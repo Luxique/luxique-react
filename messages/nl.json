@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "treatments": "Behandelingen",
+    "academy": "Academy",
+    "onlinePlatform": "Online Leeromgeving",
+    "personalTrack": "Persoonlijk Traject",
+    "about": "Over mij",
+    "bookTreatment": "Boek een behandeling",
+    "startEducation": "Start je opleiding →"
+  },
+  "hero": {
+    "title": "The art of lashes. Perfected.",
+    "subtitle": "Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland's #1 lash educator.",
+    "viewCourses": "Bekijk de opleidingen",
+    "bookTreatment": "Boek een behandeling",
+    "badge": "Arnhem · Gecertificeerde lash artist & educator"
+  },
+  "techVsArtist": {
+    "intro": "Er is een verschil tussen wimpers zetten en wimpers creëren. Ik leer je het tweede.",
+    "techLabel": "De basis. Het startpunt.",
+    "artistLabel": "Waar ik je naartoe breng.",
+    "tech": {
+      "title": "Lash Tech",
+      "body": "Je beheerst de techniek. Je werkt nauwkeurig. Je legt fans aan. Je klant gaat tevreden naar huis.\n\nMaar je werkt grotendeels vanuit standaard maps en vaste patronen — Russian volume, hybrids, classics. Je kopieert wat werkt.\n\nEr is niets mis mee. Maar er is meer."
+    },
+    "artist": {
+      "title": "Lash Artist ✦",
+      "body": "Je ziet het oog. Niet de wimper.\n\nJe analyseert de oogvorm voordat je begint. Je weet welke curl past bij welk oog — en waarom. Je bouwt een set die echt van díe persoon is. Niet een kopie van wat iedereen maakt."
+    },
+    "quote": "“A normal lash tech just copies and pastes. I look at eye shapes. I have knowledge about every curl and I know how to use it, when to use it.”",
+    "bridge": "Bij LXQ Academy leer ik je denken als een artist. Vanaf dag één.",
+    "cta": "Bekijk de opleidingen →"
+  },
+  "whatIStandFor": {
+    "title": "Ik wil de standaard veranderen.",
+    "body1": "Vraag een willekeurig iemand op straat wat lash extensions zijn. Ze zeggen:\n\n"Die grote zwarte dingen op je wimpers."",
+    "body2": "Dat is niet wat lash extensions zijn. En dat is precies wat ik wil veranderen.\n\nIn Nederland is Russian volume de norm. Zwaar, donker, vol. Ik koos daar bewust niet voor. Toen ik begon, deed ik direct wispy — naturel, passend bij het oog van de klant. Mensen begrepen het niet altijd in het begin. Maar ik bleef gaan. En uiteindelijk wilden mensen precies dat hebben wat ik maakte.",
+    "pullQuote": "“It's good to be different. Start off different. Just be you — and people will love you eventually.”",
+    "pullQuoteAttr": "— Chiva",
+    "body3": "LXQ Academy bestaat omdat er een verschil is tussen een lash tech en een lash artist — en dat verschil er écht toe doet. Niet alleen voor de klant die in jouw stoel zit, maar voor het niveau van het hele vak.\n\nIk leid geen technici op. Ik leid artists op.",
+    "statements": [
+      "Kennis over elke curl die bestaat — en wanneer je welke gebruikt",
+      "Werken mét oogvormen, niet ondanks ze",
+      "Sets die passen bij de persoon, niet bij de trend"
+    ]
+  },
+  "comparison": {
+    "title": "Niet elke opleiding is hetzelfde. Dit is het verschil.",
+    "standard": "Standaard cursus",
+    "lxq": "LXQ Academy ✦",
+    "features": [
+      { "name": "Groepsgrootte", "standard": "10–20 cursisten", "lxq": "Max. 2 per dag" },
+      { "name": "Begeleiding na de cursus", "standard": "✗", "lxq": "✓ Wekelijkse mentorship calls" },
+      { "name": "Werken met oogvormen", "standard": "Basis of geen", "lxq": "✓ Diepgaand — elke oogvorm" },
+      { "name": "Curl theorie", "standard": "Standaard curls", "lxq": "✓ Alle curls + strategische toepassing" },
+      { "name": "Werken op echte modellen", "standard": "Soms", "lxq": "✓ Altijd" },
+      { "name": "Content editing meegegeven", "standard": "✗", "lxq": "✓ Mini cursus editen inbegrepen" },
+      { "name": "Certificering", "standard": "Soms", "lxq": "✓ Officieel LXQ certificaat" },
+      { "name": "Online leeromgeving", "standard": "✗", "lxq": "✓ Volledig platform met videolessen" },
+      { "name": "Persoonlijk contact met docent", "standard": "✗", "lxq": "✓ Direct met Chiva" },
+      { "name": "Bottom lashes technieken", "standard": "Zelden", "lxq": "✓ Onderdeel van de opleiding" }
+    ],
+    "footer": "Bij mij ga je niet afstuderen als iemand die weet hoe het moet. Je gaat afstuderen als iemand die weet waarom."
+  },
+  "booking": {
+    "title": "Plan jouw afspraak",
+    "subtitle": "Kies je behandeling en plan direct in.",
+    "newSet": {
+      "title": "Nieuwe Set",
+      "desc": "Volledig op maat. Inclusief uitgebreid consult en lash mapping.",
+      "duration": "90 minuten"
+    },
+    "refill": {
+      "title": "Opvullen",
+      "desc": "Jouw persoonlijke lash map staat opgeslagen. We recreëren je set.",
+      "duration": "60 minuten"
+    },
+    "other": "← Andere behandeling"
+  },
+  "academy": {
+    "title": "Online leeromgeving & IRL traject",
+    "online": {
+      "title": "Online Leerplatform",
+      "desc": "Videocursussen op jouw eigen tempo. Start wanneer jij wilt, leer waar je wilt.",
+      "features": ["Medusa cursus — beginnersniveau", "Wispy cursus — vervolgmodule", "Certificaat bij afronding", "Levenslange toegang"],
+      "cta": "Bekijk de cursussen →"
+    },
+    "personal": {
+      "title": "Persoonlijk Traject",
+      "desc": "Verspreid over meerdere dagen leer je alle kneepjes van het vak bij Chiva op locatie in Arnhem.",
+      "features": ["Hands-on op locatie Arnhem", "Alle materialen inbegrepen", "Volledig op maat"],
+      "cta": "Meer informatie →"
+    }
+  },
+  "reviews": {
+    "title": "Wat klanten zeggen",
+    "score": "5.0",
+    "basedOn": "Gebaseerd op 47 reviews"
+  },
+  "footer": {
+    "treatments": "Behandelingen",
+    "newSet": "Nieuwe Set",
+    "refill": "Opvullen",
+    "book": "Boek een afspraak",
+    "academy": "Academy",
+    "courses": "Online Cursussen",
+    "coaching": "Persoonlijk Traject",
+    "info": "Info",
+    "about": "Over mij",
+    "faq": "FAQ"
+  }
+}
