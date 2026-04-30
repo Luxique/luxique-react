@@ -14,7 +14,7 @@ export default function AcademySection() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Online */}
-          <div className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition cursor-pointer">
+          <a href="#online-cursussen" id="online-cursussen" className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition group">
             <div className="text-3xl mb-4">🎬</div>
             <h3 className="font-['Cormorant_Garamond'] text-[22px] mb-3">Online Leerplatform</h3>
             <p className="text-[13px] text-white/50 leading-[1.7] mb-6">
@@ -27,13 +27,13 @@ export default function AcademySection() {
                 </li>
               ))}
             </ul>
-            <a className="inline-block text-[13px] text-[var(--rose)] font-semibold hover:text-[var(--rose-light)] transition">
+            <span className="inline-block text-[13px] text-[var(--rose)] font-semibold group-hover:text-[var(--rose-light)] transition">
               Bekijk de cursussen →
-            </a>
-          </div>
+            </span>
+          </a>
 
           {/* Persoonlijk Traject */}
-          <div className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition cursor-pointer">
+          <a href="#persoonlijk-traject" id="persoonlijk-traject" className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition group">
             <div className="text-3xl mb-4">🤝</div>
             <h3 className="font-['Cormorant_Garamond'] text-[22px] mb-3">Persoonlijk Traject</h3>
             <p className="text-[13px] text-white/50 leading-[1.7] mb-6">
@@ -46,10 +46,10 @@ export default function AcademySection() {
                 </li>
               ))}
             </ul>
-            <a className="inline-block text-[13px] text-[var(--rose)] font-semibold hover:text-[var(--rose-light)] transition">
+            <span className="inline-block text-[13px] text-[var(--rose)] font-semibold group-hover:text-[var(--rose-light)] transition">
               Meer informatie →
-            </a>
-          </div>
+            </span>
+          </a>
         </div>
       </div>
     </section>

@@ -1,11 +1,11 @@
 export default function Footer() {
   return (
-    <footer className="bg-[var(--dark)] text-white py-16">
+    <footer className="bg-[var(--dark)] text-white py-16 border-t border-white/5">
       <div className="max-w-[900px] mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div>
-            <div className="font-['Cormorant_Garamond'] text-xl tracking-[0.08em] mb-3">LUXIQUE</div>
+            <div className="font-['Avenir_Next'] text-[16px] tracking-[0.2em] font-[100] uppercase mb-3">LUXIQUE</div>
             <p className="text-[12px] text-white/40 leading-relaxed">
               The art of lashes. Perfected.
             </p>
@@ -22,16 +22,17 @@ export default function Footer() {
           {/* Academy */}
           <div>
             <h5 className="text-[13px] font-semibold mb-4 text-white/60">Academy</h5>
-            <a href="#academy" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Online Cursussen</a>
-            <a href="#academy" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">Persoonlijk Traject</a>
+            <a href="#online-cursussen" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Online Cursussen</a>
+            <a href="#persoonlijk-traject" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">Persoonlijk Traject</a>
           </div>
 
           {/* Info */}
           <div>
             <h5 className="text-[13px] font-semibold mb-4 text-white/60">Info</h5>
             <a href="#over-mij" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Over mij</a>
-            <a href="#" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">FAQ</a>
-            <a href="https://instagram.com/lashedbychiva" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">@lashedbychiva</a>
+            <a href="#faq" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">FAQ</a>
+            <a href="#contact" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Contact</a>
+            <a href="https://instagram.com/lashedbychiva" target="_blank" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">@lashedbychiva</a>
           </div>
         </div>
 
