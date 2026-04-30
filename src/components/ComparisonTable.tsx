@@ -1,74 +1,78 @@
 export default function ComparisonTable() {
   const features = [
-    { name: 'Groepsgrootte', standard: '10–20 cursisten', lxq: 'Max. 2 per dag' },
-    { name: 'Begeleiding na de cursus', standard: '✗', lxq: '✓ Wekelijkse mentorship calls' },
-    { name: 'Werken met oogvormen', standard: 'Basis of geen', lxq: '✓ Diepgaand — elke oogvorm' },
-    { name: 'Curl theorie', standard: 'Standaard curls', lxq: '✓ Alle curls + strategische toepassing' },
-    { name: 'Werken op echte modellen', standard: 'Soms', lxq: '✓ Altijd' },
-    { name: 'Content editing meegegeven', standard: '✗', lxq: '✓ Mini cursus editen inbegrepen' },
-    { name: 'Certificering', standard: 'Soms', lxq: '✓ Officieus LXQ certificaat' },
-    { name: 'Online leeromgeving', standard: '✗', lxq: '✓ Volledig platform met videolessen' },
-    { name: 'Persoonlijk contact met docent', standard: '✗', lxq: '✓ Direct met Chiva' },
-    { name: 'Bottom lashes technieken', standard: 'Zelden', lxq: '✓ Onderdeel van de opleiding' },
+    'Werken met oogvormen',
+    'Droopyness actief voorkomen',
+    'Alle curls — J, B, L en verder',
+    'Spikes maken én correct plaatsen',
+    'Bottom lashes technieken',
+    'Wet sets creëren',
+    'Je werk professioneel fotograferen',
+    'Mentorship na de cursus',
+    'Leer in jouw eigen tempo',
   ]
 
   return (
     <section className="py-24 bg-white">
-      <div className="max-w-[900px] mx-auto px-6">
+      <div className="max-w-[700px] mx-auto px-4">
         <div className="section-tag text-center">Vergelijking</div>
-        <h2 className="section-title text-center mb-4">
+        <h2 className="section-title text-center mb-12">
           Niet elke opleiding is<br />hetzelfde. <em>Dit is het verschil.</em>
         </h2>
 
-        {/* Two-column card layout */}
-        <div className="mt-12 grid md:grid-cols-2 gap-6">
-          {/* Standard Column */}
-          <div className="bg-[var(--bg2)] rounded-2xl border border-[var(--border)] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[var(--border)]">
-              <h3 className="font-['Cormorant_Garamond'] text-[18px] font-normal text-[var(--text2)]">Standard Lash Course</h3>
+        {/* Three-column table — no stacking, fits on mobile */}
+        <div className="grid grid-cols-3 rounded-2xl overflow-hidden border border-[var(--border)] shadow-sm">
+          
+          {/* Column 1 — Feature labels */}
+          <div className="bg-[#f5f5f5]">
+            {/* Header */}
+            <div className="px-3 py-4 border-b border-[var(--border)]">
+              <span className="text-[11px] font-semibold text-[var(--text3)] uppercase tracking-wider">Feature</span>
             </div>
-            <div className="divide-y divide-[var(--border)]">
-              {features.map((f, i) => (
-                <div key={i} className="px-6 py-4 flex items-start gap-3">
-                  <span className={`flex-shrink-0 mt-0.5 text-[14px] ${f.standard === '✗' ? 'text-red-400' : 'text-[var(--text3)]'}`}>
-                    {f.standard === '✗' ? '✗' : '○'}
-                  </span>
-                  <div>
-                    <div className="text-[12px] font-semibold text-[var(--text2)] mb-0.5">{f.name}</div>
-                    {f.standard !== '✗' && (
-                      <div className="text-[11px] text-[var(--text3)]">{f.standard}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Rows */}
+            {features.map((f, i) => (
+              <div key={i} className="px-3 py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-center">
+                <span className="text-[12px] md:text-[13px] text-[var(--text2)] leading-tight">{f}</span>
+              </div>
+            ))}
           </div>
 
-          {/* LXQ Academy Column */}
-          <div className="bg-[#faf7f2] rounded-2xl border border-[var(--rose)]/20 overflow-hidden shadow-[0_0_30px_rgba(201,169,106,0.08)] relative">
-            <div className="px-6 py-5 border-b border-[var(--rose)]/15 bg-[var(--rose)]/[0.04]">
-              <h3 className="font-['Cormorant_Garamond'] text-[18px] font-normal text-[var(--rose)]">LXQ Academy ✦</h3>
+          {/* Column 2 — LXQ Academy (highlighted, rises up) */}
+          <div className="bg-gradient-to-b from-[#C9967A] to-[#a8795f] relative -mt-3 mb-[-3px] rounded-t-2xl shadow-lg z-10">
+            {/* Header */}
+            <div className="px-3 py-5 border-b border-white/20 text-center">
+              <span className="text-[12px] md:text-[13px] font-semibold text-white tracking-wide">LXQ Academy ✦</span>
             </div>
-            <div className="divide-y divide-[var(--rose)]/10">
-              {features.map((f, i) => (
-                <div key={i} className="px-6 py-4 flex items-start gap-3">
-                  <span className="flex-shrink-0 mt-0.5 text-[14px] text-[var(--rose)] font-bold">✓</span>
-                  <div>
-                    <div className="text-[12px] font-semibold text-[var(--text)] mb-0.5">{f.name}</div>
-                    <div className="text-[11px] text-[var(--text2)]">{f.lxq.replace('✓ ', '')}</div>
-                  </div>
+            {/* Rows */}
+            {features.map((_, i) => (
+              <div key={i} className="px-3 py-3.5 border-b border-white/10 last:border-b-0 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-white/90 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-[#C9967A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+
+          {/* Column 3 — Standaard cursus */}
+          <div className="bg-white">
+            {/* Header */}
+            <div className="px-3 py-4 border-b border-[var(--border)] text-center">
+              <span className="text-[11px] font-semibold text-[var(--text3)] uppercase tracking-wider">Standaard</span>
             </div>
-            {/* Premium badge */}
-            <div className="absolute top-4 right-4 bg-[var(--rose)] text-white text-[9px] font-bold tracking-wider uppercase px-3 py-1 rounded-full">
-              Premium
-            </div>
+            {/* Rows */}
+            {features.map((_, i) => (
+              <div key={i} className="px-3 py-3.5 border-b border-[var(--border)] last:border-b-0 flex items-center justify-center">
+                <svg className="w-4 h-4 text-[#e05c5c]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Footer quote */}
-        <p className="text-center text-[15px] text-[var(--text2)] mt-10 max-w-[600px] mx-auto leading-relaxed">
+        <p className="text-center text-[14px] text-[var(--text2)] mt-10 max-w-[500px] mx-auto leading-relaxed">
           Bij mij ga je niet afstuderen als iemand die weet <em>hoe</em> het moet. Je gaat afstuderen als iemand die weet <em>waarom</em>.
         </p>
       </div>
