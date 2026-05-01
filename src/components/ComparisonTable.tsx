@@ -25,8 +25,8 @@ export default function ComparisonTable() {
           Niet elke opleiding is<br />hetzelfde. <em>Dit is het verschil.</em>
         </h2>
 
-        {/* CSS Grid — 3 columns, shared row heights */}
-        <div className="grid grid-cols-[1fr_82px_70px] sm:grid-cols-[1fr_110px_95px] max-[360px]:grid-cols-[1fr_72px_62px]"
+        {/* CSS Grid — 3 columns with gaps */}
+        <div className="grid grid-cols-[1fr_90px_78px] gap-x-[8px]"
           style={{
             gridTemplateRows: '100px repeat(9, 58px)',
           }}
@@ -35,7 +35,7 @@ export default function ComparisonTable() {
           {/* COL 1: Feature labels — rows 2-10 */}
           <div className="col-start-1 row-start-2 row-end-11 bg-[#f5f4f2] rounded-2xl overflow-hidden flex flex-col">
             {features.map((f, i) => (
-              <div key={i} className="flex-1 flex items-center px-4 sm:px-5 text-[13px] sm:text-[14px] max-[360px]:text-[11.5px] max-[360px]:px-3 text-[#2a2a2a] leading-[1.35] border-t border-[#e9e7e4] first:border-t-0">
+              <div key={i} className="flex-1 flex items-center px-4 text-[13px] text-[#2a2a2a] leading-[1.35] border-t border-[#e9e7e4] first:border-t-0">
                 {f}
               </div>
             ))}
@@ -53,7 +53,7 @@ export default function ComparisonTable() {
             {/* Check rows */}
             {features.map((_, i) => (
               <div key={i} className="h-[58px] shrink-0 flex items-center justify-center border-t border-white/15">
-                <span className="w-6 h-6 rounded-full bg-white/92 flex items-center justify-center">
+                <span className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-sm">
                   {checkSVG}
                 </span>
               </div>
@@ -69,7 +69,9 @@ export default function ComparisonTable() {
             {/* Cross rows */}
             {features.map((_, i) => (
               <div key={i} className="h-[58px] shrink-0 flex items-center justify-center border-t border-[#f0edea]">
-                <span className="text-[#d44f4f] text-[15px] font-medium leading-none">✕</span>
+                <span className="w-7 h-7 rounded-full bg-white border border-[#e8e6e3] flex items-center justify-center">
+                  <span className="text-[#d44f4f] text-[13px] font-medium leading-none">✕</span>
+                </span>
               </div>
             ))}
           </div>
