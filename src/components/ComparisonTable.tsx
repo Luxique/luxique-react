@@ -20,7 +20,7 @@ export default function ComparisonTable() {
   return (
     <section className="py-24 bg-white">
       <div className="w-full max-w-[500px] mx-auto px-5">
-        <div className="text-[11px] font-semibold tracking-[0.2em] text-[#C9967A] uppercase mb-3.5">Vergelijking</div>
+        <div className="text-[11px] font-semibold tracking-[0.2em] text-[#D4AF37] uppercase mb-3.5">Vergelijking</div>
         <h2 className="font-['Cormorant_Garamond'] text-[clamp(26px,5vw,38px)] font-normal leading-[1.2] text-[#1a1a1a] mb-10">
           Niet elke opleiding is<br />hetzelfde. <em>Dit is het verschil.</em>
         </h2>

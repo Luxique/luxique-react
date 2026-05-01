@@ -5,11 +5,11 @@ export default function TechVsArtist() {
       <div className="px-6 py-20">
         {/* Intro — two-layer typography */}
         <div className="text-center px-6 mb-16">
-          <span className="block font-['Outfit'] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#C9967A] mb-5">Lash Tech vs. Lash Artist</span>
+          <span className="block font-['Outfit'] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#D4AF37] mb-5">Lash Tech vs. Lash Artist</span>
           <h2 className="font-['Cormorant_Garamond'] font-normal leading-[1.15] flex flex-col gap-[2px] items-center">
             <span className="text-[clamp(32px,7vw,52px)] text-[#1a1a1a]">Er is een verschil tussen</span>
             <span className="text-[clamp(32px,7vw,52px)] text-[#1a1a1a]">wimpers zetten</span>
-            <span className="text-[clamp(34px,7.5vw,56px)] italic text-[#C9967A]">en wimpers creëren.</span>
+            <span className="text-[clamp(34px,7.5vw,56px)] italic text-[#D4AF37]">en wimpers creëren.</span>
             <span className="text-[clamp(18px,4vw,28px)] italic text-[#888] mt-2.5 tracking-[0.01em]">Ik leer je het tweede.</span>
           </h2>
         </div>
@@ -34,18 +34,26 @@ export default function TechVsArtist() {
             </div>
           </div>
 
-          {/* Lash Artist */}
-          <div className="bg-white rounded-2xl p-8 border border-[var(--rose)] shadow-[0_0_20px_rgba(201,169,106,0.1)]">
-            <div className="text-3xl mb-3">✦</div>
-            <h3 className="font-['Cormorant_Garamond'] text-[20px] font-normal text-[var(--rose)] mb-4">Lash Artist</h3>
-            <p className="text-[13px] text-[var(--text2)] leading-[1.9] font-medium">
-              Je ziet het oog. Niet de wimper.
-            </p>
-            <p className="text-[13px] text-[var(--text2)] leading-[1.9] mt-4">
-              Je analyseert de oogvorm voordat je begint. Je weet welke curl past bij welk oog — en waarom. Je bouwt een set die echt van díe persoon is. Niet een kopie van wat iedereen maakt.
-            </p>
-            <div className="mt-6 pt-4 border-t border-[var(--rose)]/[0.2] text-[11px] text-[var(--rose)] tracking-wide uppercase">
-              Waar ik je naartoe breng.
+          {/* Lash Artist — Gold animated gradient card */}
+          <div className="relative rounded-2xl p-8 overflow-hidden shadow-[0_0_40px_rgba(212,175,55,0.25),0_0_80px_rgba(212,175,55,0.1)]">
+            {/* Animated organic gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#D4AF37] via-[#C5A028] to-[#B8941F] opacity-90" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#F5E6A3] via-transparent to-[#D4AF37] opacity-40" />
+            {/* Moving shine overlay */}
+            <div className="absolute inset-0 animate-[shine_4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full" />
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="text-3xl mb-3">✦</div>
+              <h3 className="font-['Cormorant_Garamond'] text-[20px] font-normal text-white mb-4">Lash Artist</h3>
+              <p className="text-[13px] text-white/90 leading-[1.9] font-medium">
+                Je ziet het oog. Niet de wimper.
+              </p>
+              <p className="text-[13px] text-white/80 leading-[1.9] mt-4">
+                Je analyseert de oogvorm voordat je begint. Je weet welke curl past bij welk oog — en waarom. Je bouwt een set die echt van díe persoon is. Niet een kopie van wat iedereen maakt.
+              </p>
+              <div className="mt-6 pt-4 border-t border-white/20 text-[11px] text-white/60 tracking-wide uppercase">
+                Waar ik je naartoe breng.
+              </div>
             </div>
           </div>
         </div>
