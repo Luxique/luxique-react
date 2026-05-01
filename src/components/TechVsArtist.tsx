@@ -3,11 +3,16 @@ export default function TechVsArtist() {
     <section className="pt-0 pb-24">
       <div className="max-w-[940px] mx-auto bg-[var(--bg2)] rounded-t-[36px] overflow-hidden relative z-[2] -mt-9">
       <div className="px-6 py-20">
-        {/* Intro */}
-        <p className="text-[15px] text-[var(--text2)] leading-relaxed text-center mb-16 max-w-[600px] mx-auto">
-          Er is een verschil tussen wimpers zetten en wimpers creëren.<br />
-          Ik leer je het tweede.
-        </p>
+        {/* Intro — two-layer typography */}
+        <div className="text-center px-6 mb-16">
+          <span className="block font-['Outfit'] text-[11px] font-semibold tracking-[0.18em] uppercase text-[#C9967A] mb-5">Lash Tech vs. Lash Artist</span>
+          <h2 className="font-['Cormorant_Garamond'] font-normal leading-[1.15] flex flex-col gap-[2px] items-center">
+            <span className="text-[clamp(32px,7vw,52px)] text-[#1a1a1a]">Er is een verschil tussen</span>
+            <span className="text-[clamp(32px,7vw,52px)] text-[#1a1a1a]">wimpers zetten</span>
+            <span className="text-[clamp(34px,7.5vw,56px)] italic text-[#C9967A]">en wimpers creëren.</span>
+            <span className="text-[clamp(18px,4vw,28px)] italic text-[#888] mt-2.5 tracking-[0.01em]">Ik leer je het tweede.</span>
+          </h2>
+        </div>
 
         {/* Two columns */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
