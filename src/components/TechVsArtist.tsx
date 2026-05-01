@@ -1,8 +1,8 @@
 export default function TechVsArtist() {
   return (
-    <section className="pt-4 pb-24">
-      <div className="max-w-[940px] mx-auto px-6 bg-[var(--bg2)] rounded-t-[28px] py-20 -mt-7 relative z-[2]">
-      <div className="max-w-[900px] mx-auto px-6">
+    <section className="pt-0 pb-24">
+      <div className="max-w-[940px] mx-auto bg-[var(--bg2)] rounded-t-[36px] overflow-hidden relative z-[2] -mt-9">
+      <div className="px-6 py-20">
         {/* Intro */}
         <p className="text-[15px] text-[var(--text2)] leading-relaxed text-center mb-16 max-w-[600px] mx-auto">
           Er is een verschil tussen wimpers zetten en wimpers creëren.<br />
