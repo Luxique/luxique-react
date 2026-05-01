@@ -9,7 +9,7 @@ export default function Navbar() {
     <>
       {/* Floating navbar */}
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[900px]">
-        <div className="flex items-center justify-between px-4 h-14 rounded-full bg-white/60 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-between px-4 h-14 bg-white/60 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] rounded-[28px]">
           {/* Left: Book Now + Hamburger */}
           <div className="flex items-center gap-3">
             <button className="md:hidden flex flex-col gap-1 p-1" onClick={() => setMobileOpen(!mobileOpen)}>
