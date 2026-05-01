@@ -1,7 +1,7 @@
 export default function TechVsArtist() {
   return (
-    <section className="py-24">
-      <div className="max-w-[940px] mx-auto px-6 bg-[var(--bg2)] rounded-3xl py-20">
+    <section className="pt-4 pb-24">
+      <div className="max-w-[940px] mx-auto px-6 bg-[var(--bg2)] rounded-t-[28px] py-20 -mt-7 relative z-[2]">
       <div className="max-w-[900px] mx-auto px-6">
         {/* Intro */}
         <p className="text-[15px] text-[var(--text2)] leading-relaxed text-center mb-16 max-w-[600px] mx-auto">
