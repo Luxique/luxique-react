@@ -1,27 +1,46 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function EyeShapes() {
+  const [paused, setPaused] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const posRef = useRef(0)
+  const pausedRef = useRef(false)
 
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    let anim: number
-    let speed = 0.5
+
+    // Double the content for seamless loop
+    const contentW = el.scrollWidth / 2
+
     const scroll = () => {
-      el.scrollLeft += speed
-      if (el.scrollLeft >= el.scrollWidth - el.clientWidth) {
-        speed = -0.5
-      } else if (el.scrollLeft <= 0) {
-        speed = 0.5
+      if (!pausedRef.current) {
+        posRef.current += 0.5
+        if (posRef.current >= contentW) {
+          posRef.current = 0
+        }
+        el.scrollLeft = posRef.current
       }
-      anim = requestAnimationFrame(scroll)
+      requestAnimationFrame(scroll)
     }
-    anim = requestAnimationFrame(scroll)
+    const anim = requestAnimationFrame(scroll)
     return () => cancelAnimationFrame(anim)
   }, [])
+
+  const handleTouch = () => {
+    if (pausedRef.current) return
+    pausedRef.current = true
+    setPaused(true)
+    setTimeout(() => {
+      // Re-sync posRef from actual scroll position
+      const el = scrollRef.current
+      if (el) posRef.current = el.scrollLeft
+      pausedRef.current = false
+      setPaused(false)
+    }, 3000)
+  }
 
   const shapes = [
     { name: 'Almond', emoji: '👁️', desc: 'Bijna elke style werkt' },
@@ -34,6 +53,8 @@ export default function EyeShapes() {
     { name: 'Close Set', emoji: '⬅️', desc: 'Focus outer corners' },
   ]
 
+  const allShapes = [...shapes, ...shapes]
+
   return (
     <section className="py-24 bg-white overflow-hidden">
       <div className="max-w-[900px] mx-auto px-6">
@@ -44,23 +65,26 @@ export default function EyeShapes() {
         <p className="text-center text-[14px] text-[var(--text2)] max-w-[500px] mx-auto mb-12">
           Elke oogvorm vraagt een andere aanpak. Dit is wat de meeste cursussen overslaan.
         </p>
+      </div>
 
-        <div
-          ref={scrollRef}
-          className="flex gap-4 overflow-x-auto no-scrollbar pb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {shapes.map((s, i) => (
-            <div
-              key={i}
-              className="flex-shrink-0 w-[160px] bg-[var(--bg2)] rounded-2xl p-5 text-center border border-[var(--border)] hover:border-[#D4AF37]/30 transition"
-            >
-              <div className="text-3xl mb-3">{s.emoji}</div>
-              <h4 className="font-['Cormorant_Garamond'] text-[16px] font-normal mb-2">{s.name}</h4>
-              <p className="text-[11px] text-[var(--text3)] leading-relaxed">{s.desc}</p>
-            </div>
-          ))}
-        </div>
+      {/* Full-width infinite scroll */}
+      <div
+        ref={scrollRef}
+        onClick={handleTouch}
+        onTouchStart={handleTouch}
+        className={`flex gap-4 overflow-x-auto no-scrollbar pb-2 px-6 cursor-grab active:cursor-grabbing select-none ${paused ? 'opacity-90' : ''}`}
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {allShapes.map((s, i) => (
+          <div
+            key={i}
+            className="flex-shrink-0 w-[160px] bg-[var(--bg2)] rounded-2xl p-5 text-center border border-[var(--border)] hover:border-[#D4AF37]/30 transition"
+          >
+            <div className="text-3xl mb-3">{s.emoji}</div>
+            <h4 className="font-['Cormorant_Garamond'] text-[16px] font-normal mb-2">{s.name}</h4>
+            <p className="text-[11px] text-[var(--text3)] leading-relaxed">{s.desc}</p>
+          </div>
+        ))}
       </div>
 
       <style jsx>{`
