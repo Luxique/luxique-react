@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@mux/mux-player-react": "^3.13.0",
+    "@stripe/stripe-js": "^9.4.0",
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
+    "bcryptjs": "^3.0.3",
     "next": "14.2.35",
     "next-intl": "^4.11.0",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "stripe": "^22.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",

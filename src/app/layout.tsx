@@ -3,6 +3,8 @@ import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
+import { AuthProvider } from '@/lib/auth-context'
+
 export const metadata: Metadata = {
   title: 'LXQ Academy — The Art of Lashes, Perfected',
   description: 'Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland\'s #1 lash educator.',
@@ -22,9 +24,11 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body>
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   )
