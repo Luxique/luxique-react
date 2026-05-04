@@ -9,7 +9,7 @@ type Course = { id: string; title: string; slug: string; short_description: stri
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string; notes: string }
 
 export default function DashboardPage() {
-  const { user, enrollments, loading, signOut } = useAuth()
+  const { user, role, enrollments, loading, signOut } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -70,6 +70,7 @@ export default function DashboardPage() {
               </div>
               <span className="text-[13px] text-[#888]">{firstName || user.email}</span>
             </div>
+            {role === 'admin' && <a href="/admin" className="text-[11px] bg-[#D4AF37] text-[#1a1a1a] px-2.5 py-1 rounded-full font-bold tracking-wide">ADMIN</a>}
             <a href="/profile" className="text-[12px] text-[#888] hover:text-[#D4AF37] transition">Profiel</a>
             <button onClick={signOut} className="text-[12px] text-[#aaa] hover:text-[#1a1a1a] transition px-3 py-1.5 rounded-full border border-[#eee] hover:border-[#ddd]">Uitloggen</button>
           </div>

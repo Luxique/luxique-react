@@ -1,6 +1,5 @@
 'use client'
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import type { User, Session } from '@supabase/supabase-js'
@@ -9,6 +8,7 @@ type AuthContextType = {
   user: User | null
   session: Session | null
   loading: boolean
+  role: 'admin' | 'student' | null
   enrollments: Enrollment[]
   signOut: () => Promise<void>
 }
@@ -23,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  role: null,
   enrollments: [],
   signOut: async () => {},
 })
@@ -31,12 +32,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState<'admin' | 'student' | null>(null)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
+
+  const fetchRole = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+    setRole(data?.role === 'admin' ? 'admin' : 'student')
+  }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      if (session?.user) fetchRole(session.user.id)
       setLoading(false)
     })
 
@@ -44,6 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (_event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
+        if (session?.user) fetchRole(session.user.id)
+        else setRole(null)
         setLoading(false)
       }
     )
@@ -65,11 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut()
     setUser(null)
     setSession(null)
+    setRole(null)
     setEnrollments([])
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, enrollments, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, role, enrollments, signOut }}>
       {children}
     </AuthContext.Provider>
   )
