@@ -9,7 +9,7 @@ type Course = { id: string; title: string; slug: string; short_description: stri
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string; notes: string }
 
 export default function DashboardPage() {
-  const { user, role, enrollments, loading, signOut } = useAuth()
+  const { user, enrollments, loading } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -58,25 +58,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      {/* Header */}
-      <div className="bg-white border-b border-[#eee]">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="font-['Cormorant_Garamond'] text-[24px] tracking-[0.15em] text-[#1a1a1a]">LUXIQUE</a>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 flex items-center justify-center text-[#D4AF37] text-[13px] font-semibold">
-                {firstName ? firstName[0].toUpperCase() : '?'}
-              </div>
-              <span className="text-[13px] text-[#888]">{firstName || user.email}</span>
-            </div>
-            {role === 'admin' && <a href="/admin" className="text-[11px] bg-[#D4AF37] text-[#1a1a1a] px-2.5 py-1 rounded-full font-bold tracking-wide">ADMIN</a>}
-            <a href="/profile" className="text-[12px] text-[#888] hover:text-[#D4AF37] transition">Profiel</a>
-            <button onClick={signOut} className="text-[12px] text-[#aaa] hover:text-[#1a1a1a] transition px-3 py-1.5 rounded-full border border-[#eee] hover:border-[#ddd]">Uitloggen</button>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-[#FAFAFA] pt-24">
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Welcome */}
         <h1 className="font-['Cormorant_Garamond'] text-[clamp(28px,5vw,40px)] text-[#1a1a1a] mb-2">

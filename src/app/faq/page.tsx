@@ -17,12 +17,7 @@ export default function FAQPage() {
   const [open, setOpen] = useState<number | null>(null)
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <div className="bg-white border-b border-[#eee]">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <a href="/" className="font-['Cormorant_Garamond'] text-[24px] tracking-[0.15em] text-[#1a1a1a]">LUXIQUE</a>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#FAFAFA] pt-24">
 
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="font-['Cormorant_Garamond'] text-[clamp(32px,6vw,48px)] text-[#1a1a1a] mb-4">

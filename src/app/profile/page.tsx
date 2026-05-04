@@ -11,7 +11,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState({
-    first_name: '', last_name: '', phone: '', address: '', city: '', postal_code: '', instagram: '', tiktok: ''
+    first_name: '', last_name: '', phone: '', address: '', city: '', postal_code: '', instagram: '', tiktok: '', company_name: '', vat_number: '', kvk_number: ''
   })
 
   useEffect(() => {
@@ -31,6 +31,9 @@ export default function ProfilePage() {
           postal_code: data.postal_code || '',
           instagram: data.instagram || '',
           tiktok: data.tiktok || '',
+          company_name: data.company_name || '',
+          vat_number: data.vat_number || '',
+          kvk_number: data.kvk_number || '',
         })
       }
     })
@@ -62,15 +65,8 @@ export default function ProfilePage() {
   const labelClass = "text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block"
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <div className="bg-white border-b border-[#eee]">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="font-['Cormorant_Garamond'] text-[24px] tracking-[0.15em] text-[#1a1a1a]">LUXIQUE</a>
-          <a href="/dashboard" className="text-[13px] text-[#888] hover:text-[#1a1a1a]">← Dashboard</a>
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto px-6 py-12">
+    <div className="min-h-screen bg-[#FAFAFA] pt-24">
+      <div className="max-w-2xl mx-auto px-6 py-8">
         <h1 className="font-['Cormorant_Garamond'] text-[36px] text-[#1a1a1a] mb-2">Profiel</h1>
         <p className="text-[14px] text-[#888] mb-8">Beheer je persoonlijke gegevens</p>
 
@@ -130,6 +126,27 @@ export default function ProfilePage() {
               <div>
                 <label className={labelClass}>TikTok</label>
                 <input value={form.tiktok} onChange={e => setForm({ ...form, tiktok: e.target.value })} className={inputClass} placeholder="@gebruikersnaam" />
+              </div>
+            </div>
+          </div>
+
+          {/* Business / Invoice */}
+          <div className="bg-white rounded-2xl p-6 border border-[#eee]">
+            <h3 className="text-[13px] font-semibold text-[#1a1a1a] mb-4 tracking-wide">BEDRIJFSGEGEVENS <span className="text-[#aaa] font-normal">(voor facturen)</span></h3>
+            <div className="space-y-3">
+              <div>
+                <label className={labelClass}>Bedrijfsnaam</label>
+                <input value={form.company_name} onChange={e => setForm({ ...form, company_name: e.target.value })} className={inputClass} placeholder="Optioneel" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>BTW-nummer</label>
+                  <input value={form.vat_number} onChange={e => setForm({ ...form, vat_number: e.target.value })} className={inputClass} placeholder="NL000000000B00" />
+                </div>
+                <div>
+                  <label className={labelClass}>KVK-nummer</label>
+                  <input value={form.kvk_number} onChange={e => setForm({ ...form, kvk_number: e.target.value })} className={inputClass} placeholder="12345678" />
+                </div>
               </div>
             </div>
           </div>
