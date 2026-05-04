@@ -2,10 +2,9 @@
 
 import { Suspense, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') || '/dashboard'
 
