@@ -11,7 +11,7 @@ type Enrollment = {
   id: string; user_id: string; course_id: string; status: string;
   payment_method: string | null; payment_amount: number | null; paid_at: string | null;
   enrolled_at: string; granted_by: string | null;
-  courses: { title: string } | null; profiles: { email: string; full_name: string } | null
+  courses: {title:string}[]; profiles: {email:string;full_name:string}[]
 }
 
 export default function AdminPage() {
@@ -174,8 +174,8 @@ export default function AdminPage() {
                 <tbody>
                   {enrollments.map(e => (
                     <tr key={e.id} className="border-b border-[#f5f5f5] hover:bg-[#fafafa]">
-                      <td className="px-5 py-3 text-[13px]">{(e.profiles as {full_name?:string;email?:string}|null)?.full_name || (e.profiles as {full_name?:string;email?:string}|null)?.email || '—'}</td>
-                      <td className="px-5 py-3 text-[13px]">{(e.courses as {title?:string}|null)?.title || '—'}</td>
+                      <td className="px-5 py-3 text-[13px]">{e.profiles?.[0]?.full_name || e.profiles?.[0]?.email || '—'}</td>
+                      <td className="px-5 py-3 text-[13px]">{e.courses?.[0]?.title || '—'}</td>
                       <td className="px-5 py-3 text-[13px]">{e.payment_amount ? `€${e.payment_amount}` : e.payment_method === 'manual' ? 'Handmatig' : '—'}</td>
                       <td className="px-5 py-3">
                         <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
