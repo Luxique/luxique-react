@@ -4,23 +4,23 @@ export default function WhatIStandFor() {
       <div className="max-w-[800px] mx-auto px-6">
         <div className="section-tag">Missie</div>
         <h2 className="section-title mb-10">
-          Ik wil de standaard<br /><em>veranderen.</em>
+          Wij willen de standaard<br /><em>veranderen.</em>
         </h2>
 
         {/* Body part 1 */}
         <p className="text-[14px] text-[var(--text2)] leading-[1.9] mb-6">
           Vraag een willekeurig iemand op straat wat lash extensions zijn. Ze zeggen:
         </p>
-        <p className="text-[16px] text-[var(--text)] font-medium mb-8 pl-4 border-l-2 border-[var(--rose)]">
+        <p className="text-[16px] text-[var(--text2)] mb-8 pl-4 border-l-2 border-[#D4AF37]">
           &ldquo;Die grote zwarte dingen op je wimpers.&rdquo;
         </p>
 
         {/* Body part 2 */}
         <p className="text-[14px] text-[var(--text2)] leading-[1.9] mb-6">
-          Dat is niet wat lash extensions zijn. En dat is precies wat ik wil veranderen.
+          Dat is niet wat lash extensions zijn. En dat is precies wat wij willen veranderen.
         </p>
         <p className="text-[14px] text-[var(--text2)] leading-[1.9] mb-8">
-          In Nederland is Russian volume de norm. Zwaar, donker, vol. Ik koos daar bewust niet voor. Toen ik begon, deed ik direct wispy — naturel, passend bij het oog van de klant. Mensen begrepen het niet altijd in het begin. Maar ik bleef gaan. En uiteindelijk wilden mensen precies dat hebben wat ik maakte.
+          In Nederland is Russian volume de norm. Zwaar, donker, vol. Chiva koos daar bewust niet voor. Toen zij begon, deed zij direct wispy — naturel, passend bij het oog van de klant. Mensen begrepen het niet altijd in het begin. Maar zij bleef gaan. En uiteindelijk wilden mensen precies dat hebben wat zij maakte.
         </p>
 
         {/* Pull Quote */}
@@ -34,7 +34,7 @@ export default function WhatIStandFor() {
           LXQ Academy bestaat omdat er een verschil is tussen een lash tech en een lash artist — en dat verschil er écht toe doet. Niet alleen voor de klant die in jouw stoel zit, maar voor het niveau van het hele vak.
         </p>
         <p className="text-[15px] text-[var(--text)] font-medium mb-10">
-          Ik leid geen technici op. Ik leid artists op.
+          Wij leiden geen technici op. Wij leiden artists op.
         </p>
 
         {/* Three Statements */}

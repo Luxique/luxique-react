@@ -56,13 +56,13 @@ export default function EyeShapes() {
   const allShapes = [...shapes, ...shapes]
 
   return (
-    <section className="py-24 bg-white overflow-hidden">
+    <section className="py-12 md:py-24 bg-white overflow-hidden">
       <div className="max-w-[900px] mx-auto px-6">
         <div className="section-tag text-center">Kennis</div>
         <h2 className="section-title text-center mb-4">
           Oogvormen zeggen <em>alles</em>
         </h2>
-        <p className="text-center text-[14px] text-[var(--text2)] max-w-[500px] mx-auto mb-12">
+        <p className="text-center text-[14px] text-[var(--text2)] max-w-[500px] mx-auto mb-6 md:mb-12">
           Elke oogvorm vraagt een andere aanpak. Dit is wat de meeste cursussen overslaan.
         </p>
       </div>

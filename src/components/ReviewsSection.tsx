@@ -8,7 +8,7 @@ export default function ReviewsSection() {
   ]
 
   return (
-    <section className="py-24 bg-white">
+    <section className="py-12 md:py-24 bg-white">
       <div className="max-w-[900px] mx-auto px-6">
         <div className="section-tag">Reviews</div>
         <h2 className="section-title mb-6">
@@ -19,7 +19,7 @@ export default function ReviewsSection() {
         <div className="flex items-center gap-4 mb-10">
           <div className="text-[36px] font-['Cormorant_Garamond'] text-[var(--rose)]">5.0</div>
           <div>
-            <div className="text-[var(--rose)] text-lg">★★★★★</div>
+            <div className="text-[#D4AF37] text-lg">★★★★★</div>
             <div className="text-[11px] text-[var(--text3)]">Gebaseerd op 47 reviews</div>
           </div>
         </div>
@@ -37,7 +37,7 @@ export default function ReviewsSection() {
                   <div className="text-[11px] text-[var(--text3)]">{r.role} · {r.time}</div>
                 </div>
               </div>
-              <div className="text-[var(--rose)] text-[13px] mb-3">★★★★★</div>
+              <div className="text-[#D4AF37] text-[13px] mb-3">★★★★★</div>
               <p className="text-[13px] text-[var(--text2)] leading-relaxed">&ldquo;{r.text}&rdquo;</p>
             </div>
           ))}

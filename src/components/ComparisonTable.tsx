@@ -13,7 +13,7 @@ export default function ComparisonTable() {
 
   const checkSVG = (
     <svg viewBox="0 0 13 13" fill="none" className="w-[13px] h-[13px]">
-      <path d="M2 6.5l3 3L11 3" stroke="#b07050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M2 6.5l3 3L11 3" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   )
 
@@ -43,7 +43,7 @@ export default function ComparisonTable() {
 
           {/* COL 2: LXQ Academy — rows 1-10, gradient */}
           <div className="col-start-2 row-start-1 row-end-11 rounded-[18px] overflow-hidden flex flex-col"
-            style={{ background: 'linear-gradient(180deg, #cfa080 0%, #a8714e 100%)' }}
+            style={{ background: 'linear-gradient(180deg, #D4AF37 0%, #B8941F 100%)' }}
           >
             {/* Header */}
             <div className="h-[100px] flex flex-col items-center justify-end pb-3.5 gap-1 shrink-0">

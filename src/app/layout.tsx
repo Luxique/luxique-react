@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
 import { AuthProvider } from '@/lib/auth-context'
+import ChatWidget from '@/components/ChatWidget'
 
 export const metadata: Metadata = {
   title: 'LXQ Academy — The Art of Lashes, Perfected',
@@ -28,6 +29,7 @@ export default function RootLayout({
           <Navbar />
           <main>{children}</main>
           <Footer />
+          <ChatWidget />
         </AuthProvider>
       </body>
     </html>

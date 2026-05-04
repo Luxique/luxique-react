@@ -10,7 +10,7 @@ export default function TechVsArtist() {
             <span className="text-[clamp(32px,7vw,52px)] text-[#1a1a1a]">Er is een verschil tussen</span>
             <span className="text-[clamp(32px,7vw,52px)] text-[#1a1a1a]">wimpers zetten</span>
             <span className="text-[clamp(34px,7.5vw,56px)] italic text-[#D4AF37]">en wimpers creëren.</span>
-            <span className="text-[clamp(18px,4vw,28px)] italic text-[#888] mt-2.5 tracking-[0.01em]">Ik leer je het tweede.</span>
+            <span className="text-[clamp(18px,4vw,28px)] italic text-[#888] mt-2.5 tracking-[0.01em]">Wij leren je het tweede.</span>
           </h2>
         </div>
 
@@ -19,15 +19,15 @@ export default function TechVsArtist() {
           {/* Lash Tech */}
           <div className="bg-white rounded-2xl p-8 border border-[var(--border)]">
             <div className="text-3xl mb-3">🔧</div>
-            <h3 className="font-['Cormorant_Garamond'] text-[20px] font-normal mb-4">Lash Tech</h3>
+            <h3 className="font-['Cormorant_Garamond'] text-[20px] font-normal mb-4">Lash Technician</h3>
             <p className="text-[13px] text-[var(--text2)] leading-[1.9]">
-              Je beheerst de techniek. Je werkt nauwkeurig. Je legt fans aan. Je klant gaat tevreden naar huis.
+              Een lash technician beheerst de basistechniek: het aanbrengen van fans, het werken met verschillende lash types, en het volgen van standaard maps. De klant gaat tevreden naar huis.
             </p>
             <p className="text-[13px] text-[var(--text2)] leading-[1.9] mt-4">
-              Maar je werkt grotendeels vanuit standaard maps en vaste patronen — Russian volume, hybrids, classics. Je kopieert wat werkt.
+              Het werk is voornamelijk uitvoerend — Russian volume, hybrids, classics volgens vaste patronen. Er wordt gewerkt vanuit wat bekend is, niet vanuit wat het oog vraagt.
             </p>
             <p className="text-[13px] text-[var(--text2)] leading-[1.9] mt-4">
-              Er is niets mis mee. Maar er is meer.
+              Solide vakmanschap. Maar er is een verschil tussen goed kunnen en echt begrijpen.
             </p>
             <div className="mt-6 pt-4 border-t border-[var(--border)] text-[11px] text-[var(--text3)] tracking-wide uppercase">
               De basis. Het startpunt.
@@ -49,10 +49,10 @@ export default function TechVsArtist() {
                 Je ziet het oog. Niet de wimper.
               </p>
               <p className="text-[13px] text-white/80 leading-[1.9] mt-4">
-                Je analyseert de oogvorm voordat je begint. Je weet welke curl past bij welk oog — en waarom. Je bouwt een set die echt van díe persoon is. Niet een kopie van wat iedereen maakt.
+                Een lash artist analyseert de oogvorm vóórdat er een wimper wordt geplaatst. Weet welke curl past bij welk oog — en waarom. Ontwerpt een set die écht bij die persoon past. Geen kopie, geen standaard map. Een uniek ontwerp, elke keer weer.
               </p>
               <div className="mt-6 pt-4 border-t border-white/20 text-[11px] text-white/60 tracking-wide uppercase">
-                Waar ik je naartoe breng.
+                Waar wij je naartoe brengen.
               </div>
             </div>
           </div>
@@ -65,7 +65,7 @@ export default function TechVsArtist() {
 
         {/* Bridge */}
         <p className="text-center text-[15px] text-[var(--text2)] mt-8">
-          Bij LXQ Academy leer ik je denken als een artist. Vanaf dag één.
+          Bij LXQ Academy leren wij je denken als een artist. Vanaf dag één.
         </p>
 
         {/* CTA */}

@@ -5,7 +5,7 @@ export default function AcademySection() {
         <div className="text-center mb-16">
           <div className="section-tag" style={{ color: 'var(--rose-light)' }}>Academy</div>
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(36px,4vw,56px)] font-light leading-[1.15]">
-            Online leeromgeving<br />& <em>IRL traject</em>
+            Persoonlijk traject
           </h2>
           <p className="text-[13px] text-white/40 max-w-[340px] mx-auto leading-[1.8] mt-4">
             Leer op jouw eigen tempo via onze videocursussen, of kies voor een persoonlijk traject bij Chiva op locatie.
