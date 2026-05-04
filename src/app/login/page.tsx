@@ -24,11 +24,12 @@ function LoginForm() {
     if (error) {
       setError(error.message === 'Invalid login credentials'
         ? 'Ongeldig e-mailadres of wachtwoord'
+        : error.message === 'Email not confirmed'
+        ? 'Je e-mailadres is nog niet geverifieerd. Controleer je inbox.'
         : error.message)
       setLoading(false)
     } else {
-      router.push(redirect)
-      router.refresh()
+      window.location.href = redirect
     }
   }
 
