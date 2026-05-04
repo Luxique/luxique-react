@@ -96,9 +96,13 @@ export default function Navbar() {
                       {role === 'admin' && (
                         <>
                           <div className="border-t border-[#f0f0f0] my-1" />
+                          <a href="/admin/customers" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
+                            <span className="text-[14px]">👥</span>
+                            <span className="text-[13px] text-[#D4AF37] font-medium">Admin — Klanten</span>
+                          </a>
                           <a href="/admin" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                            <span className="text-[14px]">⚡</span>
-                            <span className="text-[13px] text-[#D4AF37] font-medium">Admin</span>
+                            <span className="text-[14px]">🎬</span>
+                            <span className="text-[13px] text-[#888]">Cursussen & Inschrijvingen</span>
                           </a>
                         </>
                       )}
