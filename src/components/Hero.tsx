@@ -21,8 +21,8 @@ export default function Hero() {
 
         {/* Title */}
         <h1 className="font-['Cormorant_Garamond'] text-[clamp(36px,6vw,68px)] font-light leading-[1.1] text-white mb-6">
-          The art of lashes.<br />
-          <em>Perfected.</em>
+          <span className="text-[#D4AF37]">We Teach</span><br />
+          The Art of Lashes.
         </h1>
 
         {/* Subtitle */}
