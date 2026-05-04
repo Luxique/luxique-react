@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
 
-type Course = { id: string; title: string; slug: string; short_description: string; thumbnail_url: string; lessons: { id: string; title: string }[] }
+type Course = { id: string; title: string; slug: string; short_description: string }
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string; notes: string }
 
 export default function DashboardPage() {
