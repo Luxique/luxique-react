@@ -78,7 +78,7 @@ export default function RegisterPage() {
               <input
                 type="text"
                 value={firstName}
-                onChange={e => setFullName(e.target.value)}
+                onChange={e => setFirstName(e.target.value)}
                 required
                 className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[14px] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/20 transition"
                 placeholder="Voornaam"
