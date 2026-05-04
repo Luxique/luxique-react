@@ -5,7 +5,7 @@ export default function AcademySection() {
         <div className="text-center mb-16">
           <div className="section-tag" style={{ color: 'var(--rose-light)' }}>Academy</div>
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(36px,4vw,56px)] font-light leading-[1.15]">
-            Persoonlijk traject
+            Online Leerplatform &<br/><em>Persoonlijk Traject</em>
           </h2>
           <p className="text-[13px] text-white/40 max-w-[340px] mx-auto leading-[1.8] mt-4">
             Leer op jouw eigen tempo via onze videocursussen, of kies voor een persoonlijk traject bij Chiva op locatie.
@@ -14,7 +14,7 @@ export default function AcademySection() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Online */}
-          <a href="#online-cursussen" id="online-cursussen" className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition group">
+          <a href="/courses" id="online-cursussen" className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition group">
             <div className="text-3xl mb-4">🎬</div>
             <h3 className="font-['Cormorant_Garamond'] text-[22px] mb-3">Online Leerplatform</h3>
             <p className="text-[13px] text-white/50 leading-[1.7] mb-6">
@@ -33,7 +33,7 @@ export default function AcademySection() {
           </a>
 
           {/* Persoonlijk Traject */}
-          <a href="#persoonlijk-traject" id="persoonlijk-traject" className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition group">
+          <a href="/booking" id="persoonlijk-traject" className="bg-white/[0.04] backdrop-blur border border-white/[0.08] rounded-2xl p-8 hover:border-[var(--rose)]/30 transition group">
             <div className="text-3xl mb-4">🤝</div>
             <h3 className="font-['Cormorant_Garamond'] text-[22px] mb-3">Persoonlijk Traject</h3>
             <p className="text-[13px] text-white/50 leading-[1.7] mb-6">

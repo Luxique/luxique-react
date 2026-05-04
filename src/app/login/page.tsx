@@ -13,7 +13,6 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [magicLinkSent, setMagicLinkSent] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,32 +32,15 @@ function LoginForm() {
     }
   }
 
-  const handleMagicLink = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/callback?redirect=${redirect}`,
-      },
-    })
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setMagicLinkSent(true)
-    }
-    setLoading(false)
-  }
-
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center px-4">
       <div className="w-full max-w-[400px]">
         <div className="text-center mb-10">
-          <h1 className="font-['Cormorant_Garamond'] text-[36px] tracking-[0.15em] text-[#1a1a1a]">LUXIQUE</h1>
-          <p className="text-[13px] text-[#888] mt-2 tracking-wide">Academy by Chiva</p>
+          <div className="w-12 h-12 rounded-full bg-[#D4AF37]/10 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-[#D4AF37]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-[#eee]">
@@ -67,12 +49,6 @@ function LoginForm() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-[13px] rounded-xl px-4 py-3 mb-4">
               {error}
-            </div>
-          )}
-
-          {magicLinkSent && (
-            <div className="bg-green-50 border border-green-200 text-green-700 text-[13px] rounded-xl px-4 py-3 mb-4">
-              ✨ Magic link verstuurd! Check je e-mail.
             </div>
           )}
 
@@ -113,23 +89,6 @@ function LoginForm() {
               {loading ? 'Bezig...' : 'Inloggen'}
             </button>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#eee]" />
-            </div>
-            <div className="relative flex justify-center text-[11px]">
-              <span className="bg-white px-3 text-[#aaa]">of</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleMagicLink}
-            disabled={loading || !email}
-            className="w-full py-3 rounded-full border border-[#D4AF37] text-[#D4AF37] font-semibold text-[14px] hover:bg-[#D4AF37]/5 transition disabled:opacity-50"
-          >
-            Magic link via e-mail
-          </button>
 
           <p className="text-center text-[12px] text-[#aaa] mt-6">
             Nog geen account?{' '}
