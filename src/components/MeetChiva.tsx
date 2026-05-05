@@ -86,7 +86,7 @@ export default function MeetChiva() {
         </div>
 
         {/* Portrait — feet at exact bottom, bleeds above panel, scale from bottom-left */}
-        <div className="absolute bottom-0 left-[120px] top-auto z-[3] w-[320px] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:scale-100" style={{ transformOrigin: 'bottom left', transform: 'scale(1.15)' }}>
+        <div className="absolute bottom-0 left-[160px] top-auto z-[3] w-[320px] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:scale-100" style={{ transformOrigin: 'bottom left', transform: 'scale(1.15)' }}>
           <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
         </div>
 
@@ -94,10 +94,11 @@ export default function MeetChiva() {
         <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-[350px] max-[540px]:pt-[300px] min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-end gap-4 max-[860px]:px-6 max-[860px]:pb-6 max-[860px]:items-center max-[860px]:text-center">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
-            The Woman Behind Luxique
+            Meet <span className="text-[#C4A265]">Chiva</span>
           </span>
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(32px,3.5vw,54px)] font-normal leading-[1.08] text-[#1E1A14] tracking-[-0.01em]">
             Lash artist.<br />Educator.<br /><em className="italic text-[#C4A265]">Oprichter.</em>
+          </h2>
           </h2>
           <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.7] max-w-[360px]">
             Chiva begon met lashes en wist meteen: dit wil ik doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en velen studenten die ik heb mogen begeleiden tot lash artist.
