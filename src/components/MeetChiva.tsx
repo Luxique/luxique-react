@@ -87,7 +87,7 @@ export default function MeetChiva() {
 
         {/* Portrait — bleeds upward on desktop, starts from bottom */}
         <div className="absolute left-[60px] bottom-0 w-[320px] z-[3] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:translate-y-0 min-[860px]:-translate-y-[40px]">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.jpg" alt="Chiva" className="w-full aspect-[3/4] object-cover object-top rounded-t-2xl block" />
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full aspect-[3/4] object-contain object-top block" />
         </div>
 
         {/* Desktop text overlay — right of portrait */}
