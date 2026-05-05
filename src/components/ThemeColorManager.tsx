@@ -38,7 +38,7 @@ export default function ThemeColorManager() {
       const vh = window.innerHeight
 
       // Find which section is most visible
-      let bestSection: HTMLElement | null = null
+      let bestSection: Element | null = null
       let bestOverlap = 0
 
       sections.forEach((section) => {
