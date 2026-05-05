@@ -3,7 +3,7 @@
 export default function TechVsArtist() {
   return (
     <section className="px-[14px] max-[860px]:px-[10px] pt-0 pb-0">
-      <div className="bg-[#FAF8F4] rounded-[22px] overflow-hidden grid grid-cols-1 min-[860px]:grid-cols-[380px_1fr] min-h-[520px] relative">
+      <div className="bg-[#FAF8F4] rounded-[22px] overflow-hidden grid grid-cols-1 min-[860px]:grid-cols-[minmax(390px,420px)_1fr] min-h-[520px] relative">
 
         {/* LEFT COLUMN */}
         <div className="p-[44px_36px_44px_40px] max-[860px]:p-[32px_28px] flex flex-col justify-between max-[860px]:flex-row max-[860px]:flex-wrap max-[860px]:items-start max-[860px]:gap-[20px] border-r-0 max-[860px]:border-b border-[rgba(30,26,20,0.07)] relative max-[860px]:border-r-0 min-[860px]:border-r min-[860px]:border-[rgba(30,26,20,0.07)]">
@@ -107,12 +107,8 @@ export default function TechVsArtist() {
             </div>
           </div>
 
-          {/* Quote strip — right aligned on desktop */}
+          {/* Quote strip — right aligned, profile right of text */}
           <div className="px-[40px] max-[860px]:px-[20px] pb-[36px] max-[860px]:pb-[28px] flex items-start gap-[16px] justify-end min-[860px]:pr-[32px]">
-            <div className="flex flex-col items-center gap-[6px] shrink-0">
-              <div className="w-[2px] h-[32px] bg-[linear-gradient(180deg,#C4A265_0%,transparent_100%)] rounded-[2px]" />
-              <img src="/images/chiva-avatar.jpg" alt="Chiva" className="w-[80px] h-[80px] rounded-full object-cover border-[2px] border-[rgba(196,162,101,0.4)]" />
-            </div>
             <div>
               <p className="font-['Cormorant_Garamond'] text-[17px] italic font-light leading-[1.6] text-[#1E1A14] max-w-[600px]">
                 &ldquo;A normal lash tech just copies and pastes. I look at eye shapes. I have knowledge about every face that sits in my chair.&rdquo;
@@ -120,6 +116,10 @@ export default function TechVsArtist() {
               <p className="mt-[6px] text-[10.5px] font-medium tracking-[0.16em] uppercase text-[#7A6340]">
                 — Chiva · Founder, Luxique Academy
               </p>
+            </div>
+            <div className="flex flex-col items-center gap-[6px] shrink-0">
+              <div className="w-[2px] h-[32px] bg-[linear-gradient(180deg,#C4A265_0%,transparent_100%)] rounded-[2px]" />
+              <img src="/images/chiva-avatar.jpg" alt="Chiva" className="w-[80px] h-[80px] rounded-full object-cover border-[2px] border-[rgba(196,162,101,0.4)]" />
             </div>
           </div>
         </div>
