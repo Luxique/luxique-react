@@ -34,7 +34,7 @@ export default function Navbar() {
 
         {/* Logo pill — flex-fill on mobile */}
         <div className="h-[52px] max-md:h-[48px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center shrink-0 md:shrink md:flex-none md:px-[26px] max-md:flex-1 max-md:px-4">
-          <a href="/" className="font-['Avenir_Next'] max-md:font-['Josefin_Sans'] text-[15px] max-md:text-[13px] font-[400] tracking-[0.5em] max-md:tracking-[0.4em] text-white uppercase whitespace-nowrap select-none">
+          <a href="/" className="font-['Avenir_Next'] max-md:font-['Josefin_Sans'] text-[18px] max-md:text-[15px] font-[400] tracking-[0.45em] max-md:tracking-[0.35em] text-white uppercase whitespace-nowrap select-none">
             Luxique
           </a>
         </div>

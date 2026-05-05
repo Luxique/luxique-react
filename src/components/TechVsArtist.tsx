@@ -60,9 +60,9 @@ export default function TechVsArtist() {
                 <h3 className="font-['Cormorant_Garamond'] text-[22px] font-normal leading-[1.2] mb-[10px] tracking-[-0.01em] text-[#1E1A14]">Lash Technician</h3>
                 <div className="h-[1px] my-[16px] bg-[rgba(30,26,20,0.08)]" />
                 <p className="text-[12.5px] font-light leading-[1.75] text-[#7A7268] flex-1">
-                  Een lash technician beheerst de basistechniek: het aanbrengen van fans, het werken met verschillende lash types, en het volgen van standaard maps. De klant gaat tevreden naar huis.
+                  Een lash technician beheerst de basistechniek: het aanbrengen van fans, het werken met verschillende lash types, en het volgen van standaard maps.
                   <br /><br />
-                  Het werk is voornamelijk uitvoerend — Russian volume, hybrids, classics volgens vaste patronen. Er wordt gewerkt vanuit wat bekend is, niet vanuit wat het oog vraagt.
+                  Het werk is voornamelijk uitvoerend: Russian volume, hybrids, classics volgens vaste patronen. Er wordt gewerkt vanuit wat bekend is. Alleen wordt er niet bepaald gewerkt vanuit wat het oog vraagt.
                 </p>
                 <span className="text-[9.5px] font-semibold tracking-[0.2em] uppercase mt-[14px] text-[rgba(30,26,20,0.28)]">Een goede start, maar er is meer</span>
               </div>
@@ -93,7 +93,7 @@ export default function TechVsArtist() {
                 <p className="text-[12.5px] font-light leading-[1.75] text-[rgba(250,248,244,0.55)] flex-1">
                   <strong className="text-[rgba(250,248,244,0.85)] font-normal">Je ziet het oog. Niet de wimper.</strong>
                   <br /><br />
-                  Een lash artist analyseert de oogvorm vóórdat er een wimper wordt geplaatst. Weet welke curl past bij welk oog — en waaróm. Ontwerpt een set die écht bij de persoon past. Geen kopie, geen standaard map. Een uniek ontwerp, elke keer weer.
+                  Een lash artist analyseert de oogvorm vóórdat er ook maar één wimper wordt geplaatst. De artist weet precies welke curl past bij welk oog — en waaróm. Er wordt een set ontwikkeld die écht bij de persoon past. Geen kopie, geen standaard map. Een uniek ontwerp, dat verschilt per persoon.
                 </p>
                 <a href="/courses" className="inline-flex items-center gap-[7px] mt-[18px] px-[20px] py-[10px] rounded-full bg-[#C4A265] text-[#0C0A07] font-['Outfit'] text-[12px] font-semibold tracking-[0.04em] border-none cursor-pointer transition-all duration-200 w-fit hover:bg-[#DFC08A] hover:scale-[1.02]">
                   Bekijk de academy
