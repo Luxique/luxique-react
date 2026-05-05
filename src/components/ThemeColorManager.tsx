@@ -35,7 +35,6 @@ export default function ThemeColorManager() {
 
     // Fallback: scroll-based color for smooth transitions
     const handleScroll = () => {
-      const scrollY = window.scrollY
       const vh = window.innerHeight
 
       // Find which section is most visible
