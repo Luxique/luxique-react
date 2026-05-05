@@ -104,6 +104,13 @@ export default function MeetChiva() {
           </p>
         </div>
 
+        {/* Right-side action photo — full height, left fade */}
+        <div className="absolute top-0 right-0 bottom-0 w-[45%] z-[2] max-[860px]:hidden">
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-action.jpg" alt="Chiva in action" className="w-full h-full object-cover object-center" />
+          {/* Left fade gradient */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #F5F1EA 0%, rgba(245,241,234,0.85) 15%, rgba(245,241,234,0.4) 35%, rgba(245,241,234,0) 55%)' }} />
+        </div>
+
         {/* Name tag badge bottom-right */}
         <div className="absolute bottom-0 left-0 right-0 z-[4] px-12 pb-7 max-[860px]:px-6 max-[860px]:pb-6 flex items-end justify-end">
           <div className="bg-[rgba(250,248,244,0.75)] backdrop-blur-[16px] border border-[rgba(196,162,101,0.25)] rounded-[12px] px-[18px] py-[10px] flex flex-col gap-[2px]">
