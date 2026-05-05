@@ -27,6 +27,8 @@ export default function RootLayout({
     <html lang="nl">
       <head>
         <meta name="theme-color" content="#0C0A07" />
+        <meta name="color-scheme" content="dark" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
         <AuthProvider>

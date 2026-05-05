@@ -4,15 +4,26 @@ import { useEffect } from 'react'
 
 export default function ThemeColorManager() {
   useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
-    if (!meta) return
+    const getOrCreate = (name: string): HTMLMetaElement => {
+      let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
+      if (!el) {
+        el = document.createElement('meta')
+        el.name = name
+        document.head.appendChild(el)
+      }
+      return el
+    }
 
-    let currentColor = meta.content
+    const themeMeta = getOrCreate('theme-color')
+    const csMeta = getOrCreate('color-scheme')
 
-    const setColor = (color: string) => {
+    let currentColor = ''
+
+    const setColor = (color: string, dark: boolean) => {
       if (color === currentColor) return
       currentColor = color
-      meta.setAttribute('content', color)
+      themeMeta.content = color
+      csMeta.content = dark ? 'dark' : 'light'
     }
 
     const sections = document.querySelectorAll('[data-theme-color]')
@@ -22,8 +33,9 @@ export default function ThemeColorManager() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const color = entry.target.getAttribute('data-theme-color')
-            if (color) setColor(color)
+            const color = entry.target.getAttribute('data-theme-color') || ''
+            const dark = entry.target.getAttribute('data-theme-dark') === 'true'
+            setColor(color, dark)
           }
         })
       },
@@ -47,9 +59,9 @@ export default function ThemeColorManager() {
       })
 
       if (bestEl) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const c = (bestEl as Element).getAttribute('data-theme-color')
-        if (c) setColor(c)
+        const c = (bestEl as Element).getAttribute('data-theme-color') || ''
+        const d = (bestEl as Element).getAttribute('data-theme-dark') === 'true'
+        setColor(c, d)
       }
     }
 
