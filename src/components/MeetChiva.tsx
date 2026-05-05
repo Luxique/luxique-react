@@ -77,21 +77,21 @@ export default function MeetChiva() {
     <section className="px-[14px] max-[860px]:px-[10px] flex flex-col gap-[14px]">
 
       {/* ══ ROW 1: Hero portrait panel ══ */}
-      <div className="rounded-[22px] bg-[#161310] relative min-[860px]:overflow-visible overflow-hidden min-h-[420px] max-[860px]:min-h-0 flex items-end">
+      <div className="rounded-[22px] bg-[#161310] relative min-[860px]:overflow-visible overflow-hidden min-h-[420px] max-[860px]:min-h-[480px] max-[540px]:min-h-[420px] flex items-end">
         {/* Inner bg with orbs */}
-        <div className="rounded-[22px] overflow-hidden absolute inset-0 bg-[#F5F1EA] max-[860px]:relative max-[860px]:min-h-[440px] max-[540px]:min-h-[380px]">
+        <div className="rounded-[22px] overflow-hidden absolute inset-0 bg-[#F5F1EA]">
           <OrbCanvas />
           {/* Grain overlay */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'1\'/%3E%3C/svg%3E")' }} />
         </div>
 
-        {/* Portrait — feet at exact bottom, bleeds above panel, scale from bottom-left */}
-        <div className="absolute bottom-0 left-[160px] top-auto z-[3] w-[320px] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:scale-100" style={{ transformOrigin: 'bottom left', transform: 'scale(1.15)' }}>
+        {/* Portrait — feet at exact bottom, bleeds above panel on desktop, right-aligned on mobile */}
+        <div className="absolute bottom-0 left-[160px] top-auto z-[3] w-[320px] max-[860px]:left-auto max-[860px]:right-0 max-[860px]:w-[55%] max-[860px]:max-w-[300px]" style={{ transformOrigin: 'bottom left' }}>          
           <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
         </div>
 
-        {/* Text overlay — right of portrait on desktop, below portrait on mobile */}
-        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-[350px] max-[540px]:pt-[300px] min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-end gap-4 max-[860px]:px-6 max-[860px]:pb-6 max-[860px]:items-center max-[860px]:text-center">
+        {/* Text overlay — left-top on mobile, right of portrait on desktop */}}
+        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-7 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>
@@ -113,7 +113,7 @@ export default function MeetChiva() {
         </div>
 
         {/* Name tag badge bottom-right */}
-        <div className="absolute bottom-0 left-0 right-0 z-[4] px-12 pb-7 max-[860px]:px-6 max-[860px]:pb-6 flex items-end justify-end">
+        <div className="absolute bottom-0 left-0 right-0 z-[4] px-12 pb-7 max-[860px]:hidden flex items-end justify-end">
           <div className="bg-[rgba(250,248,244,0.75)] backdrop-blur-[16px] border border-[rgba(196,162,101,0.25)] rounded-[12px] px-[18px] py-[10px] flex flex-col gap-[2px]">
             <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A6340]">The Woman Behind Luxique</span>
             <span className="font-['Cormorant_Garamond'] text-[16px] italic text-[#1E1A14] leading-none">Chiva — Lash Artist &amp; Educator</span>
