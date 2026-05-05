@@ -22,9 +22,9 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-50 flex items-center gap-[10px] h-[52px] shrink-0 px-[14px] max-md:px-[10px] py-[14px] max-md:py-[10px]">
-        {/* Mobile: hamburger circle */}
+        {/* Mobile: hamburger circle — FIRST in DOM */}
         <button onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden w-[52px] h-[52px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center cursor-pointer shrink-0">
+          className="md:hidden w-[48px] h-[48px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center cursor-pointer shrink-0">
           <div className="flex flex-col gap-[4.5px] items-center">
             <span className={`w-[18px] h-[1.5px] bg-[rgba(255,255,255,0.65)] rounded-[2px] transition-all ${mobileOpen ? 'rotate-45 translate-y-[6px]' : ''}`} />
             <span className={`w-[18px] h-[1.5px] bg-[rgba(255,255,255,0.65)] rounded-[2px] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
@@ -32,9 +32,9 @@ export default function Navbar() {
           </div>
         </button>
 
-        {/* Logo pill */}
-        <div className="px-[26px] h-[52px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center shrink-0 md:shrink md:flex-none">
-          <a href="/" className="font-['Avenir_Next'] text-[13px] font-[200] tracking-[0.55em] text-white uppercase whitespace-nowrap select-none">
+        {/* Logo pill — flex-fill on mobile */}
+        <div className="h-[52px] max-md:h-[48px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center shrink-0 md:shrink md:flex-none md:px-[26px] max-md:flex-1 max-md:px-4">
+          <a href="/" className="font-['Avenir_Next'] max-md:font-['Josefin_Sans'] text-[13px] max-md:text-[12px] font-[200] tracking-[0.55em] max-md:tracking-[0.45em] text-white uppercase whitespace-nowrap select-none">
             Luxique
           </a>
         </div>
