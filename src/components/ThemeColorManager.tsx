@@ -47,7 +47,8 @@ export default function ThemeColorManager() {
       })
 
       if (bestEl) {
-        const c = bestEl.getAttribute('data-theme-color')
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const c = (bestEl as Element).getAttribute('data-theme-color')
         if (c) setColor(c)
       }
     }
