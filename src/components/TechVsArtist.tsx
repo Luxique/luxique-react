@@ -1,3 +1,5 @@
+'use client'
+
 export default function TechVsArtist() {
   return (
     <section className="px-[14px] max-[860px]:px-[10px] pt-0 pb-0">
@@ -109,7 +111,7 @@ export default function TechVsArtist() {
           <div className="px-[40px] max-[860px]:px-[20px] pb-[36px] max-[860px]:pb-[28px] pl-[28px] max-[860px]:pl-[20px] flex items-start gap-[16px]">
             <div className="flex flex-col items-center gap-[6px] shrink-0">
               <div className="w-[2px] h-[32px] bg-[linear-gradient(180deg,#C4A265_0%,transparent_100%)] rounded-[2px]" />
-              <img src="/images/chiva-avatar.jpg" alt="Chiva" className="w-[80px] h-[80px] rounded-full object-cover border-[2px] border-[rgba(196,162,101,0.4)]" onError={(e) => { (e.target as HTMLImageElement).style.display='none' }} />
+              <img src="/images/chiva-avatar.jpg" alt="Chiva" className="w-[80px] h-[80px] rounded-full object-cover border-[2px] border-[rgba(196,162,101,0.4)]" />
             </div>
             <div>
               <p className="font-['Cormorant_Garamond'] text-[17px] italic font-light leading-[1.6] text-[#1E1A14] max-w-[600px]">
