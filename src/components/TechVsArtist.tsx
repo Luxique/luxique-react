@@ -107,7 +107,12 @@ export default function TechVsArtist() {
 
           {/* Quote strip */}
           <div className="px-[40px] max-[860px]:px-[20px] pb-[36px] max-[860px]:pb-[28px] pl-[28px] max-[860px]:pl-[20px] flex items-start gap-[16px]">
-            <div className="w-[2px] min-h-[54px] bg-[linear-gradient(180deg,#C4A265_0%,transparent_100%)] shrink-0 mt-[4px] rounded-[2px]" />
+            <div className="flex flex-col items-center gap-[6px] shrink-0">
+              <div className="w-[40px] h-[40px] rounded-full bg-[linear-gradient(140deg,#2a2218,#1e1a12)] border-[1.5px] border-[rgba(196,162,101,0.35)] flex items-center justify-center">
+                <span className="font-['Cormorant_Garamond'] text-[16px] italic text-[#C4A265] leading-none">C</span>
+              </div>
+              <div className="w-[2px] h-[32px] bg-[linear-gradient(180deg,#C4A265_0%,transparent_100%)] rounded-[2px]" />
+            </div>
             <div>
               <p className="font-['Cormorant_Garamond'] text-[17px] italic font-light leading-[1.6] text-[#1E1A14] max-w-[600px]">
                 &ldquo;A normal lash tech just copies and pastes. I look at eye shapes. I have knowledge about every face that sits in my chair.&rdquo;
