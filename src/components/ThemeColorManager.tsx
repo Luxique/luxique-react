@@ -2,51 +2,67 @@
 
 import { useEffect } from 'react'
 
-const sectionColors: Record<string, string> = {
-  hero: '#0C0A07',
-  verschil: '#FAF8F4',
-  oogvormen: '#FFFFFF',
-  missie: '#FAF8F4',
-  behandelingen: '#FAF8F4',
-  'meet-chiva': '#FAF8F4',
-  reels: '#FFFFFF',
-  academy: '#0C0A07',
-  reviews: '#FAF8F4',
-  faq: '#FAF8F4',
-}
-
 export default function ThemeColorManager() {
   useEffect(() => {
-    const setThemeColor = (color: string) => {
-      let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
-      if (!meta) {
-        meta = document.createElement('meta')
-        meta.name = 'theme-color'
-        document.head.appendChild(meta)
-      }
-      meta.content = color
+    const meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
+    if (!meta) return
+
+    let currentColor = meta.content
+
+    const setColor = (color: string) => {
+      if (color === currentColor) return
+      currentColor = color
+      meta.setAttribute('content', color)
     }
 
-    const observers: IntersectionObserver[] = []
+    const sections = document.querySelectorAll<HTMLElement>('[data-theme-color]')
 
-    Object.entries(sectionColors).forEach(([id, color]) => {
-      const el = document.getElementById(id)
-      if (!el) return
+    if (sections.length === 0) return
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) setThemeColor(color)
-          })
-        },
-        { threshold: 0.4, rootMargin: '-20% 0px -20% 0px' }
-      )
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const color = entry.target.getAttribute('data-theme-color')
+            if (color) setColor(color)
+          }
+        })
+      },
+      { threshold: 0.3, rootMargin: '-10% 0px -10% 0px' }
+    )
 
-      observer.observe(el)
-      observers.push(observer)
-    })
+    sections.forEach((section) => observer.observe(section))
 
-    return () => observers.forEach((o) => o.disconnect())
+    // Fallback: scroll-based color for smooth transitions
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const vh = window.innerHeight
+
+      // Find which section is most visible
+      let bestSection: HTMLElement | null = null
+      let bestOverlap = 0
+
+      sections.forEach((section) => {
+        const rect = section.getBoundingClientRect()
+        const overlap = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0))
+        if (overlap > bestOverlap) {
+          bestOverlap = overlap
+          bestSection = section
+        }
+      })
+
+      if (bestSection) {
+        const color = bestSection.getAttribute('data-theme-color')
+        if (color) setColor(color)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [])
 
   return null

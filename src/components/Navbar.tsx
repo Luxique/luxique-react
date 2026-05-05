@@ -21,7 +21,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px] py-[14px] max-md:py-[10px] bg-transparent">
+      <nav className="fixed top-[14px] max-md:top-[10px] left-0 right-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px]">
         {/* Mobile: hamburger circle — FIRST in DOM */}
         <button onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden w-[48px] h-[48px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center cursor-pointer shrink-0">
