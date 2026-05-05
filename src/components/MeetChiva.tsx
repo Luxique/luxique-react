@@ -78,7 +78,7 @@ export default function MeetChiva() {
     <section className="px-[14px] max-[860px]:px-[10px] flex flex-col gap-[14px]">
 
       {/* ══ ROW 1: Hero portrait panel ══ */}
-      <div className="rounded-[22px] bg-[#161310] relative min-[860px]:overflow-visible overflow-hidden min-h-[420px] max-[860px]:min-h-[480px] max-[540px]:min-h-[420px] flex items-end">
+      <div className="rounded-[22px] bg-[#161310] relative overflow-visible min-h-[420px] max-[860px]:min-h-[340px] max-[540px]:min-h-[300px] flex items-end">
         {/* Inner bg with orbs — cream, always fills */}
         <div className="rounded-[22px] overflow-hidden absolute inset-0 bg-[#F5F1EA]">
           <OrbCanvas />
@@ -102,7 +102,7 @@ export default function MeetChiva() {
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(32px,3.5vw,54px)] font-normal leading-[1.08] text-[#1E1A14] tracking-[-0.01em]">
             Lash artist.<br />Educator.<br /><em className="italic text-[#C4A265]">Oprichter.</em>
           </h2>
-          <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.7] max-w-[360px]">
+          <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
             Chiva begon met lashes en wist meteen: dit wil ik doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en velen studenten die ik heb mogen begeleiden tot lash artist.
           </p>
         </div>
