@@ -85,13 +85,13 @@ export default function MeetChiva() {
           <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'1\'/%3E%3C/svg%3E")' }} />
         </div>
 
-        {/* Portrait — bleeds upward on desktop, starts from bottom */}
-        <div className="absolute left-[60px] bottom-0 w-[320px] z-[3] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:translate-y-0 min-[860px]:-translate-y-[40px]">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full aspect-[3/4] object-contain object-top block" />
+        {/* Portrait — bleeds upward on desktop, 150% scale */}
+        <div className="absolute left-[40px] bottom-0 w-[480px] z-[3] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:translate-y-0 min-[860px]:-translate-y-[50px]">
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full object-contain object-bottom block" />
         </div>
 
-        {/* Desktop text overlay — right of portrait */}
-        <div className="relative z-[4] ml-[440px] max-[860px]:hidden py-12 pr-12 flex-1 flex flex-col justify-end gap-4">
+        {/* Text overlay — right of portrait on desktop, below portrait on mobile */}
+        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-[350px] max-[540px]:pt-[300px] min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-end gap-4 max-[860px]:px-6 max-[860px]:pb-6 max-[860px]:items-center max-[860px]:text-center">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             The Woman Behind Luxique
