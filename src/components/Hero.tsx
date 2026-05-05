@@ -24,7 +24,7 @@ export default function Hero() {
   }, [next])
 
   return (
-    <div className="flex-1 grid grid-cols-1 md:grid-cols-[390px_1fr] gap-[14px] max-md:gap-[10px] min-h-0">
+    <div className="flex-1 grid grid-cols-1 md:grid-cols-[minmax(390px,420px)_1fr] gap-[14px] max-md:gap-[10px] min-h-0">
       {/* LEFT PANEL */}
       <div className="bg-[#FAF8F4] rounded-[22px] pt-10 px-[38px] pb-0 flex flex-col overflow-hidden relative md:pb-0 max-md:pb-6">
         {/* Gold glow */}

@@ -14,8 +14,10 @@ export default function Home() {
   return (
     <>
       {/* Full-viewport hero — dark bg bleeds behind navbar */}
-      <div className="w-full h-screen bg-[#0C0A07] pt-[76px] px-[14px] max-md:px-[10px] pb-[14px] max-md:pb-[10px] -mt-[76px]">
-        <Hero />
+      <div className="relative w-full h-screen bg-[#0C0A07] overflow-hidden">
+        <div className="absolute inset-0 pt-[76px] px-[14px] max-md:px-[10px] pb-[14px] max-md:pb-[10px] -mt-[76px] flex flex-col gap-[14px] max-md:gap-[10px]">
+          <Hero />
+        </div>
       </div>
       <TechVsArtist />
       <EyeShapes />
