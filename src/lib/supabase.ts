@@ -1,20 +1,30 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const getUrl = () => process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const getAnonKey = () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const getServiceKey = () => process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+let _supabase: SupabaseClient | null = null
+let _supabaseAdmin: SupabaseClient | null = null
+
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    if (!_supabase) {
+      _supabase = createClient(getUrl(), getAnonKey(), {
+        auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
+      })
+    }
+    return Reflect.get(_supabase, prop)
   },
 })
 
-// Server-side client with service role (for admin operations)
-export const supabaseAdmin = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    if (!_supabaseAdmin) {
+      _supabaseAdmin = createClient(getUrl(), getServiceKey(), {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+    }
+    return Reflect.get(_supabaseAdmin, prop)
   },
 })
