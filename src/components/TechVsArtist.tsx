@@ -53,7 +53,7 @@ export default function TechVsArtist() {
                   </svg>
                 </div>
                 <span className="absolute top-[12px] left-[12px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[11px] py-[4px] rounded-full bg-[rgba(255,255,255,0.7)] text-[#7A7268] border border-[rgba(255,255,255,0.4)] z-[2]">
-                  Standaard
+                  Een goede start, maar er is meer
                 </span>
               </div>
               <div className="p-[22px_22px_26px] flex flex-col flex-1 relative z-[1]">
