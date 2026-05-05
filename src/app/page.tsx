@@ -17,7 +17,7 @@ export default function Home() {
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>
-      <div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false"><MeetChiva /></div>
+      <div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><MeetChiva /></div>
       <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
       <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false"><WhatIStandFor /></div>
       <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false"><BeforeAfter /></div>
