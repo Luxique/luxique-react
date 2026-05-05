@@ -66,7 +66,7 @@ export default function Hero() {
 
         {/* Image card — desktop only */}
         <div className="hidden md:block mt-auto mb-[38px] rounded-2xl overflow-hidden relative w-full">
-          <img src="/images/hero-bg.jpg" alt="Chiva" className="w-full h-auto max-h-[240px] min-h-[120px] object-cover" />
+          <img src="/hero-bg.jpg" alt="Chiva" className="w-full h-auto max-h-[240px] min-h-[120px] object-cover" />
           <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(12,10,7,0.82)_0%,rgba(12,10,7,0.3)_55%,transparent_100%)] pointer-events-none" />
           <div className="absolute bottom-0 left-0 right-0 p-[18px_20px] z-[2] flex items-end justify-between gap-3">
             <div>
@@ -84,7 +84,7 @@ export default function Hero() {
       <div className="rounded-[22px] overflow-visible relative bg-[#161310] min-h-[240px]">
         {SLIDES.map((slide, i) => (
           <div key={i} className="absolute inset-0 transition-opacity duration-[850ms] ease-in-out" style={{ opacity: current === i ? 1 : 0 }}>
-            <img src="/images/hero-bg.jpg" alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
+            <img src="/hero-bg.jpg" alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
             <div className="absolute top-5 right-5 bg-[rgba(12,10,7,0.55)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[10px] max-md:rounded-[10px] px-[15px] py-[11px] z-[5] text-right">
               <span className="block font-['Cormorant_Garamond'] text-[15px] italic text-[#DFC08A] mb-[2px]">{slide.title}</span>
               <span className="text-[10px] text-[rgba(255,255,255,0.42)] tracking-[0.1em] uppercase">{slide.sub}</span>
