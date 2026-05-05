@@ -87,13 +87,7 @@ export default function MeetChiva() {
 
         {/* Portrait — bleeds upward on desktop */}
         <div className="absolute left-[60px] bottom-0 w-[320px] z-[3] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:translate-y-0 min-[860px]:-translate-y-[20px]">
-          {/* GEORGE: <img src="/images/chiva-portrait.jpg" alt="Chiva" className="w-full aspect-[3/4] object-cover object-top rounded-t-2xl block" /> */}
-          <div className="w-full aspect-[3/4] bg-[linear-gradient(180deg,#2a1f14_0%,#1a1209_60%,#0f0a06_100%)] rounded-t-2xl flex flex-col items-center justify-center gap-[10px] text-[rgba(196,162,101,0.2)]">
-            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </svg>
-            <span className="text-[10px] tracking-[0.15em] uppercase font-['Outfit']">Chiva — Portrait Photo</span>
-          </div>
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait.jpg" alt="Chiva" className="w-full aspect-[3/4] object-cover object-top rounded-t-2xl block" />
         </div>
 
         {/* Desktop text overlay — right of portrait */}
