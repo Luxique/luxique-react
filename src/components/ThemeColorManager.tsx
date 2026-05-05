@@ -15,8 +15,7 @@ export default function ThemeColorManager() {
       meta.setAttribute('content', color)
     }
 
-    const sections = document.querySelectorAll<HTMLElement>('[data-theme-color]')
-
+    const sections = document.querySelectorAll('[data-theme-color]')
     if (sections.length === 0) return
 
     const observer = new IntersectionObserver(
@@ -33,26 +32,23 @@ export default function ThemeColorManager() {
 
     sections.forEach((section) => observer.observe(section))
 
-    // Fallback: scroll-based color for smooth transitions
     const handleScroll = () => {
       const vh = window.innerHeight
-
-      // Find which section is most visible
-      let bestSection: Element | null = null
+      let bestEl: Element | null = null
       let bestOverlap = 0
 
-      sections.forEach((section) => {
-        const rect = section.getBoundingClientRect()
+      sections.forEach((el) => {
+        const rect = el.getBoundingClientRect()
         const overlap = Math.max(0, Math.min(rect.bottom, vh) - Math.max(rect.top, 0))
         if (overlap > bestOverlap) {
           bestOverlap = overlap
-          bestSection = section
+          bestEl = el
         }
       })
 
-      if (bestSection) {
-        const color = bestSection.getAttribute('data-theme-color')
-        if (color) setColor(color)
+      if (bestEl) {
+        const c = bestEl.getAttribute('data-theme-color')
+        if (c) setColor(c)
       }
     }
 
