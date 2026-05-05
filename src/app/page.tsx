@@ -13,7 +13,10 @@ import FAQ from '@/components/FAQ'
 export default function Home() {
   return (
     <>
-      <Hero />
+      {/* Full-viewport hero — dark bg bleeds behind navbar */}
+      <div className="w-full h-screen bg-[#0C0A07] pt-[76px] px-[14px] max-md:px-[10px] pb-[14px] max-md:pb-[10px] -mt-[76px]">
+        <Hero />
+      </div>
       <TechVsArtist />
       <EyeShapes />
       <WhatIStandFor />

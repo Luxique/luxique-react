@@ -17,143 +17,126 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const navLinks = [
-    { label: 'Behandelingen', href: '/#behandelingen' },
-    { label: 'Academy', href: '/courses' },
-    { label: 'Over ons', href: '/about' },
-    { label: 'Reviews', href: '/#reviews' },
-    { label: 'FAQ', href: '/faq' },
-    { label: 'Contact', href: '/contact' },
-  ]
-
   const firstName = user?.user_metadata?.first_name || user?.user_metadata?.full_name?.split(' ')[0] || ''
 
   return (
     <>
-      <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[960px]">
-        <div className="flex items-center justify-between px-4 h-14 bg-white/60 backdrop-blur-xl border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08)] rounded-[28px]">
-
-          {/* Left: Hamburger (mobile) */}
-          <button className="md:hidden flex flex-col gap-1 p-1" onClick={() => setMobileOpen(!mobileOpen)}>
-            <span className={`w-5 h-0.5 bg-[var(--dark)] transition-all ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`} />
-            <span className={`w-5 h-0.5 bg-[var(--dark)] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
-            <span className={`w-5 h-0.5 bg-[var(--dark)] transition-all ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`} />
-          </button>
-
-          {/* Center: Logo */}
-          <a href="/" className="absolute left-1/2 -translate-x-1/2 font-['Avenir_Next'] text-[18px] tracking-[0.25em] font-[100] text-[var(--dark)] uppercase select-none">
-            LUXIQUE
-          </a>
-
-          {/* Left desktop links */}
-          <div className="hidden md:flex items-center gap-4">
-            {navLinks.slice(0, 3).map(l => (
-              <a key={l.href} href={l.href} className="text-[12px] font-medium text-[var(--text2)] hover:text-[#D4AF37] transition">{l.label}</a>
-            ))}
+      <nav className="flex items-center gap-[10px] h-[52px] shrink-0">
+        {/* Mobile: hamburger circle */}
+        <button onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden w-[52px] h-[52px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center cursor-pointer shrink-0">
+          <div className="flex flex-col gap-[4.5px] items-center">
+            <span className={`w-[18px] h-[1.5px] bg-[rgba(255,255,255,0.65)] rounded-[2px] transition-all ${mobileOpen ? 'rotate-45 translate-y-[6px]' : ''}`} />
+            <span className={`w-[18px] h-[1.5px] bg-[rgba(255,255,255,0.65)] rounded-[2px] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
+            <span className={`w-[18px] h-[1.5px] bg-[rgba(255,255,255,0.65)] rounded-[2px] transition-all ${mobileOpen ? '-rotate-45 -translate-y-[6px]' : ''}`} />
           </div>
+        </button>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            {user ? (
-              <>
-                {/* Logged in: profile dropdown */}
-                <div className="relative" ref={dropdownRef}>
-                  <button onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-[#f5f5f5] transition">
-                    <div className="w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center text-white text-[12px] font-semibold">
-                      {firstName ? firstName[0].toUpperCase() : 'U'}
-                    </div>
-                    <span className="hidden md:block text-[12px] font-medium text-[#1a1a1a] max-w-[80px] truncate">{firstName || 'Profiel'}</span>
-                    <svg className={`w-3.5 h-3.5 text-[#888] transition ${profileOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+        {/* Logo pill */}
+        <div className="px-[26px] h-[52px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center shrink-0 md:shrink md:flex-none">
+          <a href="/" className="font-['Avenir_Next'] text-[13px] font-[200] tracking-[0.55em] text-white uppercase whitespace-nowrap select-none">
+            Luxique
+          </a>
+        </div>
 
-                  {profileOpen && (
-                    <div className="absolute right-0 top-12 w-[220px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#eee] overflow-hidden py-1">
-                      <div className="px-4 py-3 border-b border-[#f0f0f0]">
-                        <p className="text-[13px] font-medium text-[#1a1a1a]">{user.user_metadata?.full_name || firstName || 'Gebruiker'}</p>
-                        <p className="text-[11px] text-[#888] truncate">{user.email}</p>
-                      </div>
+        {/* Desktop: links pill */}
+        <div className="hidden md:flex h-[52px] flex-1 items-center justify-center px-5 gap-8 rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)]">
+          {['Behandelingen', 'Academy', 'Over ons'].map(label => (
+            <a key={label} href={label === 'Behandelingen' ? '/#behandelingen' : label === 'Academy' ? '/courses' : '/about'}
+              className="text-[12px] tracking-[0.05em] text-[rgba(255,255,255,0.55)] hover:text-[#DFC08A] transition-colors whitespace-nowrap">
+              {label}
+            </a>
+          ))}
+          <a href="/booking" className="text-[12px] font-medium px-5 py-2 rounded-full bg-[#C4A265] text-[#0C0A07] hover:bg-[#DFC08A] transition-colors whitespace-nowrap ml-2">
+            Boek
+          </a>
+        </div>
 
-                      <a href="/dashboard" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                        <span className="text-[14px]">📊</span>
-                        <span className="text-[13px] text-[#1a1a1a]">Dashboard</span>
-                      </a>
-                      <a href="/profile" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                        <span className="text-[14px]">👤</span>
-                        <span className="text-[13px] text-[#1a1a1a]">Profiel</span>
-                      </a>
-                      <a href="/booking" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                        <span className="text-[14px]">📅</span>
-                        <span className="text-[13px] text-[#1a1a1a]">Boek afspraak</span>
-                      </a>
-                      <a href="/courses" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                        <span className="text-[14px]">🎬</span>
-                        <span className="text-[13px] text-[#1a1a1a]">Cursussen</span>
-                      </a>
-
-                      {role === 'admin' && (
-                        <>
-                          <div className="border-t border-[#f0f0f0] my-1" />
-                          <a href="/admin/customers" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                            <span className="text-[14px]">👥</span>
-                            <span className="text-[13px] text-[#D4AF37] font-medium">Admin — Klanten</span>
-                          </a>
-                          <a href="/admin" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition">
-                            <span className="text-[14px]">🎬</span>
-                            <span className="text-[13px] text-[#888]">Cursussen & Inschrijvingen</span>
-                          </a>
-                        </>
-                      )}
-
-                      <div className="border-t border-[#f0f0f0] my-1" />
-                      <button onClick={() => { signOut(); setProfileOpen(false) }} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#fafafa] transition w-full text-left">
-                        <span className="text-[14px]">👋</span>
-                        <span className="text-[13px] text-[#888]">Uitloggen</span>
-                      </button>
-                    </div>
-                  )}
+        {/* Login / Profile circle */}
+        {user ? (
+          <div className="relative" ref={dropdownRef}>
+            <button onClick={() => setProfileOpen(!profileOpen)}
+              className="w-[52px] h-[52px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center cursor-pointer shrink-0">
+              <div className="w-[22px] h-[22px] rounded-full bg-[#C4A265] flex items-center justify-center text-white text-[10px] font-semibold">
+                {firstName ? firstName[0].toUpperCase() : 'U'}
+              </div>
+            </button>
+            {profileOpen && (
+              <div className="absolute right-0 top-[60px] w-[220px] bg-[rgba(22,19,16,0.95)] backdrop-blur-[28px] rounded-2xl border border-[rgba(196,162,101,0.15)] overflow-hidden py-1 z-50">
+                <div className="px-4 py-3 border-b border-[rgba(196,162,101,0.1)]">
+                  <p className="text-[13px] font-medium text-white">{user.user_metadata?.full_name || firstName || 'Gebruiker'}</p>
+                  <p className="text-[11px] text-[rgba(255,255,255,0.4)] truncate">{user.email}</p>
                 </div>
-              </>
-            ) : (
-              <>
-                <a href="/booking" className="text-[12px] font-semibold text-[#D4AF37] border border-[#D4AF37] px-4 py-2 rounded-full hover:bg-[#D4AF37] hover:text-white transition hidden md:inline-flex">
-                  Book
-                </a>
-                <a href="/login" className="text-[12px] font-semibold text-white bg-[#D4AF37] px-4 py-2 rounded-full hover:bg-[#C5A028] transition hidden md:inline-flex">
-                  Login
-                </a>
-                <a href="/login" className="md:hidden w-8 h-8 rounded-full bg-[#D4AF37] flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                  </svg>
-                </a>
-              </>
+                {[
+                  { icon: '📊', label: 'Dashboard', href: '/dashboard' },
+                  { icon: '🎬', label: 'Cursussen', href: '/courses' },
+                  { icon: '📅', label: 'Boeken', href: '/booking' },
+                  { icon: '👤', label: 'Profiel', href: '/profile' },
+                ].map(item => (
+                  <a key={item.href} href={item.href} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
+                    <span className="text-[14px]">{item.icon}</span>
+                    <span className="text-[13px] text-[rgba(255,255,255,0.7)]">{item.label}</span>
+                  </a>
+                ))}
+                {role === 'admin' && (
+                  <>
+                    <div className="border-t border-[rgba(196,162,101,0.1)] my-1" />
+                    <a href="/admin/customers" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
+                      <span className="text-[14px]">👥</span>
+                      <span className="text-[13px] text-[#C4A265] font-medium">Admin — Klanten</span>
+                    </a>
+                    <a href="/admin" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
+                      <span className="text-[14px]">🎬</span>
+                      <span className="text-[13px] text-[rgba(255,255,255,0.5)]">Cursussen & Inschrijvingen</span>
+                    </a>
+                  </>
+                )}
+                <div className="border-t border-[rgba(196,162,101,0.1)] my-1" />
+                <button onClick={() => { signOut(); setProfileOpen(false) }}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition w-full text-left">
+                  <span className="text-[14px]">👋</span>
+                  <span className="text-[13px] text-[rgba(255,255,255,0.4)]">Uitloggen</span>
+                </button>
+              </div>
             )}
           </div>
-        </div>
+        ) : (
+          <a href="/login" title="Inloggen"
+            className="w-[52px] h-[52px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center cursor-pointer shrink-0 group">
+            <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] stroke-[rgba(255,255,255,0.65)] fill-none stroke-[1.5] stroke-linecap-round stroke-linejoin-round group-hover:stroke-[#DFC08A] transition-colors">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+            </svg>
+          </a>
+        )}
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
-          <div className="absolute left-4 top-24 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl p-6 w-[260px] space-y-1 border border-white/30" onClick={e => e.stopPropagation()}>
-            {navLinks.map(l => (
-              <a key={l.href} href={l.href} className="block text-[14px] py-2.5 px-3 rounded-xl hover:bg-[#D4AF37]/5 transition" onClick={() => setMobileOpen(false)}>
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
+          <div className="absolute left-[14px] top-[76px] w-[260px] bg-[rgba(22,19,16,0.95)] backdrop-blur-[28px] rounded-2xl border border-[rgba(196,162,101,0.15)] p-6 space-y-1" onClick={e => e.stopPropagation()}>
+            {[
+              { label: 'Behandelingen', href: '/#behandelingen' },
+              { label: 'Academy', href: '/courses' },
+              { label: 'Over ons', href: '/about' },
+              { label: 'Reviews', href: '/#reviews' },
+              { label: 'FAQ', href: '/faq' },
+              { label: 'Contact', href: '/contact' },
+            ].map(l => (
+              <a key={l.href} href={l.href} className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.65)] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>
                 {l.label}
               </a>
             ))}
-            <hr className="border-black/[0.06] my-2" />
+            <hr className="border-[rgba(196,162,101,0.1)] my-2" />
             {user ? (
               <>
-                <a href="/dashboard" className="block text-[14px] py-2.5 px-3 rounded-xl hover:bg-[#D4AF37]/5 transition" onClick={() => setMobileOpen(false)}>Dashboard</a>
-                <a href="/profile" className="block text-[14px] py-2.5 px-3 rounded-xl hover:bg-[#D4AF37]/5 transition" onClick={() => setMobileOpen(false)}>Profiel</a>
-                {role === 'admin' && <a href="/admin" className="block text-[14px] py-2.5 px-3 rounded-xl text-[#D4AF37] font-medium hover:bg-[#D4AF37]/5 transition" onClick={() => setMobileOpen(false)}>⚡ Admin</a>}
-                <button onClick={() => { signOut(); setMobileOpen(false) }} className="block text-[14px] py-2.5 px-3 rounded-xl text-[#888] hover:bg-[#D4AF37]/5 transition w-full text-left">Uitloggen</button>
+                <a href="/dashboard" className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.65)] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>Dashboard</a>
+                <a href="/profile" className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.65)] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>Profiel</a>
+                {role === 'admin' && <a href="/admin/customers" className="block text-[14px] py-2.5 px-3 rounded-xl text-[#C4A265] font-medium hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>⚡ Admin</a>}
+                <button onClick={() => { signOut(); setMobileOpen(false) }} className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.4)] hover:bg-[rgba(196,162,101,0.08)] transition w-full text-left">Uitloggen</button>
               </>
             ) : (
-              <a href="/login" className="block text-[14px] py-2.5 px-3 rounded-xl text-[#D4AF37] font-semibold hover:bg-[#D4AF37]/5 transition" onClick={() => setMobileOpen(false)}>Inloggen</a>
+              <a href="/login" className="block text-[14px] py-2.5 px-3 rounded-xl text-[#C4A265] font-medium hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>Inloggen</a>
             )}
           </div>
         </div>
