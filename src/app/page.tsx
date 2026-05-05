@@ -13,7 +13,7 @@ import FAQ from '@/components/FAQ'
 export default function Home() {
   return (
     <>
-      <div id="hero" data-theme-color="#0C0A07" data-theme-dark="true" className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden -mt-[80px] max-md:-mt-[72px] pt-[80px] max-md:pt-[72px]">
+      <div id="hero" data-theme-color="#0C0A07" data-theme-dark="true" className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden">
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>

@@ -36,7 +36,7 @@ export default function Hero() {
   const review = SLIDES[current].review
 
   return (
-    <div className="w-full h-full pt-[12px] px-[14px] pb-[14px] max-md:pt-[10px] max-md:px-[10px] max-md:pb-[10px]">
+    <div className="w-full h-full pt-[80px] max-md:pt-[72px] px-[14px] pb-[14px] max-md:px-[10px] max-md:pb-[10px]">
     <div className="w-full h-full grid grid-cols-1 md:grid-cols-[minmax(390px,420px)_1fr] gap-[14px] max-md:gap-[10px] overflow-hidden max-md:grid-rows-[auto_1fr]">
       {/* LEFT PANEL */}
       <div className="bg-[#FAF8F4] rounded-[22px] pt-10 px-[38px] max-md:px-[22px] max-md:pt-[26px] max-md:pb-7 max-md:shrink-0 max-md:flex-none flex flex-col overflow-hidden relative">
