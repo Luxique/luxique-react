@@ -107,9 +107,9 @@ export default function TechVsArtist() {
             </div>
           </div>
 
-          {/* Quote strip — right aligned, profile right of text */}
-          <div className="px-[40px] max-[860px]:px-[20px] pb-[36px] max-[860px]:pb-[28px] flex items-start gap-[16px] justify-end min-[860px]:pr-[32px]">
-            <div>
+          {/* Quote strip — right aligned, text centered with profile circle */}
+          <div className="px-[40px] max-[860px]:px-[20px] pb-[36px] max-[860px]:pb-[28px] flex items-center gap-[16px] justify-end min-[860px]:pr-[32px]">
+            <div className="text-right">
               <p className="font-['Cormorant_Garamond'] text-[17px] italic font-light leading-[1.6] text-[#1E1A14] max-w-[600px]">
                 &ldquo;A normal lash tech just copies and pastes. I look at eye shapes. I have knowledge about every face that sits in my chair.&rdquo;
               </p>
