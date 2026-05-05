@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-/* ── Orb canvas background ── */
 function OrbCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -71,26 +70,30 @@ function OrbCanvas() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block will-change-transform" />
 }
 
-/* ── Main component ── */
+const CHIVA_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png'
+const ACTION_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-action.jpg'
+
 export default function MeetChiva() {
   return (
     <section className="px-[14px] max-[860px]:px-[10px] flex flex-col gap-[14px]">
 
       {/* ══ ROW 1: Hero portrait panel ══ */}
       <div className="rounded-[22px] bg-[#161310] relative min-[860px]:overflow-visible overflow-hidden min-h-[420px] max-[860px]:min-h-[480px] max-[540px]:min-h-[420px] flex items-end">
-        {/* Inner bg with orbs */}
+        {/* Inner bg with orbs — cream, always fills */}
         <div className="rounded-[22px] overflow-hidden absolute inset-0 bg-[#F5F1EA]">
           <OrbCanvas />
-          {/* Grain overlay */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'1\'/%3E%3C/svg%3E")' }} />
         </div>
 
-        {/* Portrait — feet at exact bottom, bleeds above panel on desktop, right-aligned on mobile */}
-        <div className="absolute bottom-0 left-[160px] top-auto z-[3] w-[320px] max-[860px]:left-auto max-[860px]:right-0 max-[860px]:w-[55%] max-[860px]:max-w-[300px]" style={{ transformOrigin: 'bottom left' }}>          
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
+        {/* Portrait — desktop: left side with scale, mobile: right-bottom aligned */}
+        <div
+          className="absolute bottom-0 top-auto z-[3] left-[160px] w-[320px] max-[860px]:left-auto max-[860px]:right-0 max-[860px]:w-[55%] max-[860px]:max-w-[300px]"
+          style={{ transformOrigin: 'bottom left', transform: 'scale(1.15)' }}
+        >
+          <img src={CHIVA_IMG} alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
         </div>
 
-        {/* Text overlay — left-top on mobile, right of portrait on desktop */}
+        {/* Text overlay — desktop: right of portrait, mobile: top-left */}
         <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-7 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
@@ -99,20 +102,18 @@ export default function MeetChiva() {
           <h2 className="font-['Cormorant_Garamond'] text-[clamp(32px,3.5vw,54px)] font-normal leading-[1.08] text-[#1E1A14] tracking-[-0.01em]">
             Lash artist.<br />Educator.<br /><em className="italic text-[#C4A265]">Oprichter.</em>
           </h2>
-          </h2>
           <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.7] max-w-[360px]">
             Chiva begon met lashes en wist meteen: dit wil ik doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en velen studenten die ik heb mogen begeleiden tot lash artist.
           </p>
         </div>
 
-        {/* Right-side action photo — full height, left fade, clipped to container radius */}
+        {/* Right-side action photo — desktop only */}
         <div className="absolute top-0 right-0 bottom-0 w-[50%] z-[2] max-[860px]:hidden overflow-hidden rounded-r-[22px]">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-action.jpg" alt="Chiva in action" className="w-full h-full object-cover object-center" />
-          {/* Left fade — solid first, then gradual fade */}
+          <img src={ACTION_IMG} alt="Chiva in action" className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #F5F1EA 0%, #F5F1EA 20%, rgba(245,241,234,0.95) 30%, rgba(245,241,234,0.5) 50%, rgba(245,241,234,0) 70%)' }} />
         </div>
 
-        {/* Name tag badge bottom-right */}
+        {/* Name tag badge — desktop only */}
         <div className="absolute bottom-0 left-0 right-0 z-[4] px-12 pb-7 max-[860px]:hidden flex items-end justify-end">
           <div className="bg-[rgba(250,248,244,0.75)] backdrop-blur-[16px] border border-[rgba(196,162,101,0.25)] rounded-[12px] px-[18px] py-[10px] flex flex-col gap-[2px]">
             <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A6340]">The Woman Behind Luxique</span>
@@ -123,10 +124,8 @@ export default function MeetChiva() {
 
       {/* ══ ROW 2: [image] [text] [image] ══ */}
       <div className="grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.15fr_1fr] gap-[14px] items-stretch">
-
-        {/* Left flanking image */}
+        {/* Left flanking image — desktop only */}
         <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
-          {/* GEORGE: <img src="/images/chiva-werk-1.jpg" alt="Chiva aan het werk" className="w-full h-full object-cover block" /> */}
           <div className="w-full h-full min-h-[320px] bg-[linear-gradient(145deg,#1e1a12_0%,#2a2318_100%)] flex flex-col items-center justify-center gap-2 text-[rgba(196,162,101,0.2)]">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
               <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
@@ -146,7 +145,6 @@ export default function MeetChiva() {
             Niet kopiëren.<br /><em className="italic text-[#C4A265]">Creëren.</em>
           </h3>
 
-          {/* Story with fade-out */}
           <div className="relative w-full max-h-[220px] overflow-hidden mb-1">
             <div className="flex flex-col gap-[14px]">
               <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.8]">
@@ -170,9 +168,8 @@ export default function MeetChiva() {
           </Link>
         </div>
 
-        {/* Right flanking image */}
+        {/* Right flanking image — desktop only */}
         <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
-          {/* GEORGE: <img src="/images/chiva-werk-2.jpg" alt="Lash close-up" className="w-full h-full object-cover block" /> */}
           <div className="w-full h-full min-h-[320px] bg-[linear-gradient(145deg,#16120c_0%,#201a10_100%)] flex flex-col items-center justify-center gap-2 text-[rgba(196,162,101,0.2)]">
             <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
               <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
