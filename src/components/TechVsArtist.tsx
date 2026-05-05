@@ -41,7 +41,7 @@ export default function TechVsArtist() {
           <div className="p-[32px_32px_32px_28px] max-[860px]:p-[24px_20px] grid grid-cols-1 min-[540px]:grid-cols-2 gap-[16px] max-[860px]:gap-[12px] items-stretch">
 
             {/* TECH CARD */}
-            <div className="rounded-[16px] overflow-hidden flex flex-col relative transition-transform duration-300 ease-in-out hover:-translate-y-[3px] bg-[rgba(30,26,20,0.05)] border-[1.5px] border-[rgba(30,26,20,0.08)] hover:shadow-[0_8px_28px_rgba(30,26,20,0.08)] cursor-default">
+            <div className="rounded-[16px] overflow-hidden flex flex-col relative transition-transform duration-300 ease-in-out hover:-translate-y-[3px] bg-[rgba(30,26,20,0.05)] border-[1.5px] border-[rgba(30,26,20,0.08)] hover:shadow-[0_8px_28px_rgba(30,26,20,0.08)] cursor-default max-[540px]:order-[-1]">
               <div className="w-full aspect-[4/3] overflow-hidden relative shrink-0 bg-[linear-gradient(140deg,#e8e4dc_0%,#d4cfc6_100%)]">
                 {/* GEORGE: img tag for lash-tech.jpg */}
                 {/* <img src="/images/lash-tech.jpg" alt="Lash Technician" className="w-full h-full object-cover" /> */}
@@ -53,7 +53,7 @@ export default function TechVsArtist() {
                   </svg>
                 </div>
                 <span className="absolute top-[12px] left-[12px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[11px] py-[4px] rounded-full bg-[rgba(255,255,255,0.7)] text-[#7A7268] border border-[rgba(255,255,255,0.4)] z-[2]">
-                  Een goede start, maar er is meer
+                  Een solide basis
                 </span>
               </div>
               <div className="p-[22px_22px_26px] flex flex-col flex-1 relative z-[1]">
@@ -64,12 +64,12 @@ export default function TechVsArtist() {
                   <br /><br />
                   Het werk is voornamelijk uitvoerend — Russian volume, hybrids, classics volgens vaste patronen. Er wordt gewerkt vanuit wat bekend is, niet vanuit wat het oog vraagt.
                 </p>
-                <span className="text-[9.5px] font-semibold tracking-[0.2em] uppercase mt-[14px] text-[rgba(30,26,20,0.28)]">De basis · Het startpunt</span>
+                <span className="text-[9.5px] font-semibold tracking-[0.2em] uppercase mt-[14px] text-[rgba(30,26,20,0.28)]">Een goede start, maar er is meer</span>
               </div>
             </div>
 
             {/* ARTIST CARD */}
-            <div className="rounded-[16px] overflow-hidden flex flex-col relative transition-transform duration-300 ease-in-out hover:-translate-y-[3px] bg-[#0C0A07] border-[1.5px] border-[rgba(196,162,101,0.2)] shadow-[0_16px_56px_rgba(12,10,7,0.35),0_0_0_1px_rgba(196,162,101,0.1)] hover:shadow-[0_24px_72px_rgba(12,10,7,0.45),0_0_0_1px_rgba(196,162,101,0.18)] cursor-default max-[540px]:order-[-1]">
+            <div className="rounded-[16px] overflow-hidden flex flex-col relative transition-transform duration-300 ease-in-out hover:-translate-y-[3px] bg-[#0C0A07] border-[1.5px] border-[rgba(196,162,101,0.2)] shadow-[0_16px_56px_rgba(12,10,7,0.35),0_0_0_1px_rgba(196,162,101,0.1)] hover:shadow-[0_24px_72px_rgba(12,10,7,0.45),0_0_0_1px_rgba(196,162,101,0.18)] cursor-default">
               {/* Gold glow */}
               <div className="absolute -top-[30px] -right-[30px] w-[140px] h-[140px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.14)_0%,transparent_70%)] pointer-events-none z-0" />
               <div className="w-full aspect-[4/3] overflow-hidden relative shrink-0 bg-[linear-gradient(140deg,#1e1a12_0%,#2a2218_100%)]">
