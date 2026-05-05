@@ -5,6 +5,7 @@ import Footer from '@/components/Footer'
 
 import { AuthProvider } from '@/lib/auth-context'
 import ChatWidget from '@/components/ChatWidget'
+import ThemeColorManager from '@/components/ThemeColorManager'
 
 export const metadata: Metadata = {
   title: 'LXQ Academy — The Art of Lashes, Perfected',
@@ -24,12 +25,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl">
+      <head>
+        <meta name="theme-color" content="#0C0A07" />
+      </head>
       <body>
         <AuthProvider>
           <Navbar />
           <main>{children}</main>
           <Footer />
           <ChatWidget />
+          <ThemeColorManager />
         </AuthProvider>
       </body>
     </html>

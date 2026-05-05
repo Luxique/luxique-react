@@ -13,20 +13,18 @@ import FAQ from '@/components/FAQ'
 export default function Home() {
   return (
     <>
-      {/* Full-viewport hero — negative margin pulls it behind the sticky navbar */}
-      <div className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden -mt-[80px] max-md:-mt-[72px] pt-[80px] max-md:pt-[72px]">
+      <div id="hero" className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden -mt-[80px] max-md:-mt-[72px] pt-[80px] max-md:pt-[72px]">
         <Hero />
       </div>
-      <TechVsArtist />
-      <EyeShapes />
-      <WhatIStandFor />
-      <BeforeAfter />
-      <MeetChiva />
-      <ReelsSection />
-      <ComparisonTable />
-      <AcademySection />
-      <ReviewsSection />
-      <FAQ />
+      <div id="verschil"><TechVsArtist /></div>
+      <div id="oogvormen"><EyeShapes /></div>
+      <div id="missie"><WhatIStandFor /></div>
+      <div id="behandelingen"><BeforeAfter /></div>
+      <div id="meet-chiva"><MeetChiva /></div>
+      <div id="reels"><ReelsSection /></div>
+      <div id="academy"><ComparisonTable /><AcademySection /></div>
+      <div id="reviews"><ReviewsSection /></div>
+      <div id="faq"><FAQ /></div>
     </>
   )
 }
