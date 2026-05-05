@@ -90,7 +90,7 @@ export default function MeetChiva() {
           <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
         </div>
 
-        {/* Text overlay — left-top on mobile, right of portrait on desktop */}}
+        {/* Text overlay — left-top on mobile, right of portrait on desktop */}
         <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-7 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
