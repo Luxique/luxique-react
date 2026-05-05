@@ -13,11 +13,9 @@ import FAQ from '@/components/FAQ'
 export default function Home() {
   return (
     <>
-      {/* Full-viewport hero — dark bg with padding top for navbar space */}
-      <div className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden">
-        <div className="absolute inset-0 pt-[76px] max-md:pt-[72px] p-[20px_14px_14px_14px] max-md:p-[16px_10px_10px_10px] flex flex-col gap-[14px] max-md:gap-[10px]">
-          <Hero />
-        </div>
+      {/* Full-viewport hero — negative margin pulls it behind the sticky navbar */}
+      <div className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden -mt-[80px] max-md:-mt-[72px] pt-[80px] max-md:pt-[72px]">
+        <Hero />
       </div>
       <TechVsArtist />
       <EyeShapes />

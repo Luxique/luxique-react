@@ -32,9 +32,10 @@ export default function Hero() {
   }, [])
 
   return (
-    <div className="flex-1 grid grid-cols-1 md:grid-cols-[minmax(390px,420px)_1fr] gap-[14px] max-md:gap-[10px] min-h-0 overflow-hidden">
+    <div className="w-full h-full p-[20px_14px_14px_14px] max-md:p-[16px_10px_10px_10px]">
+    <div className="w-full h-full grid grid-cols-1 md:grid-cols-[minmax(390px,420px)_1fr] gap-[14px] max-md:gap-[10px] overflow-hidden max-md:grid-rows-[auto_1fr]">
       {/* LEFT PANEL */}
-      <div className="bg-[#FAF8F4] rounded-[22px] pt-10 px-[38px] max-md:px-[22px] max-md:pt-[26px] max-md:pb-7 flex flex-col overflow-hidden relative">
+      <div className="bg-[#FAF8F4] rounded-[22px] pt-10 px-[38px] max-md:px-[22px] max-md:pt-[26px] max-md:pb-7 max-md:shrink-0 max-md:flex-none flex flex-col overflow-hidden relative">
         {/* Gold glow */}
         <div className="absolute -top-[50px] -right-[50px] w-[180px] h-[180px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.18)_0%,transparent_70%)] pointer-events-none" />
 
@@ -118,6 +119,7 @@ export default function Hero() {
           ))}
         </div>
       </div>
+    </div>
     </div>
   )
 }
