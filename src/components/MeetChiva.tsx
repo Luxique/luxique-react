@@ -86,7 +86,7 @@ export default function MeetChiva() {
         </div>
 
         {/* Portrait — feet at exact bottom, bleeds above panel, scale from bottom-left */}
-        <div className="absolute bottom-0 left-[80px] top-auto z-[3] w-[320px] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:scale-100" style={{ transformOrigin: 'bottom left', transform: 'scale(1.15)' }}>
+        <div className="absolute bottom-0 left-[120px] top-auto z-[3] w-[320px] max-[860px]:left-1/2 max-[860px]:w-[75%] max-[860px]:max-w-[300px] max-[860px]:translate-x-[-50%] max-[860px]:scale-100" style={{ transformOrigin: 'bottom left', transform: 'scale(1.15)' }}>
           <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.png" alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
         </div>
 
