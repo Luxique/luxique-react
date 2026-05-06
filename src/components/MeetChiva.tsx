@@ -78,7 +78,7 @@ export default function MeetChiva() {
     <section className="px-[14px] max-[860px]:px-[10px] flex flex-col gap-[14px]">
 
       {/* ══ ROW 1: Hero portrait panel ══ */}
-      <div className="rounded-[22px] bg-[#161310] relative overflow-hidden min-h-[420px] max-[860px]:min-h-[380px] max-[540px]:min-h-[340px] flex items-end">
+      <div className="rounded-[22px] bg-[#161310] relative overflow-hidden min-h-[420px] max-[860px]:min-h-[380px] max-[540px]:min-h-[340px] flex min-[860px]:items-end items-start">
         {/* Inner bg with orbs — cream, always fills */}
         <div className="rounded-[22px] overflow-hidden absolute inset-0 bg-[#F5F1EA]">
           <OrbCanvas />
@@ -94,7 +94,7 @@ export default function MeetChiva() {
         </div>
 
         {/* Text overlay — desktop: right of portrait, mobile: top-left */}
-        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-2 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
+        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-6 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-start min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>
