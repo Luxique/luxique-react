@@ -169,6 +169,156 @@ em { font-style: italic; font-weight: 400; }
   box-shadow: 0 0 20px rgba(201,169,106,0.15);
 }
 
+/* Eye Shapes — scrolling cards */
+.oog-track {
+  animation: ticker 40s linear infinite;
+}
+.oog-track:hover {
+  animation-play-state: paused;
+}
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.scroll-hint-arrow {
+  animation: bounce-x 1.6s ease-in-out infinite;
+}
+@keyframes bounce-x {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(5px); }
+}
+
+/* Eye card */
+.eye-card {
+  flex-shrink: 0;
+  width: 195px;
+  height: 258px;
+  border-radius: 18px;
+  padding: 22px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s ease;
+}
+
+.eye-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.eye-card::after {
+  content: '';
+  position: absolute;
+  top: -24px;
+  right: -24px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196,162,101,0.14) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.eye-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 28px 64px rgba(0,0,0,0.55);
+}
+
+.eye-card .card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+
+.eye-card .card-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: rgba(250,248,244,0.22);
+  letter-spacing: 0.1em;
+}
+
+.eye-card .card-arrow {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(250,248,244,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(250,248,244,0.3);
+  transition: all 0.2s;
+}
+
+.eye-card:hover .card-arrow {
+  border-color: #C4A265;
+  color: #C4A265;
+  background: rgba(196,162,101,0.1);
+}
+
+.eye-card .card-icon {
+  font-size: 34px;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 4px 0;
+}
+
+.eye-card .card-bottom {
+  position: relative;
+  z-index: 1;
+}
+
+.eye-card .card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 21px;
+  font-weight: 400;
+  color: rgba(250,248,244,0.92);
+  line-height: 1.1;
+  margin-bottom: 5px;
+  letter-spacing: -0.01em;
+}
+
+.eye-card .card-tip {
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(250,248,244,0.36);
+  letter-spacing: 0.06em;
+}
+
+.eye-card .card-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background: linear-gradient(90deg, #C4A265 0%, transparent 100%);
+  border-radius: 0 0 0 18px;
+  transition: width 0.4s ease;
+}
+
+.eye-card:hover .card-accent {
+  width: 55%;
+}
+
+@media (max-width: 720px) {
+  .eye-card {
+    width: 162px;
+    height: 228px;
+  }
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .section-title { font-size: clamp(28px, 6vw, 40px); }
