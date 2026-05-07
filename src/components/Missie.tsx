@@ -97,7 +97,7 @@ export default function Missie() {
           </p>
 
           <p className="text-[14px] font-light text-[#7A7268] leading-[1.85]">
-            Het resultaat? Een markt vol technici die goede resultaten leveren. Maar zelden iemand die écht het verschil maakt — voor de klant in de stoel, en voor het vak zelf.
+            Het resultaat? Een markt vol technici die prima resultaten leveren. Maar zelden iemand die écht het verschil maakt zowel voor de klant in de stoel als voor het vak zelf.
           </p>
         </div>
       </div>
