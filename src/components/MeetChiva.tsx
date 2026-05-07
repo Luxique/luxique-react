@@ -103,7 +103,7 @@ export default function MeetChiva() {
             Lash artist.<br />Educator.<br /><em className="italic text-[#C4A265]">Oprichter.</em>
           </h2>
           <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
-            Chiva begon met lashes en wist meteen: dit wil ik doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en velen studenten die ik heb mogen begeleiden tot lash artist.
+            Ik begon met lashes en voelde meteen: dit is precies wat ik wil doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en vele studenten die ik heb mogen begeleiden tot lash artist.
           </p>
         </div>
 
