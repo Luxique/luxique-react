@@ -196,7 +196,7 @@ export default function MeetChiva() {
               Van beginners tot gevorderden —<br /><em className="italic text-[#C4A265]">iedereen is welkom.</em>
             </h3>
             <p className="text-[13.5px] font-light text-[rgba(250,248,244,0.45)] leading-[1.7] max-w-[500px]">
-              LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Chiva heeft honderden studenten opgeleid en haar filosofie is simpel: elke oogvorm verdient een unieke aanpak.
+              LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Chiva heeft velen studenten opgeleid en haar filosofie is simpel: elke oogvorm verdient een unieke aanpak.
             </p>
           </div>
           <Link href="/about" className="font-['Outfit'] text-[13px] font-medium px-[28px] py-[13px] rounded-full bg-transparent text-[#FAF8F4] border-[1.5px] border-[rgba(250,248,244,0.22)] cursor-pointer transition-all duration-[220ms] whitespace-nowrap shrink-0 hover:border-[#C4A265] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.06)] w-fit">
