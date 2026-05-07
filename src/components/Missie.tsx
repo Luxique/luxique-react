@@ -79,7 +79,7 @@ export default function Missie() {
           <div className="absolute bottom-0 left-0 right-0 h-[55%] bg-[linear-gradient(0deg,rgba(12,10,7,0.82),transparent)] flex flex-col justify-end p-6 pb-7">
             <span className="block text-[9px] font-semibold tracking-[0.24em] uppercase text-[#C4A265] mb-2">Missie</span>
             <h2 className="font-['Cormorant_Garamond'] text-[clamp(22px,3.5vw,36px)] font-normal text-[#FAF8F4] leading-[1.1] tracking-[-0.01em]">
-              De lash industrie verdient<br /><em className="italic text-[#C4A265]">een hogere standaard.</em>
+              Wij willen de standaard<br /><em className="italic text-[#C4A265]">veranderen.</em>
             </h2>
           </div>
         </div>
@@ -99,12 +99,6 @@ export default function Missie() {
           <p className="text-[14px] font-light text-[#7A7268] leading-[1.85]">
             Het resultaat? Een markt vol technici die goede resultaten leveren. Maar zelden iemand die écht het verschil maakt — voor de klant in de stoel, en voor het vak zelf.
           </p>
-
-          <div className="border-l-2 border-[#C4A265] py-[2px] pl-5">
-            <p className="font-['Cormorant_Garamond'] text-[18px] italic font-light text-[#1E1A14] leading-[1.55]">
-              Dat is de ruimte waar LXQ Academy bestaat.
-            </p>
-          </div>
         </div>
       </div>
 
