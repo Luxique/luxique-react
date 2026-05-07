@@ -1,7 +1,7 @@
 import Hero from '@/components/Hero'
 import TechVsArtist from '@/components/TechVsArtist'
 import EyeShapes from '@/components/EyeShapes'
-import WhatIStandFor from '@/components/WhatIStandFor'
+import Missie from '@/components/Missie'
 import BeforeAfter from '@/components/BeforeAfter'
 import ComparisonTable from '@/components/ComparisonTable'
 import MeetChiva from '@/components/MeetChiva'
@@ -19,7 +19,7 @@ export default function Home() {
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>
       <div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><MeetChiva /></div>
       <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
-      <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false"><WhatIStandFor /></div>
+      <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false"><Missie /></div>
       <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false"><BeforeAfter /></div>
       <div id="reels" data-theme-color="#1C1812" data-theme-dark="true"><ReelsSection /></div>
       <div id="academy" data-theme-color="#FAFAFA" data-theme-dark="false"><ComparisonTable /><AcademySection /></div>
