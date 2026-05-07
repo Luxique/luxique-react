@@ -93,7 +93,7 @@ export default function Missie() {
 
         <div className="flex flex-col gap-[18px]">
           <p className="text-[14px] font-light text-[#7A7268] leading-[1.85]">
-            Lash extensions zijn al jaren een van de snelst groeiende beauty behandelingen in Nederland. Maar de opleiding houdt geen gelijke tred. De meeste cursussen leren je uitvoeren — niet begrijpen. Je leert fans plaatsen, maar niet waarom die fan bij dat oog past.
+            Lash extensions zijn al jaren één van de snelst groeiende beauty behandelingen in Nederland. Maar het opleidingsniveau staat stil. Terwijl de markt groeit, blijft de kwaliteit hangen op hetzelfde niveau als tien jaar geleden. Geen innovatie, geen vooruitgang. De meeste cursussen leren je repetitief werk uitvoeren — hetzelfde patroon, dezelfde map, keer op keer. Je leert techniek, maar je leert niet begrijpen. Doorgaans leer je wel fans plaatsen, maar niet of die ene fan bij dat specifieke oog past.
           </p>
 
           <p className="text-[14px] font-light text-[#7A7268] leading-[1.85]">
