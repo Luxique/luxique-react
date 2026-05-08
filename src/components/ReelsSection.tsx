@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 
-const REEL_VIDEO_URL = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels/lash-reel-1.mov'
+const REEL_VIDEO_URL = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels/lash-reel-1.mp4'
 
 const contentItems = [
   { type: 'reel' as const, title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:32', videoUrl: REEL_VIDEO_URL },
