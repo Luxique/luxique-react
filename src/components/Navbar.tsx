@@ -1,13 +1,17 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
+  const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/')
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -32,11 +36,17 @@ export default function Navbar() {
           </div>
         </button>
 
-        {/* Logo pill — flex-fill on mobile */}
-        <div className="h-[52px] max-md:h-[48px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center shrink-0 md:shrink md:flex-none md:px-[26px] max-md:flex-1 max-md:px-4">
-          <a href="/" className="font-['Avenir_Next'] max-md:font-['Josefin_Sans'] text-[18px] max-md:text-[15px] font-[400] tracking-[0.45em] max-md:tracking-[0.35em] text-white uppercase whitespace-nowrap select-none">
-            Luxique
-          </a>
+        <div className="relative h-[52px] max-md:h-[48px]">
+          <div className="h-[52px] max-md:h-[48px] rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)] flex items-center justify-center shrink-0 md:shrink md:flex-none md:px-[26px] max-md:flex-1 max-md:px-4">
+            <a href="/" className="font-['Avenir_Next'] max-md:font-['Josefin_Sans'] text-[18px] max-md:text-[15px] font-[400] tracking-[0.45em] max-md:tracking-[0.35em] text-white uppercase whitespace-nowrap select-none">
+              Luxique
+            </a>
+          </div>
+          {isAcademyPage && (
+            <span className="absolute -right-[10px] -top-[6px] px-[10px] py-[2px] rounded-full bg-[rgba(22,19,16,0.92)] backdrop-blur-[16px] border border-[rgba(196,162,101,0.3)] text-[8px] font-semibold tracking-[0.18em] uppercase text-[#C4A265] whitespace-nowrap z-10 pointer-events-none">
+              Academy
+            </span>
+          )}
         </div>
 
         {/* Desktop: links pill */}
