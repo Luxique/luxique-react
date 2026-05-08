@@ -75,13 +75,7 @@ export default function TechVsArtist() {
               {/* Gold glow */}
               <div className="absolute -top-[30px] -right-[30px] w-[140px] h-[140px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.14)_0%,transparent_70%)] pointer-events-none z-0" />
               <div className="w-full aspect-[4/3] overflow-hidden relative shrink-0 bg-[linear-gradient(140deg,#1e1a12_0%,#2a2218_100%)]">
-                {/* GEORGE: img tag for lash-artist.jpg */}
-                {/* <img src="/images/lash-artist.jpg" alt="Lash Artist" className="w-full h-full object-cover" /> */}
-                <div className="w-full h-full flex items-center justify-center text-[rgba(196,162,101,0.18)]">
-                  <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                  </svg>
-                </div>
+                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/techvsartist-chiva.webp" alt="Lash Artist" className="w-full h-full object-cover" />
                 <span className="absolute top-[12px] left-[12px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[11px] py-[4px] rounded-full bg-[rgba(12,10,7,0.65)] text-[#C4A265] border border-[rgba(196,162,101,0.25)] z-[2]">
                   Waar wij je naartoe brengen
                 </span>
