@@ -2,8 +2,10 @@
 
 import { useEffect, useRef } from 'react'
 
+const REEL_VIDEO_URL = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels/lash-reel-1.mov'
+
 const contentItems = [
-  { type: 'reel' as const, title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:32' },
+  { type: 'reel' as const, title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:32', videoUrl: REEL_VIDEO_URL },
   { type: 'image' as const, title: 'Wispy Volume Set', views: '8.1K' },
   { type: 'reel' as const, title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:45' },
   { type: 'image' as const, title: 'Classic Lash Result', views: '6.3K' },
@@ -17,14 +19,28 @@ const contentItems = [
 
 function ContentCard({ item }: { item: typeof contentItems[0] }) {
   const isReel = item.type === 'reel'
+  const hasVideo = isReel && item.videoUrl
   return (
     <div className="flex-shrink-0 w-[260px] md:w-[280px] group cursor-pointer">
       <div className="relative aspect-[9/16] rounded-2xl overflow-hidden border border-white/[0.06] hover:border-[var(--rose)]/30 transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1610] via-[#221e18] to-[#2a2520]" />
+        {hasVideo ? (
+          <video
+            src={item.videoUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1610] via-[#221e18] to-[#2a2520]" />
+        )}
         <div className="absolute inset-0 flex items-center justify-center z-10">
+          {!hasVideo && (
           <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:bg-[var(--rose)]/30 group-hover:scale-110 transition-all duration-300">
             <span className="text-white text-xl">{isReel ? '▶' : '📷'}</span>
           </div>
+          )}
         </div>
         {isReel && item.duration && (
           <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] text-white/80 font-medium">{item.duration}</div>
