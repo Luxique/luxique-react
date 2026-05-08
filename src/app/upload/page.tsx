@@ -34,7 +34,7 @@ export default function UploadPage() {
       } else {
         setUploads(prev => prev.map(u => u.name === file.name ? { ...u, status: `❌ ${data.message || 'failed'}` } : u))
       }
-    } catch (err) {
+    } catch {
       setUploads(prev => prev.map(u => u.name === file.name ? { ...u, status: `❌ error` } : u))
     }
   }, [])
@@ -52,7 +52,7 @@ export default function UploadPage() {
   return (
     <div style={{ maxWidth: 600, margin: '80px auto', padding: 20, fontFamily: 'system-ui' }}>
       <h1 style={{ fontSize: 24, marginBottom: 8 }}>📤 LUXIQUE Video Upload</h1>
-      <p style={{ color: '#888', marginBottom: 24 }}>Sleep video's hierheen of klik om te selecteren</p>
+      <p style={{ color: '#888', marginBottom: 24 }}>Sleep video&apos;s hierheen of klik om te selecteren</p>
       <div
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
@@ -69,7 +69,7 @@ export default function UploadPage() {
         }}
       >
         <div style={{ fontSize: 40, marginBottom: 12 }}>🎬</div>
-        <div style={{ color: '#aaa' }}>Drop video's here — MP4, MOV, any size</div>
+        <div style={{ color: '#aaa' }}>Drop video&apos;s here — MP4, MOV, any size</div>
         <input id="file-input" type="file" multiple accept="video/*" onChange={handleChange} style={{ display: 'none' }} />
       </div>
       <div style={{ marginTop: 24 }}>
