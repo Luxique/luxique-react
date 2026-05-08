@@ -33,24 +33,11 @@ function ContentCard({ item }: { item: ContentItem }) {
   const hasVideo = Boolean(item.videoUrl)
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Autoplay video when this card enters viewport
+  // Autoplay video immediately
   useEffect(() => {
     if (!hasVideo || !videoRef.current) return
     const video = videoRef.current
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            video.play().catch(() => {})
-          } else {
-            video.pause()
-          }
-        })
-      },
-      { threshold: 0.01 }
-    )
-    observer.observe(video)
-    return () => observer.disconnect()
+    video.play().catch(() => {})
   }, [hasVideo])
 
   return (
