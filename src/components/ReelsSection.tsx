@@ -27,9 +27,30 @@ const contentItems: ContentItem[] = [
   { type: 'reel', title: 'Bottom Lash Technique', views: '4.3K', duration: '0:22' },
 ]
 
-function ContentCard({ item, videoRef }: { item: ContentItem; videoRef?: React.RefObject<HTMLVideoElement | null> }) {
+function ContentCard({ item }: { item: ContentItem }) {
   const isReel = item.type === 'reel'
   const hasVideo = Boolean(item.videoUrl)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Autoplay video when this card enters viewport
+  useEffect(() => {
+    if (!hasVideo || !videoRef.current) return
+    const video = videoRef.current
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => {})
+          } else {
+            video.pause()
+          }
+        })
+      },
+      { threshold: 0.3 }
+    )
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [hasVideo])
 
   return (
     <div className="flex-shrink-0 w-[260px] md:w-[280px] group cursor-pointer">
@@ -48,6 +69,7 @@ function ContentCard({ item, videoRef }: { item: ContentItem; videoRef?: React.R
           <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${item.imageUrl})` }} />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1610] via-[#221e18] to-[#2a2520]" />
+        )}
         )}
 
         {/* Play/camera icon — hidden when video or image is showing */}
@@ -79,29 +101,6 @@ function ContentCard({ item, videoRef }: { item: ContentItem; videoRef?: React.R
 
 export default function ReelsSection() {
   const trackRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
-
-  // Autoplay video when visible, pause when not
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
-
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            video.play().catch(() => {})
-          } else {
-            video.pause()
-          }
-        })
-      },
-      { threshold: 0.5 }
-    )
-
-    observer.observe(video)
-    return () => observer.disconnect()
-  }, [])
 
   // Infinite scroll animation
   useEffect(() => {
@@ -127,9 +126,7 @@ export default function ReelsSection() {
   }, [])
 
   const renderCard = useCallback((item: ContentItem, i: number, prefix: string) => {
-    // Only pass videoRef to the first video card in each set
-    const needsVideoRef = item.videoUrl && prefix === 'a' && i === 0
-    return <ContentCard key={`${prefix}-${i}`} item={item} videoRef={needsVideoRef ? videoRef : undefined} />
+    return <ContentCard key={`${prefix}-${i}`} item={item} />
   }, [])
 
   return (
