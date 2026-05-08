@@ -127,7 +127,7 @@ export default function AcademySection() {
           {/* ── Content ── */}
           <div className="content-area" id="academy-courses">
 
-            {COURSES.map((course, i) => (
+            {COURSES.map((course) => (
               <div key={course.slug} className={`course-card ${course.preview ? 'featured' : ''} fade-up`}>
                 <div className="card-inner">
                   <div className={`card-thumb ${!course.preview ? 'opacity-55' : ''}`}>
