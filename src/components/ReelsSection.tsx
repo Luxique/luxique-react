@@ -70,7 +70,6 @@ function ContentCard({ item }: { item: ContentItem }) {
         ) : (
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1610] via-[#221e18] to-[#2a2520]" />
         )}
-        )}
 
         {/* Play/camera icon — hidden when video or image is showing */}
         {!(hasVideo || item.imageUrl) && (
