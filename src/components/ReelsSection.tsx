@@ -20,7 +20,7 @@ const contentItems: ContentItem[] = [
   { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:45' },
   { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:18' },
   { type: 'image', title: 'Classic Lash Result', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp` },
-  { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:28' },
+  { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4` },
   { type: 'image', title: 'Close Up — Spikes', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp` },
   { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:55' },
   { type: 'image', title: 'Wet Set Look', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp` },
