@@ -199,15 +199,8 @@ export default function BeforeAfter() {
               <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-[linear-gradient(0deg,rgba(12,10,7,0.72),transparent)] pointer-events-none" />
             </div>
 
-            {/* Footer */}
-            <div className="bg-white px-5 py-[18px] border-t border-[rgba(30,26,20,0.06)] flex items-center justify-between">
-              <span className="font-['Cormorant_Garamond'] text-[19px] font-normal text-[#1E1A14] tracking-[-0.01em]">{card.name}</span>
-              <span className="w-[30px] h-[30px] rounded-full border border-[rgba(30,26,20,0.12)] flex items-center justify-center text-[#7A7268] transition-all duration-200 shrink-0 group-hover:border-[#C4A265] group-hover:text-[#C4A265]">
-                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </span>
-            </div>
+            {/* Bottom padding inside card */}
+            <div className="h-0" />
           </div>
         ))}
       </div>
