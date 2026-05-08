@@ -65,15 +65,7 @@ export default function Missie() {
 
         {/* Floating image card */}
         <div className="relative z-[2] w-[min(420px,88%)] max-[860px]:w-[min(290px,74%)] max-[430px]:w-[70%] rounded-[20px] overflow-hidden shadow-[0_32px_80px_rgba(12,10,7,0.22),0_0_0_1px_rgba(196,162,101,0.1)] mt-6 max-[860px]:my-0 max-[860px]:mx-auto aspect-[4/3] max-[860px]:aspect-[3/4] bg-[linear-gradient(145deg,#1e1a12,#141009)]">
-          {/* Placeholder — replace with real image */}
-          <div className="w-full h-full flex flex-col items-center justify-center gap-[10px] text-[rgba(196,162,101,0.2)] text-[10px] tracking-[0.14em] uppercase">
-            <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
-              <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            Foto — lash werk / studio sfeer
-          </div>
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-image.webp" alt="Missie — Lash werk" className="w-full h-full object-cover" />
 
           {/* Dark gradient overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-[55%] bg-[linear-gradient(0deg,rgba(12,10,7,0.82),transparent)] flex flex-col justify-end p-6 pb-7">
