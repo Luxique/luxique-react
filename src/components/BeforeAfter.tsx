@@ -2,10 +2,12 @@
 
 import { useRef, useEffect, useCallback } from 'react'
 
+const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
+
 const BA_CARDS = [
-  { name: 'Wispy Set', afterImg: '/images/ba-wispy-after.jpg', beforeImg: '/images/ba-wispy-before.jpg' },
-  { name: 'Medusa Set', afterImg: '/images/ba-medusa-after.jpg', beforeImg: '/images/ba-medusa-before.jpg' },
-  { name: 'Volume Set', afterImg: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ba-volume-after.jpg', beforeImg: '/images/ba-volume-before.jpg' },
+  { name: 'Wispy Set', afterImg: `${CDN}/ba-wispy-after.jpg`, beforeImg: `${CDN}/ba-wispy-before.jpg` },
+  { name: 'Medusa Set', afterImg: `${CDN}/ba-medusa-after.jpg`, beforeImg: `${CDN}/ba-medusa-before.jpg` },
+  { name: 'Volume Set', afterImg: `${CDN}/ba-volume-after.jpg`, beforeImg: `${CDN}/ba-volume-before.jpg` },
 ]
 
 export default function BeforeAfter() {
@@ -173,7 +175,8 @@ export default function BeforeAfter() {
               </div>
 
               {/* Before layer */}
-              <div className="ba-before-layer absolute inset-0 bg-[#F0EDE6]">
+              <div className="ba-before-layer absolute inset-0 bg-[#F0EDE6]" style={card.beforeImg.startsWith('http') ? { backgroundImage: `url(${card.beforeImg})`, backgroundSize: 'cover', backgroundPosition: 'center top' } : undefined}>
+                {!card.beforeImg.startsWith('http') && (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-[10px] text-[rgba(30,26,20,0.2)] text-[10px] tracking-[0.14em] uppercase">
                   <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75" className="text-[rgba(30,26,20,0.2)]">
                     <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
@@ -182,6 +185,7 @@ export default function BeforeAfter() {
                   </svg>
                   Before foto
                 </div>
+                )}
               </div>
 
               {/* Slider line */}
