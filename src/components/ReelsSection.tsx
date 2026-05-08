@@ -113,7 +113,7 @@ export default function ReelsSection() {
     return () => cancelAnimationFrame(animId)
   }, [])
 
-  const renderCard = useCallback((item: ContentItem, i: number, prefix: string) => {
+  const renderCard = useCallback((item: ContentItem, _i: number, prefix: string) => {
     return <ContentCard key={`${prefix}-${i}`} item={item} />
   }, [])
 
