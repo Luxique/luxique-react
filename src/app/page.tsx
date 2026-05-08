@@ -20,7 +20,7 @@ export default function Home() {
       <div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><MeetChiva /></div>
       <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false" className="px-[14px] pb-[14px] max-[860px]:px-[10px] max-[860px]:pb-[10px]"><Missie /></div>
       <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
-      <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false"><BeforeAfter /></div>
+      <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] max-[860px]:px-[10px]"><BeforeAfter /></div>
       <div id="reels" data-theme-color="#1C1812" data-theme-dark="true"><ReelsSection /></div>
       <div id="academy" data-theme-color="#FAFAFA" data-theme-dark="false"><ComparisonTable /><AcademySection /></div>
       <div id="reviews" data-theme-color="#FAFAFA" data-theme-dark="false"><ReviewsSection /></div>
