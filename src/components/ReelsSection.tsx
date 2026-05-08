@@ -8,6 +8,7 @@ type ContentItem = {
   views: string
   duration?: string
   videoUrl?: string
+  posterUrl?: string
   imageUrl?: string
 }
 
@@ -15,12 +16,12 @@ const CDN_VID = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/publ
 const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
 
 const contentItems: ContentItem[] = [
-  { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4` },
+  { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp` },
   { type: 'image', title: 'Wispy Volume Set', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp` },
-  { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4` },
+  { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4`, posterUrl: `${CDN_IMG}/reel-poster-3.webp` },
   { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:18' },
   { type: 'image', title: 'Classic Lash Result', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp` },
-  { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4` },
+  { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4`, posterUrl: `${CDN_IMG}/reel-poster-2.webp` },
   { type: 'image', title: 'Close Up — Spikes', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp` },
   { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:55' },
   { type: 'image', title: 'Wet Set Look', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp` },
@@ -46,7 +47,7 @@ function ContentCard({ item }: { item: ContentItem }) {
           }
         })
       },
-      { threshold: 0.3 }
+      { threshold: 0.01 }
     )
     observer.observe(video)
     return () => observer.disconnect()
@@ -59,6 +60,7 @@ function ContentCard({ item }: { item: ContentItem }) {
           <video
             ref={videoRef}
             src={item.videoUrl}
+            poster={item.posterUrl}
             muted
             loop
             playsInline
