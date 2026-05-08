@@ -19,11 +19,11 @@ const contentItems: ContentItem[] = [
   { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp` },
   { type: 'image', title: 'Wispy Volume Set', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp` },
   { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4`, posterUrl: `${CDN_IMG}/reel-poster-3.webp` },
-  { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:18' },
+  { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-4.mp4`, posterUrl: `${CDN_IMG}/reel-poster-4.webp` },
   { type: 'image', title: 'Classic Lash Result', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp` },
   { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4`, posterUrl: `${CDN_IMG}/reel-poster-2.webp` },
   { type: 'image', title: 'Close Up — Spikes', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp` },
-  { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:55' },
+  { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-5.mp4`, posterUrl: `${CDN_IMG}/reel-poster-5.webp` },
   { type: 'image', title: 'Wet Set Look', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp` },
   { type: 'reel', title: 'Bottom Lash Technique', views: '4.3K', duration: '0:22' },
 ]
