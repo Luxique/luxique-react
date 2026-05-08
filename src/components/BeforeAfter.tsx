@@ -5,9 +5,9 @@ import { useRef, useEffect, useCallback } from 'react'
 const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
 
 const BA_CARDS = [
-  { name: 'Wispy Set', afterImg: `${CDN}/ba-wispy-after.jpg`, beforeImg: `${CDN}/ba-wispy-before.jpg` },
-  { name: 'Medusa Set', afterImg: `${CDN}/ba-medusa-after.jpg`, beforeImg: `${CDN}/ba-medusa-before.jpg` },
-  { name: 'Volume Set', afterImg: `${CDN}/ba-volume-after.jpg`, beforeImg: `${CDN}/ba-volume-before.jpg` },
+  { name: 'Wispy Set', afterImg: `${CDN}/ba-wispy-after.webp`, beforeImg: `${CDN}/ba-wispy-before.webp` },
+  { name: 'Medusa Set', afterImg: `${CDN}/ba-medusa-after.webp`, beforeImg: `${CDN}/ba-medusa-before.webp` },
+  { name: 'Volume Set', afterImg: `${CDN}/ba-volume-after.webp`, beforeImg: `${CDN}/ba-volume-before.webp` },
 ]
 
 export default function BeforeAfter() {

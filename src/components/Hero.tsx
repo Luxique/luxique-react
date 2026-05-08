@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 
-const IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-bg.jpg'
+const IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-bg.webp'
 
 const SLIDES = [
   { title: 'Wispy Set', sub: 'Behandeling · Arnhem', review: { name: 'Sarah M.', text: 'Na de cursus had ik direct mijn eerste klanten.' } },
