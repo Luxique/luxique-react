@@ -5,7 +5,7 @@ import { useRef, useEffect, useCallback } from 'react'
 const BA_CARDS = [
   { name: 'Wispy Set', afterImg: '/images/ba-wispy-after.jpg', beforeImg: '/images/ba-wispy-before.jpg' },
   { name: 'Medusa Set', afterImg: '/images/ba-medusa-after.jpg', beforeImg: '/images/ba-medusa-before.jpg' },
-  { name: 'Volume Set', afterImg: '/images/ba-volume-after.jpg', beforeImg: '/images/ba-volume-before.jpg' },
+  { name: 'Volume Set', afterImg: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ba-volume-after.jpg', beforeImg: '/images/ba-volume-before.jpg' },
 ]
 
 export default function BeforeAfter() {
@@ -159,7 +159,8 @@ export default function BeforeAfter() {
               onClick={(e) => handleClick(i, e)}
             >
               {/* After layer */}
-              <div className="ba-after-layer absolute inset-0 bg-[linear-gradient(145deg,#1e1a12,#141009)]">
+              <div className="ba-after-layer absolute inset-0 bg-[linear-gradient(145deg,#1e1a12,#141009)]" style={card.afterImg.startsWith('http') ? { backgroundImage: `url(${card.afterImg})`, backgroundSize: 'cover', backgroundPosition: 'center top' } : undefined}>
+                {!card.afterImg.startsWith('http') && (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-[10px] text-[rgba(196,162,101,0.25)] text-[10px] tracking-[0.14em] uppercase">
                   <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75" className="text-[rgba(196,162,101,0.25)]">
                     <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
@@ -168,6 +169,7 @@ export default function BeforeAfter() {
                   </svg>
                   After foto
                 </div>
+                )}
               </div>
 
               {/* Before layer */}
