@@ -8,21 +8,23 @@ type ContentItem = {
   views: string
   duration?: string
   videoUrl?: string
+  imageUrl?: string
 }
 
 const CDN_VID = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels'
+const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
 
 const contentItems: ContentItem[] = [
   { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4` },
-  { type: 'image', title: 'Wispy Volume Set', views: '8.1K' },
+  { type: 'image', title: 'Wispy Volume Set', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp` },
   { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:45' },
-  { type: 'image', title: 'Classic Lash Result', views: '6.3K' },
   { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:18' },
-  { type: 'image', title: 'Close Up — Spikes', views: '5.7K' },
+  { type: 'image', title: 'Classic Lash Result', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp` },
   { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:28' },
-  { type: 'image', title: 'Wet Set Look', views: '4.9K' },
+  { type: 'image', title: 'Close Up — Spikes', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp` },
   { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:55' },
-  { type: 'image', title: 'Bottom Lash Technique', views: '4.3K' },
+  { type: 'image', title: 'Wet Set Look', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp` },
+  { type: 'reel', title: 'Bottom Lash Technique', views: '4.3K', duration: '0:22' },
 ]
 
 function ContentCard({ item, videoRef }: { item: ContentItem; videoRef?: React.RefObject<HTMLVideoElement | null> }) {
@@ -42,12 +44,14 @@ function ContentCard({ item, videoRef }: { item: ContentItem; videoRef?: React.R
             preload="auto"
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
+        ) : item.imageUrl ? (
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${item.imageUrl})` }} />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1610] via-[#221e18] to-[#2a2520]" />
         )}
 
-        {/* Play/camera icon — hidden when video is playing */}
-        {!(hasVideo) && (
+        {/* Play/camera icon — hidden when video or image is showing */}
+        {!(hasVideo || item.imageUrl) && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:bg-[var(--rose)]/30 group-hover:scale-110 transition-all duration-300">
               <span className="text-white text-xl">{isReel ? '▶' : '📷'}</span>
