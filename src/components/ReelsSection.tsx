@@ -17,7 +17,7 @@ const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/publ
 const contentItems: ContentItem[] = [
   { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4` },
   { type: 'image', title: 'Wispy Volume Set', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp` },
-  { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:45' },
+  { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4` },
   { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:18' },
   { type: 'image', title: 'Classic Lash Result', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp` },
   { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4` },
