@@ -1,51 +1,69 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
-const REEL_VIDEO_URL = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels/lash-reel-1.mp4'
+type ContentItem = {
+  type: 'reel' | 'image'
+  title: string
+  views: string
+  duration?: string
+  videoUrl?: string
+}
 
-const contentItems = [
-  { type: 'reel' as const, title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:32', videoUrl: REEL_VIDEO_URL },
-  { type: 'image' as const, title: 'Wispy Volume Set', views: '8.1K' },
-  { type: 'reel' as const, title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:45' },
-  { type: 'image' as const, title: 'Classic Lash Result', views: '6.3K' },
-  { type: 'reel' as const, title: 'Before & After', views: '15.2K', duration: '0:18' },
-  { type: 'image' as const, title: 'Close Up — Spikes', views: '5.7K' },
-  { type: 'reel' as const, title: 'Lash Curl Guide', views: '6.7K', duration: '0:28' },
-  { type: 'reel' as const, title: 'Volume Fan Making', views: '10.1K', duration: '0:55' },
-  { type: 'image' as const, title: 'Wet Set Look', views: '4.9K' },
-  { type: 'reel' as const, title: 'Bottom Lash Technique', views: '4.3K', duration: '0:22' },
+const CDN_VID = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels'
+
+const contentItems: ContentItem[] = [
+  { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4` },
+  { type: 'image', title: 'Wispy Volume Set', views: '8.1K' },
+  { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:45' },
+  { type: 'image', title: 'Classic Lash Result', views: '6.3K' },
+  { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:18' },
+  { type: 'image', title: 'Close Up — Spikes', views: '5.7K' },
+  { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:28' },
+  { type: 'image', title: 'Wet Set Look', views: '4.9K' },
+  { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:55' },
+  { type: 'image', title: 'Bottom Lash Technique', views: '4.3K' },
 ]
 
-function ContentCard({ item }: { item: typeof contentItems[0] }) {
+function ContentCard({ item, videoRef }: { item: ContentItem; videoRef?: React.RefObject<HTMLVideoElement | null> }) {
   const isReel = item.type === 'reel'
-  const hasVideo = isReel && item.videoUrl
+  const hasVideo = Boolean(item.videoUrl)
+
   return (
     <div className="flex-shrink-0 w-[260px] md:w-[280px] group cursor-pointer">
       <div className="relative aspect-[9/16] rounded-2xl overflow-hidden border border-white/[0.06] hover:border-[var(--rose)]/30 transition-all duration-300">
-        {hasVideo ? (
+        {hasVideo && item.videoUrl ? (
           <video
+            ref={videoRef}
             src={item.videoUrl}
-            autoPlay
             muted
             loop
             playsInline
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1610] via-[#221e18] to-[#2a2520]" />
         )}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          {!hasVideo && (
-          <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:bg-[var(--rose)]/30 group-hover:scale-110 transition-all duration-300">
-            <span className="text-white text-xl">{isReel ? '▶' : '📷'}</span>
+
+        {/* Play/camera icon — hidden when video is playing */}
+        {!(hasVideo) && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 group-hover:bg-[var(--rose)]/30 group-hover:scale-110 transition-all duration-300">
+              <span className="text-white text-xl">{isReel ? '▶' : '📷'}</span>
+            </div>
           </div>
-          )}
-        </div>
+        )}
+
+        {/* Duration badge */}
         {isReel && item.duration && (
           <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] text-white/80 font-medium">{item.duration}</div>
         )}
+
+        {/* Reel/Photo badge */}
         <div className="absolute top-3 left-3 z-10 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-md text-[9px] text-white/60 font-medium uppercase tracking-wider">{isReel ? 'Reel' : 'Photo'}</div>
+
+        {/* Bottom info */}
         <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
           <p className="text-[13px] text-white font-semibold leading-tight mb-1">{item.title}</p>
           <span className="text-[10px] text-white/50 font-medium">{item.views} views</span>
@@ -57,7 +75,31 @@ function ContentCard({ item }: { item: typeof contentItems[0] }) {
 
 export default function ReelsSection() {
   const trackRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
+  // Autoplay video when visible, pause when not
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => {})
+          } else {
+            video.pause()
+          }
+        })
+      },
+      { threshold: 0.5 }
+    )
+
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [])
+
+  // Infinite scroll animation
   useEffect(() => {
     const track = trackRef.current
     if (!track) return
@@ -68,7 +110,6 @@ export default function ReelsSection() {
 
     const animate = () => {
       offset += speed
-      // One full set width = scrollWidth / 3 (we triple items in JSX)
       const setWidth = track.scrollWidth / 3
       if (offset >= setWidth) {
         offset -= setWidth
@@ -81,11 +122,17 @@ export default function ReelsSection() {
     return () => cancelAnimationFrame(animId)
   }, [])
 
+  const renderCard = useCallback((item: ContentItem, i: number, prefix: string) => {
+    // Only pass videoRef to the first video card in each set
+    const needsVideoRef = item.videoUrl && prefix === 'a' && i === 0
+    return <ContentCard key={`${prefix}-${i}`} item={item} videoRef={needsVideoRef ? videoRef : undefined} />
+  }, [])
+
   return (
     <section className="py-20 bg-[var(--dark)] relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--dark)] via-[#1e1a15] to-[var(--dark)]" />
       <div className="relative z-10">
-        {/* Centered header with IG logo */}
+        {/* Header */}
         <div className="flex justify-center mb-12">
           <a href="https://instagram.com/lashedbychiva" target="_blank" className="inline-flex items-center gap-3 group">
             <span className="text-[17px] text-white font-medium group-hover:text-[var(--rose)] transition">
@@ -97,12 +144,12 @@ export default function ReelsSection() {
           </a>
         </div>
 
-        {/* Infinite scrolling track — uses transform for smooth loop */}
+        {/* Infinite scrolling track */}
         <div className="overflow-hidden">
           <div ref={trackRef} className="flex gap-5 will-change-transform">
-            {contentItems.map((item, i) => <ContentCard key={`a-${i}`} item={item} />)}
-            {contentItems.map((item, i) => <ContentCard key={`b-${i}`} item={item} />)}
-            {contentItems.map((item, i) => <ContentCard key={`c-${i}`} item={item} />)}
+            {contentItems.map((item, i) => renderCard(item, i, 'a'))}
+            {contentItems.map((item, i) => renderCard(item, i, 'b'))}
+            {contentItems.map((item, i) => renderCard(item, i, 'c'))}
           </div>
         </div>
       </div>
