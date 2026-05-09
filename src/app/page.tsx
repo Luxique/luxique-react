@@ -5,7 +5,8 @@ import Missie from '@/components/Missie'
 import BeforeAfter from '@/components/BeforeAfter'
 import MeetChiva from '@/components/MeetChiva'
 import ReelsSection from '@/components/ReelsSection'
-import AcademySection from '@/components/AcademySection'
+import ComparisonTable from '@/components/ComparisonTable'
+import AcademyHomeSection from '@/components/AcademyHomeSection'
 import ReviewsSection from '@/components/ReviewsSection'
 import FAQ from '@/components/FAQ'
 
@@ -21,7 +22,7 @@ export default function Home() {
       <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
       <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] pt-[14px] max-[860px]:px-[10px] max-[860px]:pt-[10px]"><BeforeAfter /></div>
       <div id="reels" data-theme-color="#1C1812" data-theme-dark="true"><ReelsSection /></div>
-      <div id="academy" data-theme-color="#0C0A07" data-theme-dark="true"><AcademySection /></div>
+      <div id="academy" data-theme-color="#FAFAFA" data-theme-dark="false"><ComparisonTable /><AcademyHomeSection /></div>
       <div id="reviews" data-theme-color="#FAFAFA" data-theme-dark="false"><ReviewsSection /></div>
       <div id="faq" data-theme-color="#FAFAFA" data-theme-dark="false"><FAQ /></div>
     </>
