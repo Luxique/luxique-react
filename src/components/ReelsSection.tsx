@@ -114,7 +114,7 @@ export default function ReelsSection() {
   }, [])
 
   const renderCard = useCallback((item: ContentItem, _i: number, prefix: string) => {
-    return <ContentCard key={`${prefix}-${i}`} item={item} />
+    return <ContentCard key={`${prefix}-${_i}`} item={item} />
   }, [])
 
   return (
