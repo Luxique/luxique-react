@@ -139,6 +139,10 @@ export default function AdminPage() {
                 {t.key === 'overview' ? 'Overzicht' : t.key === 'customers' ? `Klanten` : t.key === 'courses' ? 'Cursussen' : t.key === 'calendar' ? 'Agenda' : 'Financiën'}
               </button>
             ))}
+            <a href="/admin/courses" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition">
+              <span className="text-[16px]">📚</span>
+              Bouw Cursus
+            </a>
           </div>
         </div>
 
