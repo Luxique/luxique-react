@@ -15,15 +15,6 @@ type Block = {
   sort_order: number
 }
 
-type Module = {
-  id: string
-  course_id: string
-  title: string
-  description: string | null
-  sort_order: number
-  lessons: Lesson[]
-}
-
 type Lesson = {
   id: string
   module_id: string
@@ -160,8 +151,6 @@ export default function CourseBuilderPage() {
     if (!course) return
     await supabase.from('courses').update({ description: JSON.stringify(newBlocks) }).eq('id', course.id)
   }
-
-  const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
   // ── Course CRUD ──
   const createCourse = async () => {
