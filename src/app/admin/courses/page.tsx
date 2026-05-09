@@ -52,8 +52,6 @@ type CourseData = {
   sort_order: number
 }
 
-const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
-
 function uid() { return crypto.randomUUID() }
 
 /* ── Block component with drag ── */
