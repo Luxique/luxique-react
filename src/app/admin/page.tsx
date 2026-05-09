@@ -40,7 +40,7 @@ export default function AdminPage() {
       .then(({ data }) => setEnrollments(data || []))
   }
 
-  useEffect(() => { refresh() }, [role])
+  useEffect(() => { refresh() }, [role, refresh])
 
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return

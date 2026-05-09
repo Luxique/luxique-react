@@ -67,8 +67,9 @@ export default function BeforeAfter() {
 
   // Cleanup timers on unmount
   useEffect(() => {
+    const timers = resetTimers.current
     return () => {
-      resetTimers.current.forEach(t => clearTimeout(t))
+      timers.forEach(t => clearTimeout(t))
     }
   }, [])
 
