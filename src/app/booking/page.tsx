@@ -39,12 +39,13 @@ export default function BookingPage() {
             <p className="text-[14px] text-[#888] mb-6">
               Kies een datum en tijd voor je lash behandeling of consult.
             </p>
-            <div className="aspect-[4/3] bg-[#f9f8f6] rounded-xl flex items-center justify-center border border-[#eee]">
-              <div className="text-center">
-                <div className="text-3xl mb-3">📅</div>
-                <p className="text-[13px] text-[#888]">Cal.com booking widget</p>
-                <p className="text-[11px] text-[#aaa] mt-1">Wordt geladen via Cal.com embed</p>
-              </div>
+            <div className="rounded-xl overflow-hidden border border-[#eee]">
+              <iframe
+                src="https://cal.com/glennisha-daams-zan8ht?embed="
+                title="Boek een afspraak"
+                className="w-full border-0"
+                style={{ height: '700px' }}
+              />
             </div>
           </div>
         </div>

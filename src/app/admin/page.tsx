@@ -210,7 +210,10 @@ export default function AdminPage() {
 
               {/* Quick actions */}
               <div className="flex gap-3">
-                <button onClick={() => setShowGrant(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0C0A07] text-white text-[13px] font-medium hover:bg-[#333] transition">
+                <a href="/admin/courses" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0C0A07] text-white text-[13px] font-medium hover:bg-[#333] transition">
+                  📚 Cursus Builder
+                </a>
+                <button onClick={() => setShowGrant(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#ddd] text-[#888] text-[13px] font-medium hover:border-[#C4A265] hover:text-[#C4A265] transition">
                   <IconPlus /> Cursus toewijzen
                 </button>
               </div>
@@ -322,12 +325,13 @@ export default function AdminPage() {
               <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
                 <div className="px-5 py-4 border-b border-[#eee] flex items-center justify-between">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda — Cal.com</h3>
-                  <a href="https://app.cal.com" target="_blank" className="text-[11px] px-3 py-1 rounded-full border border-[#ddd] text-[#888] hover:border-[#C4A265] hover:text-[#C4A265] transition">Open Cal.com ↗</a>
+                  <a href="https://cal.com/glennisha-daams-zan8ht" target="_blank" className="text-[11px] px-3 py-1 rounded-full border border-[#ddd] text-[#888] hover:border-[#C4A265] hover:text-[#C4A265] transition">Open Cal.com ↗</a>
                 </div>
                 <div className="p-4">
                   <iframe
-                    src="https://cal.com/embed"
-                    title="Cal.com Calendar"
+                    src="https://cal.com/glennisha-daams-zan8ht?embed=
+"
+                    title="Cal.com Agenda"
                     className="w-full border-0 rounded-xl"
                     style={{ height: '600px' }}
                   />
