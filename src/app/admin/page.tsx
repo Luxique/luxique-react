@@ -40,7 +40,8 @@ export default function AdminPage() {
       .then(({ data }) => setEnrollments(data || []))
   }
 
-  useEffect(() => { refresh() }, [role, refresh])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { refresh() }, [role])
 
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return
