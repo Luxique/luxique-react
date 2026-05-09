@@ -91,13 +91,17 @@ export default function Navbar() {
                 {role === 'admin' && (
                   <>
                     <div className="border-t border-[rgba(196,162,101,0.1)] my-1" />
+                    <a href="/admin" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
+                      <span className="text-[14px]">⚡</span>
+                      <span className="text-[13px] text-[#C4A265] font-medium">Dashboard</span>
+                    </a>
+                    <a href="/admin/courses" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
+                      <span className="text-[14px]">📚</span>
+                      <span className="text-[13px] text-[rgba(255,255,255,0.5)]">Cursus Builder</span>
+                    </a>
                     <a href="/admin/customers" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
                       <span className="text-[14px]">👥</span>
-                      <span className="text-[13px] text-[#C4A265] font-medium">Admin — Klanten</span>
-                    </a>
-                    <a href="/admin" className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
-                      <span className="text-[14px]">🎬</span>
-                      <span className="text-[13px] text-[rgba(255,255,255,0.5)]">Cursussen & Inschrijvingen</span>
+                      <span className="text-[13px] text-[rgba(255,255,255,0.5)]">Klanten</span>
                     </a>
                   </>
                 )}
@@ -144,7 +148,8 @@ export default function Navbar() {
                 <a href="/profile" className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.65)] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>Profiel</a>
                 {role === 'admin' && (
                   <>
-                    <a href="/admin" className="block text-[14px] py-2.5 px-3 rounded-xl text-[#C4A265] font-medium hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>⚡ Admin</a>
+                    <a href="/admin" className="block text-[14px] py-2.5 px-3 rounded-xl text-[#C4A265] font-medium hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>⚡ Dashboard</a>
+                    <a href="/admin/courses" className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.55)] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>📚 Cursus Builder</a>
                     <a href="/admin/customers" className="block text-[14px] py-2.5 px-3 rounded-xl text-[rgba(255,255,255,0.55)] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>👥 Klanten</a>
                   </>
                 )}
