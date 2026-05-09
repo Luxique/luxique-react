@@ -41,7 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select('role')
       .eq('id', userId)
       .single()
-    setRole(data?.role === 'admin' ? 'admin' : 'student')
+    // Only update if we got a result — keep existing role if fetch fails
+    if (data?.role) {
+      setRole(data.role === 'admin' ? 'admin' : 'student')
+    }
   }
 
   useEffect(() => {
@@ -54,10 +57,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        // Skip INITIAL_SESSION — already handled by getSession above
+        if (_event === 'INITIAL_SESSION') return
         setSession(session)
         setUser(session?.user ?? null)
         if (session?.user) fetchRole(session.user.id)
-        else setRole(null)
+        else {
+          setRole(null)
+          setEnrollments([])
+        }
         setLoading(false)
       }
     )

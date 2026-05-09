@@ -26,9 +26,8 @@ export default function AdminPage() {
   const [grantCourseId, setGrantCourseId] = useState('')
   const [granting, setGranting] = useState(false)
 
-  useEffect(() => {
-    if (!loading && (!user || role !== 'admin')) router.push('/dashboard')
-  }, [user, role, loading, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading])
 
   const refresh = () => {
     if (role !== 'admin') return
@@ -66,8 +65,16 @@ export default function AdminPage() {
     setCourses(prev => prev.map(c => c.id === id ? { ...c, is_published: !current } : c))
   }
 
-  if (loading || role !== 'admin') {
+  if (loading) {
     return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Laden...</div></div>
+  }
+
+  if (!user) {
+    return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Doorverwijzen naar login...</div></div>
+  }
+
+  if (role !== 'admin') {
+    return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center flex-col gap-4"><div className="text-[#888] text-[14px]">Je hebt geen toegang tot deze pagina.</div><a href="/dashboard" className="text-[13px] text-[#D4AF37]">← Terug naar dashboard</a></div>
   }
 
   return (
