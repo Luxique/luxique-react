@@ -126,14 +126,7 @@ export default function MeetChiva() {
       <div className="grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.15fr_1fr] gap-[14px] items-stretch">
         {/* Left flanking image — desktop only */}
         <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
-          <div className="w-full h-full min-h-[320px] bg-[linear-gradient(145deg,#1e1a12_0%,#2a2318_100%)] flex flex-col items-center justify-center gap-2 text-[rgba(196,162,101,0.2)]">
-            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
-              <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[rgba(196,162,101,0.25)] mt-2">Chiva aan het werk</span>
-          </div>
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-action.webp" alt="Chiva aan het werk" className="w-full h-full min-h-[320px] object-cover" />
           <span className="absolute top-[14px] left-[14px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[12px] py-[5px] rounded-full bg-[rgba(12,10,7,0.55)] backdrop-blur-[10px] border border-[rgba(196,162,101,0.2)] text-[#C4A265]">Arnhem · Studio</span>
         </div>
 
@@ -170,14 +163,7 @@ export default function MeetChiva() {
 
         {/* Right flanking image — desktop only */}
         <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
-          <div className="w-full h-full min-h-[320px] bg-[linear-gradient(145deg,#16120c_0%,#201a10_100%)] flex flex-col items-center justify-center gap-2 text-[rgba(196,162,101,0.2)]">
-            <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
-              <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <polyline points="21 15 16 10 5 21" />
-            </svg>
-            <span className="text-[10px] font-medium tracking-[0.15em] uppercase text-[rgba(196,162,101,0.25)] mt-2">Lash close-up</span>
-          </div>
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ba-wispy-after.webp" alt="Lash close-up" className="w-full h-full min-h-[320px] object-cover" />
           <span className="absolute top-[14px] left-[14px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[12px] py-[5px] rounded-full bg-[rgba(12,10,7,0.55)] backdrop-blur-[10px] border border-[rgba(196,162,101,0.2)] text-[#C4A265]">Lashed by Chiva</span>
         </div>
       </div>

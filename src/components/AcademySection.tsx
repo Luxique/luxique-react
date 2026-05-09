@@ -10,12 +10,13 @@ interface Course {
   level: 'beginner' | 'intermediate' | 'advanced'
   desc: string
   preview: boolean
+  thumb?: string
 }
 
 const COURSES: Course[] = [
-  { slug: 'medusa-lash-basics', name: 'Medusa Lash Basics', meta: '12 lessen · ~6 uur', level: 'beginner', desc: 'Beginnerscursus — Medusa techniek. Leer de basis van de Medusa set van scratch, inclusief fan placement, curl selectie en klantcommunicatie.', preview: true },
-  { slug: 'wispy-lash-mastery', name: 'Wispy Lash Mastery', meta: '16 lessen · ~8 uur', level: 'intermediate', desc: 'Vervolgmodule — Wispy techniek. Verdiep je in de wispy stijl die Chiva bekend maakte: lichte, naturel ogende sets die perfect aansluiten op elke oogvorm.', preview: true },
-  { slug: 'oogvorm-analyse', name: 'Oogvorm Analyse', meta: '10 lessen · ~4 uur', level: 'intermediate', desc: 'Leer elke oogvorm herkennen en vertalen naar de perfecte set. De basis van het Luxique gedachtegoed — kijken naar het oog, niet naar de wimper.', preview: false },
+  { slug: 'medusa-lash-basics', name: 'Medusa Lash Basics', meta: '12 lessen · ~6 uur', level: 'beginner', desc: 'Beginnerscursus — Medusa techniek. Leer de basis van de Medusa set van scratch, inclusief fan placement, curl selectie en klantcommunicatie.', preview: true, thumb: `${CDN_IMG}/ba-wispy-after.webp` },
+  { slug: 'wispy-lash-mastery', name: 'Wispy Lash Mastery', meta: '16 lessen · ~8 uur', level: 'intermediate', desc: 'Vervolgmodule — Wispy techniek. Verdiep je in de wispy stijl die Chiva bekend maakte: lichte, naturel ogende sets die perfect aansluiten op elke oogvorm.', preview: true, thumb: `${CDN_IMG}/ba-medusa-after.webp` },
+  { slug: 'oogvorm-analyse', name: 'Oogvorm Analyse', meta: '10 lessen · ~4 uur', level: 'intermediate', desc: 'Leer elke oogvorm herkennen en vertalen naar de perfecte set. De basis van het Luxique gedachtegoed — kijken naar het oog, niet naar de wimper.', preview: false, thumb: `${CDN_IMG}/chiva-action.webp` },
 ]
 
 /* ── icons ── */
@@ -132,12 +133,18 @@ export default function AcademySection() {
                 <div className="card-inner">
                   <div className={`card-thumb ${!course.preview ? 'opacity-55' : ''}`}>
                     <div className="card-thumb-placeholder">
-                      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.75}>
-                        <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                      </svg>
-                      Course thumbnail
+                      {course.thumb ? (
+                        <img src={course.thumb} alt={course.name} className="w-full h-full object-cover absolute inset-0" />
+                      ) : (
+                        <>
+                          <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.75}>
+                            <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                          Course thumbnail
+                        </>
+                      )}
                     </div>
                     {course.preview ? (
                       <>

@@ -45,15 +45,8 @@ export default function TechVsArtist() {
             {/* TECH CARD */}
             <div className="rounded-[16px] overflow-hidden flex flex-col relative transition-transform duration-300 ease-in-out hover:-translate-y-[3px] bg-[rgba(30,26,20,0.05)] border-[1.5px] border-[rgba(30,26,20,0.08)] hover:shadow-[0_8px_28px_rgba(30,26,20,0.08)] cursor-default max-[540px]:order-[-1]">
               <div className="w-full aspect-[4/3] overflow-hidden relative shrink-0 bg-[linear-gradient(140deg,#e8e4dc_0%,#d4cfc6_100%)]">
-                {/* GEORGE: img tag for lash-tech.jpg */}
-                {/* <img src="/images/lash-tech.jpg" alt="Lash Technician" className="w-full h-full object-cover" /> */}
-                <div className="w-full h-full flex items-center justify-center text-[rgba(30,26,20,0.15)]">
-                  <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
-                    <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                </div>
+                {/* Lash Tech image */}
+                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/reel-photo-4.webp" alt="Lash Technician" className="w-full h-full object-cover" />
                 <span className="absolute top-[12px] left-[12px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[11px] py-[4px] rounded-full bg-[rgba(255,255,255,0.7)] text-[#7A7268] border border-[rgba(255,255,255,0.4)] z-[2]">
                   Een solide basis
                 </span>
