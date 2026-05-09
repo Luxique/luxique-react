@@ -316,28 +316,52 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* ═══ CALENDAR ═══ */}
+          {/* ═══ CALENDAR — Cal.com embed ═══ */}
           {tab === 'calendar' && (
-            <div className="bg-white rounded-2xl border border-[#eee] p-6">
-              <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-6">Alle afspraken</h3>
-              {bookings.length > 0 ? (
-                <div className="space-y-3">
-                  {bookings.map(b => (
-                    <div key={b.id} className="flex items-center gap-4 py-3 border-b border-[#f5f5f5] last:border-0">
-                      <div className="w-14 h-14 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
-                        <span className="text-[9px] font-semibold uppercase">{new Date(b.appointment_date).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
-                        <span className="text-[18px] font-bold">{new Date(b.appointment_date).getDate()}</span>
-                        <span className="text-[9px]">{new Date(b.appointment_date).toLocaleDateString('nl-NL', { month: 'short' })}</span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[14px] font-medium">{b.treatment_name}</p>
-                        <p className="text-[12px] text-[#aaa]">{new Date(b.appointment_date).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
-                      </div>
-                      <span className={`text-[11px] px-3 py-1 rounded-full font-medium ${b.status === 'confirmed' ? 'bg-green-50 text-green-600' : b.status === 'completed' ? 'bg-blue-50 text-blue-600' : b.status === 'cancelled' ? 'bg-red-50 text-red-400' : 'bg-[#f5f5f5] text-[#888]'}`}>{b.status}</span>
-                    </div>
-                  ))}
+            <div className="space-y-4">
+              <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#eee] flex items-center justify-between">
+                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda — Cal.com</h3>
+                  <a href="https://app.cal.com" target="_blank" className="text-[11px] px-3 py-1 rounded-full border border-[#ddd] text-[#888] hover:border-[#C4A265] hover:text-[#C4A265] transition">Open Cal.com ↗</a>
                 </div>
-              ) : <p className="text-[14px] text-[#888]">Geen afspraken gevonden</p>}
+                <div className="p-4">
+                  <iframe
+                    src="https://cal.com/embed"
+                    title="Cal.com Calendar"
+                    className="w-full border-0 rounded-xl"
+                    style={{ height: '600px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Bookings from Supabase */}
+              <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+                <div className="px-5 py-4 border-b border-[#eee]">
+                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Boekingen (uit database)</h3>
+                </div>
+                {bookings.length > 0 ? (
+                  <div className="divide-y divide-[#f5f5f5]">
+                    {bookings.map(b => (
+                      <div key={b.id} className="flex items-center gap-4 px-5 py-4">
+                        <div className="w-12 h-12 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
+                          <span className="text-[9px] font-semibold uppercase">{new Date(b.appointment_date).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
+                          <span className="text-[16px] font-bold">{new Date(b.appointment_date).getDate()}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[13px] font-medium">{b.treatment_name}</p>
+                          <p className="text-[11px] text-[#aaa]">{new Date(b.appointment_date).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <span className={`text-[11px] px-3 py-1 rounded-full font-medium ${b.status === 'confirmed' ? 'bg-green-50 text-green-600' : b.status === 'completed' ? 'bg-blue-50 text-blue-600' : b.status === 'cancelled' ? 'bg-red-50 text-red-400' : 'bg-[#f5f5f5] text-[#888]'}`}>{b.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <p className="text-[13px] text-[#888]">Geen boekingen gevonden</p>
+                    <p className="text-[11px] text-[#aaa] mt-1">Boekingen verschijnen hier automatisch als klanten boeken via Cal.com</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
