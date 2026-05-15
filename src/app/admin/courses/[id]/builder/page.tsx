@@ -4,6 +4,9 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 /* ── Types ── */
 type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
@@ -90,6 +93,27 @@ export default function CourseBuilderPage() {
   const [videoUploading, setVideoUploading] = useState(false)
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
 
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    
+    setBlocks(prev => {
+      const oldIndex = prev.findIndex(b => b.id === active.id);
+      const newIndex = prev.findIndex(b => b.id === over.id);
+      const reordered = arrayMove(prev, oldIndex, newIndex);
+      // Persist order to Supabase
+      reordered.forEach((block, index) => {
+        supabase.from('blocks').update({ order: index }).eq('id', block.id).then(() => {});
+      });
+      return reordered;
+    });
+  };
+
   const saveCourse = useCallback(async () => {
     if (!course) return
     
@@ -107,12 +131,13 @@ export default function CourseBuilderPage() {
     })
 
     // Save blocks if we're in a lesson or quiz context
-    if ((currentContext === 'lesson' && currentLesson) || (currentContext === 'quiz' && currentQuiz)) {
-      await saveBlocks()
-    }
+    // Note: blocks are saved individually when they change
+    // if ((currentContext === 'lesson' && currentLesson) || (currentContext === 'quiz' && currentQuiz)) {
+    //   await saveBlocks()
+    // }
 
     alert('Concept opgeslagen!')
-  }, [course, currentContext, currentLesson, currentQuiz])
+  }, [course])
 
   // Design tokens from mockup
   const colors = {
@@ -216,38 +241,6 @@ export default function CourseBuilderPage() {
       }
       
       setCourse(parsedCourse)
-    }
-  }
-
-  const saveBlocks = async () => {
-    if (!course) return
-    
-    // Upsert all blocks for current context
-    for (let i = 0; i < blocks.length; i++) {
-      const block = blocks[i]
-      await supabase.from('blocks').upsert({
-        id: block.id,
-        lesson_id: currentContext === 'lesson' ? currentLesson?.id : null,
-        course_id: currentContext === 'global' ? course.id : null,
-        type: block.type,
-        sort_order: i,
-        content: {
-          title: block.title,
-          subtitle: block.subtitle,
-          content: block.content,
-          url: block.url,
-          caption: block.caption,
-          question: block.question,
-          options: block.options,
-          points: block.points,
-          quizType: block.quizType,
-          autoplay: block.autoplay,
-          subtitles: block.subtitles,
-          fileName: block.fileName,
-          fileDescription: block.fileDescription
-        },
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' })
     }
   }
 
@@ -638,7 +631,15 @@ export default function CourseBuilderPage() {
               const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
               const { status, asset_id, playback_id } = await statusRes.json()
               if (status === 'ready' && playback_id) {
-                // Update block content with Mux IDs
+                // Try to get a signed token
+                let playbackToken = null;
+                try {
+                  const tokenRes = await fetch(`/api/mux/playback-token?playback_id=${playback_id}`);
+                  const tokenData = await tokenRes.json();
+                  playbackToken = tokenData.token;
+                } catch { /* public asset, no token needed */ }
+                
+                // Update block content with Mux IDs and token
                 const updatedBlocks = blocks.map(b => {
                   const currentContent = typeof b.content === 'object' && b.content !== null ? b.content : {}
                   return b.id === block.id 
@@ -647,7 +648,8 @@ export default function CourseBuilderPage() {
                         content: {
                           ...currentContent,
                           mux_asset_id: asset_id,
-                          mux_playback_id: playback_id
+                          mux_playback_id: playback_id,
+                          mux_playback_token: playbackToken,
                         }
                       }
                     : b
@@ -682,6 +684,7 @@ export default function CourseBuilderPage() {
                   playback-id={block.content.mux_playback_id as string}
                   stream-type="on-demand"
                   style={{ width: '100%', height: '100%', display: 'block' }}
+                  {...(block.content.mux_playback_token ? { tokens: block.content.mux_playback_token as string } : {})}
                 ></mux-player>
               </div>
             ) : videoUploading ? (
@@ -925,12 +928,14 @@ export default function CourseBuilderPage() {
                 // Check if video has been uploaded
                 const videoContent = typeof block.content === 'object' && block.content !== null ? block.content as Record<string, unknown> : null;
                 const playbackId = videoContent?.mux_playback_id as string | undefined;
+                const playbackToken = videoContent?.mux_playback_token as string | undefined;
                 return playbackId ? (
                   <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
                     <mux-player
                       playback-id={playbackId}
                       stream-type="on-demand"
                       style={{ width: '100%', height: '100%', display: 'block' }}
+                      {...(playbackToken ? { tokens: playbackToken } : {})}
                     ></mux-player>
                   </div>
                 ) : (
@@ -1105,6 +1110,43 @@ export default function CourseBuilderPage() {
     }
   }
 
+  /* ── Sortable Block Component ── */
+  function SortableBlock({ block, children }: { block: Block, children: React.ReactNode }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+    
+    return (
+      <div ref={setNodeRef} style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        zIndex: isDragging ? 10 : undefined,
+        position: 'relative',
+      }}>
+        {/* Drag handle */}
+        <div {...attributes} {...listeners} style={{
+          position: 'absolute',
+          top: 8,
+          left: -24,
+          width: 20,
+          height: 20,
+          cursor: 'grab',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0.3,
+          transition: 'opacity 0.15s',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+            <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+            <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+          </svg>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
   if (loading) return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
   if (!user) return null
   if (role !== 'admin') return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
@@ -1274,8 +1316,11 @@ export default function CourseBuilderPage() {
           </div>
 
           {/* Content Blocks */}
-          {blocks.map((block) => (
-            <div key={block.id} className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_2px_10px_rgba(30,26,20,0.08)]">
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+              {blocks.map((block) => (
+                <SortableBlock key={block.id} block={block}>
+                  <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_2px_10px_rgba(30,26,20,0.08)] ml-8">
               <div className="flex items-center justify-between p-2.5 bg-[#F0EDE6] border-b border-[rgba(30,26,20,0.09)]">
                 <div className="flex items-center gap-2">
                   <svg width="9" height="13" viewBox="0 0 9 13" fill="none" className="text-[#7A7268] opacity-50">
@@ -1303,7 +1348,10 @@ export default function CourseBuilderPage() {
                 {renderBlock(block)}
               </div>
             </div>
+          </SortableBlock>
           ))}
+          </SortableContext>
+          </DndContext>
 
           {/* Add Block Button */}
           <div className="relative">
