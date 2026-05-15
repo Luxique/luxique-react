@@ -12,6 +12,7 @@ export default function Navbar() {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/')
+  const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -23,6 +24,49 @@ export default function Navbar() {
 
   const firstName = user?.user_metadata?.first_name || user?.user_metadata?.full_name?.split(' ')[0] || ''
 
+  // Builder Navigation
+  if (isBuilder) {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-100 h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-[20px]" style={{ zIndex: 100 }}>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => window.location.href = '/admin/courses'}
+            className="flex items-center gap-1 text-[12px] text-[#7A7268] hover:text-[#1E1A14] transition cursor-pointer"
+            style={{ background: 'transparent', border: 'none', fontFamily: '\'Outfit\', sans-serif' }}
+          >
+            ← Verlaat builder
+          </button>
+          <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
+          <span className="font-['Avenir_Next'] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
+            LUXIQUE
+          </span>
+          <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase px-2 py-1 rounded-full bg-[rgba(196,162,101,0.12)] text-[#7A6340] border border-[rgba(196,162,101,0.25)] whitespace-nowrap">
+            ADMIN
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5 mr-2">
+            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Bouwen"></div>
+            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Instellingen"></div>
+            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Publiceren"></div>
+          </div>
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('builder-save'))}
+            className="text-[12px] font-medium px-4 py-1.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition cursor-pointer"
+            style={{ background: 'transparent' }}
+          >
+            Concept opslaan
+          </button>
+          <button className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition cursor-pointer">
+            Publiceren →
+          </button>
+        </div>
+      </nav>
+    )
+  }
+
+  // Regular Navigation
   return (
     <>
       <nav className="fixed top-[14px] max-md:top-[10px] left-0 right-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px]">

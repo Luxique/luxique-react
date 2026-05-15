@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
 
 /* ── Types ── */
@@ -13,7 +13,11 @@ interface Block {
   type: BlockType
   title?: string
   subtitle?: string
-  content?: string
+  content?: string | {
+    mux_asset_id?: string
+    mux_playback_id?: string
+    [key: string]: unknown
+  }
   url?: string
   caption?: string
   question?: string
@@ -74,13 +78,41 @@ export default function CourseBuilderPage() {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
-  const [showBlockPicker, setShowBlockPicker] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
+  const [pickerOpen, setPickerOpen] = useState(false)
   const addBlockButtonRef = useRef<HTMLButtonElement>(null)
 
   const [questionNumber, setQuestionNumber] = useState(1)
+  
+  // Video upload state
+  const videoFileInputRef = useRef<HTMLInputElement>(null)
+  const [videoUploading, setVideoUploading] = useState(false)
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0)
+
+  const saveCourse = useCallback(async () => {
+    if (!course) return
+    
+    // Update course metadata
+    await supabase.from('courses').upsert({
+      id: course.id,
+      title: course.title,
+      description: course.description || null,
+      first_lesson_free: course.firstLessonFree || false,
+      intro_video: course.introVideo || false,
+      final_quiz_required: course.finalQuizRequired || false,
+      certificate: course.certificate || false,
+      is_first_lesson_free: course.firstLessonFree || false,
+      status: 'draft'
+    })
+
+    // Save blocks if we're in a lesson or quiz context
+    if ((currentContext === 'lesson' && currentLesson) || (currentContext === 'quiz' && currentQuiz)) {
+      await saveBlocks()
+    }
+
+    alert('Concept opgeslagen!')
+  }, [course, currentContext, currentLesson, currentQuiz])
 
   // Design tokens from mockup
   const colors = {
@@ -139,7 +171,14 @@ export default function CourseBuilderPage() {
         ]
       })
     }
-  }, [searchParams])
+
+    // Add event listener for save from navbar
+    const handleSave = () => {
+      saveCourse()
+    }
+    window.addEventListener('builder-save', handleSave)
+    return () => window.removeEventListener('builder-save', handleSave)
+  }, [searchParams, saveCourse])
 
   const loadCourse = async (id: string) => {
     const { data: courseData } = await supabase.from('courses').select('*').eq('id', id).single()
@@ -178,32 +217,6 @@ export default function CourseBuilderPage() {
       
       setCourse(parsedCourse)
     }
-  }
-
-  const saveCourse = async () => {
-    if (!course) return
-    setSaving(true)
-    
-    // Update course metadata
-    await supabase.from('courses').upsert({
-      id: course.id,
-      title: course.title,
-      description: course.description || null,
-      first_lesson_free: course.firstLessonFree || false,
-      intro_video: course.introVideo || false,
-      final_quiz_required: course.finalQuizRequired || false,
-      certificate: course.certificate || false,
-      is_first_lesson_free: course.firstLessonFree || false,
-      status: 'draft'
-    })
-
-    // Save blocks if we're in a lesson or quiz context
-    if ((currentContext === 'lesson' && currentLesson) || (currentContext === 'quiz' && currentQuiz)) {
-      await saveBlocks()
-    }
-
-    setSaving(false)
-    alert('Concept opgeslagen!')
   }
 
   const saveBlocks = async () => {
@@ -286,17 +299,21 @@ export default function CourseBuilderPage() {
   const addBlock = (type: BlockType) => {
     const newBlock: Block = { id: uid(), type }
     setBlocks([...blocks, newBlock])
-    setShowBlockPicker(false)
+    setPickerOpen(false)
   }
 
-  const updateBlockPickerPosition = () => {
-    if (addBlockButtonRef.current) {
-      const rect = addBlockButtonRef.current.getBoundingClientRect()
-      setBlockPickerPosition({
-        top: rect.top - 220, // Position above button
-        left: rect.left + rect.width / 2 - 110 // Center horizontally
-      })
-    }
+  const openPicker = () => {
+    if (!addBlockButtonRef.current) return
+    const rect = addBlockButtonRef.current.getBoundingClientRect()
+    const pickerHeight = 200
+    const pickerWidth = 340
+    const openUpward = rect.bottom + pickerHeight > window.innerHeight
+    
+    setBlockPickerPosition({
+      top: openUpward ? rect.top - pickerHeight - 8 : rect.bottom + 8,
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - pickerWidth - 8)),
+    })
+    setPickerOpen(true)
   }
 
   const deleteBlock = (id: string) => {
@@ -591,14 +608,101 @@ export default function CourseBuilderPage() {
   const renderBlock = (block: Block) => {
     switch (block.type) {
       case 'video':
+        const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+          const file = e.target.files?.[0]
+          if (!file) return
+          setVideoUploading(true)
+          setVideoUploadProgress(0)
+          try {
+            // 1. Get upload URL from backend
+            const res = await fetch('/api/mux/upload-url', { method: 'POST' })
+            const { upload_url, upload_id } = await res.json()
+            
+            // 2. Upload to Mux via XHR for progress tracking
+            await new Promise<void>((resolve, reject) => {
+              const xhr = new XMLHttpRequest()
+              xhr.upload.onprogress = (ev) => {
+                if (ev.lengthComputable) setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 100))
+              }
+              xhr.onload = () => resolve()
+              xhr.onerror = () => reject(new Error('Upload failed'))
+              xhr.open('PUT', upload_url)
+              xhr.setRequestHeader('Content-Type', file.type)
+              xhr.send(file)
+            })
+            
+            // 3. Poll until asset is ready
+            let attempts = 0
+            while (attempts < 30) {
+              await new Promise(r => setTimeout(r, 2000))
+              const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
+              const { status, asset_id, playback_id } = await statusRes.json()
+              if (status === 'ready' && playback_id) {
+                // Update block content with Mux IDs
+                const updatedBlocks = blocks.map(b => {
+                  const currentContent = typeof b.content === 'object' && b.content !== null ? b.content : {}
+                  return b.id === block.id 
+                    ? { 
+                        ...b, 
+                        content: {
+                          ...currentContent,
+                          mux_asset_id: asset_id,
+                          mux_playback_id: playback_id
+                        }
+                      }
+                    : b
+                })
+                setBlocks(updatedBlocks)
+                break
+              }
+              attempts++
+            }
+          } catch (err) {
+            console.error('Upload error:', err)
+            alert('Upload mislukt. Probeer opnieuw.')
+          } finally {
+            setVideoUploading(false)
+          }
+        }
+        
         return (
           <div className="space-y-3">
-            <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] cursor-pointer hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.4 }}>
-                <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-              </svg>
-              <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden via Mux</span>
-            </div>
+            <input 
+              ref={videoFileInputRef}
+              type="file" 
+              accept="video/*" 
+              style={{ display: 'none' }} 
+              onChange={handleVideoUpload} 
+            />
+            
+            {typeof block.content === 'object' && block.content !== null && block.content.mux_playback_id ? (
+              // Show video thumbnail/preview
+              <div style={{ width: '100%', aspectRatio: '16/9', background: '#1a1a1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4CAF82' }}>
+                ✅ Video geüpload
+              </div>
+            ) : videoUploading ? (
+              // Progress bar
+              <div style={{ padding: 20, textAlign: 'center' }}>
+                <div style={{ width: '100%', height: 4, background: '#F0EDE6', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: `${videoUploadProgress}%`, height: '100%', background: '#C4A265', transition: 'width 0.3s' }} />
+                </div>
+                <p style={{ fontSize: 11, color: '#7A7268', marginTop: 8 }}>{videoUploadProgress}% — video wordt verwerkt...</p>
+              </div>
+            ) : (
+              // Clickable upload zone
+              <div 
+                onClick={() => videoFileInputRef.current?.click()} 
+                style={{ cursor: 'pointer' }}
+                className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition"
+              >
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.4 }}>
+                  <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                </svg>
+                <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden via Mux</span>
+                <span className="text-[10.5px] text-[rgba(30,26,20,0.3)] font-light">MP4, MOV of MKV · klik om te kiezen</span>
+              </div>
+            )}
+            
             <input 
               type="text"
               placeholder="Of plak een Vimeo / YouTube URL"
@@ -832,7 +936,7 @@ export default function CourseBuilderPage() {
                     {block.subtitle && (
                       <p className="text-[13px] text-[rgba(250,248,244,0.45)] mt-1">{block.subtitle}</p>
                     )}
-                    {block.content && (
+                    {typeof block.content === 'string' && block.content && (
                       <p className="text-[12.5px] font-light text-[rgba(250,248,244,0.38)] leading-relaxed mt-2">
                         {block.content}
                       </p>
@@ -1022,50 +1126,8 @@ export default function CourseBuilderPage() {
 
   return (
     <div className="min-h-screen bg-[#F0EDE6] overflow-hidden" style={{ fontFamily: "'Outfit', sans-serif" }}>
-      {/* Topbar */}
-      <div className="fixed top-[64px] left-0 right-0 h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-[18px] z-[300]">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.push('/admin/courses')}
-            className="flex items-center gap-1 text-[12px] text-[#7A7268] hover:text-[#1E1A14] transition"
-          >
-            ← Cursussen
-          </button>
-          <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
-          <span className="font-['AvenirNext'] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
-            Luxique
-          </span>
-          <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
-          <input 
-            type="text"
-            value={course?.title || ''}
-            onChange={(e) => course && updateCourseField('title', e.target.value)}
-            placeholder="Cursusnaam..."
-            className="text-[13px] text-[#7A7268] cursor-text outline-none border-none bg-transparent min-w-[120px]"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1.5 mr-2">
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Bouwen"></div>
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Instellingen"></div>
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Publiceren"></div>
-          </div>
-          <button 
-            onClick={saveCourse}
-            disabled={saving}
-            className="text-[12px] font-medium px-4 py-1.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition disabled:opacity-50"
-          >
-            Concept opslaan
-          </button>
-          <button className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition">
-            Publiceren →
-          </button>
-        </div>
-      </div>
-
       {/* Main App */}
-      <div className="flex" style={{ height: '100vh', paddingTop: '114px' }}>
+      <div className="flex" style={{ height: '100vh', paddingTop: '50px' }}>
         {/* Sidebar */}
         <div className="w-[260px] bg-[#FAF8F4] border-r border-[rgba(30,26,20,0.09)] overflow-y-auto flex flex-col">
           <div className="p-2.5 border-b border-[rgba(30,26,20,0.09)]">
@@ -1233,8 +1295,7 @@ export default function CourseBuilderPage() {
             <button
               ref={addBlockButtonRef}
               onClick={() => {
-                updateBlockPickerPosition()
-                setShowBlockPicker(!showBlockPicker)
+                openPicker()
               }}
               className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full pulse-animation"
             >
@@ -1245,18 +1306,28 @@ export default function CourseBuilderPage() {
             </button>
 
             {/* Block Picker Dropdown */}
-            {showBlockPicker && (
-              <div 
-                className="fixed bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[12px] shadow-[0_8px_32px_rgba(30,26,20,0.14)] p-2 z-[100] min-w-[220px] flex flex-wrap gap-1"
-                style={{
-                  top: `${blockPickerPosition.top}px`,
-                  left: `${blockPickerPosition.left}px`
-                }}
-              >
+            {pickerOpen && (
+              <>
+                <div 
+                  style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
+                  onClick={() => setPickerOpen(false)} 
+                />
+                <div 
+                  className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[12px] shadow-[0_8px_32px_rgba(30,26,20,0.14)] p-2 z-[100] min-w-[220px] flex flex-wrap gap-1 block-picker show"
+                  style={{
+                    position: 'fixed',
+                    top: blockPickerPosition.top,
+                    left: blockPickerPosition.left,
+                    width: 340
+                  }}
+                >
                 {(['video', 'text', 'image', 'quiz', 'callout', 'download', 'divider'] as BlockType[]).map((type) => (
                   <button
                     key={type}
-                    onClick={() => addBlock(type)}
+                    onClick={() => {
+                      addBlock(type)
+                      setPickerOpen(false)
+                    }}
                     className="flex items-center gap-2 p-2 px-2.5 rounded-lg border-none bg-transparent cursor-pointer w-[calc(50%-4px)] transition hover:bg-[rgba(196,162,101,0.08)]"
                   >
                     <div className="w-7 h-7 rounded-lg bg-[rgba(196,162,101,0.1)] flex items-center justify-center text-[#C4A265] flex-shrink-0">
@@ -1273,6 +1344,7 @@ export default function CourseBuilderPage() {
                   </button>
                 ))}
               </div>
+              </>
             )}
           </div>
         </div>
