@@ -1,1104 +1,675 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase-client'
+import { supabase } from '@/lib/supabase'
 
 /* ── Types ── */
-type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
-
-interface Block {
-  id: string
-  type: BlockType
-  title?: string
-  subtitle?: string
-  content?: string
-  url?: string
-  caption?: string
-  question?: string
-  options?: Array<{ id: string; text: string; correct: boolean }>
-  points?: number
-  quizType?: 'intermediate' | 'final'
-  autoplay?: boolean
-  subtitles?: boolean
-  fileName?: string
-  fileDescription?: string
-}
-
-interface Lesson {
-  id: string
-  num: number
-  name: string
-  free: boolean
-  duration?: string
-  reflectionQuestions?: string[]
-  blocks?: Block[]
-}
-
-interface Quiz {
-  id: string
-  num: number
-  name: string
-  type: 'intermediate' | 'final'
-  minPassingScore?: number
-  allowRetake?: boolean
-  showAnswers?: boolean
-  randomize?: boolean
-  blocks?: Block[]
-}
-
 interface Course {
   id: string
   title: string
   description?: string
-  firstLessonFree?: boolean
-  introVideo?: boolean
-  finalQuizRequired?: boolean
-  certificate?: boolean
-  lessons?: Lesson[]
-  quizzes?: Quiz[]
+  slug: string
+  level: string
+  price: number
+  status: 'draft' | 'published' | 'archived'
+  thumbnail_url?: string
+  intro_video_mux_id?: string
+  thumbnail_time?: number
+  created_at: string
+  lessons_count?: number
+  duration_minutes?: number
+  students_count?: number
+  has_quiz?: boolean
+  has_certificate?: boolean
 }
 
-type ContextType = 'global' | 'lesson' | 'quiz'
-
-function uid() { return crypto.randomUUID() }
-
-/* ── Main Course Builder Component ── */
-export default function CourseBuilderPage() {
+export default function CoursesOverviewPage() {
   const { user, role, loading } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [course, setCourse] = useState<Course | null>(null)
-  const [currentContext, setCurrentContext] = useState<ContextType>('global')
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
-  const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
-  const [blocks, setBlocks] = useState<Block[]>([])
-  const [showBlockPicker, setShowBlockPicker] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [lessonNumber, setLessonNumber] = useState(2)
+  const [courses, setCourses] = useState<Course[]>([])
+  const [stats, setStats] = useState({
+    totalCourses: 0,
+    totalStudents: 0,
+    totalRevenue: 0,
+    completionRate: 0
+  })
+  const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [newCourse, setNewCourse] = useState({
+    title: '',
+    level: '',
+    description: ''
+  })
+  const [loadingCourses, setLoadingCourses] = useState(true)
 
-  const [questionNumber, setQuestionNumber] = useState(1)
-
-  // Design tokens from mockup
-  const colors = {
-    gold: '#C4A265',
-    goldL: '#DFC08A',
-    goldD: '#7A6340',
-    cream: '#FAF8F4',
-    cream2: '#F0EDE6',
-    cream3: '#E8E3DB',
-    dark: '#0C0A07',
-    dark2: '#161310',
-    text: '#1E1A14',
-    muted: '#7A7268',
-    green: 'rgba(80,190,120,0.9)'
-  }
-
-  useEffect(() => { 
-    if (!loading && !user) router.push('/login') 
+  useEffect(() => {
+    if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
   useEffect(() => {
-    const courseId = searchParams.get('id')
-    if (courseId) {
-      loadCourse(courseId)
-    } else {
-      // Create new course
-      setCourse({
-        id: uid(),
-        title: 'Nieuwe Cursus',
-        firstLessonFree: true,
-        introVideo: true,
-        finalQuizRequired: false,
-        certificate: true,
-        lessons: [
-          { id: uid(), num: 1, name: 'Introductie', free: true, reflectionQuestions: ['Wat viel je op aan...'] }
-        ],
-        quizzes: [
-          { id: uid(), num: 1, name: 'Tussentijdse toets', type: 'intermediate' }
-        ]
+    if (!loading && user && role === 'admin') {
+      fetchCourses()
+    }
+  }, [loading, user, role])
+
+  const fetchCourses = async () => {
+    try {
+      setLoadingCourses(true)
+      // Use the imported supabase client
+
+      // Fetch courses
+      const { data: coursesData, error: coursesError } = await supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (coursesError) throw coursesError
+
+      // For each course, fetch lessons count and enrollments
+      const coursesWithCounts = await Promise.all(
+        (coursesData || []).map(async (course) => {
+          // Count lessons
+          const { count: lessonsCount } = await supabase
+            .from('lessons')
+            .select('*', { count: 'exact', head: true })
+            .eq('course_id', course.id)
+
+          // Count enrollments
+          const { count: enrollmentsCount } = await supabase
+            .from('enrollments')
+            .select('*', { count: 'exact', head: true })
+            .eq('course_id', course.id)
+
+          // Get total duration from lessons
+          const { data: lessonsData } = await supabase
+            .from('lessons')
+            .select('duration_minutes')
+            .eq('course_id', course.id)
+
+          const totalDuration = lessonsData?.reduce((sum, lesson) => sum + (lesson.duration_minutes || 0), 0) || 0
+
+          return {
+            ...course,
+            lessons_count: lessonsCount || 0,
+            students_count: enrollmentsCount || 0,
+            duration_minutes: totalDuration
+          }
+        })
+      )
+
+      setCourses(coursesWithCounts)
+
+      // Calculate stats
+      const totalCourses = coursesWithCounts.length
+      const totalStudents = coursesWithCounts.reduce((sum, c) => sum + (c.students_count || 0), 0)
+      const totalRevenue = coursesWithCounts.reduce((sum, c) => sum + (c.price || 0) * (c.students_count || 0), 0)
+
+      // Calculate completion rate (enrollments with completed_at / total enrollments)
+      const { count: completedEnrollments } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .not('completed_at', 'is', null)
+
+      const { count: totalEnrollments } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+
+      const completionRate = totalEnrollments && totalEnrollments > 0
+        ? Math.round(((completedEnrollments || 0) / totalEnrollments) * 100)
+        : 0
+
+      setStats({
+        totalCourses,
+        totalStudents,
+        totalRevenue,
+        completionRate
       })
-    }
-  }, [searchParams])
-
-  const loadCourse = async (id: string) => {
-    const { data } = await supabase.from('courses').select('*').eq('id', id).single()
-    if (data) {
-      // Parse the course data
-      const courseData: Course = {
-        id: data.id,
-        title: data.title,
-        description: data.description || undefined,
-        firstLessonFree: data.first_lesson_free || false,
-        introVideo: data.intro_video || false,
-        finalQuizRequired: data.final_quiz_required || false,
-        certificate: data.certificate || false,
-        lessons: data.lessons || [],
-        quizzes: data.quizzes || []
-      }
-      setCourse(courseData)
+    } catch (error) {
+      console.error('Error fetching courses:', error)
+    } finally {
+      setLoadingCourses(false)
     }
   }
 
-  const saveCourse = async () => {
-    if (!course) return
-    setSaving(true)
-    
-    await supabase.from('courses').upsert({
-      id: course.id,
-      title: course.title,
-      description: course.description || null,
-      first_lesson_free: course.firstLessonFree || false,
-      intro_video: course.introVideo || false,
-      final_quiz_required: course.finalQuizRequired || false,
-      certificate: course.certificate || false,
-      lessons: course.lessons || [],
-      quizzes: course.quizzes || []
-    })
+  const handleArchiveCourse = async (courseId: string, currentStatus: string) => {
+    try {
+      // Use the imported supabase client
+      const newStatus = currentStatus === 'archived' ? 'draft' : 'archived'
 
-    setSaving(false)
-    alert('Concept opgeslagen!')
-  }
+      const { error } = await supabase
+        .from('courses')
+        .update({ status: newStatus })
+        .eq('id', courseId)
 
-  const switchContext = (type: ContextType, item?: Lesson | Quiz) => {
-    setCurrentContext(type)
-    if (type === 'lesson' && item && 'free' in item) {
-      setCurrentLesson(item as Lesson)
-      setBlocks((item as Lesson).blocks || [])
-    } else if (type === 'quiz' && item && 'type' in item) {
-      setCurrentQuiz(item as Quiz)
-      setBlocks((item as Quiz).blocks || [])
-    } else {
-      setBlocks([])
+      if (error) throw error
+
+      // Refresh courses
+      fetchCourses()
+    } catch (error) {
+      console.error('Error archiving course:', error)
+      alert('Er ging iets mis bij het archiveren')
     }
   }
 
-  const addBlock = (type: BlockType) => {
-    const newBlock: Block = { id: uid(), type }
-    setBlocks([...blocks, newBlock])
-    setShowBlockPicker(false)
-  }
-
-  const deleteBlock = (id: string) => {
-    setBlocks(blocks.filter(b => b.id !== id))
-  }
-
-  const addLesson = () => {
-    if (!course) return
-    const newLesson: Lesson = {
-      id: uid(),
-      num: lessonNumber,
-      name: `Les ${lessonNumber}`,
-      free: false,
-      reflectionQuestions: []
+  const handleCreateCourse = async () => {
+    if (!newCourse.title.trim()) {
+      alert('Vul een cursusnaam in')
+      return
     }
-    setLessonNumber(lessonNumber + 1)
-    setCourse({
-      ...course,
-      lessons: [...(course.lessons || []), newLesson]
-    })
+
+    try {
+      // Use the imported supabase client
+      const slug = newCourse.title.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+
+      const { data, error } = await supabase
+        .from('courses')
+        .insert({
+          title: newCourse.title,
+          description: newCourse.description,
+          slug,
+          level: newCourse.level || 'Beginner',
+          price: 0,
+          status: 'draft'
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Redirect to course builder
+      router.push(`/admin/courses/${data.id}/builder`)
+    } catch (error) {
+      console.error('Error creating course:', error)
+      alert('Er ging iets mis bij het aanmaken')
+    }
   }
 
-  const addReflectionQuestion = () => {
-    if (!currentLesson) return
-    const newQuestions = [...(currentLesson.reflectionQuestions || []), `Reflectievraag ${questionNumber}`]
-    setQuestionNumber(questionNumber + 1)
-    setCurrentLesson({
-      ...currentLesson,
-      reflectionQuestions: newQuestions
-    })
-  }
+  const getFilteredCourses = () => {
+    let filtered = courses
 
-  const updateCourseField = (field: keyof Course, value: string | boolean | Lesson[] | Quiz[] | undefined) => {
-    if (!course) return
-    setCourse({ ...course, [field]: value })
-  }
+    if (filter !== 'all') {
+      filtered = filtered.filter(c => c.status === filter)
+    }
 
-  const updateLessonField = (field: keyof Lesson, value: string | number | boolean | string[] | undefined) => {
-    if (!currentLesson) return
-    setCurrentLesson({ ...currentLesson, [field]: value })
-  }
-
-  const updateQuizField = (field: keyof Quiz, value: string | 'intermediate' | 'final' | number | boolean | undefined) => {
-    if (!currentQuiz) return
-    setCurrentQuiz({ ...currentQuiz, [field]: value })
-  }
-
-  const renderSidebarForm = () => {
-    if (currentContext === 'global') {
-      return (
-        <div className="space-y-4">
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Cursusinformatie</span>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Korte beschrijving</label>
-                <textarea 
-                  value={course?.description || ''}
-                  onChange={(e) => updateCourseField('description', e.target.value)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[60px]"
-                  placeholder="Wat leren studenten in deze cursus?"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Toegang</span>
-            </div>
-            <div className="space-y-2">
-              {(
-                [
-                  { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
-                  { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
-                  { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
-                  { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
-                ] as const
-              ).map((item) => (
-                <div key={item.field} className="flex items-center justify-between">
-                  <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
-                  <label className="relative w-8 h-5 flex-shrink-0">
-                    <input 
-                      type="checkbox" 
-                      checked={(course?.[item.field] as boolean) || false}
-                      onChange={(e) => updateCourseField(item.field, e.target.checked)}
-                      className="opacity-0 w-0 h-0"
-                    />
-                    <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s]"></span>
-                    <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[0.22s]"></span>
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="pt-4">
-            <p className="text-[11px] text-[#7A7268] text-center leading-relaxed">
-              Thumbnail, niveau, prijs en certificaat stel je in bij <strong className="text-[#1E1A14]">Publiceren</strong> →
-            </p>
-          </div>
-        </div>
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(c =>
+        c.title.toLowerCase().includes(query) ||
+        c.description?.toLowerCase().includes(query)
       )
     }
 
-    if (currentContext === 'lesson' && currentLesson) {
-      return (
-        <div className="space-y-4">
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Les info</span>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Lesnaam</label>
-                <input 
-                  type="text"
-                  value={currentLesson.name}
-                  onChange={(e) => updateLessonField('name', e.target.value)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="Naam van deze les"
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Geschatte duur</label>
-                <input 
-                  type="text"
-                  value={currentLesson.duration || ''}
-                  onChange={(e) => updateLessonField('duration', e.target.value)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. ~20 min"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[12px] font-light text-[#1E1A14]">Gratis preview les</span>
-                <label className="relative w-8 h-5 flex-shrink-0">
-                  <input 
-                    type="checkbox" 
-                    checked={currentLesson.free}
-                    onChange={(e) => updateLessonField('free', e.target.checked)}
-                    className="opacity-0 w-0 h-0"
-                  />
-                  <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s]"></span>
-                  <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[0.22s]"></span>
-                </label>
-              </div>
-            </div>
+    return filtered
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'published': return 'Live'
+      case 'draft': return 'Concept'
+      case 'archived': return 'Gearchiveerd'
+      default: return status
+    }
+  }
+
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'published': return 'status-live'
+      case 'draft': return 'status-concept'
+      case 'archived': return 'status-archived'
+      default: return ''
+    }
+  }
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `~${minutes} min`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `~${hours}u ${mins}m` : `~${hours} uur`
+  }
+
+  const formatRevenue = (amount: number) => {
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#F0EDE6] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
+  }
+
+  if (!user || role !== 'admin') {
+    return <div className="min-h-screen bg-[#F0EDE6] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
+  }
+
+  const filteredCourses = getFilteredCourses()
+
+  return (
+    <>
+      <style jsx global>{`
+        :root {
+          --gold: #C4A265;
+          --gold-l: #DFC08A;
+          --gold-d: #7A6340;
+          --cream: #FAF8F4;
+          --cream2: #F0EDE6;
+          --cream3: #E8E3DB;
+          --dark: #0C0A07;
+          --dark2: #161310;
+          --text: #1E1A14;
+          --muted: #7A7268;
+          --green: #4CAF82;
+          --red: #E05A4E;
+        }
+        html, body {
+          font-family: 'Outfit', sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-[#F0EDE6]">
+        {/* Topbar */}
+        <div className="h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-6 sticky top-0 z-[100]">
+          <div className="flex items-center gap-3">
+            <span className="font-['AvenirNext','Avenir_Next','Avenir','Century_Gothic',sans-serif] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
+              Luxique
+            </span>
+            <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
+            <span className="text-[13px] text-[#7A7268]">Academy beheer</span>
           </div>
-          
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Reflectievragen na les</span>
-            </div>
-            <p className="text-[11px] text-[#7A7268] font-light leading-relaxed mb-3">
-              Studenten beantwoorden deze vragen na de les — geen score, puur reflectie.
-            </p>
-            <div className="space-y-2">
-              {currentLesson.reflectionQuestions?.map((question, index) => (
-                <div key={index} className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-2 flex items-start gap-2">
-                  <span className="font-['Cormorant_Garamond'] text-[13px] text-[rgba(196,162,101,0.5)] italic">1</span>
-                  <input 
-                    type="text"
-                    value={question}
-                    className="flex-1 bg-transparent outline-none text-[12px] text-[#1E1A14] leading-relaxed"
-                    placeholder="bijv. Wat viel je op aan..."
-                  />
-                </div>
-              ))}
-            </div>
-            <button 
-              onClick={addReflectionQuestion}
-              className="w-full flex items-center gap-2 p-2 rounded-[7px] border border-dashed border-[rgba(196,162,101,0.2)] bg-transparent text-[rgba(196,162,101,0.5)] text-[11px] hover:border-[rgba(196,162,101,0.4)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition"
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => router.push('/')}
+              className="text-[12px] font-medium px-4 py-1.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition flex items-center gap-1.5"
             >
-              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4.5v15m7.5-7.5h-15" />
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
               </svg>
-              Vraag toevoegen
+              Naar site
+            </button>
+            <button
+              onClick={() => setShowModal(true)}
+              className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition flex items-center gap-1.5"
+            >
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 4.5v15m7.5-7.5h-15"/>
+              </svg>
+              Nieuwe cursus
             </button>
           </div>
         </div>
-      )
-    }
 
-    if (currentContext === 'quiz' && currentQuiz) {
-      return (
-        <div className="space-y-4">
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Toets instellingen</span>
+        {/* Page */}
+        <div className="max-w-[1100px] mx-auto px-6 py-7">
+
+          {/* Header */}
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <h1 className="font-['Cormorant_Garamond',serif] text-[28px] font-normal text-[#1E1A14] tracking-[-0.01em] mb-1">
+                Cursussen
+              </h1>
+              <p className="text-[13px] text-[#7A7268] font-light">
+                Beheer en bewerk alle LXQ Academy cursussen
+              </p>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Toetsnaam</label>
-                <input 
-                  type="text"
-                  value={currentQuiz.name}
-                  onChange={(e) => updateQuizField('name', e.target.value)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Tussentijdse toets"
-                />
+          </div>
+
+          {/* Stats Strip */}
+          <div className="grid grid-cols-4 gap-2.5 mb-6">
+            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+                {stats.totalCourses}
               </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Type</label>
-                <select 
-                  value={currentQuiz.type}
-                  onChange={(e) => updateQuizField('type', e.target.value as 'intermediate' | 'final')}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+                Cursussen
+              </div>
+            </div>
+            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+                {stats.totalStudents}
+              </div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+                Studenten
+              </div>
+            </div>
+            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+                {formatRevenue(stats.totalRevenue)}
+              </div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+                Totale omzet
+              </div>
+            </div>
+            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+                {stats.completionRate}%
+              </div>
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+                Voltooiingsrate
+              </div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-1.5 mb-4.5 flex-wrap">
+            <button
+              onClick={() => setFilter('all')}
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+                filter === 'all'
+                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+              }`}
+            >
+              Alle cursussen
+            </button>
+            <button
+              onClick={() => setFilter('published')}
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+                filter === 'published'
+                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+              }`}
+            >
+              Live
+            </button>
+            <button
+              onClick={() => setFilter('draft')}
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+                filter === 'draft'
+                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+              }`}
+            >
+              Concept
+            </button>
+            <button
+              onClick={() => setFilter('archived')}
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+                filter === 'archived'
+                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+              }`}
+            >
+              Gearchiveerd
+            </button>
+            <div className="ml-auto relative">
+              <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#7A7268]" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+              </svg>
+              <input
+                type="text"
+                placeholder="Zoeken..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-full py-1 px-3 pl-8 text-[12px] outline-none w-[200px] focus:border-[rgba(196,162,101,0.4)] focus:w-[240px] transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Course Cards Grid */}
+          {loadingCourses ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-[#7A7268] text-[14px]">Laden...</div>
+            </div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center gap-2.5">
+              <div className="text-[40px] opacity-40">📚</div>
+              <p className="text-[15px] font-normal text-[#7A7268]">
+                Geen cursussen gevonden
+              </p>
+              <p className="text-[12px] text-[rgba(30,26,20,0.35)] max-w-[280px] leading-relaxed">
+                {filter === 'all' && !searchQuery
+                  ? 'Maak je eerste cursus aan om te beginnen'
+                  : 'Probeer een andere filter of zoekterm'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-3">
+              {filteredCourses.map((course) => (
+                <div
+                  key={course.id}
+                  className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_4px_18px_rgba(30,26,20,0.08)] hover:-translate-y-px"
+                  onClick={() => router.push(`/admin/courses/${course.id}/builder`)}
                 >
-                  <option value="intermediate">Tussentijdse toets</option>
-                  <option value="final">Eindtoets</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Minimale slagingsscore (%)</label>
-                <input 
-                  type="number"
-                  value={currentQuiz.minPassingScore || ''}
-                  onChange={(e) => updateQuizField('minPassingScore', parseInt(e.target.value) || undefined)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. 70"
-                  min="0"
-                  max="100"
-                />
-              </div>
-              <div className="space-y-2">
-                {(
-                  [
-                    { label: 'Herkansing mogelijk', field: 'allowRetake' as keyof Quiz },
-                    { label: 'Antwoorden tonen na afloop', field: 'showAnswers' as keyof Quiz },
-                    { label: 'Volgorde randomiseren', field: 'randomize' as keyof Quiz }
-                  ] as const
-                ).map((item) => (
-                  <div key={item.field} className="flex items-center justify-between">
-                    <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
-                    <label className="relative w-8 h-5 flex-shrink-0">
-                      <input 
-                        type="checkbox" 
-                        checked={(currentQuiz[item.field] as boolean) || false}
-                        onChange={(e) => updateQuizField(item.field, e.target.checked)}
-                        className="opacity-0 w-0 h-0"
+                  {/* Thumbnail */}
+                  <div className="w-full aspect-video bg-gradient-to-br from-[#1e1a12] to-[#0f0c07] relative overflow-hidden flex items-center justify-center">
+                    {course.thumbnail_url ? (
+                      <img
+                        src={course.thumbnail_url}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
                       />
-                      <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s]"></span>
-                      <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[0.22s]"></span>
-                    </label>
+                    ) : (
+                      <div className="text-[rgba(196,162,101,0.2)]">
+                        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75">
+                          <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+                        </svg>
+                      </div>
+                    )}
+                    <span className={`absolute top-2.5 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2 py-1 rounded-full ${getStatusClass(course.status)}`}>
+                      {getStatusLabel(course.status)}
+                    </span>
+                    <span className="absolute top-2.5 right-2.5 text-[8.5px] font-semibold tracking-[0.12em] uppercase px-2 py-1 rounded-full bg-[rgba(12,10,7,0.6)] backdrop-blur-md text-[rgba(250,248,244,0.6)] border border-[rgba(255,255,255,0.08)]">
+                      {course.level}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    }
 
-    return null
-  }
-
-  const renderBlock = (block: Block) => {
-    switch (block.type) {
-      case 'video':
-        return (
-          <div className="space-y-3">
-            <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] cursor-pointer hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.4 }}>
-                <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-              </svg>
-              <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden via Mux</span>
-            </div>
-            <input 
-              type="text"
-              placeholder="Of plak een Vimeo / YouTube URL"
-              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.4)]"
-            />
-            <div className="flex gap-2 flex-wrap">
-              <button className="text-[10.5px] font-medium p-1.5 px-2.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(196,162,101,0.35)] hover:text-[#7A6340] hover:bg-[rgba(196,162,101,0.08)] transition">
-                Autoplay
-              </button>
-              <button className="text-[10.5px] font-medium p-1.5 px-2.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(196,162,101,0.35)] hover:text-[#7A6340] hover:bg-[rgba(196,162,101,0.08)] transition">
-                Ondertitels
-              </button>
-            </div>
-          </div>
-        )
-
-      case 'text':
-        return (
-          <div className="space-y-2">
-            <input 
-              type="text"
-              placeholder="Hoofdtitel..."
-              className="w-full bg-transparent border-none outline-none font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
-            />
-            <input 
-              type="text"
-              placeholder="Subtitel of introductie..."
-              className="w-full bg-transparent border-none outline-none text-[14px] text-[#7A7268] mt-1"
-            />
-            <textarea 
-              rows={3}
-              placeholder="Schrijf hier de inhoud van dit blok..."
-              className="w-full bg-transparent border-none outline-none text-[13px] font-light text-[#7A7268] leading-relaxed resize-none min-h-[60px] mt-2"
-            />
-          </div>
-        )
-
-      case 'image':
-        return (
-          <div className="space-y-2">
-            <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:bg-[rgba(196,162,101,0.03)] transition">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.35 }}>
-                <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
-              </svg>
-            </div>
-            <input 
-              type="text"
-              placeholder="Bijschrift (optioneel)"
-              className="w-full bg-transparent border-none outline-none text-[11.5px] text-[#7A7268] italic text-center mt-1"
-            />
-          </div>
-        )
-
-      case 'quiz':
-        return (
-          <div className="space-y-3">
-            <input 
-              type="text"
-              placeholder="Wat is de vraag?"
-              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[8px] p-[9px_12px] text-[13px] outline-none focus:border-[rgba(80,190,120,0.4)]"
-            />
-            <div className="space-y-2">
-              {['A', 'B', 'C'].map((letter, index) => (
-                <div key={letter} className="flex items-center gap-2">
-                  <div className={`w-6 h-6 rounded-full bg-[#F0EDE6] border border-[rgba(30,26,20,0.09)] flex items-center justify-center text-[9.5px] font-medium text-[#7A7268] flex-shrink-0 cursor-pointer transition ${index === 0 ? 'bg-[rgba(80,190,120,0.08)] border-[rgba(80,190,120,0.22)] text-[rgba(80,190,120,0.9)]' : ''}`}>
-                    {letter}
-                  </div>
-                  <input 
-                    type="text"
-                    placeholder={`Antwoord ${letter}`}
-                    className="flex-1 bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none"
-                  />
-                  {index > 1 && (
-                    <button className="text-[rgba(30,26,20,0.2)] hover:text-[rgba(200,60,60,0.6)] transition p-1">
-                      <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button className="text-[11px] text-[rgba(80,190,120,0.6)] hover:text-[rgba(80,190,120,0.9)] transition p-1">
-              + Optie toevoegen
-            </button>
-            <div className="flex gap-2 pt-2 border-t border-[rgba(30,26,20,0.09)] flex-wrap">
-              <select className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-1 px-2 text-[11px] text-[#7A7268] outline-none cursor-pointer">
-                <option>Tussentijds</option>
-                <option>Eindtoets</option>
-              </select>
-              <input 
-                type="number"
-                placeholder="Punten"
-                className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-1 px-2 text-[11px] text-[#1E1A14] outline-none w-16"
-              />
-              <span className="text-[9px] font-bold tracking-[0.14em] uppercase px-2 py-1 rounded-full bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]">
-                Quiz
-              </span>
-            </div>
-          </div>
-        )
-
-      case 'callout':
-        return (
-          <div className="flex gap-3 items-start bg-[rgba(196,162,101,0.07)] border-l-3 border-[rgba(196,162,101,0.35)] rounded-r-lg p-3">
-            <span className="text-[17px] flex-shrink-0 mt-0.5">💡</span>
-            <textarea 
-              rows={2}
-              placeholder="Tip of opmerking..."
-              className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1E1A14] leading-relaxed resize-none min-h-[45px]"
-            />
-          </div>
-        )
-
-      case 'download':
-        return (
-          <div className="space-y-3">
-            <div className="w-full bg-[#F0EDE6] border-1.5 border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-5 flex flex-col items-center gap-2 cursor-pointer hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition text-center">
-              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.5 }}>
-                <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Bestand uploaden</span>
-              <span className="text-[10.5px] text-[rgba(30,26,20,0.3)] font-light">PDF of afbeelding · max 50MB</span>
-            </div>
-            <div className="space-y-2">
-              <input 
-                type="text"
-                placeholder="Bestandsnaam voor studenten, bijv. Werkblad les 1"
-                className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none"
-              />
-              <input 
-                type="text"
-                placeholder="Korte beschrijving (optioneel)"
-                className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none"
-              />
-            </div>
-          </div>
-        )
-
-      case 'divider':
-        return (
-          <div className="flex items-center gap-3 py-2">
-            <div className="flex-1 h-px bg-[rgba(196,162,101,0.2)]"></div>
-            <span className="text-[10px] text-[rgba(196,162,101,0.4)]">✦</span>
-            <div className="flex-1 h-px bg-[rgba(196,162,101,0.2)]"></div>
-          </div>
-        )
-
-      default:
-        return null
-    }
-  }
-
-  const renderPreview = () => {
-    if (currentContext === 'global') {
-      return (
-        <div className="space-y-4">
-          <div className="w-full aspect-video bg-[rgba(0,0,0,0.4)] rounded-lg flex items-center justify-center">
-            <div className="w-11 h-11 rounded-full bg-[rgba(196,162,101,0.2)] border border-[rgba(196,162,101,0.3)] flex items-center justify-center text-[#C4A265]">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-          <div>
-            <p className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[rgba(250,248,244,0.88)] tracking-[-0.01em]">
-              {course?.title || 'Cursusnaam'}
-            </p>
-            <p className="text-[13px] text-[rgba(250,248,244,0.45)] mt-1">Intro video — klik om te starten</p>
-          </div>
-          <div className="flex items-center gap-2.5 py-2">
-            <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-            <span className="text-[9px] text-[rgba(196,162,101,0.3)]">✦</span>
-            <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-          </div>
-          <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-[rgba(196,162,101,0.45)]">
-            Inhoud van de cursus
-          </p>
-          <div className="space-y-2">
-            {course?.lessons?.map((lesson) => (
-              <div key={lesson.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05)]">
-                <span className="font-['Cormorant_Garamond'] text-[12px] text-[rgba(196,162,101,0.4)] italic">1</span>
-                <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] flex-1">{lesson.name}</span>
-                {lesson.free && (
-                  <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">
-                    Gratis
-                  </span>
-                )}
-              </div>
-            ))}
-            {course?.quizzes?.map((quiz) => (
-              <div key={quiz.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05)]">
-                <span className="font-['Cormorant_Garamond'] text-[12px] text-[rgba(80,190,120,0.4)] italic">✦</span>
-                <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] flex-1">{quiz.name}</span>
-                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]">
-                  Toets
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )
-    }
-
-    if (currentContext === 'lesson' && currentLesson) {
-      return (
-        <div className="space-y-3">
-          {blocks.map((block) => {
-            switch (block.type) {
-              case 'video':
-                return (
-                  <div key={block.id} className="w-full aspect-video bg-[rgba(0,0,0,0.4)] rounded-lg flex items-center justify-center">
-                    <div className="w-11 h-11 rounded-full bg-[rgba(196,162,101,0.2)] border border-[rgba(196,162,101,0.3)] flex items-center justify-center text-[#C4A265]">
-                      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                  </div>
-                )
-              case 'text':
-                return (
-                  <div key={block.id}>
-                    <p className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[rgba(250,248,244,0.88)] tracking-[-0.01em]">
-                      {block.title}
+                  {/* Card Body */}
+                  <div className="p-4">
+                    <p className="font-['Cormorant_Garamond',serif] text-[18px] font-normal text-[#1E1A14] tracking-[-0.01em] mb-0.5">
+                      {course.title}
                     </p>
-                    {block.subtitle && (
-                      <p className="text-[13px] text-[rgba(250,248,244,0.45)] mt-1">{block.subtitle}</p>
-                    )}
-                    {block.content && (
-                      <p className="text-[12.5px] font-light text-[rgba(250,248,244,0.38)] leading-relaxed mt-2">
-                        {block.content}
-                      </p>
-                    )}
-                  </div>
-                )
-              case 'image':
-                return (
-                  <div key={block.id} className="space-y-1">
-                    <div className="w-full aspect-video bg-[rgba(255,255,255,0.05)] rounded-lg flex items-center justify-center">
-                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.75">
-                        <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-                      </svg>
+                    <p className="text-[11.5px] text-[#7A7268] font-light mb-3">
+                      {course.description || 'Geen beschrijving'}
+                    </p>
+
+                    {/* Meta */}
+                    <div className="flex gap-3.5 mb-3.5">
+                      <div className="flex items-center gap-1 text-[11px] text-[#7A7268]">
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+                        </svg>
+                        {course.lessons_count || 0} lessen
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] text-[#7A7268]">
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {formatDuration(course.duration_minutes || 0)}
+                      </div>
+                      {course.has_quiz && (
+                        <div className="flex items-center gap-1 text-[11px] text-[#7A7268]">
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Eindtoets
+                        </div>
+                      )}
                     </div>
-                    {block.caption && (
-                      <p className="text-[11px] text-[rgba(255,255,255,0.3)] italic text-center">{block.caption}</p>
-                    )}
-                  </div>
-                )
-              case 'callout':
-                return (
-                  <div key={block.id} className="bg-[rgba(196,162,101,0.07)] border-l-3 border-[rgba(196,162,101,0.3)] rounded-r-lg p-3 text-[12.5px] text-[rgba(250,248,244,0.55)] leading-relaxed">
-                    💡 Tip of opmerking verschijnt hier
-                  </div>
-                )
-              case 'divider':
-                return (
-                  <div key={block.id} className="flex items-center gap-2.5 py-2">
-                    <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-                    <span className="text-[9px] text-[rgba(196,162,101,0.3)]">✦</span>
-                    <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-                  </div>
-                )
-              default:
-                return null
-            }
-          })}
-          
-          {currentLesson.reflectionQuestions && currentLesson.reflectionQuestions.length > 0 && (
-            <div className="bg-[rgba(0,0,0,0.2)] rounded-lg p-4 border border-[rgba(255,255,255,0.05)]">
-              <span className="text-[9.5px] font-bold tracking-[0.2em] uppercase text-[rgba(196,162,101,0.5)] block mb-3">
-                Reflectievragen
-              </span>
-              {currentLesson.reflectionQuestions.map((question, index) => (
-                <div key={index} className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] rounded-lg p-3 mb-2 flex items-start gap-2">
-                  <span className="font-['Cormorant_Garamond'] text-[13px] text-[rgba(196,162,101,0.4)] italic">1</span>
-                  <div className="flex-1">
-                    <p className="text-[12px] text-[rgba(250,248,244,0.55)]">{question}</p>
-                    <textarea 
-                      placeholder="Jouw antwoord..."
-                      className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] rounded-lg p-2 text-[11.5px] text-[rgba(255,255,255,0.3)] outline-none resize-none min-h-9 mt-2"
-                    />
+
+                    {/* Earnings Row */}
+                    <div className="flex items-center justify-between py-2.5 border-y border-[rgba(30,26,20,0.09)] mb-3">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#7A7268]">
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+                        </svg>
+                        <strong className="text-[14px] font-semibold text-[#1E1A14]">
+                          {course.students_count || 0}
+                        </strong>
+                        {' '}studenten
+                      </div>
+                      <div className="text-right">
+                        <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1E1A14] leading-none tracking-[-0.01em]">
+                          {formatRevenue((course.price || 0) * (course.students_count || 0))}
+                        </div>
+                        <div className="text-[9.5px] text-[#7A7268] tracking-[0.1em] uppercase">
+                          Omzet
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div
+                      className="flex gap-1.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => router.push(`/admin/courses/${course.id}/builder`)}
+                        className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border-none bg-[#C4A265] text-white hover:bg-[#DFC08A] transition flex items-center justify-center gap-1.5"
+                      >
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+                        </svg>
+                        Bewerken
+                      </button>
+                      <button
+                        onClick={() => router.push(`/courses/${course.slug}`)}
+                        className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border border-[rgba(30,26,20,0.09)] bg-[#F0EDE6] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition flex items-center justify-center gap-1.5"
+                      >
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Preview
+                      </button>
+                      <button
+                        onClick={() => handleArchiveCourse(course.id, course.status)}
+                        className="flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border border-[rgba(30,26,20,0.09)] bg-transparent text-[#7A7268] hover:bg-[rgba(224,90,78,0.08)] hover:border-[rgba(224,90,78,0.3)] hover:text-[#E05A4E] transition"
+                        title={course.status === 'archived' ? 'De-archiveren' : 'Archiveren'}
+                      >
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.375c0 .621.504 1.125 1.125 1.125z"/>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
+
+              {/* New Course Card */}
+              <div
+                onClick={() => setShowModal(true)}
+                className="bg-transparent border-1.5 border-dashed border-[rgba(196,162,101,0.25)] rounded-[14px] flex flex-col items-center justify-center gap-2.5 px-6 py-10 cursor-pointer hover:border-[rgba(196,162,101,0.5)] hover:bg-[rgba(196,162,101,0.03)] transition text-center min-h-[280px]"
+              >
+                <div className="w-12 h-12 rounded-xl bg-[rgba(196,162,101,0.1)] border border-[rgba(196,162,101,0.2)] flex items-center justify-center text-[#C4A265] mb-1">
+                  <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 4.5v15m7.5-7.5h-15"/>
+                  </svg>
+                </div>
+                <p className="font-['Cormorant_Garamond',serif] text-[17px] font-normal text-[#1E1A14]">
+                  Nieuwe cursus
+                </p>
+                <p className="text-[11.5px] text-[#7A7268] font-light leading-relaxed">
+                  Maak een nieuwe cursus aan en begin met bouwen in de course builder
+                </p>
+              </div>
             </div>
           )}
         </div>
-      )
-    }
-
-    if (currentContext === 'quiz' && currentQuiz) {
-      return (
-        <div className="space-y-3">
-          <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-[rgba(80,190,120,0.45)] mb-2">
-            Toetsvragen
-          </p>
-          <div className="bg-[rgba(255,255,255,0.04)] rounded-lg p-4 border border-[rgba(255,255,255,0.07)]">
-            <p className="text-[13px] font-medium text-[rgba(250,248,244,0.75)] mb-3">Vraag 1</p>
-            <div className="space-y-2">
-              {['A', 'B', 'C'].map((letter) => (
-                <div key={letter} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.07)] rounded-lg text-[12px] text-[rgba(250,248,244,0.5)] cursor-pointer hover:border-[rgba(196,162,101,0.25)] hover:text-[rgba(250,248,244,0.75)] transition">
-                  <div className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.15)] flex items-center justify-center text-[9px] text-[rgba(255,255,255,0.35)] flex-shrink-0">
-                    {letter}
-                  </div>
-                  Antwoord {letter}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col items-center justify-center py-8 gap-3">
-            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="rgba(80,190,120,0.25)" strokeWidth="0.75">
-              <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-[13px] text-[rgba(250,248,244,0.35)]">Voeg quizvragen toe via de builder</p>
-          </div>
-        </div>
-      )
-    }
-
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="rgba(196,162,101,0.25)" strokeWidth="0.75">
-          <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-        </svg>
-        <p className="text-[13px] text-[rgba(250,248,244,0.4)] font-light">Nog geen blokken</p>
-        <p className="text-[11px] text-[rgba(250,248,244,0.22)]">Voeg een blok toe in de builder</p>
       </div>
-    )
-  }
 
-  const getBlockTypeLabel = (type: BlockType) => {
-    const labels: Record<BlockType, string> = {
-      video: 'Video',
-      text: 'Titel + tekst',
-      image: 'Afbeelding',
-      quiz: 'Quiz vraag',
-      callout: 'Tip / Note',
-      download: 'Download',
-      divider: 'Scheiding'
-    }
-    return labels[type]
-  }
-
-  const getBlockTypeIcon = (type: BlockType) => {
-    const icons: Record<BlockType, string> = {
-      video: '<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>',
-      text: '<path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/>',
-      image: '<path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z"/>',
-      quiz: '<path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
-      callout: '<path d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
-      download: '<path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>',
-      divider: '<path d="M3.75 9h16.5m-16.5 6.75h16.5"/>'
-    }
-    return icons[type]
-  }
-
-  const getBlockTypeDescription = (type: BlockType) => {
-    const descriptions: Record<BlockType, string> = {
-      video: 'Mux of URL',
-      text: 'Titel & body',
-      image: 'Met bijschrift',
-      quiz: 'Meerkeuze',
-      callout: 'Gekleurde box',
-      download: 'PDF of afbeelding',
-      divider: 'Visuele break'
-    }
-    return descriptions[type]
-  }
-
-  if (loading) return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
-  if (!user) return null
-  if (role !== 'admin') return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
-
-  return (
-    <div className="min-h-screen bg-[#F0EDE6] overflow-hidden" style={{ fontFamily: "'Outfit', sans-serif" }}>
-      {/* Topbar */}
-      <div className="fixed top-0 left-0 right-0 h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-[18px] z-[300]">
-        <div className="flex items-center gap-3">
-          <span className="font-['AvenirNext'] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
-            Luxique
-          </span>
-          <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
-          <input 
-            type="text"
-            value={course?.title || ''}
-            onChange={(e) => course && updateCourseField('title', e.target.value)}
-            placeholder="Cursusnaam..."
-            className="text-[13px] text-[#7A7268] cursor-text outline-none border-none bg-transparent min-w-[120px]"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1.5 mr-2">
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Bouwen"></div>
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Instellingen"></div>
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Publiceren"></div>
-          </div>
-          <button 
-            onClick={saveCourse}
-            disabled={saving}
-            className="text-[12px] font-medium px-4 py-1.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition disabled:opacity-50"
+      {/* Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-[rgba(12,10,7,0.45)] backdrop-blur-sm z-[200] flex items-center justify-center"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-[#FAF8F4] rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]"
+            onClick={(e) => e.stopPropagation()}
           >
-            Concept opslaan
-          </button>
-          <button className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition">
-            Publiceren →
-          </button>
-        </div>
-      </div>
+            <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1E1A14] mb-1.5">
+              Nieuwe cursus aanmaken
+            </p>
+            <p className="text-[12.5px] text-[#7A7268] font-light mb-5.5 leading-relaxed">
+              Vul de basisgegevens in. Alles kun je later verder aanpassen in de course builder.
+            </p>
 
-      {/* Main App */}
-      <div className="flex" style={{ height: '100vh', paddingTop: '50px' }}>
-        {/* Sidebar */}
-        <div className="w-[260px] bg-[#FAF8F4] border-r border-[rgba(30,26,20,0.09)] overflow-y-auto flex flex-col">
-          <div className="p-2.5 border-b border-[rgba(30,26,20,0.09)]">
-            <span className="text-[9px] font-bold tracking-[0.22em] uppercase text-[#7A7268] block mb-1 px-0.5">
-              Bezig met
-            </span>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-3 mb-5">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] tracking-[0.06em] block mb-0.5">
+                  Cursusnaam
+                </label>
+                <input
+                  type="text"
+                  value={newCourse.title}
+                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                  placeholder="bijv. Wispy Lash Mastery"
+                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] tracking-[0.06em] block mb-0.5">
+                  Niveau
+                </label>
+                <select
+                  value={newCourse.level}
+                  onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value })}
+                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition appearance-none cursor-pointer"
+                >
+                  <option value="">Kies niveau</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Gevorderd">Gevorderd</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] tracking-[0.06em] block mb-0.5">
+                  Korte omschrijving
+                </label>
+                <input
+                  type="text"
+                  value={newCourse.description}
+                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                  placeholder="bijv. Vervolgmodule — Wispy techniek"
+                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
               <button
-                onClick={() => switchContext('global')}
-                className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'global' ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
+                onClick={() => setShowModal(false)}
+                className="flex-1 text-[13px] font-normal py-2.5 rounded-full border border-[rgba(30,26,20,0.09)] bg-transparent cursor-pointer text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition"
               >
-                <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'global' ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
-                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <path d="M3 9h18M9 21V9"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0 text-left">
-                  <span className={`text-[12px] font-medium block leading-tight ${currentContext === 'global' ? 'text-[#7A6340]' : 'text-[#1E1A14]'}`}>
-                    Cursus overzicht
-                  </span>
-                  <span className="text-[10px] text-[#7A7268] font-light">Algemene info</span>
-                </div>
+                Annuleren
               </button>
-
-              {course?.lessons?.map((lesson) => (
-                <button
-                  key={lesson.id}
-                  onClick={() => switchContext('lesson', lesson)}
-                  className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
-                >
-                  <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <span className={`text-[12px] font-medium block leading-tight ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'text-[#7A6340]' : 'text-[#1E1A14]'}`}>
-                      Les {lesson.num}
-                    </span>
-                    <span className="text-[10px] text-[#7A7268] font-light">{lesson.name}</span>
-                  </div>
-                  {lesson.free && (
-                    <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-1.5 py-0.5 rounded-full bg-[#C4A265] text-white flex-shrink-0">
-                      Gratis
-                    </span>
-                  )}
-                </button>
-              ))}
-
-              {course?.quizzes?.map((quiz) => (
-                <button
-                  key={quiz.id}
-                  onClick={() => switchContext('quiz', quiz)}
-                  className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'quiz' && currentQuiz?.id === quiz.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
-                >
-                  <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'quiz' && currentQuiz?.id === quiz.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <span className={`text-[12px] font-medium block leading-tight ${currentContext === 'quiz' && currentQuiz?.id === quiz.id ? 'text-[#7A6340]' : 'text-[#1E1A14]'}`}>
-                      {quiz.name}
-                    </span>
-                    <span className="text-[10px] text-[#7A7268] font-light">Na les 2</span>
-                  </div>
-                  <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-1.5 py-0.5 rounded-full bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)] flex-shrink-0">
-                    Toets
-                  </span>
-                </button>
-              ))}
+              <button
+                onClick={handleCreateCourse}
+                className="flex-[2] text-[13px] font-semibold py-2.5 rounded-full bg-[#C4A265] text-white border-none cursor-pointer hover:bg-[#DFC08A] hover:shadow-[0_4px_14px_rgba(196,162,101,0.28)] transition"
+              >
+                Aanmaken & bouwen →
+              </button>
             </div>
-            
-            <button
-              onClick={addLesson}
-              className="flex items-center gap-1.5 p-1.5 px-2 rounded-lg border border-dashed border-[rgba(196,162,101,0.22)] bg-transparent cursor-pointer w-full text-[rgba(196,162,101,0.5)] text-[11px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition mt-1"
-            >
-              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Les of toets toevoegen
-            </button>
-          </div>
-
-          {/* Sidebar Form */}
-          <div className="flex-1 p-2.5">
-            {renderSidebarForm()}
           </div>
         </div>
+      )}
 
-        {/* Builder */}
-        <div className="flex-1 bg-[#F0EDE6] overflow-y-auto p-5 flex flex-col gap-2.5">
-          {/* Context Banner */}
-          <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-3 flex items-center gap-2.5 shadow-[0_1px_4px_rgba(30,26,20,0.06)]">
-            <div className="w-8 h-8 rounded-lg bg-[rgba(196,162,101,0.1)] flex items-center justify-center text-[#C4A265] flex-shrink-0">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                {currentContext === 'global' && '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>'}
-                {currentContext === 'lesson' && '<path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>'}
-                {currentContext === 'quiz' && '<path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
-              </svg>
-            </div>
-            <div className="flex-1">
-              <div className="font-['Cormorant_Garamond'] text-[17px] font-medium text-[#1E1A14] tracking-[-0.01em]">
-                {currentContext === 'global' && 'Cursus overzicht'}
-                {currentContext === 'lesson' && currentLesson && `Les ${currentLesson.num} — ${currentLesson.name}`}
-                {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
-              </div>
-              <div className="text-[11px] text-[#7A7268] font-light">
-                {currentContext === 'global' && 'Voeg blokken toe voor de cursuspagina'}
-                {currentContext === 'lesson' && 'Inhoud van les'}
-                {currentContext === 'quiz' && 'Voeg quizvragen toe'}
-              </div>
-            </div>
-            <span className="text-[9px] font-bold tracking-[0.16em] uppercase px-2 py-1 rounded-full border border-[rgba(196,162,101,0.25)] text-[#7A6340] bg-[rgba(196,162,101,0.08)]">
-              {currentContext === 'global' && 'Globaal'}
-              {currentContext === 'lesson' && 'Les'}
-              {currentContext === 'quiz' && 'Toets'}
-            </span>
-          </div>
-
-          {/* Content Blocks */}
-          {blocks.map((block) => (
-            <div key={block.id} className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_2px_10px_rgba(30,26,20,0.08)]">
-              <div className="flex items-center justify-between p-2.5 bg-[#F0EDE6] border-b border-[rgba(30,26,20,0.09)]">
-                <div className="flex items-center gap-2">
-                  <svg width="9" height="13" viewBox="0 0 9 13" fill="none" className="text-[#7A7268] opacity-50">
-                    <circle cx="2.5" cy="2" r="1.1" fill="currentColor"/>
-                    <circle cx="6.5" cy="2" r="1.1" fill="currentColor"/>
-                    <circle cx="2.5" cy="6.5" r="1.1" fill="currentColor"/>
-                    <circle cx="6.5" cy="6.5" r="1.1" fill="currentColor"/>
-                    <circle cx="2.5" cy="11" r="1.1" fill="currentColor"/>
-                    <circle cx="6.5" cy="11" r="1.1" fill="currentColor"/>
-                  </svg>
-                  <span className="text-[9.5px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">
-                    {getBlockTypeLabel(block.type)}
-                  </span>
-                </div>
-                <button 
-                  onClick={() => deleteBlock(block.id)}
-                  className="w-6 h-6 rounded-lg border-none bg-transparent cursor-pointer flex items-center justify-center text-[#7A7268] hover:bg-[rgba(30,26,20,0.04)] hover:text-[#1E1A14] transition"
-                >
-                  <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="p-3.5">
-                {renderBlock(block)}
-              </div>
-            </div>
-          ))}
-
-          {/* Add Block Button */}
-          <div className="relative">
-            <button
-              onClick={() => setShowBlockPicker(!showBlockPicker)}
-              className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Blok toevoegen
-            </button>
-
-            {/* Block Picker Dropdown */}
-            {showBlockPicker && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[12px] shadow-[0_8px_32px_rgba(30,26,20,0.14)] p-2 z-[100] min-w-[220px] flex flex-wrap gap-1">
-                {(['video', 'text', 'image', 'quiz', 'callout', 'download', 'divider'] as BlockType[]).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => addBlock(type)}
-                    className="flex items-center gap-2 p-2 px-2.5 rounded-lg border-none bg-transparent cursor-pointer w-[calc(50%-4px)] transition hover:bg-[rgba(196,162,101,0.08)]"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-[rgba(196,162,101,0.1)] flex items-center justify-center text-[#C4A265] flex-shrink-0">
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" dangerouslySetInnerHTML={{ __html: getBlockTypeIcon(type) }} />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[12px] font-medium text-[#1E1A14]">
-                        {getBlockTypeLabel(type)}
-                      </div>
-                      <div className="text-[10px] text-[#7A7268]">
-                        {getBlockTypeDescription(type)}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Preview */}
-        <div className="w-[320px] bg-[#161310] border-l border-[rgba(255,255,255,0.05)] overflow-y-auto flex flex-col">
-          <div className="sticky top-0 bg-[#161310] z-10">
-            <div className="p-3.5 border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between">
-              <span className="text-[9.5px] font-bold tracking-[0.22em] uppercase text-[rgba(196,162,101,0.5)]">
-                Student preview
-              </span>
-              <div className="flex gap-1">
-                <button className="w-6 h-6 rounded-lg border border-[rgba(255,255,255,0.08)] bg-transparent flex items-center justify-center text-[rgba(255,255,255,0.28)]">
-                  <svg width="12" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/>
-                    <path d="M8 21h8m-4-4v4"/>
-                  </svg>
-                </button>
-                <button className="w-6 h-6 rounded-lg border border-[rgba(255,255,255,0.08)] bg-transparent flex items-center justify-center text-[rgba(255,255,255,0.28)]">
-                  <svg width="10" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <rect x="5" y="2" width="14" height="20" rx="2"/>
-                    <path d="M12 18h.01"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Lesson Indicator */}
-            <div className="flex items-center gap-2 p-3.5 border-b border-[rgba(255,255,255,0.05)]">
-              <span className="font-['Cormorant_Garamond'] text-[13px] text-[rgba(196,162,101,0.5)] italic">✦</span>
-              <span className="text-[12px] font-medium text-[rgba(250,248,244,0.65)]">
-                {currentContext === 'global' && 'Cursus overzicht'}
-                {currentContext === 'lesson' && currentLesson && `Les ${currentLesson.num} — ${currentLesson.name}`}
-                {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
-              </span>
-              <span className={`text-[8.5px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full ml-auto ${
-                currentContext === 'global' ? 'bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.3)] border border-[rgba(255,255,255,0.08)]' :
-                currentContext === 'lesson' ? (currentLesson?.free ? 'bg-[#C4A265] text-white' : 'bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.3)] border border-[rgba(255,255,255,0.08)]') :
-                'bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]'
-              }`}>
-                {currentContext === 'global' && 'Globaal'}
-                {currentContext === 'lesson' && (currentLesson?.free ? 'Gratis preview' : 'Account vereist')}
-                {currentContext === 'quiz' && 'Toets'}
-              </span>
-            </div>
-          </div>
-
-          <div className="p-3.5">
-            {renderPreview()}
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Status badge styles */}
+      <style jsx>{`
+        .status-live {
+          background: #4CAF82;
+          color: white;
+        }
+        .status-concept {
+          background: rgba(255,255,255,0.15);
+          color: rgba(255,255,255,0.7);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .status-archived {
+          background: rgba(0,0,0,0.4);
+          color: rgba(255,255,255,0.5);
+          backdrop-filter: blur(8px);
+        }
+      `}</style>
+    </>
   )
 }
