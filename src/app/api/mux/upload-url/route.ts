@@ -11,7 +11,7 @@ export async function POST() {
 
     const upload = await mux.video.uploads.create({
       new_asset_settings: {
-        playback_policy: ['signed'],
+        playback_policy: ['public'],  // TODO: switch to signed for student view
         mp4_support: 'none',
       },
       cors_origin: process.env.NEXT_PUBLIC_URL || '*',

@@ -677,8 +677,12 @@ export default function CourseBuilderPage() {
             
             {typeof block.content === 'object' && block.content !== null && block.content.mux_playback_id ? (
               // Show video thumbnail/preview
-              <div style={{ width: '100%', aspectRatio: '16/9', background: '#1a1a1a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4CAF82' }}>
-                ✅ Video geüpload
+              <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
+                <mux-player
+                  playback-id={block.content.mux_playback_id as string}
+                  stream-type="on-demand"
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                ></mux-player>
               </div>
             ) : videoUploading ? (
               // Progress bar
@@ -918,7 +922,18 @@ export default function CourseBuilderPage() {
           {blocks.map((block) => {
             switch (block.type) {
               case 'video':
-                return (
+                // Check if video has been uploaded
+                const videoContent = typeof block.content === 'object' && block.content !== null ? block.content as Record<string, unknown> : null;
+                const playbackId = videoContent?.mux_playback_id as string | undefined;
+                return playbackId ? (
+                  <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
+                    <mux-player
+                      playback-id={playbackId}
+                      stream-type="on-demand"
+                      style={{ width: '100%', height: '100%', display: 'block' }}
+                    ></mux-player>
+                  </div>
+                ) : (
                   <div key={block.id} className="w-full aspect-video bg-[rgba(0,0,0,0.4)] rounded-lg flex items-center justify-center">
                     <div className="w-11 h-11 rounded-full bg-[rgba(196,162,101,0.2)] border border-[rgba(196,162,101,0.3)] flex items-center justify-center text-[#C4A265]">
                       <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
