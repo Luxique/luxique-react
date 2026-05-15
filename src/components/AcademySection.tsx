@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images';
+
 /* ── course data ── */
 interface Course {
   slug: string
