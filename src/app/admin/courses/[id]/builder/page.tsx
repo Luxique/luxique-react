@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
 
 /* ── Types ── */
@@ -31,7 +31,7 @@ interface Lesson {
   num: number
   name: string
   free: boolean
-  duration?: string
+  duration?: number // Store as total minutes
   reflectionQuestions?: string[]
   blocks?: Block[]
 }
@@ -77,6 +77,8 @@ export default function CourseBuilderPage() {
   const [showBlockPicker, setShowBlockPicker] = useState(false)
   const [saving, setSaving] = useState(false)
   const [lessonNumber, setLessonNumber] = useState(2)
+  const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
+  const addBlockButtonRef = useRef<HTMLButtonElement>(null)
 
   const [questionNumber, setQuestionNumber] = useState(1)
 
@@ -116,7 +118,24 @@ export default function CourseBuilderPage() {
           { id: uid(), num: 1, name: 'Introductie', free: true, reflectionQuestions: ['Wat viel je op aan...'] }
         ],
         quizzes: [
-          { id: uid(), num: 1, name: 'Tussentijdse toets', type: 'intermediate' }
+          { 
+            id: uid(), 
+            num: 1, 
+            name: 'Toets', 
+            type: 'intermediate',
+            blocks: [
+              {
+                id: uid(),
+                type: 'quiz',
+                question: '',
+                options: [
+                  { id: uid(), text: '', correct: true },
+                  { id: uid(), text: '', correct: false },
+                  { id: uid(), text: '', correct: false }
+                ]
+              }
+            ]
+          }
         ]
       })
     }
@@ -180,18 +199,35 @@ export default function CourseBuilderPage() {
     setShowBlockPicker(false)
   }
 
+  const updateBlockPickerPosition = () => {
+    if (addBlockButtonRef.current) {
+      const rect = addBlockButtonRef.current.getBoundingClientRect()
+      setBlockPickerPosition({
+        top: rect.top - 220, // Position above button
+        left: rect.left + rect.width / 2 - 110 // Center horizontally
+      })
+    }
+  }
+
   const deleteBlock = (id: string) => {
     setBlocks(blocks.filter(b => b.id !== id))
   }
 
   const addLesson = () => {
     if (!course) return
+    const defaultBlocks: Block[] = [
+      { id: uid(), type: 'text', title: '', subtitle: '', content: '' },
+      { id: uid(), type: 'video', autoplay: false, subtitles: false },
+      { id: uid(), type: 'text', title: '', subtitle: '', content: '' }
+    ]
+    
     const newLesson: Lesson = {
       id: uid(),
       num: lessonNumber,
       name: `Les ${lessonNumber}`,
       free: false,
-      reflectionQuestions: []
+      reflectionQuestions: [],
+      blocks: defaultBlocks
     }
     setLessonNumber(lessonNumber + 1)
     setCourse({
@@ -266,10 +302,10 @@ export default function CourseBuilderPage() {
                       type="checkbox" 
                       checked={(course?.[item.field] as boolean) || false}
                       onChange={(e) => updateCourseField(item.field, e.target.checked)}
-                      className="opacity-0 w-0 h-0"
+                      className="opacity-0 w-0 h-0 peer"
                     />
-                    <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s]"></span>
-                    <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[0.22s]"></span>
+                    <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s] peer-checked:bg-[#C4A265]"></span>
+                    <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[transform 0.22s ease] peer-checked:before:translate-x-3"></span>
                   </label>
                 </div>
               ))}
@@ -305,13 +341,39 @@ export default function CourseBuilderPage() {
               </div>
               <div>
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Geschatte duur</label>
-                <input 
-                  type="text"
-                  value={currentLesson.duration || ''}
-                  onChange={(e) => updateLessonField('duration', e.target.value)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. ~20 min"
-                />
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="text-[9px] text-[#7A7268] block mb-1">uur</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={Math.floor((currentLesson.duration || 0) / 60)}
+                      onChange={(e) => {
+                        const hours = parseInt(e.target.value) || 0
+                        const minutes = (currentLesson.duration || 0) % 60
+                        updateLessonField('duration', hours * 60 + minutes)
+                      }}
+                      className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[9px] text-[#7A7268] block mb-1">min</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      max="59"
+                      step="5"
+                      value={(currentLesson.duration || 0) % 60}
+                      onChange={(e) => {
+                        const minutes = parseInt(e.target.value) || 0
+                        const hours = Math.floor((currentLesson.duration || 0) / 60)
+                        updateLessonField('duration', hours * 60 + minutes)
+                      }}
+                      className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                  </div>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] font-light text-[#1E1A14]">Gratis preview les</span>
@@ -320,10 +382,10 @@ export default function CourseBuilderPage() {
                     type="checkbox" 
                     checked={currentLesson.free}
                     onChange={(e) => updateLessonField('free', e.target.checked)}
-                    className="opacity-0 w-0 h-0"
+                    className="opacity-0 w-0 h-0 peer"
                   />
-                  <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s]"></span>
-                  <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[0.22s]"></span>
+                  <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s] peer-checked:bg-[#C4A265]"></span>
+                  <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[transform 0.22s ease] peer-checked:before:translate-x-3"></span>
                 </label>
               </div>
             </div>
@@ -419,10 +481,10 @@ export default function CourseBuilderPage() {
                         type="checkbox" 
                         checked={(currentQuiz[item.field] as boolean) || false}
                         onChange={(e) => updateQuizField(item.field, e.target.checked)}
-                        className="opacity-0 w-0 h-0"
+                        className="opacity-0 w-0 h-0 peer"
                       />
-                      <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s]"></span>
-                      <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[0.22s]"></span>
+                      <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s] peer-checked:bg-[#C4A265]"></span>
+                      <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[transform 0.22s ease] peer-checked:before:translate-x-3"></span>
                     </label>
                   </div>
                 ))}
@@ -629,7 +691,12 @@ export default function CourseBuilderPage() {
             {course?.lessons?.map((lesson) => (
               <div key={lesson.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05)]">
                 <span className="font-['Cormorant_Garamond'] text-[12px] text-[rgba(196,162,101,0.4)] italic">1</span>
-                <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] flex-1">{lesson.name}</span>
+                <div className="flex-1">
+                  <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] block">{lesson.name}</span>
+                  {lesson.duration && (
+                    <span className="text-[9.5px] text-[rgba(250,248,244,0.35)]">{formatDuration(lesson.duration)}</span>
+                  )}
+                </div>
                 {lesson.free && (
                   <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">
                     Gratis
@@ -816,15 +883,65 @@ export default function CourseBuilderPage() {
     return descriptions[type]
   }
 
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return ''
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    if (hours > 0 && mins > 0) {
+      return `${hours} uur ${mins} min`
+    } else if (hours > 0) {
+      return `${hours} uur`
+    } else {
+      return `${mins} min`
+    }
+  }
+
   if (loading) return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
   if (!user) return null
   if (role !== 'admin') return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
 
+  {/* Pulse Animation Styles */}
+  <style jsx>{`
+    @keyframes pulse-gold {
+      0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(196, 162, 101, 0); 
+        border-color: rgba(196, 162, 101, 0.22); 
+      }
+      50% { 
+        box-shadow: 0 0 0 6px rgba(196, 162, 101, 0.08); 
+        border-color: rgba(196, 162, 101, 0.5); 
+      }
+    }
+    .pulse-animation {
+      animation: pulse-gold 2s infinite;
+    }
+    .pulse-animation:hover {
+      animation: none;
+    }
+    .pulse-animation svg {
+      animation: pulse-scale 2s infinite;
+    }
+    .pulse-animation:hover svg {
+      animation: none;
+    }
+    @keyframes pulse-scale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+  `}</style>
+
   return (
     <div className="min-h-screen bg-[#F0EDE6] overflow-hidden" style={{ fontFamily: "'Outfit', sans-serif" }}>
       {/* Topbar */}
-      <div className="fixed top-0 left-0 right-0 h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-[18px] z-[300]">
+      <div className="fixed top-[64px] left-0 right-0 h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-[18px] z-[300]">
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => router.push('/admin/courses')}
+            className="flex items-center gap-1 text-[12px] text-[#7A7268] hover:text-[#1E1A14] transition"
+          >
+            ← Cursussen
+          </button>
+          <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
           <span className="font-['AvenirNext'] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
             Luxique
           </span>
@@ -858,7 +975,7 @@ export default function CourseBuilderPage() {
       </div>
 
       {/* Main App */}
-      <div className="flex" style={{ height: '100vh', paddingTop: '50px' }}>
+      <div className="flex" style={{ height: '100vh', paddingTop: '114px' }}>
         {/* Sidebar */}
         <div className="w-[260px] bg-[#FAF8F4] border-r border-[rgba(30,26,20,0.09)] overflow-y-auto flex flex-col">
           <div className="p-2.5 border-b border-[rgba(30,26,20,0.09)]">
@@ -1015,8 +1132,12 @@ export default function CourseBuilderPage() {
           {/* Add Block Button */}
           <div className="relative">
             <button
-              onClick={() => setShowBlockPicker(!showBlockPicker)}
-              className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full"
+              ref={addBlockButtonRef}
+              onClick={() => {
+                updateBlockPickerPosition()
+                setShowBlockPicker(!showBlockPicker)
+              }}
+              className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full pulse-animation"
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 4.5v15m7.5-7.5h-15" />
@@ -1026,7 +1147,13 @@ export default function CourseBuilderPage() {
 
             {/* Block Picker Dropdown */}
             {showBlockPicker && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[12px] shadow-[0_8px_32px_rgba(30,26,20,0.14)] p-2 z-[100] min-w-[220px] flex flex-wrap gap-1">
+              <div 
+                className="fixed bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[12px] shadow-[0_8px_32px_rgba(30,26,20,0.14)] p-2 z-[100] min-w-[220px] flex flex-wrap gap-1"
+                style={{
+                  top: `${blockPickerPosition.top}px`,
+                  left: `${blockPickerPosition.left}px`
+                }}
+              >
                 {(['video', 'text', 'image', 'quiz', 'callout', 'download', 'divider'] as BlockType[]).map((type) => (
                   <button
                     key={type}
