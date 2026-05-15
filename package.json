@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@mux/mux-node": "^14.0.1",
     "@mux/mux-player-react": "^3.13.0",
     "@stripe/stripe-js": "^9.4.0",
     "@supabase/ssr": "^0.10.2",

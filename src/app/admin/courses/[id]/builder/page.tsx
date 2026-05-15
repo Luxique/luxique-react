@@ -142,21 +142,41 @@ export default function CourseBuilderPage() {
   }, [searchParams])
 
   const loadCourse = async (id: string) => {
-    const { data } = await supabase.from('courses').select('*').eq('id', id).single()
-    if (data) {
+    const { data: courseData } = await supabase.from('courses').select('*').eq('id', id).single()
+    if (courseData) {
       // Parse the course data
-      const courseData: Course = {
-        id: data.id,
-        title: data.title,
-        description: data.description || undefined,
-        firstLessonFree: data.first_lesson_free || false,
-        introVideo: data.intro_video || false,
-        finalQuizRequired: data.final_quiz_required || false,
-        certificate: data.certificate || false,
-        lessons: data.lessons || [],
-        quizzes: data.quizzes || []
+      const parsedCourse: Course = {
+        id: courseData.id,
+        title: courseData.title,
+        description: courseData.description || undefined,
+        firstLessonFree: courseData.first_lesson_free || false,
+        introVideo: courseData.intro_video || false,
+        finalQuizRequired: courseData.final_quiz_required || false,
+        certificate: courseData.certificate || false,
+        lessons: [],
+        quizzes: []
       }
-      setCourse(courseData)
+      
+      // Fetch lessons for this course
+      const { data: lessonsData } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('course_id', id)
+        .order('sort_order')
+        
+      if (lessonsData) {
+        parsedCourse.lessons = lessonsData.map(lesson => ({
+          id: lesson.id,
+          num: lesson.sort_order + 1,
+          name: lesson.title,
+          free: lesson.is_free,
+          duration: lesson.duration_seconds ? Math.floor(lesson.duration_seconds / 60) : undefined,
+          reflectionQuestions: [],
+          blocks: [] // Will be loaded separately
+        }))
+      }
+      
+      setCourse(parsedCourse)
     }
   }
 
@@ -164,6 +184,7 @@ export default function CourseBuilderPage() {
     if (!course) return
     setSaving(true)
     
+    // Update course metadata
     await supabase.from('courses').upsert({
       id: course.id,
       title: course.title,
@@ -172,22 +193,91 @@ export default function CourseBuilderPage() {
       intro_video: course.introVideo || false,
       final_quiz_required: course.finalQuizRequired || false,
       certificate: course.certificate || false,
-      lessons: course.lessons || [],
-      quizzes: course.quizzes || []
+      is_first_lesson_free: course.firstLessonFree || false,
+      status: 'draft'
     })
+
+    // Save blocks if we're in a lesson or quiz context
+    if ((currentContext === 'lesson' && currentLesson) || (currentContext === 'quiz' && currentQuiz)) {
+      await saveBlocks()
+    }
 
     setSaving(false)
     alert('Concept opgeslagen!')
   }
 
-  const switchContext = (type: ContextType, item?: Lesson | Quiz) => {
+  const saveBlocks = async () => {
+    if (!course) return
+    
+    // Upsert all blocks for current context
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i]
+      await supabase.from('blocks').upsert({
+        id: block.id,
+        lesson_id: currentContext === 'lesson' ? currentLesson?.id : null,
+        course_id: currentContext === 'global' ? course.id : null,
+        type: block.type,
+        sort_order: i,
+        content: {
+          title: block.title,
+          subtitle: block.subtitle,
+          content: block.content,
+          url: block.url,
+          caption: block.caption,
+          question: block.question,
+          options: block.options,
+          points: block.points,
+          quizType: block.quizType,
+          autoplay: block.autoplay,
+          subtitles: block.subtitles,
+          fileName: block.fileName,
+          fileDescription: block.fileDescription
+        },
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
+    }
+  }
+
+  const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
     if (type === 'lesson' && item && 'free' in item) {
       setCurrentLesson(item as Lesson)
-      setBlocks((item as Lesson).blocks || [])
+      // Load blocks for this lesson
+      await loadBlocksForLesson((item as Lesson).id)
     } else if (type === 'quiz' && item && 'type' in item) {
       setCurrentQuiz(item as Quiz)
       setBlocks((item as Quiz).blocks || [])
+    } else {
+      setBlocks([])
+    }
+  }
+
+  const loadBlocksForLesson = async (lessonId: string) => {
+    const { data: blocksData } = await supabase
+      .from('blocks')
+      .select('*')
+      .eq('lesson_id', lessonId)
+      .order('sort_order')
+      
+    if (blocksData) {
+      const parsedBlocks: Block[] = blocksData.map(block => ({
+        id: block.id,
+        type: block.type as BlockType,
+        title: block.content?.title,
+        subtitle: block.content?.subtitle,
+        content: block.content?.content,
+        url: block.content?.url,
+        caption: block.content?.caption,
+        question: block.content?.question,
+        options: block.content?.options,
+        points: block.content?.points,
+        quizType: block.content?.quizType,
+        autoplay: block.content?.autoplay,
+        subtitles: block.content?.subtitles,
+        fileName: block.content?.fileName,
+        fileDescription: block.content?.fileDescription
+      }))
+      setBlocks(parsedBlocks)
     } else {
       setBlocks([])
     }
@@ -984,7 +1074,10 @@ export default function CourseBuilderPage() {
             </span>
             <div className="flex flex-col gap-0.5">
               <button
-                onClick={() => switchContext('global')}
+                onClick={() => {
+                  switchContext('global')
+                  // Handle async without blocking
+                }}
                 className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'global' ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
               >
                 <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'global' ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
@@ -1004,7 +1097,10 @@ export default function CourseBuilderPage() {
               {course?.lessons?.map((lesson) => (
                 <button
                   key={lesson.id}
-                  onClick={() => switchContext('lesson', lesson)}
+                  onClick={() => {
+                    switchContext('lesson', lesson)
+                    // Handle async without blocking
+                  }}
                   className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
                 >
                   <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
@@ -1029,7 +1125,10 @@ export default function CourseBuilderPage() {
               {course?.quizzes?.map((quiz) => (
                 <button
                   key={quiz.id}
-                  onClick={() => switchContext('quiz', quiz)}
+                  onClick={() => {
+                    switchContext('quiz', quiz)
+                    // Handle async without blocking
+                  }}
                   className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'quiz' && currentQuiz?.id === quiz.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
                 >
                   <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'quiz' && currentQuiz?.id === quiz.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
