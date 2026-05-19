@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -72,10 +72,9 @@ type ContextType = 'global' | 'lesson' | 'quiz'
 function uid() { return crypto.randomUUID() }
 
 /* ── Main Course Builder Component ── */
-export default function CourseBuilderPage() {
+export default function CourseBuilderPage({ params }: { params: { id: string } }) {
   const { user, role, loading } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [course, setCourse] = useState<Course | null>(null)
   const [currentContext, setCurrentContext] = useState<ContextType>('global')
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
@@ -159,51 +158,40 @@ export default function CourseBuilderPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    const courseId = searchParams.get('id')
-    if (courseId) {
+    const courseId = params.id
+    if (courseId && courseId !== 'new') {
       loadCourse(courseId)
     } else {
-      // Create new course
       setCourse({
-        id: uid(),
+        id: crypto.randomUUID(),
         title: 'Nieuwe Cursus',
         firstLessonFree: true,
         introVideo: true,
         finalQuizRequired: false,
         certificate: true,
         lessons: [
-          { id: uid(), num: 1, name: 'Introductie', free: true, reflectionQuestions: ['Wat viel je op aan...'] }
+          { id: crypto.randomUUID(), num: 1, name: 'Introductie', free: true, reflectionQuestions: [], blocks: [
+            { id: crypto.randomUUID(), type: 'video' as const },
+            { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
+          ]}
         ],
         quizzes: [
-          { 
-            id: uid(), 
-            num: 1, 
-            name: 'Toets', 
-            type: 'intermediate',
-            blocks: [
-              {
-                id: uid(),
-                type: 'quiz',
-                question: '',
-                options: [
-                  { id: uid(), text: '', correct: true },
-                  { id: uid(), text: '', correct: false },
-                  { id: uid(), text: '', correct: false }
-                ]
-              }
-            ]
-          }
+          { id: crypto.randomUUID(), num: 1, name: 'Toets', type: 'intermediate' as const, blocks: [
+            { id: crypto.randomUUID(), type: 'quiz' as const, question: '', options: [
+              { id: crypto.randomUUID(), text: '', correct: true },
+              { id: crypto.randomUUID(), text: '', correct: false },
+            ]}
+          ]}
         ]
       })
     }
+  }, [params.id])
 
-    // Add event listener for save from navbar
-    const handleSave = () => {
-      saveCourse()
-    }
+  useEffect(() => {
+    const handleSave = () => { saveCourse() }
     window.addEventListener('builder-save', handleSave)
     return () => window.removeEventListener('builder-save', handleSave)
-  }, [searchParams, saveCourse])
+  }, [saveCourse])
 
   const loadCourse = async (id: string) => {
     const { data: courseData } = await supabase.from('courses').select('*').eq('id', id).single()

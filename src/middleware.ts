@@ -17,7 +17,8 @@ export async function middleware(request: NextRequest) {
       "connect-src 'self' https://*.supabase.co https://api.mux.com https://storage.googleapis.com wss://*.supabase.co",
       "media-src 'self' https://*.mux.com blob:",
       "img-src 'self' data: https://*.mux.com https://image.mux.com https://*.supabase.co",
-      "style-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
       "frame-src 'self' https://*.mux.com",
     ].join('; '))
     return response
