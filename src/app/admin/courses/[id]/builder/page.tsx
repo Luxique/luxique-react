@@ -259,13 +259,21 @@ export default function CourseBuilderPage() {
   }
 
   const loadBlocksForLesson = async (lessonId: string) => {
+    // Eerst check in lokale course state (voor nieuwe cursussen)
+    const localLesson = course?.lessons?.find(l => l.id === lessonId)
+    if (localLesson?.blocks && localLesson.blocks.length > 0) {
+      setBlocks(localLesson.blocks)
+      return
+    }
+    
+    // Dan Supabase (voor bestaande cursussen)
     const { data: blocksData } = await supabase
       .from('blocks')
       .select('*')
       .eq('lesson_id', lessonId)
       .order('sort_order')
-      
-    if (blocksData) {
+    
+    if (blocksData && blocksData.length > 0) {
       const parsedBlocks: Block[] = blocksData.map(block => ({
         id: block.id,
         type: block.type as BlockType,
@@ -273,19 +281,14 @@ export default function CourseBuilderPage() {
         subtitle: block.content?.subtitle,
         content: block.content?.content,
         url: block.content?.url,
-        caption: block.content?.caption,
-        question: block.content?.question,
-        options: block.content?.options,
-        points: block.content?.points,
-        quizType: block.content?.quizType,
-        autoplay: block.content?.autoplay,
-        subtitles: block.content?.subtitles,
-        fileName: block.content?.fileName,
-        fileDescription: block.content?.fileDescription
       }))
       setBlocks(parsedBlocks)
     } else {
-      setBlocks([])
+      // Geen blokken gevonden: zet standaard blokken
+      setBlocks([
+        { id: uid(), type: 'video', autoplay: false, subtitles: false },
+        { id: uid(), type: 'text', title: '', subtitle: '', content: '' },
+      ])
     }
   }
 
@@ -397,15 +400,15 @@ export default function CourseBuilderPage() {
               ).map((item) => (
                 <div key={item.field} className="flex items-center justify-between">
                   <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
-                  <label className="relative w-8 h-5 flex-shrink-0">
+                  <label className="relative w-8 h-5 flex-shrink-0 block">
                     <input 
                       type="checkbox" 
                       checked={(course?.[item.field] as boolean) || false}
                       onChange={(e) => updateCourseField(item.field, e.target.checked)}
                       className="opacity-0 w-0 h-0 peer"
                     />
-                    <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s] peer-checked:bg-[#C4A265]"></span>
-                    <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[transform 0.22s ease] peer-checked:before:translate-x-3"></span>
+                    <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-all duration-[220ms] peer-checked:bg-[#C4A265]"></span>
+                    <span className="absolute h-3 w-3 left-[3px] bottom-[3px] bg-[rgba(30,26,20,0.35)] rounded-full transition-transform duration-[220ms] ease-in-out peer-checked:translate-x-[14px] peer-checked:bg-white"></span>
                   </label>
                 </div>
               ))}
@@ -484,8 +487,8 @@ export default function CourseBuilderPage() {
                     onChange={(e) => updateLessonField('free', e.target.checked)}
                     className="opacity-0 w-0 h-0 peer"
                   />
-                  <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s] peer-checked:bg-[#C4A265]"></span>
-                  <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[transform 0.22s ease] peer-checked:before:translate-x-3"></span>
+                  <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-all duration-[220ms] peer-checked:bg-[#C4A265]"></span>
+                  <span className="absolute h-3 w-3 left-[3px] bottom-[3px] bg-[rgba(30,26,20,0.35)] rounded-full transition-transform duration-[220ms] ease-in-out peer-checked:translate-x-[14px] peer-checked:bg-white"></span>
                 </label>
               </div>
             </div>
@@ -583,8 +586,8 @@ export default function CourseBuilderPage() {
                         onChange={(e) => updateQuizField(item.field, e.target.checked)}
                         className="opacity-0 w-0 h-0 peer"
                       />
-                      <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-[0.22s] peer-checked:bg-[#C4A265]"></span>
-                      <span className="absolute inset-0 before:absolute before:h-3 before:w-3 before:left-[3px] before:bottom-[3px] before:bg-[rgba(30,26,20,0.3)] before:rounded-full before:transition-[transform 0.22s ease] peer-checked:before:translate-x-3"></span>
+                      <span className="absolute inset-0 bg-[rgba(30,26,20,0.12)] rounded-full cursor-pointer transition-all duration-[220ms] peer-checked:bg-[#C4A265]"></span>
+                      <span className="absolute h-3 w-3 left-[3px] bottom-[3px] bg-[rgba(30,26,20,0.35)] rounded-full transition-transform duration-[220ms] ease-in-out peer-checked:translate-x-[14px] peer-checked:bg-white"></span>
                     </label>
                   </div>
                 ))}
