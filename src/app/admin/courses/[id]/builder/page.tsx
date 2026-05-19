@@ -886,7 +886,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       return (
         <div>
           <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.4)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(196,162,101,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265' }}>▶</div>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(196,162,101,0.2)', border: '1px solid rgba(196,162,101,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265', fontSize: 16 }}>▶</div>
           </div>
           <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 21, color: 'rgba(250,248,244,0.88)', marginBottom: 5 }}>{course?.title || 'Cursusnaam'}</p>
           <p style={{ fontSize: 11.5, color: 'rgba(250,248,244,0.35)', marginBottom: 12 }}>Intro video — klik om te starten</p>
