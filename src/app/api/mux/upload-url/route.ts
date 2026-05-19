@@ -3,19 +3,25 @@ import Mux from '@mux/mux-node';
 
 export async function POST() {
   try {
-    // Lazy initialize Mux client
-    const mux = new Mux({
-      tokenId: process.env.MUX_TOKEN_ID!,
-      tokenSecret: process.env.MUX_TOKEN_SECRET!,
-    });
+    const tokenId = process.env.MUX_TOKEN_ID;
+    const tokenSecret = process.env.MUX_TOKEN_SECRET;
+    console.log('Mux env check:', { hasTokenId: !!tokenId, hasTokenSecret: !!tokenSecret });
+
+    if (!tokenId || !tokenSecret) {
+      return NextResponse.json({ error: 'Mux credentials not configured' }, { status: 500 });
+    }
+
+    const mux = new Mux({ tokenId, tokenSecret });
 
     const upload = await mux.video.uploads.create({
       new_asset_settings: {
-        playback_policy: ['public'],  // TODO: switch to signed for student view
+        playback_policy: ['public'],
         mp4_support: 'none',
       },
       cors_origin: process.env.NEXT_PUBLIC_URL || '*',
     });
+
+    console.log('Mux upload created:', { id: upload.id, url: upload.url ? 'present' : 'missing' });
 
     return NextResponse.json({ 
       upload_url: upload.url, 
@@ -24,7 +30,8 @@ export async function POST() {
   } catch (error) {
     console.error('Error creating Mux upload URL:', error);
     return NextResponse.json({ 
-      error: 'Failed to create upload URL' 
+      error: 'Failed to create upload URL',
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }
