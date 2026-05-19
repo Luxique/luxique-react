@@ -93,78 +93,6 @@ export default function CourseBuilderPage() {
   const [videoUploading, setVideoUploading] = useState(false)
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
 
-  // ── SWITCH CONTEXT FUNCTION ──
-  const switchContext = useCallback((context: ContextType, item?: Lesson | Quiz) => {
-    setCurrentContext(context)
-    if (context === 'lesson' && item) {
-      setCurrentLesson(item as Lesson)
-      setCurrentQuiz(null)
-      // Load blocks for this lesson
-      loadBlocksForLesson(item.id)
-    } else if (context === 'quiz' && item) {
-      setCurrentQuiz(item as Quiz)
-      setCurrentLesson(null)
-      // Load blocks for this quiz
-      loadBlocksForQuiz(item.id)
-    } else if (context === 'global') {
-      setCurrentLesson(null)
-      setCurrentQuiz(null)
-      setBlocks([])
-    }
-  }, [])
-
-  // ── LOAD BLOCKS FUNCTIONS ──
-  const loadBlocksForLesson = useCallback(async (lessonId: string) => {
-    const { data: blocksData } = await supabase
-      .from('blocks')
-      .select('*')
-      .eq('lesson_id', lessonId)
-      .order('sort_order')
-    
-    if (blocksData) {
-      setBlocks(blocksData.map(block => ({
-        ...block,
-        content: typeof block.content === 'string' ? JSON.parse(block.content) : block.content
-      })))
-    }
-  }, [])
-
-  const loadBlocksForQuiz = useCallback(async (quizId: string) => {
-    const { data: blocksData } = await supabase
-      .from('blocks')
-      .select('*')
-      .eq('quiz_id', quizId)
-      .order('sort_order')
-    
-    if (blocksData) {
-      setBlocks(blocksData.map(block => ({
-        ...block,
-        content: typeof block.content === 'string' ? JSON.parse(block.content) : block.content
-      })))
-    }
-  }, [])
-
-  // ── ADD LESSON FUNCTION ──
-  const addLesson = useCallback(() => {
-    const newLesson: Lesson = {
-      id: uid(),
-      num: lessonNumber,
-      name: `Nieuwe les ${lessonNumber}`,
-      free: false,
-      duration: 0,
-      blocks: []
-    }
-    setLessonNumber(prev => prev + 1)
-    
-    if (course) {
-      setCourse(prev => ({
-        ...prev!,
-        lessons: [...(prev?.lessons || []), newLesson]
-      }))
-      switchContext('lesson', newLesson)
-    }
-  }, [course, lessonNumber, switchContext])
-
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -385,6 +313,31 @@ export default function CourseBuilderPage() {
     setBlocks(blocks.filter(b => b.id !== id))
   }
 
+  const addLesson = () => {
+    if (!course) return
+    const defaultBlocks: Block[] = [
+      { id: uid(), type: 'text', title: '', subtitle: '', content: '' },
+      { id: uid(), type: 'video', autoplay: false, subtitles: false },
+      { id: uid(), type: 'text', title: '', subtitle: '', content: '' }
+    ]
+    
+    const newLesson: Lesson = {
+      id: uid(),
+      num: lessonNumber,
+      name: `Les ${lessonNumber}`,
+      free: false,
+      reflectionQuestions: [],
+      blocks: defaultBlocks
+    }
+    setLessonNumber(lessonNumber + 1)
+    setCourse({
+      ...course,
+      lessons: [...(course.lessons || []), newLesson]
+    })
+  }
+
+  const addReflectionQuestion = () => {
+    if (!currentLesson) return
     const newQuestions = [...(currentLesson.reflectionQuestions || []), `Reflectievraag ${questionNumber}`]
     setQuestionNumber(questionNumber + 1)
     setCurrentLesson({
@@ -745,11 +698,7 @@ export default function CourseBuilderPage() {
             ) : (
               // Clickable upload zone
               <div 
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  videoFileInputRef.current?.click()
-                }} 
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); videoFileInputRef.current?.click() }} 
                 style={{ cursor: 'pointer' }}
                 className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition"
               >
@@ -941,7 +890,7 @@ export default function CourseBuilderPage() {
           </p>
           <div className="space-y-2">
             {course?.lessons?.map((lesson) => (
-              <div key={lesson.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05]">
+              <div key={lesson.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05)]">
                 <span className="font-['Cormorant_Garamond'] text-[12px] text-[rgba(196,162,101,0.4)] italic">{lesson.num}</span>
                 <div className="flex-1">
                   <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] block">{lesson.name}</span>
@@ -949,13 +898,6 @@ export default function CourseBuilderPage() {
                     <span className="text-[9.5px] text-[rgba(250,248,244,0.35)]">{formatDuration(lesson.duration)}</span>
                   )}
                 </div>
-                {lesson.free && (
-                  <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-1.5 py-0.5 rounded-full bg-[#C4A265] text-white">
-                    Gratis
-                  </span>
-                )}
-              </div>
-            ))}
                 {lesson.free && (
                   <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">
                     Gratis
@@ -1082,31 +1024,32 @@ export default function CourseBuilderPage() {
           <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-[rgba(80,190,120,0.45)] mb-2">
             Toetsvragen
           </p>
-          <div className="bg-[rgba(255,255,255,0.04)] rounded-lg p-4 border border-[rgba(255,255,255,0.07]">
-            {blocks.filter(b => b.type === 'quiz').map((block, index) => (
-              <div key={block.id} className="mb-4 last:mb-0">
-                <p className="text-[13px] font-medium text-[rgba(250,248,244,0.75)] mb-3">Vraag {index + 1}: {block.question}</p>
-                <div className="space-y-2">
-                  {block.content?.options?.map((option: any, optIndex: number) => (
-                    <div key={optIndex} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.07)] rounded-lg text-[12px] text-[rgba(250,248,244,0.5)] cursor-pointer hover:border-[rgba(196,162,101,0.25)] hover:text-[rgba(250,248,244,0.75)] transition">
-                      <div className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.15)] flex items-center justify-center text-[9px] text-[rgba(255,255,255,0.35)] flex-shrink-0">
-                        {String.fromCharCode(65 + optIndex)}
+          {blocks.length > 0 ? (
+            <div className="bg-[rgba(255,255,255,0.04)] rounded-lg p-4 border border-[rgba(255,255,255,0.07)]">
+              {blocks.map((block, index) => (
+                <div key={block.id} className={index > 0 ? 'mt-4' : ''}>
+                  <p className="text-[13px] font-medium text-[rgba(250,248,244,0.75)] mb-3">Vraag {index + 1}: {block.question || 'Geen vraag'}</p>
+                  <div className="space-y-2">
+                    {(block.options || []).map((option: { id: string; text: string; correct: boolean }, optIdx: number) => (
+                      <div key={option.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.07)] rounded-lg text-[12px] text-[rgba(250,248,244,0.5)] cursor-pointer hover:border-[rgba(196,162,101,0.25)] hover:text-[rgba(250,248,244,0.75)] transition">
+                        <div className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.15)] flex items-center justify-center text-[9px] text-[rgba(255,255,255,0.35)] flex-shrink-0">
+                          {String.fromCharCode(65 + optIdx)}
+                        </div>
+                        {option.text || `Antwoord ${String.fromCharCode(65 + optIdx)}`}
                       </div>
-                      {option}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          {blocks.filter(b => b.type === 'quiz').length === 0 ? (
+              ))}
+            </div>
+          ) : (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
               <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="rgba(80,190,120,0.25)" strokeWidth="0.75">
                 <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-[13px] text-[rgba(250,248,244,0.35)]">Voeg quizvragen toe via de builder</p>
             </div>
-          ) : null}
+          )}
         </div>
       )
     }
