@@ -29,7 +29,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#0C0A07" />
         <meta name="color-scheme" content="dark" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <script type="module" src="https://cdn.mux.com/mux-player/1.15.0/mux-player.mjs" async></script>
       </head>
       <body>
         <AuthProvider>

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase-client'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import MuxPlayer from '@mux/mux-player-react'
 
 /* ── Types ── */
 type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
@@ -670,12 +671,11 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             {typeof block.content === 'object' && block.content !== null && block.content.mux_playback_id ? (
               // Show video thumbnail/preview
               <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
-                <mux-player
-                  playback-id={block.content.mux_playback_id as string}
-                  stream-type="on-demand"
-                  style={{ width: '100%', height: '100%', display: 'block' }}
-                  {...(block.content.mux_playback_token ? { tokens: block.content.mux_playback_token as string } : {})}
-                ></mux-player>
+                <MuxPlayer
+                  playbackId={block.content.mux_playback_id as string}
+                  streamType="on-demand"
+                  style={{ width: '100%', aspectRatio: '16/9' }}
+                />
               </div>
             ) : videoUploading ? (
               // Progress bar
@@ -918,15 +918,13 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                 // Check if video has been uploaded
                 const videoContent = typeof block.content === 'object' && block.content !== null ? block.content as Record<string, unknown> : null;
                 const playbackId = videoContent?.mux_playback_id as string | undefined;
-                const playbackToken = videoContent?.mux_playback_token as string | undefined;
                 return playbackId ? (
                   <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
-                    <mux-player
-                      playback-id={playbackId}
-                      stream-type="on-demand"
-                      style={{ width: '100%', height: '100%', display: 'block' }}
-                      {...(playbackToken ? { tokens: playbackToken } : {})}
-                    ></mux-player>
+                    <MuxPlayer
+                      playbackId={playbackId}
+                      streamType="on-demand"
+                      style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
+                    />
                   </div>
                 ) : (
                   <div key={block.id} className="w-full aspect-video bg-[rgba(0,0,0,0.4)] rounded-lg flex items-center justify-center">
