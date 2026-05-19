@@ -90,6 +90,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   
   // Video upload state
   const videoFileInputRef = useRef<HTMLInputElement>(null)
+  const imageFileInputRef = useRef<HTMLInputElement>(null)
+  const downloadFileInputRef = useRef<HTMLInputElement>(null)
   const [videoUploading, setVideoUploading] = useState(false)
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
 
@@ -768,7 +770,17 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       case 'image':
         return (
           <div className="space-y-2">
-            <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:bg-[rgba(196,162,101,0.03)] transition">
+            <input
+              ref={imageFileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={() => { /* TODO: image upload logic */ }}
+            />
+            <div
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); imageFileInputRef.current?.click() }}
+              className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:bg-[rgba(196,162,101,0.03)] transition"
+            >
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.35 }}>
                 <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
               </svg>
@@ -845,7 +857,17 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       case 'download':
         return (
           <div className="space-y-3">
-            <div className="w-full bg-[#F0EDE6] border-1.5 border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-5 flex flex-col items-center gap-2 cursor-pointer hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition text-center">
+            <input
+              ref={downloadFileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.zip,.png,.jpg"
+              style={{ display: 'none' }}
+              onChange={() => { /* TODO: file upload logic */ }}
+            />
+            <div
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); downloadFileInputRef.current?.click() }}
+              className="w-full bg-[#F0EDE6] border-1.5 border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-5 flex flex-col items-center gap-2 cursor-pointer hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition text-center"
+            >
               <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.5 }}>
                 <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
               </svg>
@@ -900,12 +922,13 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             const playbackId = (content as {mux_playback_id?: string}).mux_playback_id
             if (playbackId) {
               return (
-                <MuxPlayer
-                  key={block.id}
-                  playbackId={playbackId}
-                  streamType="on-demand"
-                  style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
-                />
+                <div key={block.id} style={{ width: '100%', borderRadius: 8, overflow: 'hidden' }}>
+                  <MuxPlayer
+                    playbackId={playbackId}
+                    streamType="on-demand"
+                    style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
+                  />
+                </div>
               )
             }
             return (
@@ -917,27 +940,91 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
 
           if (block.type === 'text') {
             return (
-              <div key={block.id}>
-                {block.title && <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, color: 'rgba(250,248,244,0.88)', marginBottom: 4 }}>{block.title}</p>}
-                {block.subtitle && <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.5)', marginBottom: 6 }}>{block.subtitle}</p>}
-                {typeof block.content === 'string' && block.content && <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }}>{block.content}</p>}
+              <div key={block.id} style={{ marginBottom: 12 }}>
+                {block.title && (
+                  <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, color: 'rgba(250,248,244,0.88)', marginBottom: 4, lineHeight: 1.2 }}>
+                    {block.title}
+                  </p>
+                )}
+                {block.subtitle && (
+                  <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.5)', marginBottom: 6 }}>
+                    {block.subtitle}
+                  </p>
+                )}
+                {typeof block.content === 'string' && block.content && (
+                  <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.35)', lineHeight: 1.75 }}>
+                    {block.content}
+                  </p>
+                )}
+                {!block.title && !block.subtitle && !block.content && (
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Tekst blok — nog leeg</p>
+                )}
+              </div>
+            )
+          }
+
+          if (block.type === 'image') {
+            return (
+              <div key={block.id} style={{ marginBottom: 12 }}>
+                {block.url ? (
+                  <img src={block.url} alt={block.caption || ''} style={{ width: '100%', borderRadius: 8, display: 'block' }} />
+                ) : (
+                  <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(255,255,255,0.04)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>Afbeelding</span>
+                  </div>
+                )}
+                {block.caption && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 4 }}>{block.caption}</p>}
+              </div>
+            )
+          }
+
+          if (block.type === 'quiz') {
+            return (
+              <div key={block.id} style={{ marginBottom: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, border: '1px solid rgba(255,255,255,0.07)' }}>
+                <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.7)', marginBottom: 8, fontWeight: 500 }}>
+                  {block.question || 'Quizvraag — nog leeg'}
+                </p>
+                {(block.options || []).map((opt: { text: string; correct: boolean }, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: opt.correct ? 'rgba(80,190,120,0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${opt.correct ? 'rgba(80,190,120,0.4)' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: opt.correct ? 'rgba(80,190,120,0.9)' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
+                      {String.fromCharCode(65 + i)}
+                    </div>
+                    <span style={{ fontSize: 12, color: opt.correct ? 'rgba(80,190,120,0.8)' : 'rgba(255,255,255,0.35)' }}>
+                      {opt.text || `Antwoord ${String.fromCharCode(65 + i)}`}
+                    </span>
+                  </div>
+                ))}
               </div>
             )
           }
 
           if (block.type === 'callout') {
             return (
-              <div key={block.id} style={{ background: 'rgba(196,162,101,0.07)', borderLeft: '3px solid rgba(196,162,101,0.3)', borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 12.5, color: 'rgba(250,248,244,0.55)', lineHeight: 1.6 }}>
-                💡 {typeof block.content === 'string' ? block.content : ''}
+              <div key={block.id} style={{ marginBottom: 12, background: 'rgba(196,162,101,0.07)', borderLeft: '3px solid rgba(196,162,101,0.35)', borderRadius: '0 8px 8px 0', padding: '10px 14px' }}>
+                <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.55)', lineHeight: 1.6 }}>
+                  {typeof block.content === 'string' && block.content ? block.content : 'Tip / Note — nog leeg'}
+                </p>
+              </div>
+            )
+          }
+
+          if (block.type === 'download') {
+            return (
+              <div key={block.id} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(196,162,101,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265', flexShrink: 0, fontSize: 14 }}>↓</div>
+                <div>
+                  <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.7)', fontWeight: 500 }}>{block.fileName || 'Downloadbestand'}</p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{block.fileDescription || 'Klik om te downloaden'}</p>
+                </div>
               </div>
             )
           }
 
           if (block.type === 'divider') {
             return (
-              <div key={block.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={block.id} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
-                <span style={{ color: 'rgba(196,162,101,0.3)', fontSize: 10 }}>✦</span>
+                <span style={{ color: 'rgba(196,162,101,0.25)', fontSize: 10 }}>✦</span>
                 <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
               </div>
             )
@@ -1187,7 +1274,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               </div>
             </div>
             <span className="text-[9px] font-bold tracking-[0.16em] uppercase px-2 py-1 rounded-full border border-[rgba(196,162,101,0.25)] text-[#7A6340] bg-[rgba(196,162,101,0.08)]">
-              {currentContext === 'global' && 'Globaal'}
+              {currentContext === 'global' && ''}
               {currentContext === 'lesson' && 'Les'}
               {currentContext === 'quiz' && 'Toets'}
             </span>
@@ -1201,14 +1288,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_2px_10px_rgba(30,26,20,0.08)] ml-8">
               <div className="flex items-center justify-between p-2.5 bg-[#F0EDE6] border-b border-[rgba(30,26,20,0.09)]">
                 <div className="flex items-center gap-2">
-                  <svg width="9" height="13" viewBox="0 0 9 13" fill="none" className="text-[#7A7268] opacity-50">
-                    <circle cx="2.5" cy="2" r="1.1" fill="currentColor"/>
-                    <circle cx="6.5" cy="2" r="1.1" fill="currentColor"/>
-                    <circle cx="2.5" cy="6.5" r="1.1" fill="currentColor"/>
-                    <circle cx="6.5" cy="6.5" r="1.1" fill="currentColor"/>
-                    <circle cx="2.5" cy="11" r="1.1" fill="currentColor"/>
-                    <circle cx="6.5" cy="11" r="1.1" fill="currentColor"/>
-                  </svg>
                   <span className="text-[9.5px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">
                     {getBlockTypeLabel(block.type)}
                   </span>
@@ -1326,7 +1405,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                 currentContext === 'lesson' ? (currentLesson?.free ? 'bg-[#C4A265] text-white' : 'bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.3)] border border-[rgba(255,255,255,0.08)]') :
                 'bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]'
               }`}>
-                {currentContext === 'global' && 'Globaal'}
+                {currentContext === 'global' && ''}
                 {currentContext === 'lesson' && (currentLesson?.free ? 'Gratis preview' : 'Account vereist')}
                 {currentContext === 'quiz' && 'Toets'}
               </span>
