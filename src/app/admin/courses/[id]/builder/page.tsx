@@ -882,91 +882,71 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   }
 
   const renderPreview = () => {
-    if (currentContext === 'global') {
+    // Preview is puur een spiegel van blocks state. Geen hardcoded content.
+    if (blocks.length === 0) {
       return (
-        <div>
-          <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.4)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(196,162,101,0.2)', border: '1px solid rgba(196,162,101,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265', fontSize: 16 }}>▶</div>
-          </div>
-          <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 21, color: 'rgba(250,248,244,0.88)', marginBottom: 5 }}>{course?.title || 'Cursusnaam'}</p>
-          <p style={{ fontSize: 11.5, color: 'rgba(250,248,244,0.35)', marginBottom: 12 }}>Intro video — klik om te starten</p>
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
-            <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,162,101,0.5)', display: 'block', marginBottom: 7 }}>Inhoud van de cursus</span>
-            {course?.lessons?.map(lesson => (
-              <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 7, marginBottom: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 12, color: 'rgba(196,162,101,0.4)', fontStyle: 'italic' }}>{lesson.num}</span>
-                <span style={{ fontSize: 11.5, color: 'rgba(250,248,244,0.6)', flex: 1 }}>{lesson.name}</span>
-                {lesson.free && <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 100, background: '#C4A265', color: '#fff' }}>Gratis</span>}
+        <div style={{ textAlign: 'center', padding: 32, color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
+          Geen blokken toegevoegd
+        </div>
+      )
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {blocks.map(block => {
+          const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
+
+          if (block.type === 'video') {
+            const playbackId = (content as {mux_playback_id?: string}).mux_playback_id
+            if (playbackId) {
+              return (
+                <MuxPlayer
+                  key={block.id}
+                  playbackId={playbackId}
+                  streamType="on-demand"
+                  style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
+                />
+              )
+            }
+            return (
+              <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(196,162,101,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265' }}>▶</div>
               </div>
-            ))}
-          </div>
-        </div>
-      )
-    }
+            )
+          }
 
-    if (currentContext === 'lesson' || currentContext === 'quiz') {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {blocks.length === 0 && (
-            <div style={{ textAlign: 'center', padding: 20, color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>Voeg blokken toe in de builder</div>
-          )}
-          {blocks.map(block => {
-            const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
+          if (block.type === 'text') {
+            return (
+              <div key={block.id}>
+                {block.title && <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, color: 'rgba(250,248,244,0.88)', marginBottom: 4 }}>{block.title}</p>}
+                {block.subtitle && <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.5)', marginBottom: 6 }}>{block.subtitle}</p>}
+                {typeof block.content === 'string' && block.content && <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }}>{block.content}</p>}
+              </div>
+            )
+          }
 
-            if (block.type === 'video') {
-              const playbackId = (content as {mux_playback_id?: string}).mux_playback_id
-              if (playbackId) {
-                return (
-                  <MuxPlayer
-                    key={block.id}
-                    playbackId={playbackId}
-                    streamType="on-demand"
-                    style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
-                  />
-                )
-              }
-              return (
-                <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>Video</span>
-                </div>
-              )
-            }
+          if (block.type === 'callout') {
+            return (
+              <div key={block.id} style={{ background: 'rgba(196,162,101,0.07)', borderLeft: '3px solid rgba(196,162,101,0.3)', borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 12.5, color: 'rgba(250,248,244,0.55)', lineHeight: 1.6 }}>
+                💡 {typeof block.content === 'string' ? block.content : ''}
+              </div>
+            )
+          }
 
-            if (block.type === 'text') {
-              return (
-                <div key={block.id}>
-                  {block.title && <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, color: 'rgba(250,248,244,0.88)', marginBottom: 4 }}>{block.title}</p>}
-                  {block.subtitle && <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.5)', marginBottom: 6 }}>{block.subtitle}</p>}
-                  {typeof block.content === 'string' && block.content && <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }}>{block.content}</p>}
-                </div>
-              )
-            }
+          if (block.type === 'divider') {
+            return (
+              <div key={block.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
+                <span style={{ color: 'rgba(196,162,101,0.3)', fontSize: 10 }}>✦</span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
+              </div>
+            )
+          }
 
-            if (block.type === 'callout') {
-              return (
-                <div key={block.id} style={{ background: 'rgba(196,162,101,0.07)', borderLeft: '3px solid rgba(196,162,101,0.3)', borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 12.5, color: 'rgba(250,248,244,0.55)', lineHeight: 1.6 }}>
-                  💡 {typeof block.content === 'string' ? block.content : ''}
-                </div>
-              )
-            }
-
-            if (block.type === 'divider') {
-              return (
-                <div key={block.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
-                  <span style={{ color: 'rgba(196,162,101,0.3)', fontSize: 10 }}>✦</span>
-                  <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
-                </div>
-              )
-            }
-
-            return null
-          })}
-        </div>
-      )
-    }
-
-    return null
+          return null
+        })}
+      </div>
+    )
   }
 
   const getBlockTypeLabel = (type: BlockType) => {
