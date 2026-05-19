@@ -1,13 +1,14 @@
 import Mux from '@mux/mux-node'
 import { NextResponse } from 'next/server'
 
-const mux = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID!,
-  tokenSecret: process.env.MUX_TOKEN_SECRET!,
-})
-
 export async function POST() {
   try {
+    // Mux client BINNEN de functie aanmaken
+    const mux = new Mux({
+      tokenId: process.env.MUX_TOKEN_ID!,
+      tokenSecret: process.env.MUX_TOKEN_SECRET!,
+    })
+
     const upload = await mux.video.uploads.create({
       new_asset_settings: {
         playback_policy: ['public'],
@@ -15,8 +16,6 @@ export async function POST() {
       },
       cors_origin: '*',
     })
-
-    console.log('Mux upload created:', upload.id, upload.url)
 
     return NextResponse.json({
       upload_url: upload.url,
