@@ -13,13 +13,23 @@ export async function POST() {
 
     const mux = new Mux({ tokenId, tokenSecret });
 
-    const upload = await mux.video.uploads.create({
-      new_asset_settings: {
-        playback_policy: ['public'],
-        mp4_support: 'none',
-      },
-      cors_origin: process.env.NEXT_PUBLIC_URL || '*',
-    });
+    let upload;
+    try {
+      upload = await mux.video.uploads.create({
+        new_asset_settings: {
+          playback_policy: ['public'],
+          mp4_support: 'none',
+        },
+        cors_origin: process.env.NEXT_PUBLIC_URL || '*',
+      });
+    } catch (createError) {
+      console.error('Mux uploads.create error:', createError);
+      return NextResponse.json({
+        error: 'Mux create failed',
+        details: createError instanceof Error ? createError.message : String(createError),
+        stack: createError instanceof Error ? createError.stack : undefined,
+      }, { status: 500 });
+    }
 
     console.log('Mux upload created:', { id: upload.id, url: upload.url ? 'present' : 'missing' });
 
