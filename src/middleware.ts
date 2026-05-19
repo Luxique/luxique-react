@@ -9,7 +9,21 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Security headers only
+  // Skip restrictive headers for admin routes (course builder needs eval for React hydration + Mux)
+  if (pathname.startsWith('/admin')) {
+    response.headers.set('Content-Security-Policy', [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.mux.com",
+      "connect-src 'self' https://*.supabase.co https://api.mux.com https://storage.googleapis.com wss://*.supabase.co",
+      "media-src 'self' https://*.mux.com blob:",
+      "img-src 'self' data: https://*.mux.com https://image.mux.com https://*.supabase.co",
+      "style-src 'self' 'unsafe-inline'",
+      "frame-src 'self' https://*.mux.com",
+    ].join('; '))
+    return response
+  }
+
+  // Security headers for non-admin routes
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
