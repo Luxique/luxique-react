@@ -116,28 +116,56 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
 
   const saveCourse = useCallback(async () => {
     if (!course) return
-    
-    // Update course metadata
-    await supabase.from('courses').upsert({
+
+    // 1. Upsert course
+    const { error: courseError } = await supabase.from('courses').upsert({
       id: course.id,
       title: course.title,
       description: course.description || null,
-      first_lesson_free: course.firstLessonFree || false,
+      is_first_lesson_free: course.firstLessonFree || false,
       intro_video: course.introVideo || false,
       final_quiz_required: course.finalQuizRequired || false,
       certificate: course.certificate || false,
-      is_first_lesson_free: course.firstLessonFree || false,
       status: 'draft'
     })
+    if (courseError) { console.error('Course error:', courseError); return }
 
-    // Save blocks if we're in a lesson or quiz context
-    // Note: blocks are saved individually when they change
-    // if ((currentContext === 'lesson' && currentLesson) || (currentContext === 'quiz' && currentQuiz)) {
-    //   await saveBlocks()
-    // }
+    // 2. Sla les + blokken op als we in een les context zijn
+    if (currentContext === 'lesson' && currentLesson) {
+      await supabase.from('lessons').upsert({
+        id: currentLesson.id,
+        course_id: course.id,
+        title: currentLesson.name,
+        is_free: currentLesson.free,
+        sort_order: currentLesson.num - 1,
+        duration_seconds: (currentLesson.duration || 0) * 60,
+      })
+
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i]
+        const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
+        await supabase.from('blocks').upsert({
+          id: block.id,
+          lesson_id: currentLesson.id,
+          course_id: course.id,
+          type: block.type,
+          sort_order: i,
+          content: {
+            title: block.title,
+            subtitle: block.subtitle,
+            content: block.content,
+            url: block.url,
+            mux_asset_id: (content as {mux_asset_id?: string}).mux_asset_id,
+            mux_playback_id: (content as {mux_playback_id?: string}).mux_playback_id,
+            question: block.question,
+            options: block.options,
+          }
+        })
+      }
+    }
 
     alert('Concept opgeslagen!')
-  }, [course])
+  }, [course, currentContext, currentLesson, blocks])
 
   // Design tokens from mockup
   const colors = {
@@ -856,52 +884,19 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const renderPreview = () => {
     if (currentContext === 'global') {
       return (
-        <div className="space-y-4">
-          <div className="w-full aspect-video bg-[rgba(0,0,0,0.4)] rounded-lg flex items-center justify-center">
-            <div className="w-11 h-11 rounded-full bg-[rgba(196,162,101,0.2)] border border-[rgba(196,162,101,0.3)] flex items-center justify-center text-[#C4A265]">
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
+        <div>
+          <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.4)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(196,162,101,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265' }}>▶</div>
           </div>
-          <div>
-            <p className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[rgba(250,248,244,0.88)] tracking-[-0.01em]">
-              {course?.title || 'Cursusnaam'}
-            </p>
-            <p className="text-[13px] text-[rgba(250,248,244,0.45)] mt-1">Intro video — klik om te starten</p>
-          </div>
-          <div className="flex items-center gap-2.5 py-2">
-            <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-            <span className="text-[9px] text-[rgba(196,162,101,0.3)]">✦</span>
-            <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-          </div>
-          <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-[rgba(196,162,101,0.45)]">
-            Inhoud van de cursus
-          </p>
-          <div className="space-y-2">
-            {course?.lessons?.map((lesson) => (
-              <div key={lesson.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05)]">
-                <span className="font-['Cormorant_Garamond'] text-[12px] text-[rgba(196,162,101,0.4)] italic">{lesson.num}</span>
-                <div className="flex-1">
-                  <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] block">{lesson.name}</span>
-                  {lesson.duration && (
-                    <span className="text-[9.5px] text-[rgba(250,248,244,0.35)]">{formatDuration(lesson.duration)}</span>
-                  )}
-                </div>
-                {lesson.free && (
-                  <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">
-                    Gratis
-                  </span>
-                )}
-              </div>
-            ))}
-            {course?.quizzes?.map((quiz) => (
-              <div key={quiz.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.05)]">
-                <span className="font-['Cormorant_Garamond'] text-[12px] text-[rgba(80,190,120,0.4)] italic">✦</span>
-                <span className="text-[11.5px] text-[rgba(250,248,244,0.6)] flex-1">{quiz.name}</span>
-                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]">
-                  Toets
-                </span>
+          <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 21, color: 'rgba(250,248,244,0.88)', marginBottom: 5 }}>{course?.title || 'Cursusnaam'}</p>
+          <p style={{ fontSize: 11.5, color: 'rgba(250,248,244,0.35)', marginBottom: 12 }}>Intro video — klik om te starten</p>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12 }}>
+            <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(196,162,101,0.5)', display: 'block', marginBottom: 7 }}>Inhoud van de cursus</span>
+            {course?.lessons?.map(lesson => (
+              <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'rgba(255,255,255,0.04)', borderRadius: 7, marginBottom: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 12, color: 'rgba(196,162,101,0.4)', fontStyle: 'italic' }}>{lesson.num}</span>
+                <span style={{ fontSize: 11.5, color: 'rgba(250,248,244,0.6)', flex: 1 }}>{lesson.name}</span>
+                {lesson.free && <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 100, background: '#C4A265', color: '#fff' }}>Gratis</span>}
               </div>
             ))}
           </div>
@@ -909,143 +904,69 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       )
     }
 
-    if (currentContext === 'lesson' && currentLesson) {
+    if (currentContext === 'lesson' || currentContext === 'quiz') {
       return (
-        <div className="space-y-3">
-          {blocks.map((block) => {
-            switch (block.type) {
-              case 'video':
-                const vidContent = typeof block.content === 'object' && block.content !== null ? block.content as Record<string, unknown> : null;
-                const vidPlaybackId = vidContent?.mux_playback_id as string | undefined;
-                return vidPlaybackId ? (
-                  <div key={block.id} style={{ marginBottom: 10 }}>
-                    <MuxPlayer
-                      playbackId={vidPlaybackId}
-                      streamType="on-demand"
-                      style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
-                    />
-                  </div>
-                ) : (
-                  <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Geen video</span>
-                  </div>
-                )
-              case 'text':
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {blocks.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 20, color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>Voeg blokken toe in de builder</div>
+          )}
+          {blocks.map(block => {
+            const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
+
+            if (block.type === 'video') {
+              const playbackId = (content as {mux_playback_id?: string}).mux_playback_id
+              if (playbackId) {
                 return (
-                  <div key={block.id}>
-                    <p className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[rgba(250,248,244,0.88)] tracking-[-0.01em]">
-                      {block.title}
-                    </p>
-                    {block.subtitle && (
-                      <p className="text-[13px] text-[rgba(250,248,244,0.45)] mt-1">{block.subtitle}</p>
-                    )}
-                    {typeof block.content === 'string' && block.content && (
-                      <p className="text-[12.5px] font-light text-[rgba(250,248,244,0.38)] leading-relaxed mt-2">
-                        {block.content}
-                      </p>
-                    )}
-                  </div>
+                  <MuxPlayer
+                    key={block.id}
+                    playbackId={playbackId}
+                    streamType="on-demand"
+                    style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
+                  />
                 )
-              case 'image':
-                return (
-                  <div key={block.id} className="space-y-1">
-                    <div className="w-full aspect-video bg-[rgba(255,255,255,0.05)] rounded-lg flex items-center justify-center">
-                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.15)" strokeWidth="0.75">
-                        <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-                      </svg>
-                    </div>
-                    {block.caption && (
-                      <p className="text-[11px] text-[rgba(255,255,255,0.3)] italic text-center">{block.caption}</p>
-                    )}
-                  </div>
-                )
-              case 'callout':
-                return (
-                  <div key={block.id} className="bg-[rgba(196,162,101,0.07)] border-l-3 border-[rgba(196,162,101,0.3)] rounded-r-lg p-3 text-[12.5px] text-[rgba(250,248,244,0.55)] leading-relaxed">
-                    💡 Tip of opmerking verschijnt hier
-                  </div>
-                )
-              case 'divider':
-                return (
-                  <div key={block.id} className="flex items-center gap-2.5 py-2">
-                    <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-                    <span className="text-[9px] text-[rgba(196,162,101,0.3)]">✦</span>
-                    <div className="flex-1 h-px bg-[rgba(196,162,101,0.12)]"></div>
-                  </div>
-                )
-              default:
-                return null
+              }
+              return (
+                <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>Video</span>
+                </div>
+              )
             }
+
+            if (block.type === 'text') {
+              return (
+                <div key={block.id}>
+                  {block.title && <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 22, color: 'rgba(250,248,244,0.88)', marginBottom: 4 }}>{block.title}</p>}
+                  {block.subtitle && <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.5)', marginBottom: 6 }}>{block.subtitle}</p>}
+                  {typeof block.content === 'string' && block.content && <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }}>{block.content}</p>}
+                </div>
+              )
+            }
+
+            if (block.type === 'callout') {
+              return (
+                <div key={block.id} style={{ background: 'rgba(196,162,101,0.07)', borderLeft: '3px solid rgba(196,162,101,0.3)', borderRadius: '0 8px 8px 0', padding: '12px 14px', fontSize: 12.5, color: 'rgba(250,248,244,0.55)', lineHeight: 1.6 }}>
+                  💡 {typeof block.content === 'string' ? block.content : ''}
+                </div>
+              )
+            }
+
+            if (block.type === 'divider') {
+              return (
+                <div key={block.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
+                  <span style={{ color: 'rgba(196,162,101,0.3)', fontSize: 10 }}>✦</span>
+                  <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
+                </div>
+              )
+            }
+
+            return null
           })}
-          
-          {currentLesson.reflectionQuestions && currentLesson.reflectionQuestions.length > 0 && (
-            <div className="bg-[rgba(0,0,0,0.2)] rounded-lg p-4 border border-[rgba(255,255,255,0.05)]">
-              <span className="text-[9.5px] font-bold tracking-[0.2em] uppercase text-[rgba(196,162,101,0.5)] block mb-3">
-                Reflectievragen
-              </span>
-              {currentLesson.reflectionQuestions.map((question, index) => (
-                <div key={index} className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] rounded-lg p-3 mb-2 flex items-start gap-2">
-                  <span className="font-['Cormorant_Garamond'] text-[13px] text-[rgba(196,162,101,0.4)] italic">1</span>
-                  <div className="flex-1">
-                    <p className="text-[12px] text-[rgba(250,248,244,0.55)]">{question}</p>
-                    <textarea 
-                      placeholder="Jouw antwoord..."
-                      className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] rounded-lg p-2 text-[11.5px] text-[rgba(255,255,255,0.3)] outline-none resize-none min-h-9 mt-2"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )
     }
 
-    if (currentContext === 'quiz' && currentQuiz) {
-      return (
-        <div className="space-y-3">
-          <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-[rgba(80,190,120,0.45)] mb-2">
-            Toetsvragen
-          </p>
-          {blocks.length > 0 ? (
-            <div className="bg-[rgba(255,255,255,0.04)] rounded-lg p-4 border border-[rgba(255,255,255,0.07)]">
-              {blocks.map((block, index) => (
-                <div key={block.id} className={index > 0 ? 'mt-4' : ''}>
-                  <p className="text-[13px] font-medium text-[rgba(250,248,244,0.75)] mb-3">Vraag {index + 1}: {block.question || 'Geen vraag'}</p>
-                  <div className="space-y-2">
-                    {(block.options || []).map((option: { id: string; text: string; correct: boolean }, optIdx: number) => (
-                      <div key={option.id} className="flex items-center gap-2 p-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.07)] rounded-lg text-[12px] text-[rgba(250,248,244,0.5)] cursor-pointer hover:border-[rgba(196,162,101,0.25)] hover:text-[rgba(250,248,244,0.75)] transition">
-                        <div className="w-5 h-5 rounded-full border border-[rgba(255,255,255,0.15)] flex items-center justify-center text-[9px] text-[rgba(255,255,255,0.35)] flex-shrink-0">
-                          {String.fromCharCode(65 + optIdx)}
-                        </div>
-                        {option.text || `Antwoord ${String.fromCharCode(65 + optIdx)}`}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 gap-3">
-              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="rgba(80,190,120,0.25)" strokeWidth="0.75">
-                <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-[13px] text-[rgba(250,248,244,0.35)]">Voeg quizvragen toe via de builder</p>
-            </div>
-          )}
-        </div>
-      )
-    }
-
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="rgba(196,162,101,0.25)" strokeWidth="0.75">
-          <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-        </svg>
-        <p className="text-[13px] text-[rgba(250,248,244,0.4)] font-light">Nog geen blokken</p>
-        <p className="text-[11px] text-[rgba(250,248,244,0.22)]">Voeg een blok toe in de builder</p>
-      </div>
-    )
+    return null
   }
 
   const getBlockTypeLabel = (type: BlockType) => {
@@ -1085,19 +1006,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       divider: 'Visuele break'
     }
     return descriptions[type]
-  }
-
-  const formatDuration = (minutes?: number) => {
-    if (!minutes) return ''
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    if (hours > 0 && mins > 0) {
-      return `${hours} uur ${mins} min`
-    } else if (hours > 0) {
-      return `${hours} uur`
-    } else {
-      return `${mins} min`
-    }
   }
 
   /* ── Sortable Block Component ── */
