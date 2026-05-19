@@ -915,24 +915,19 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           {blocks.map((block) => {
             switch (block.type) {
               case 'video':
-                // Check if video has been uploaded
-                const videoContent = typeof block.content === 'object' && block.content !== null ? block.content as Record<string, unknown> : null;
-                const playbackId = videoContent?.mux_playback_id as string | undefined;
-                return playbackId ? (
-                  <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
+                const vidContent = typeof block.content === 'object' && block.content !== null ? block.content as Record<string, unknown> : null;
+                const vidPlaybackId = vidContent?.mux_playback_id as string | undefined;
+                return vidPlaybackId ? (
+                  <div key={block.id} style={{ marginBottom: 10 }}>
                     <MuxPlayer
-                      playbackId={playbackId}
+                      playbackId={vidPlaybackId}
                       streamType="on-demand"
                       style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
                     />
                   </div>
                 ) : (
-                  <div key={block.id} className="w-full aspect-video bg-[rgba(0,0,0,0.4)] rounded-lg flex items-center justify-center">
-                    <div className="w-11 h-11 rounded-full bg-[rgba(196,162,101,0.2)] border border-[rgba(196,162,101,0.3)] flex items-center justify-center text-[#C4A265]">
-                      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
+                  <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Geen video</span>
                   </div>
                 )
               case 'text':

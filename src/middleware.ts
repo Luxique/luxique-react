@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Content-Security-Policy', [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.mux.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mux.com https://*.mux.com https://direct-uploads.oci-us-phoenix-1-vgp1.production.mux.com https://storage.googleapis.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mux.com https://*.mux.com https://direct-uploads.oci-us-phoenix-1-vgp1.production.mux.com https://storage.googleapis.com https://inferred.litix.io",
       "media-src 'self' https://*.mux.com blob:",
       "img-src 'self' data: https://*.mux.com https://image.mux.com https://*.supabase.co",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
