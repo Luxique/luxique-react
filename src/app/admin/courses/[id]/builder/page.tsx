@@ -10,6 +10,43 @@ import { CSS } from '@dnd-kit/utilities';
 import MuxPlayer from '@mux/mux-player-react'
 import { TextBlock, ImageBlock, QuizBlock, CalloutBlock, DownloadBlock } from './BlockComponents'
 
+/* ── SortableBlock (module-level, prevents re-mount) ── */
+function SortableBlock({ block, children }: { block: { id: string }, children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+  
+  return (
+    <div ref={setNodeRef} style={{
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+      zIndex: isDragging ? 10 : undefined,
+      position: 'relative',
+    }}>
+      {/* Drag handle */}
+      <div {...attributes} {...listeners} style={{
+        position: 'absolute',
+        top: 8,
+        left: -24,
+        width: 20,
+        height: 20,
+        cursor: 'grab',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: 0.3,
+        transition: 'opacity 0.15s',
+      }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+          <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+          <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+        </svg>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 /* ── Types ── */
 type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
 
@@ -965,42 +1002,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   }
 
   /* ── Sortable Block Component ── */
-  function SortableBlock({ block, children }: { block: Block, children: React.ReactNode }) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
-    
-    return (
-      <div ref={setNodeRef} style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 10 : undefined,
-        position: 'relative',
-      }}>
-        {/* Drag handle */}
-        <div {...attributes} {...listeners} style={{
-          position: 'absolute',
-          top: 8,
-          left: -24,
-          width: 20,
-          height: 20,
-          cursor: 'grab',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0.3,
-          transition: 'opacity 0.15s',
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
-            <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-            <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
-          </svg>
-        </div>
-        {children}
-      </div>
-    );
-  }
-
   if (loading) return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
   if (!user) return null
   if (role !== 'admin') return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
