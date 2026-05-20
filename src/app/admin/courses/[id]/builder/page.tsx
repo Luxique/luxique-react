@@ -159,15 +159,29 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     if (!course) return
 
     // Sync current blocks to course state first
-    const courseToSave = currentLesson ? {
-      ...course,
-      lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
-    } : course
+    let courseToSave = course
+    if (currentLesson) {
+      courseToSave = {
+        ...course,
+        lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
+      }
+    } else if (currentContext === 'global' && course.lessons && course.lessons.length > 0) {
+      // Global context — sync blocks to first lesson
+      const firstLesson = course.lessons[0]
+      courseToSave = {
+        ...course,
+        lessons: course.lessons.map(l => l.id === firstLesson.id ? { ...l, blocks } : l)
+      }
+    }
 
     console.log('[saveCourse] Starting save...', {
       courseId: courseToSave.id,
       title: courseToSave.title,
       lessonCount: courseToSave.lessons?.length,
+      currentContext,
+      currentLessonId: currentLesson?.id,
+      blocksCount: blocks.length,
+      firstLessonBlocks: courseToSave.lessons?.[0]?.blocks?.length,
     })
 
     // 1. Upsert course
@@ -350,6 +364,24 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       setCourse(parsedCourse)
     }
   }
+
+  // Auto-create lesson 1 if no lessons exist
+  useEffect(() => {
+    if (!course) return
+    if (course.lessons && course.lessons.length > 0) return
+    const firstLesson: Lesson = {
+      id: crypto.randomUUID(),
+      num: 1,
+      name: 'Introductie',
+      free: true,
+      reflectionQuestions: [],
+      blocks: [
+        { id: crypto.randomUUID(), type: 'video' as const },
+        { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
+      ]
+    }
+    setCourse({ ...course, lessons: [firstLesson] })
+  }, [course?.id, course?.lessons?.length])
 
   const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
