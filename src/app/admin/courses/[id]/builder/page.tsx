@@ -882,7 +882,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   </p>
                 )}
                 {typeof block.content === 'string' && block.content && (
-                  <div style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }} dangerouslySetInnerHTML={{ __html: block.content }} />
+                  <div style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }} className="[&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_s]:line-through [&_strong]:font-semibold [&_em]:italic" dangerouslySetInnerHTML={{ __html: block.content }} />
                 )}
                 {!block.title && !block.subtitle && !block.content && (
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Tekst blok — nog leeg</p>

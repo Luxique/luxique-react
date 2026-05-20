@@ -1,7 +1,6 @@
 import React, { useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
+import RichTextField from './RichTextField'
 
 /* ── Types ── */
 export type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
@@ -37,63 +36,29 @@ const colors = {
   gold: '#C4A265',
 }
 
-/* ── TextBlock (Tiptap Rich Text) ── */
-export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => {
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: typeof block.content === 'string' ? block.content : '',
-    onUpdate: ({ editor }) => {
-      onUpdate(block.id, { content: editor.getHTML() })
-    },
-  })
-
-  return (
-    <div className="space-y-2">
-      <input
-        type="text"
-        placeholder="Hoofdtitel..."
-        value={block.title || ''}
-        onChange={(e) => onUpdate(block.id, { title: e.target.value })}
-        className="w-full bg-transparent border-none outline-none font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
-      />
-      <input
-        type="text"
-        placeholder="Subtitel of introductie..."
-        value={block.subtitle || ''}
-        onChange={(e) => onUpdate(block.id, { subtitle: e.target.value })}
-        className="w-full bg-transparent border-none outline-none text-[14px] text-[#7A7268] mt-1"
-      />
-      {/* Toolbar */}
-      <div className="flex gap-1 border-b border-[rgba(30,26,20,0.08)] pb-2 mb-2">
-        <button onClick={() => editor?.chain().focus().toggleBold().run()}
-          className={`px-2 py-1 rounded text-[11px] font-bold ${editor?.isActive('bold') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}>
-          B
-        </button>
-        <button onClick={() => editor?.chain().focus().toggleItalic().run()}
-          className={`px-2 py-1 rounded text-[11px] italic ${editor?.isActive('italic') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}>
-          I
-        </button>
-        <button onClick={() => editor?.chain().focus().toggleStrike().run()}
-          className={`px-2 py-1 rounded text-[11px] line-through ${editor?.isActive('strike') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}>
-          S
-        </button>
-        <div className="w-px h-4 bg-[rgba(30,26,20,0.1)] mx-1 self-center" />
-        <button onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          className={`px-2 py-1 rounded text-[11px] ${editor?.isActive('bulletList') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}>
-          • lijst
-        </button>
-        <button onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          className={`px-2 py-1 rounded text-[11px] ${editor?.isActive('orderedList') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}>
-          1. lijst
-        </button>
-      </div>
-      <EditorContent
-        editor={editor}
-        className="text-[13px] text-[#7A7268] leading-relaxed min-h-[80px] outline-none"
-      />
-    </div>
-  )
-})
+/* ── TextBlock (Rich Text via RichTextField) ── */
+export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => (
+  <div className="space-y-2">
+    <input
+      type="text"
+      placeholder="Hoofdtitel..."
+      value={block.title || ''}
+      onChange={(e) => onUpdate(block.id, { title: e.target.value })}
+      className="w-full bg-transparent border-none outline-none font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
+    />
+    <input
+      type="text"
+      placeholder="Subtitel of introductie..."
+      value={block.subtitle || ''}
+      onChange={(e) => onUpdate(block.id, { subtitle: e.target.value })}
+      className="w-full bg-transparent border-none outline-none text-[14px] text-[#7A7268] mt-1"
+    />
+    <RichTextField
+      content={typeof block.content === 'string' ? block.content : ''}
+      onChange={(html) => onUpdate(block.id, { content: html })}
+    />
+  </div>
+))
 TextBlock.displayName = 'TextBlock'
 
 /* ── ImageBlock ── */
