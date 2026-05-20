@@ -9,6 +9,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 import MuxPlayer from '@mux/mux-player-react'
 import { TextBlock, ImageBlock, QuizBlock, CalloutBlock, DownloadBlock } from './BlockComponents'
+import RichTextField from './RichTextField'
 
 /* ── SortableBlock (module-level, prevents re-mount) ── */
 function SortableBlock({ block, children }: { block: { id: string }, children: React.ReactNode }) {
@@ -98,6 +99,15 @@ interface Course {
   id: string
   title: string
   description?: string
+  longDescription?: string
+  heroImageUrl?: string
+  heroMuxPlaybackId?: string
+  heroMuxAssetId?: string
+  whatYouLearn?: string[]
+  whoIsItFor?: string
+  priceCents?: number
+  level?: string
+  galleryUrls?: string[]
   firstLessonFree?: boolean
   introVideo?: boolean
   finalQuizRequired?: boolean
@@ -165,13 +175,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         ...course,
         lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
       }
-    } else if (currentContext === 'global' && course.lessons && course.lessons.length > 0) {
-      // Global context — sync blocks to first lesson
-      const firstLesson = course.lessons[0]
-      courseToSave = {
-        ...course,
-        lessons: course.lessons.map(l => l.id === firstLesson.id ? { ...l, blocks } : l)
-      }
     }
 
     console.log('[saveCourse] Starting save...', {
@@ -184,12 +187,21 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       firstLessonBlocks: courseToSave.lessons?.[0]?.blocks?.length,
     })
 
-    // 1. Upsert course
+    // 1. Upsert course (including landing fields)
     const { error: courseError } = await supabase.from('courses').upsert({
       id: courseToSave.id,
       title: courseToSave.title,
       slug: toSlug(courseToSave.title || 'nieuwe-cursus'),
       description: courseToSave.description || null,
+      long_description: courseToSave.longDescription || null,
+      hero_image_url: courseToSave.heroImageUrl || null,
+      hero_mux_playback_id: courseToSave.heroMuxPlaybackId || null,
+      hero_mux_asset_id: courseToSave.heroMuxAssetId || null,
+      what_you_learn: courseToSave.whatYouLearn || [],
+      who_is_it_for: courseToSave.whoIsItFor || null,
+      price_cents: courseToSave.priceCents || 0,
+      level: courseToSave.level || 'beginner',
+      gallery_urls: courseToSave.galleryUrls || [],
       is_first_lesson_free: courseToSave.firstLessonFree || false,
       intro_video: courseToSave.introVideo || false,
       final_quiz_required: courseToSave.finalQuizRequired || false,
@@ -335,6 +347,15 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         id: courseData.id,
         title: courseData.title,
         description: courseData.description || undefined,
+        longDescription: courseData.long_description || undefined,
+        heroImageUrl: courseData.hero_image_url || undefined,
+        heroMuxPlaybackId: courseData.hero_mux_playback_id || undefined,
+        heroMuxAssetId: courseData.hero_mux_asset_id || undefined,
+        whatYouLearn: courseData.what_you_learn || [],
+        whoIsItFor: courseData.who_is_it_for || undefined,
+        priceCents: courseData.price_cents || 0,
+        level: courseData.level || 'beginner',
+        galleryUrls: courseData.gallery_urls || [],
         firstLessonFree: courseData.first_lesson_free || false,
         introVideo: courseData.intro_video || false,
         finalQuizRequired: courseData.final_quiz_required || false,
@@ -492,7 +513,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     })
   }
 
-  const updateCourseField = (field: keyof Course, value: string | boolean | Lesson[] | Quiz[] | undefined) => {
+  const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Lesson[] | Quiz[] | undefined) => {
     if (!course) return
     setCourse({ ...course, [field]: value })
   }
@@ -511,57 +532,131 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     if (currentContext === 'global') {
       return (
         <div className="space-y-4">
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Cursusinformatie</span>
+          {/* Title */}
+          <div>
+            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Cursustitel</label>
+            <input
+              type="text"
+              value={course?.title || ''}
+              onChange={(e) => updateCourseField('title', e.target.value)}
+              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+              placeholder="bijv. Medusa Lash Basics"
+            />
+          </div>
+
+          {/* Short description */}
+          <div>
+            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Korte beschrijving (tagline)</label>
+            <textarea
+              value={course?.description || ''}
+              onChange={(e) => updateCourseField('description', e.target.value)}
+              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[50px]"
+              placeholder="Wat leren studenten in deze cursus?"
+            />
+          </div>
+
+          {/* Long description */}
+          <div>
+            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Uitgebreide beschrijving</label>
+            <RichTextField
+              content={course?.longDescription || ''}
+              onChange={(html) => updateCourseField('longDescription', html)}
+              variant="block"
+            />
+          </div>
+
+          {/* Price + Level */}
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Prijs (centen)</label>
+              <input
+                type="number"
+                value={course?.priceCents || 0}
+                onChange={(e) => updateCourseField('priceCents', parseInt(e.target.value) || 0)}
+                className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                placeholder="9900 = €99"
+              />
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Korte beschrijving</label>
-                <textarea 
-                  value={course?.description || ''}
-                  onChange={(e) => updateCourseField('description', e.target.value)}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[60px]"
-                  placeholder="Wat leren studenten in deze cursus?"
+            <div className="flex-1">
+              <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Niveau</label>
+              <select
+                value={course?.level || 'beginner'}
+                onChange={(e) => updateCourseField('level', e.target.value)}
+                className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none cursor-pointer"
+              >
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Gevorderd</option>
+                <option value="expert">Expert</option>
+              </select>
+            </div>
+          </div>
+
+          {/* What you learn */}
+          <div>
+            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Wat leer je?</label>
+            {(course?.whatYouLearn || []).map((item, i) => (
+              <div key={i} className="flex items-center gap-2 mb-1.5">
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const updated = [...(course?.whatYouLearn || [])]
+                    updated[i] = e.target.value
+                    updateCourseField('whatYouLearn', updated)
+                  }}
+                  className="flex-1 bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
                 />
+                <button
+                  onClick={() => {
+                    const updated = (course?.whatYouLearn || []).filter((_, j) => j !== i)
+                    updateCourseField('whatYouLearn', updated)
+                  }}
+                  className="text-[rgba(30,26,20,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                >✕</button>
               </div>
-            </div>
+            ))}
+            <button
+              onClick={() => updateCourseField('whatYouLearn', [...(course?.whatYouLearn || []), ''])}
+              className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
+            >+ Item toevoegen</button>
           </div>
-          
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Toegang</span>
-            </div>
-            <div className="space-y-2">
-              {(
-                [
-                  { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
-                  { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
-                  { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
-                  { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
-                ] as const
-              ).map((item) => (
-                <div key={item.field} className="flex items-center justify-between">
-                  <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
-                  <label className="relative w-8 h-5 flex-shrink-0 block cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={(course?.[item.field] as boolean) || false}
-                      onChange={(e) => updateCourseField(item.field, e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="absolute inset-0 rounded-full bg-[rgba(30,26,20,0.12)] peer-checked:bg-[#C4A265] transition-colors duration-200"></div>
-                    <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
-                  </label>
-                </div>
-              ))}
-            </div>
+
+          {/* Who is it for */}
+          <div>
+            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Voor wie is deze cursus?</label>
+            <textarea
+              value={course?.whoIsItFor || ''}
+              onChange={(e) => updateCourseField('whoIsItFor', e.target.value)}
+              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[50px]"
+              placeholder="Beschrijf de ideale student..."
+            />
           </div>
-          
-          <div className="pt-4">
-            <p className="text-[11px] text-[#7A7268] text-center leading-relaxed">
-              Thumbnail, niveau, prijs en certificaat stel je in bij <strong className="text-[#1E1A14]">Publiceren</strong> →
-            </p>
+
+          {/* Access toggles */}
+          <div className="border-t border-[rgba(30,26,20,0.09)] pt-3">
+            <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268] block mb-2">Instellingen</span>
+            {(
+              [
+                { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
+                { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
+                { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
+                { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
+              ] as const
+            ).map((item) => (
+              <div key={item.field} className="flex items-center justify-between py-1">
+                <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
+                <label className="relative w-8 h-5 flex-shrink-0 block cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(course?.[item.field] as boolean) || false}
+                    onChange={(e) => updateCourseField(item.field, e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="absolute inset-0 rounded-full bg-[rgba(30,26,20,0.12)] peer-checked:bg-[#C4A265] transition-colors duration-200"></div>
+                  <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
+                </label>
+              </div>
+            ))}
           </div>
         </div>
       )
@@ -1218,7 +1313,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                 {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
               </div>
               <div className="text-[11px] text-[#7A7268] font-light">
-                {currentContext === 'global' && 'Voeg blokken toe voor de cursuspagina'}
+                {currentContext === 'global' && 'Landing pagina + instellingen'}
                 {currentContext === 'lesson' && 'Inhoud van les'}
                 {currentContext === 'quiz' && 'Voeg quizvragen toe'}
               </div>

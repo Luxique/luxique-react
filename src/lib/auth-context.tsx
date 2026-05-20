@@ -38,11 +38,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchRole = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, role_level')
       .eq('id', userId)
       .single()
     // Only update if we got a result — keep existing role if fetch fails
-    if (data?.role) {
+    if (data?.role_level !== undefined && data?.role_level >= 100) {
+      setRole('admin')
+    } else if (data?.role) {
       setRole(data.role === 'admin' ? 'admin' : 'student')
     }
   }
