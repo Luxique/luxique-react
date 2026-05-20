@@ -356,9 +356,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     setBlocks(blocks.filter(b => b.id !== id))
   }
 
-  const updateBlock = (blockId: string, updates: Partial<Block>) => {
+  const updateBlock = useCallback((blockId: string, updates: Partial<Block>) => {
     setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, ...updates } : b))
-  }
+  }, [])
 
   const addLesson = () => {
     if (!course) return
