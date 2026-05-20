@@ -209,6 +209,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         id: lesson.id,
         course_id: courseToSave.id,
         title: lesson.name,
+        slug: toSlug(lesson.name || 'les'),
         is_free: lesson.free,
         sort_order: lesson.num - 1,
         duration_seconds: (lesson.duration || 0) * 60,
