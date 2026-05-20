@@ -1108,3 +1108,20 @@ em { font-style: italic; font-weight: 400; }
 .ProseMirror em { font-style: italic; }
 .ProseMirror s, .ProseMirror del { text-decoration: line-through !important; }
 .ProseMirror mark { border-radius: 2px; padding: 0 2px; }
+
+/* Course Landing Design Tokens */
+.course-landing {
+  --cl-dark: #0C0A07;
+  --cl-dark-2: #14110C;
+  --cl-dark-3: #1C1812;
+  --cl-cream: #FAF8F4;
+  --cl-cream-dim: rgba(250, 248, 244, 0.7);
+  --cl-cream-mute: rgba(250, 248, 244, 0.5);
+  --cl-gold: #C4A265;
+  --cl-gold-soft: rgba(196, 162, 101, 0.15);
+  --cl-gold-glow: rgba(196, 162, 101, 0.25);
+  --cl-border: rgba(196, 162, 101, 0.18);
+  --cl-radius: 22px;
+  --cl-radius-sm: 14px;
+  --cl-gap: 14px;
+}
