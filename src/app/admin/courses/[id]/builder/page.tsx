@@ -119,37 +119,45 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const saveCourse = useCallback(async () => {
     if (!course) return
 
+    // Sync current blocks to course state first
+    const courseToSave = currentLesson ? {
+      ...course,
+      lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
+    } : course
+
     // 1. Upsert course
     const { error: courseError } = await supabase.from('courses').upsert({
-      id: course.id,
-      title: course.title,
-      description: course.description || null,
-      is_first_lesson_free: course.firstLessonFree || false,
-      intro_video: course.introVideo || false,
-      final_quiz_required: course.finalQuizRequired || false,
-      certificate: course.certificate || false,
+      id: courseToSave.id,
+      title: courseToSave.title,
+      description: courseToSave.description || null,
+      is_first_lesson_free: courseToSave.firstLessonFree || false,
+      intro_video: courseToSave.introVideo || false,
+      final_quiz_required: courseToSave.finalQuizRequired || false,
+      certificate: courseToSave.certificate || false,
       status: 'draft'
     })
-    if (courseError) { console.error('Course error:', courseError); return }
+    if (courseError) { console.error('Course error:', courseError); alert('Fout bij opslaan cursus'); return }
 
-    // 2. Sla les + blokken op als we in een les context zijn
-    if (currentContext === 'lesson' && currentLesson) {
+    // 2. Sla ALLE lessen op
+    for (const lesson of (courseToSave.lessons || [])) {
       await supabase.from('lessons').upsert({
-        id: currentLesson.id,
-        course_id: course.id,
-        title: currentLesson.name,
-        is_free: currentLesson.free,
-        sort_order: currentLesson.num - 1,
-        duration_seconds: (currentLesson.duration || 0) * 60,
+        id: lesson.id,
+        course_id: courseToSave.id,
+        title: lesson.name,
+        is_free: lesson.free,
+        sort_order: lesson.num - 1,
+        duration_seconds: (lesson.duration || 0) * 60,
       })
 
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i]
+      // 3. Sla blokken op voor deze les
+      const lessonBlocks = lesson.blocks || []
+      for (let i = 0; i < lessonBlocks.length; i++) {
+        const block = lessonBlocks[i]
         const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
         await supabase.from('blocks').upsert({
           id: block.id,
-          lesson_id: currentLesson.id,
-          course_id: course.id,
+          lesson_id: lesson.id,
+          course_id: courseToSave.id,
           type: block.type,
           sort_order: i,
           content: {
@@ -157,17 +165,32 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             subtitle: block.subtitle,
             content: block.content,
             url: block.url,
-            mux_asset_id: (content as {mux_asset_id?: string}).mux_asset_id,
-            mux_playback_id: (content as {mux_playback_id?: string}).mux_playback_id,
+            caption: block.caption,
             question: block.question,
             options: block.options,
+            fileName: block.fileName,
+            fileDescription: block.fileDescription,
+            mux_asset_id: (content as Record<string,unknown>).mux_asset_id,
+            mux_playback_id: (content as Record<string,unknown>).mux_playback_id,
           }
         })
       }
     }
 
     alert('Concept opgeslagen!')
-  }, [course, currentContext, currentLesson, blocks])
+  }, [course, currentLesson, blocks])
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const publishCourse = async () => {
+    if (!course) return
+    await saveCourse()
+    const { error } = await supabase
+      .from('courses')
+      .update({ status: 'published' })
+      .eq('id', course.id)
+    if (error) { alert('Fout bij publiceren'); return }
+    alert('Cursus gepubliceerd! Zichtbaar op de academy pagina.')
+  }
 
   // Design tokens from mockup
   const colors = {
@@ -332,6 +355,10 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
 
   const deleteBlock = (id: string) => {
     setBlocks(blocks.filter(b => b.id !== id))
+  }
+
+  const updateBlock = (blockId: string, updates: Partial<Block>) => {
+    setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, ...updates } : b))
   }
 
   const addLesson = () => {
@@ -619,6 +646,24 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     return null
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockId: string) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const fileName = `${blockId}-${Date.now()}-${file.name}`
+    const { data, error } = await supabase.storage
+      .from('course-images')
+      .upload(fileName, file, { upsert: true })
+
+    if (error) { console.error('Image upload error:', error); return }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('course-images')
+      .getPublicUrl(data.path)
+
+    updateBlock(blockId, { url: publicUrl })
+  }
+
   const renderBlock = (block: Block) => {
     switch (block.type) {
       case 'video':
@@ -752,16 +797,22 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             <input 
               type="text"
               placeholder="Hoofdtitel..."
+              value={block.title || ''}
+              onChange={(e) => updateBlock(block.id, { title: e.target.value })}
               className="w-full bg-transparent border-none outline-none font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
             />
             <input 
               type="text"
               placeholder="Subtitel of introductie..."
+              value={block.subtitle || ''}
+              onChange={(e) => updateBlock(block.id, { subtitle: e.target.value })}
               className="w-full bg-transparent border-none outline-none text-[14px] text-[#7A7268] mt-1"
             />
             <textarea 
               rows={3}
               placeholder="Schrijf hier de inhoud van dit blok..."
+              value={typeof block.content === 'string' ? block.content : ''}
+              onChange={(e) => updateBlock(block.id, { content: e.target.value })}
               className="w-full bg-transparent border-none outline-none text-[13px] font-light text-[#7A7268] leading-relaxed resize-none min-h-[60px] mt-2"
             />
           </div>
@@ -775,7 +826,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               type="file"
               accept="image/*"
               style={{ display: 'none' }}
-              onChange={() => { /* TODO: image upload logic */ }}
+              onChange={(e) => handleImageUpload(e, block.id)}
             />
             <div
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); imageFileInputRef.current?.click() }}
@@ -788,6 +839,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             <input 
               type="text"
               placeholder="Bijschrift (optioneel)"
+              value={block.caption || ''}
+              onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
               className="w-full bg-transparent border-none outline-none text-[11.5px] text-[#7A7268] italic text-center mt-1"
             />
           </div>
@@ -799,10 +852,15 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             <input 
               type="text"
               placeholder="Wat is de vraag?"
+              value={block.question || ''}
+              onChange={(e) => updateBlock(block.id, { question: e.target.value })}
               className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[8px] p-[9px_12px] text-[13px] outline-none focus:border-[rgba(80,190,120,0.4)]"
             />
             <div className="space-y-2">
-              {['A', 'B', 'C'].map((letter, index) => (
+              {['A', 'B', 'C'].map((letter, index) => {
+                const opts = block.options || [] as { id: string; text: string; correct: boolean }[]
+                const opt = (opts as { id: string; text: string; correct: boolean }[])[index]
+                return (
                 <div key={letter} className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-full bg-[#F0EDE6] border border-[rgba(30,26,20,0.09)] flex items-center justify-center text-[9.5px] font-medium text-[#7A7268] flex-shrink-0 cursor-pointer transition ${index === 0 ? 'bg-[rgba(80,190,120,0.08)] border-[rgba(80,190,120,0.22)] text-[rgba(80,190,120,0.9)]' : ''}`}>
                     {letter}
@@ -810,6 +868,13 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   <input 
                     type="text"
                     placeholder={`Antwoord ${letter}`}
+                    value={opt?.text || ''}
+                    onChange={(e) => {
+                      const newOpts = [...(opts as { id: string; text: string; correct: boolean }[])]
+                      while (newOpts.length <= index) newOpts.push({ id: crypto.randomUUID(), text: '', correct: false })
+                      newOpts[index] = { ...newOpts[index], text: e.target.value }
+                      updateBlock(block.id, { options: newOpts })
+                    }}
                     className="flex-1 bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none"
                   />
                   {index > 1 && (
@@ -820,7 +885,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                     </button>
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
             <button className="text-[11px] text-[rgba(80,190,120,0.6)] hover:text-[rgba(80,190,120,0.9)] transition p-1">
               + Optie toevoegen
@@ -849,6 +915,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             <textarea 
               rows={2}
               placeholder="Tip of opmerking..."
+              value={typeof block.content === 'string' ? block.content : ''}
+              onChange={(e) => updateBlock(block.id, { content: e.target.value })}
               className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1E1A14] leading-relaxed resize-none min-h-[45px]"
             />
           </div>
@@ -878,11 +946,15 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               <input 
                 type="text"
                 placeholder="Bestandsnaam voor studenten, bijv. Werkblad les 1"
+                value={block.fileName || ''}
+                onChange={(e) => updateBlock(block.id, { fileName: e.target.value })}
                 className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none"
               />
               <input 
                 type="text"
                 placeholder="Korte beschrijving (optioneel)"
+                value={block.fileDescription || ''}
+                onChange={(e) => updateBlock(block.id, { fileDescription: e.target.value })}
                 className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none"
               />
             </div>
