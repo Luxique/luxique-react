@@ -550,7 +550,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             <textarea
               value={course?.description || ''}
               onChange={(e) => updateCourseField('description', e.target.value)}
-              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[50px]"
+              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[80px] resize-y"
+              rows={3}
               placeholder="Wat leren studenten in deze cursus?"
             />
           </div>
@@ -568,13 +569,17 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           {/* Price + Level */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Prijs (centen)</label>
+              <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Prijs (€)</label>
               <input
-                type="number"
-                value={course?.priceCents || 0}
-                onChange={(e) => updateCourseField('priceCents', parseInt(e.target.value) || 0)}
+                type="text"
+                value={course?.priceCents ? (course.priceCents / 100).toFixed(2).replace('.', ',') : '0,00'}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.')
+                  const euros = parseFloat(raw) || 0
+                  updateCourseField('priceCents', Math.round(euros * 100))
+                }}
                 className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                placeholder="9900 = €99"
+                placeholder="197,00"
               />
             </div>
             <div className="flex-1">
@@ -1289,9 +1294,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             </button>
           </div>
 
-          {/* Sidebar Form */}
+          {/* Sidebar Form — only for lesson/quiz context */}
           <div className="flex-1 p-2.5">
-            {renderSidebarForm()}
+            {currentContext !== 'global' && renderSidebarForm()}
           </div>
         </div>
 
@@ -1325,7 +1330,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             </span>
           </div>
 
-          {/* Content Blocks */}
+          {/* Content Blocks — only for lesson/quiz context */}
+          {currentContext !== 'global' && (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
               {blocks.map((block) => (
@@ -1354,15 +1360,22 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           ))}
           </SortableContext>
           </DndContext>
+          )}
 
-          {/* Add Block Button */}
+          {/* Global context: Course landing form in main canvas */}
+          {currentContext === 'global' && (
+            <div className="max-w-2xl mx-auto">
+              {renderSidebarForm()}
+            </div>
+          )}
+
+          {/* Add Block Button — only for lesson/quiz context */}
+          {currentContext !== 'global' && (
           <div className="relative">
             <button
               ref={addBlockButtonRef}
-              onClick={() => {
-                openPicker()
-              }}
-              className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full pulse-animation"
+              onClick={() => { openPicker() }}
+              className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full"
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 4.5v15m7.5-7.5h-15" />
@@ -1412,6 +1425,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               </>
             )}
           </div>
+          )}
         </div>
 
         {/* Preview */}
