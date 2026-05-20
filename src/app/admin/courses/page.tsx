@@ -19,6 +19,7 @@ interface Course {
   thumbnail_time?: number
   created_at: string
   lessons_count?: number
+  duration_seconds?: number
   duration_minutes?: number
   students_count?: number
   has_quiz?: boolean
@@ -86,16 +87,16 @@ export default function CoursesOverviewPage() {
           // Get total duration from lessons
           const { data: lessonsData } = await supabase
             .from('lessons')
-            .select('duration_minutes')
+            .select('duration_seconds')
             .eq('course_id', course.id)
 
-          const totalDuration = lessonsData?.reduce((sum, lesson) => sum + (lesson.duration_minutes || 0), 0) || 0
+          const totalMinutes = lessonsData?.reduce((sum, lesson) => sum + Math.round((lesson.duration_seconds || 0) / 60), 0) || 0
 
           return {
             ...course,
             lessons_count: lessonsCount || 0,
             students_count: enrollmentsCount || 0,
-            duration_minutes: totalDuration
+            duration_minutes: totalMinutes
           }
         })
       )
