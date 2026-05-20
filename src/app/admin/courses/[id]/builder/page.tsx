@@ -164,6 +164,12 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
     } : course
 
+    console.log('[saveCourse] Starting save...', {
+      courseId: courseToSave.id,
+      title: courseToSave.title,
+      lessonCount: courseToSave.lessons?.length,
+    })
+
     // 1. Upsert course
     const { error: courseError } = await supabase.from('courses').upsert({
       id: courseToSave.id,
@@ -176,11 +182,16 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       certificate: courseToSave.certificate || false,
       status: 'draft'
     })
-    if (courseError) { console.error('Course error:', courseError); alert('Fout bij opslaan cursus'); return }
+    if (courseError) {
+      console.error('[saveCourse] Course upsert FAILED:', courseError)
+      alert(`Fout bij opslaan cursus: ${courseError.message}`)
+      return
+    }
+    console.log('[saveCourse] Course upsert OK')
 
     // 2. Sla ALLE lessen op
     for (const lesson of (courseToSave.lessons || [])) {
-      await supabase.from('lessons').upsert({
+      const { error: lessonError } = await supabase.from('lessons').upsert({
         id: lesson.id,
         course_id: courseToSave.id,
         title: lesson.name,
@@ -188,13 +199,20 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         sort_order: lesson.num - 1,
         duration_seconds: (lesson.duration || 0) * 60,
       })
+      if (lessonError) {
+        console.error(`[saveCourse] Lesson "${lesson.name}" upsert FAILED:`, lessonError)
+        alert(`Fout bij opslaan les "${lesson.name}": ${lessonError.message}`)
+        return
+      }
+      console.log(`[saveCourse] Lesson "${lesson.name}" upsert OK`)
 
       // 3. Sla blokken op voor deze les
       const lessonBlocks = lesson.blocks || []
+      console.log(`[saveCourse] Saving ${lessonBlocks.length} blocks for lesson "${lesson.name}"`)
       for (let i = 0; i < lessonBlocks.length; i++) {
         const block = lessonBlocks[i]
-        const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
-        await supabase.from('blocks').upsert({
+        const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
+        const payload = {
           id: block.id,
           lesson_id: lesson.id,
           course_id: courseToSave.id,
@@ -210,13 +228,20 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             options: block.options,
             fileName: block.fileName,
             fileDescription: block.fileDescription,
-            mux_asset_id: (content as Record<string,unknown>).mux_asset_id,
-            mux_playback_id: (content as Record<string,unknown>).mux_playback_id,
+            mux_asset_id: (blockContent as Record<string,unknown>).mux_asset_id,
+            mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
           }
-        })
+        }
+        const { error: blockError } = await supabase.from('blocks').upsert(payload)
+        if (blockError) {
+          console.error(`[saveCourse] Block ${i} (${block.type}) upsert FAILED:`, blockError)
+          alert(`Fout bij opslaan blok ${i+1}: ${blockError.message}`)
+          return
+        }
       }
     }
 
+    console.log('[saveCourse] ✅ Save complete!')
     alert('Concept opgeslagen!')
   }, [course, currentLesson, blocks])
 
@@ -882,7 +907,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   </p>
                 )}
                 {typeof block.content === 'string' && block.content && (
-                  <div style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }} className="[&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_s]:line-through [&_strong]:font-semibold [&_em]:italic" dangerouslySetInnerHTML={{ __html: block.content }} />
+                  <div style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }} className="[&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_s]:line-through [&_del]:line-through [&_strong]:font-semibold [&_em]:italic [&_mark]:rounded-sm [&_mark]:px-0.5" dangerouslySetInnerHTML={{ __html: block.content }} />
                 )}
                 {!block.title && !block.subtitle && !block.content && (
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Tekst blok — nog leeg</p>

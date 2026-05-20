@@ -116,12 +116,10 @@ ImageBlock.displayName = 'ImageBlock'
 /* ── QuizBlock ── */
 export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => (
   <div className="space-y-3">
-    <input
-      type="text"
-      placeholder="Wat is de vraag?"
-      value={block.question || ''}
-      onChange={(e) => onUpdate(block.id, { question: e.target.value })}
-      className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[8px] p-[9px_12px] text-[13px] outline-none focus:border-[rgba(80,190,120,0.4)]"
+    <RichTextField
+      content={block.question || ''}
+      onChange={(html) => onUpdate(block.id, { question: html })}
+      variant="inline"
     />
     <div className="space-y-2">
       {(block.options || []).map((opt, i) => (
@@ -132,12 +130,11 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => (
           >
             {String.fromCharCode(65 + i)}
           </div>
-          <input
-            type="text"
-            placeholder={`Antwoord ${String.fromCharCode(65 + i)}`}
-            value={opt.text || ''}
-            onChange={(e) => onUpdate(block.id, { options: (block.options || []).map((o, j) => j === i ? { ...o, text: e.target.value } : o) })}
-            className="flex-1 bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none"
+          <RichTextField
+            content={opt.text || ''}
+            onChange={(html) => onUpdate(block.id, { options: (block.options || []).map((o, j) => j === i ? { ...o, text: html } : o) })}
+            variant="inline"
+            className="flex-1"
           />
         </div>
       ))}
@@ -145,20 +142,6 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => (
     <button className="text-[11px] text-[rgba(80,190,120,0.6)] hover:text-[rgba(80,190,120,0.9)] transition p-1">
       + Optie toevoegen
     </button>
-    <div className="flex gap-2 pt-2 border-t border-[rgba(30,26,20,0.09)] flex-wrap">
-      <select className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-1 px-2 text-[11px] text-[#7A7268] outline-none cursor-pointer">
-        <option>Tussentijds</option>
-        <option>Eindtoets</option>
-      </select>
-      <input
-        type="number"
-        placeholder="Punten"
-        className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-1 px-2 text-[11px] text-[#1E1A14] outline-none w-16"
-      />
-      <span className="text-[9px] font-bold tracking-[0.14em] uppercase px-2 py-1 rounded-full bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]">
-        Quiz
-      </span>
-    </div>
   </div>
 ))
 QuizBlock.displayName = 'QuizBlock'
@@ -167,13 +150,13 @@ QuizBlock.displayName = 'QuizBlock'
 export const CalloutBlock = React.memo(({ block, onUpdate }: BlockProps) => (
   <div className="flex gap-3 items-start bg-[rgba(196,162,101,0.07)] border-l-3 border-[rgba(196,162,101,0.35)] rounded-r-lg p-3">
     <span className="text-[17px] flex-shrink-0 mt-0.5">💡</span>
-    <textarea
-      rows={2}
-      placeholder="Tip of opmerking..."
-      value={typeof block.content === 'string' ? block.content : ''}
-      onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-      className="flex-1 bg-transparent border-none outline-none text-[13px] text-[#1E1A14] leading-relaxed resize-none min-h-[45px]"
-    />
+    <div className="flex-1">
+      <RichTextField
+        content={typeof block.content === 'string' ? block.content : ''}
+        onChange={(html) => onUpdate(block.id, { content: html })}
+        variant="inline"
+      />
+    </div>
   </div>
 ))
 CalloutBlock.displayName = 'CalloutBlock'

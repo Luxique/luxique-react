@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { TextStyle } from '@tiptap/extension-text-style'
@@ -10,8 +10,10 @@ import Highlight from '@tiptap/extension-highlight'
 interface RichTextFieldProps {
   content: string
   onChange: (html: string) => void
+  /** 'inline' = B/I/S/kleur/mark (no lists). 'block' = alles inclusief lists. Default: 'block' */
+  variant?: 'inline' | 'block'
   placeholder?: string
-  minH?: number
+  className?: string
 }
 
 const TEXT_COLORS = [
@@ -27,13 +29,18 @@ const HIGHLIGHT_COLORS = [
   { label: 'Soft roze', color: 'rgba(255,180,180,0.25)' },
 ]
 
-export default function RichTextField({ content, onChange }: RichTextFieldProps) {
+export default function RichTextField({ content, onChange, variant = 'block', className = '' }: RichTextFieldProps) {
   const [showTextColor, setShowTextColor] = useState(false)
   const [showHighlight, setShowHighlight] = useState(false)
+  const isBlock = variant === 'block'
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        bulletList: isBlock ? {} : false,
+        orderedList: isBlock ? {} : false,
+        listItem: isBlock ? {} : false,
+      }),
       TextStyle,
       Color,
       Highlight.configure({ multicolor: true }),
@@ -44,64 +51,60 @@ export default function RichTextField({ content, onChange }: RichTextFieldProps)
     },
   })
 
-  const closeDropdowns = useCallback(() => {
-    setShowTextColor(false)
-    setShowHighlight(false)
-  }, [])
-
   if (!editor) return null
 
   return (
-    <div className="relative">
-      {/* Toolbar — onder het veld */}
+    <div className={`relative ${className}`}>
       <EditorContent
         editor={editor}
-        className="text-[13px] text-[#7A7268] leading-relaxed min-h-[80px] outline-none"
+        className={`text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
       />
-      <div className="flex items-center gap-0.5 border-t border-[rgba(30,26,20,0.08)] pt-2 mt-2 flex-wrap">
+      {/* Toolbar — onder het veld */}
+      <div className="flex items-center gap-0.5 border-t border-[rgba(30,26,20,0.08)] pt-1.5 mt-1.5 flex-wrap">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`px-2 py-1 rounded text-[11px] font-bold ${editor.isActive('bold') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${editor.isActive('bold') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
         >B</button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`px-2 py-1 rounded text-[11px] italic ${editor.isActive('italic') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+          className={`px-1.5 py-0.5 rounded text-[10px] italic ${editor.isActive('italic') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
         >I</button>
         <button
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={`px-2 py-1 rounded text-[11px] line-through ${editor.isActive('strike') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+          className={`px-1.5 py-0.5 rounded text-[10px] line-through ${editor.isActive('strike') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
         >S</button>
-        <div className="w-px h-4 bg-[rgba(30,26,20,0.1)] mx-1" />
-        <button
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`px-2 py-1 rounded text-[11px] ${editor.isActive('bulletList') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
-        >• lijst</button>
-        <button
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`px-2 py-1 rounded text-[11px] ${editor.isActive('orderedList') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
-        >1. lijst</button>
-        <div className="w-px h-4 bg-[rgba(30,26,20,0.1)] mx-1" />
+        {isBlock && (
+          <>
+            <div className="w-px h-3 bg-[rgba(30,26,20,0.1)] mx-0.5" />
+            <button
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+              className={`px-1.5 py-0.5 rounded text-[10px] ${editor.isActive('bulletList') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+            >• lijst</button>
+            <button
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              className={`px-1.5 py-0.5 rounded text-[10px] ${editor.isActive('orderedList') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+            >1. lijst</button>
+          </>
+        )}
+        <div className="w-px h-3 bg-[rgba(30,26,20,0.1)] mx-0.5" />
         {/* Text color */}
         <div className="relative">
           <button
             onClick={() => { setShowHighlight(false); setShowTextColor(!showTextColor) }}
-            className={`px-2 py-1 rounded text-[11px] ${showTextColor ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
-          >A<span className="text-[8px] ml-0.5">▼</span></button>
+            className={`px-1.5 py-0.5 rounded text-[10px] ${showTextColor ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+          >A▼</button>
           {showTextColor && (
             <div className="absolute bottom-full mb-1 left-0 bg-white border border-[rgba(30,26,20,0.12)] rounded-lg shadow-lg p-1.5 flex gap-1 z-50">
               {TEXT_COLORS.map(c => (
-                <button
-                  key={c.color}
-                  title={c.label}
-                  onClick={() => { editor.chain().focus().setColor(c.color).run(); closeDropdowns() }}
-                  className="w-5 h-5 rounded-full border border-[rgba(30,26,20,0.15)] hover:scale-110 transition"
+                <button key={c.color} title={c.label}
+                  onClick={() => { editor.chain().focus().setColor(c.color).run(); setShowTextColor(false) }}
+                  className="w-4 h-4 rounded-full border border-[rgba(30,26,20,0.15)] hover:scale-110 transition"
                   style={{ backgroundColor: c.color }}
                 />
               ))}
-              <button
-                title="Reset"
-                onClick={() => { editor.chain().focus().unsetColor().run(); closeDropdowns() }}
-                className="w-5 h-5 rounded-full border border-[rgba(30,26,20,0.15)] bg-white flex items-center justify-center text-[9px] text-[#7A7268] hover:scale-110 transition"
+              <button title="Reset"
+                onClick={() => { editor.chain().focus().unsetColor().run(); setShowTextColor(false) }}
+                className="w-4 h-4 rounded-full border border-[rgba(30,26,20,0.15)] bg-white flex items-center justify-center text-[8px] text-[#7A7268] hover:scale-110 transition"
               >✕</button>
             </div>
           )}
@@ -110,23 +113,20 @@ export default function RichTextField({ content, onChange }: RichTextFieldProps)
         <div className="relative">
           <button
             onClick={() => { setShowTextColor(false); setShowHighlight(!showHighlight) }}
-            className={`px-2 py-1 rounded text-[11px] ${showHighlight || editor.isActive('highlight') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
-          >🖍<span className="text-[8px] ml-0.5">▼</span></button>
+            className={`px-1.5 py-0.5 rounded text-[10px] ${showHighlight || editor.isActive('highlight') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+          >🖍▼</button>
           {showHighlight && (
             <div className="absolute bottom-full mb-1 left-0 bg-white border border-[rgba(30,26,20,0.12)] rounded-lg shadow-lg p-1.5 flex gap-1 z-50">
               {HIGHLIGHT_COLORS.map(c => (
-                <button
-                  key={c.color}
-                  title={c.label}
-                  onClick={() => { editor.chain().focus().toggleHighlight({ color: c.color }).run(); closeDropdowns() }}
-                  className="w-5 h-5 rounded-full border border-[rgba(30,26,20,0.15)] hover:scale-110 transition"
+                <button key={c.color} title={c.label}
+                  onClick={() => { editor.chain().focus().toggleHighlight({ color: c.color }).run(); setShowHighlight(false) }}
+                  className="w-4 h-4 rounded-full border border-[rgba(30,26,20,0.15)] hover:scale-110 transition"
                   style={{ backgroundColor: c.color }}
                 />
               ))}
-              <button
-                title="Reset"
-                onClick={() => { editor.chain().focus().unsetHighlight().run(); closeDropdowns() }}
-                className="w-5 h-5 rounded-full border border-[rgba(30,26,20,0.15)] bg-white flex items-center justify-center text-[9px] text-[#7A7268] hover:scale-110 transition"
+              <button title="Reset"
+                onClick={() => { editor.chain().focus().unsetHighlight().run(); setShowHighlight(false) }}
+                className="w-4 h-4 rounded-full border border-[rgba(30,26,20,0.15)] bg-white flex items-center justify-center text-[8px] text-[#7A7268] hover:scale-110 transition"
               >✕</button>
             </div>
           )}
