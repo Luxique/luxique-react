@@ -152,6 +152,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     });
   };
 
+  const toSlug = (title: string) =>
+    title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
   const saveCourse = useCallback(async () => {
     if (!course) return
 
@@ -165,6 +168,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     const { error: courseError } = await supabase.from('courses').upsert({
       id: courseToSave.id,
       title: courseToSave.title,
+      slug: toSlug(courseToSave.title || 'nieuwe-cursus'),
       description: courseToSave.description || null,
       is_first_lesson_free: courseToSave.firstLessonFree || false,
       intro_video: courseToSave.introVideo || false,
@@ -878,9 +882,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   </p>
                 )}
                 {typeof block.content === 'string' && block.content && (
-                  <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.35)', lineHeight: 1.75 }}>
-                    {block.content}
-                  </p>
+                  <div style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }} dangerouslySetInnerHTML={{ __html: block.content }} />
                 )}
                 {!block.title && !block.subtitle && !block.content && (
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Tekst blok — nog leeg</p>
