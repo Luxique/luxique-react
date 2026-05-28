@@ -9,14 +9,12 @@ import ComparisonTable from '@/components/ComparisonTable'
 import AcademyHomeSection from '@/components/AcademyHomeSection'
 import ReviewsSection from '@/components/ReviewsSection'
 import FAQ from '@/components/FAQ'
-import HomepageBgFix from './HomepageBgFix'
 
 export default function Home() {
   return (
-    <div className="bg-[#FAF8F4] min-h-screen" style={{ background: '#FAF8F4' }}>
-    <HomepageBgFix />
+    <div className="bg-[#F3EEE6] min-h-screen">
     <>
-      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#FAF8F4] overflow-hidden">
+      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#F3EEE6] overflow-hidden">
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>

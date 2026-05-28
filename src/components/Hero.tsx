@@ -48,13 +48,12 @@ export default function Hero() {
             5.0 · 47 reviews
           </div>
 
-          {/* NEW: Outfit bold + Cormorant italic gold pattern */}
-          <h1 className="font-['Outfit'] font-medium leading-[1.02] mb-[14px]">
-            <span className="block text-[clamp(30px,2.8vw,46px)] text-[#1A1815] tracking-[-0.02em]">We Teach</span>
-            <span className="block text-[clamp(32px,3.1vw,50px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">The Art of Lashes.</span>
+          <h1 className="font-['Outfit'] font-medium leading-[1.02] mb-[24px] max-w-[900px]">
+            <span className="block text-[clamp(44px,6.5vw,88px)] text-[#1A1815] tracking-[-0.02em]">We Teach</span>
+            <span className="block text-[clamp(44px,6.5vw,88px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">The Art of Lashes.</span>
           </h1>
 
-          <p className="text-[13px] text-[#7A7268] leading-[1.7] mb-[26px] max-w-[290px]">
+          <p className="text-[18px] text-[#7A7268] leading-[1.6] mb-[36px] max-w-[560px]">
             Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland&apos;s #1 lash educator.
           </p>
 

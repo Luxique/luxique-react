@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function BehandelingenPage() {
   return (
-    <div data-theme-color="#FAF8F4" data-theme-dark="false" className="bg-[#FAF8F4] pt-[90px]">
+    <div data-theme-color="#FAF8F4" data-theme-dark="false" className="bg-[#F3EEE6] pt-[90px]">
       <div className="max-w-[1280px] mx-auto px-[14px] max-[860px]:px-[10px] pb-[14px]">
         <BehandelingenContent />
       </div>

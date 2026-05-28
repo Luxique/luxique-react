@@ -2,10 +2,12 @@
 
 import { useEffect } from 'react'
 
+const WARM_CREAM = '#F3EEE6'
+
 export default function HomepageBgFix() {
   useEffect(() => {
-    document.documentElement.style.background = '#FAF8F4'
-    document.body.style.background = '#FAF8F4'
+    document.documentElement.style.background = WARM_CREAM
+    document.body.style.background = WARM_CREAM
     return () => {
       document.documentElement.style.background = ''
       document.body.style.background = ''
