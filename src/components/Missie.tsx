@@ -71,7 +71,7 @@ export default function Missie() {
           <div className="absolute bottom-0 left-0 right-0 h-[55%] bg-[linear-gradient(0deg,rgba(12,10,7,0.82),transparent)] flex flex-col justify-end p-6 pb-7">
             <span className="block text-[9px] font-semibold tracking-[0.24em] uppercase text-[#C4A265] mb-2">Missie</span>
             <h2 className="font-['Cormorant_Garamond'] text-[clamp(22px,3.5vw,36px)] font-normal text-[#FAF8F4] leading-[1.1] tracking-[-0.01em]">
-              Wij willen de standaard<br /><em className="italic text-[#C4A265]">veranderen.</em>
+              Wij willen de standaard<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">veranderen.</span>
             </h2>
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function Missie() {
       {/* ══ LOOSE TEXT ══ */}
       <div className="p-[52px_56px] max-[860px]:p-[40px_20px] grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.1fr] gap-[60px] max-[860px]:gap-7 items-start">
         <div className="font-['Cormorant_Garamond'] text-[clamp(24px,2.8vw,38px)] font-normal leading-[1.15] text-[#1E1A14] tracking-[-0.01em] min-[860px]:sticky min-[860px]:top-[40px]">
-          De lash industrie<br />verdient een hogere<br /><em className="italic text-[#C4A265]">standaard.</em>
+          De lash industrie<br />verdient een hogere<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">standaard.</span>
         </div>
 
         <div className="flex flex-col gap-[18px]">
@@ -104,7 +104,7 @@ export default function Missie() {
         <div className="mb-10 relative z-[1]">
           <span className="block text-[9.5px] font-semibold tracking-[0.26em] uppercase text-[rgba(196,162,101,0.5)] mb-[14px]">Wat ons onderscheidt</span>
           <h3 className="font-['Cormorant_Garamond'] text-[clamp(24px,2.8vw,38px)] font-normal text-[rgba(250,248,244,0.88)] leading-[1.15] tracking-[-0.01em] max-w-[520px]">
-            Wat <em className="italic text-[#C4A265]">LXQ</em> anders doet dan<br />andere opleidingen.
+            Wat <span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">LXQ</span> anders doet dan<br />andere opleidingen.
           </h3>
         </div>
 

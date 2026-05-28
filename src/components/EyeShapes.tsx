@@ -99,8 +99,8 @@ export default function EyeShapes() {
         <div className="absolute -top-[50px] -right-[50px] w-[240px] h-[240px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(196,162,101,0.15) 0%, transparent 70%)' }} />
         <div>
           <span className="block text-[9.5px] font-semibold tracking-[0.26em] uppercase text-[#C4A265] mb-[18px]">Kennis</span>
-          <h2 className="font-['Cormorant_Garamond'] text-[clamp(38px,5.5vw,72px)] font-normal leading-[1] text-[#1E1A14] tracking-[-0.02em]">
-            Oogvormen<br />zeggen <em className="italic text-[#C4A265]">alles.</em>
+          <h2 className="font-['Outfit'] font-medium text-[clamp(38px,5.5vw,72px)] leading-[1] text-[#1A1815] tracking-[-0.02em]">
+            Oogvormen<br />zeggen <span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">alles.</span>
           </h2>
         </div>
         <div className="pb-1">

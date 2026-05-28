@@ -12,8 +12,9 @@ import FAQ from '@/components/FAQ'
 
 export default function Home() {
   return (
+    <div className="bg-[#FAF8F4] min-h-screen">
     <>
-      <div id="hero" data-theme-color="#0C0A07" data-theme-dark="true" className="relative w-full h-screen max-h-screen bg-[#0C0A07] overflow-hidden">
+      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#FAF8F4] overflow-hidden">
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>
@@ -21,10 +22,11 @@ export default function Home() {
       <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false" className="px-[14px] pb-[14px] max-[860px]:px-[10px] max-[860px]:pb-[10px]"><Missie /></div>
       <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
       <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] pt-[14px] max-[860px]:px-[10px] max-[860px]:pt-[10px]"><BeforeAfter /></div>
-      <div id="reels" data-theme-color="#1C1812" data-theme-dark="true"><ReelsSection /></div>
+      <div id="reels" data-theme-color="#FAF8F4" data-theme-dark="false"><ReelsSection /></div>
       <div id="academy" data-theme-color="#FAFAFA" data-theme-dark="false"><ComparisonTable /><AcademyHomeSection /></div>
       <div id="reviews" data-theme-color="#FAFAFA" data-theme-dark="false"><ReviewsSection /></div>
       <div id="faq" data-theme-color="#FAFAFA" data-theme-dark="false"><FAQ /></div>
     </>
+    </div>
   )
 }

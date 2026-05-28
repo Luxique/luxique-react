@@ -99,8 +99,8 @@ export default function MeetChiva() {
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>
           </span>
-          <h2 className="font-['Cormorant_Garamond'] text-[clamp(32px,3.5vw,54px)] font-normal leading-[1.08] text-[#1E1A14] tracking-[-0.01em]">
-            Lash artist.<br />Educator.<br /><em className="italic text-[#C4A265]">Oprichter.</em>
+          <h2 className="font-['Outfit'] font-medium text-[clamp(32px,3.5vw,54px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em]">
+            Lash artist.<br />Educator.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Oprichter.</span>
           </h2>
           <p className="text-[13.5px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
             Ik begon met lashes en voelde meteen: dit is precies wat ik wil doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en vele studenten die ik heb mogen begeleiden tot lash artist.
@@ -134,8 +134,8 @@ export default function MeetChiva() {
         <div className="bg-[#FAF8F4] rounded-[22px] p-[44px_40px] max-[860px]:p-[36px_24px] flex flex-col items-start text-left relative overflow-hidden">
           <div className="absolute -top-[40px] -right-[40px] w-[160px] h-[160px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.18)_0%,transparent_70%)] pointer-events-none" />
           <div className="text-[#C4A265] text-[16px] mb-5 opacity-70 self-center">✦</div>
-          <h3 className="font-['Cormorant_Garamond'] text-[clamp(26px,2.6vw,40px)] font-normal leading-[1.15] text-[#1E1A14] tracking-[-0.01em] mb-6 text-center self-center">
-            Niet kopiëren.<br /><em className="italic text-[#C4A265]">Creëren.</em>
+          <h3 className="font-['Outfit'] font-medium text-[clamp(26px,2.6vw,40px)] leading-[1.15] text-[#1A1815] tracking-[-0.02em] mb-6 text-center self-center">
+            Niet kopiëren.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Creëren.</span>
           </h3>
 
           <div className="relative w-full max-h-[220px] overflow-hidden mb-1">
@@ -179,7 +179,7 @@ export default function MeetChiva() {
           <div>
             <p className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#C4A265] mb-[10px]">Over ons</p>
             <h3 className="font-['Cormorant_Garamond'] text-[clamp(28px,3.5vw,52px)] font-normal leading-[1.08] text-[#FAF8F4] tracking-[-0.01em] mb-3">
-              Van beginners tot gevorderden —<br /><em className="italic text-[#C4A265]">iedereen is welkom.</em>
+              Van beginners tot gevorderden —<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">iedereen is welkom.</span>
             </h3>
             <p className="text-[13.5px] font-light text-[rgba(250,248,244,0.45)] leading-[1.7] max-w-[500px]">
               LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Chiva heeft velen studenten opgeleid en haar filosofie is simpel: elke oogvorm verdient een unieke aanpak.
