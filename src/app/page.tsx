@@ -9,10 +9,12 @@ import ComparisonTable from '@/components/ComparisonTable'
 import AcademyHomeSection from '@/components/AcademyHomeSection'
 import ReviewsSection from '@/components/ReviewsSection'
 import FAQ from '@/components/FAQ'
+import HomepageBgFix from './HomepageBgFix'
 
 export default function Home() {
   return (
-    <div className="bg-[#FAF8F4] min-h-screen">
+    <div className="bg-[#FAF8F4] min-h-screen" style={{ background: '#FAF8F4' }}>
+    <HomepageBgFix />
     <>
       <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#FAF8F4] overflow-hidden">
         <Hero />
