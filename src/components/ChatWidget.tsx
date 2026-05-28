@@ -15,11 +15,11 @@ const QUICK_REPLIES = [
 ]
 
 const FAQ_RESPONSES: Record<string, string> = {
-  'wat kost': 'Een Classic Set kost €149 en een Volume Set €199. Allebei inclusief 3 uur behandeltijd, foto-reportage en aftercare kit. Refills: €79 (Classic) of €99 (Volume).',
+  'wat kost': 'Een Nieuwe Set kost €129 en een Opvulbeurt €89. Bij een nieuwe set krijg je lash mapping, 3 uur behandeltijd, foto\'s en aftercare kit. De mapping wordt opgeslagen voor toekomstige bezoeken.',
   'hoe lang duurt': 'Reken op 3 uur. Chiva neemt de tijd voor een perfect resultaat — geen haast, geen compromissen.',
   'waar': 'LUXIQUE is gevestigd in [locatie]. Na je boeking ontvang je het exacte adres via WhatsApp.',
   'boeken': 'Je kunt direct online boeken via onze website! Ga naar de Behandeling pagina en klik op "Boek nu". Je ontvangt binnen 24 uur een bevestiging via WhatsApp.',
-  'refill': 'Refills boeken we 2-3 weken na je eerste set. Prijs: €79 (Classic) of €99 (Volume).',
+  'refill': 'Opvullen kost €89 en duurt ongeveer 2 uur. Chiva gebruikt je opgeslagen lash mapping om je set weer perfect aan te vullen.',
   'pijn': 'Nee, de meeste klanten vinden het ontspannen. Je ligt comfortabel en veel klanten vallen in slaap tijdens de behandeling.',
   'hoe lang blijft': 'Gemiddeld 4-6 weken met goede aftercare. Na 2-3 weken adviseren we een refill.',
   'annuleren': 'Gratis annuleren tot 24 uur van tevoren. Daarna rekenen we 50% van de behandelprijs.',

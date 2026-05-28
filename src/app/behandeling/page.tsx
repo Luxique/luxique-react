@@ -39,9 +39,9 @@ export default function BehandelingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
             {[
-              { num: '01', title: 'Consult & Analyse', time: '30 min', desc: 'Chiva analyseert jouw oogvorm, bespreekt je wensen en kiest het perfecte lash design. Geen standaard set — alles is maatwerk.' },
-              { num: '02', title: 'De behandeling', time: '2 uur', desc: 'Elke lash wordt met precisie geplaatst. Chiva werkt laag voor laag, van basis tot punt, voor het meest natuurlijke resultaat.' },
-              { num: '03', title: 'Foto-reportage & Aftercare', time: '30 min', desc: 'Professionele foto\'s van het resultaat. Plus uitgebreide aftercare instructies zodat je set weken lang mooi blijft.' },
+              { num: '01', title: 'Lash Mapping & Consult', time: '30 min', desc: 'Chiva analyseert jouw oogvorm en maakt een persoonlijke lash mapping. Deze wordt met foto\'s opgeslagen voor toekomstige afspraken — zodat elke visit consistent is.' },
+              { num: '02', title: 'De behandeling', time: '2 uur', desc: 'Elke lash wordt met precisie geplaatst volgens de mapping. Chiva werkt laag voor laag, van basis tot punt, voor het meest natuurlijke resultaat.' },
+              { num: '03', title: 'Foto\'s & Aftercare', time: '30 min', desc: 'Professionele foto\'s van het resultaat. De mapping + foto\'s worden opgeslagen in je klantdossier. Plus uitgebreide aftercare instructies.' },
             ].map((step) => (
               <div key={step.num} style={{ background: '#1C1812', border: '1px solid rgba(196,162,101,0.18)', borderRadius: 22, padding: '44px 36px' }}>
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", color: '#C4A265', fontSize: 48, fontStyle: 'italic', marginBottom: 8 }}>{step.num}</div>
@@ -68,14 +68,14 @@ export default function BehandelingPage() {
 
           <div style={{ maxWidth: 760, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
             {[
-              'Professionele lash consult',
+              'Professionele lash consult & mapping',
               'Maatwerk lash design',
               'Premium lash materialen',
-              '3 uur behandeltijd',
+              '3 uur behandeltijd (nieuwe set)',
               'Foto-reportage van het resultaat',
+              "Mapping + foto's opgeslagen in klantdossier",
               'Aftercare kit & instructies',
               '2 weken na-behandeling garantie',
-              'Persoonlijk advies voor onderhoud',
             ].map((item, i) => (
               <div key={i} style={{ background: '#14110C', border: '1px solid rgba(196,162,101,0.18)', borderRadius: 14, padding: '20px 24px', display: 'flex', gap: 14, alignItems: 'center' }}>
                 <span style={{ color: '#C4A265', fontSize: 16 }}>✓</span>
@@ -96,30 +96,30 @@ export default function BehandelingPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, maxWidth: 820, margin: '0 auto 60px' }}>
             <div style={{ background: '#1C1812', border: '1px solid rgba(196,162,101,0.18)', borderRadius: 22, padding: 44 }}>
-              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: '#FAF8F4', fontStyle: 'italic', fontWeight: 400, marginBottom: 12 }}>Classic Set</h3>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', color: '#C4A265', fontSize: 48, marginBottom: 8 }}>€ 149</div>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: '#FAF8F4', fontStyle: 'italic', fontWeight: 400, marginBottom: 12 }}>Nieuwe Set</h3>
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', color: '#C4A265', fontSize: 48, marginBottom: 8 }}>€ 129</div>
               <p style={{ color: 'rgba(250,248,244,0.5)', fontSize: 14, marginBottom: 20 }}>3 uur behandeltijd · Alles inbegrepen</p>
               <ul style={{ listStyle: 'none', padding: 0, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {['1-op-1 lash techniek', 'Natuurlijk resultaat', 'Foto-reportage'].map((f, i) => (
+                {['Lash mapping & consult', 'Maatwerk lash design', 'Foto-reportage', 'Mapping opgeslagen voor toekomstige visits'].map((f, i) => (
                   <li key={i} style={{ display: 'flex', gap: 10, color: 'rgba(250,248,244,0.7)', fontSize: 14 }}><span style={{ color: '#C4A265' }}>✓</span>{f}</li>
                 ))}
               </ul>
               <a href="#boeken" style={{ display: 'block', marginTop: 28, background: '#C4A265', color: '#0C0A07', padding: '14px 28px', borderRadius: 999, fontSize: 14, fontWeight: 500, letterSpacing: '0.04em', textDecoration: 'none', textAlign: 'center' }}>
-                Boek Classic Set →
+                Boek Nieuwe Set →
               </a>
             </div>
             <div style={{ background: '#1C1812', border: '2px solid rgba(196,162,101,0.4)', borderRadius: 22, padding: 44, position: 'relative' }}>
               <span style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#C4A265', color: '#0C0A07', padding: '4px 16px', borderRadius: 999, fontSize: 10, fontWeight: 600, letterSpacing: '0.15em', textTransform: 'uppercase' }}>Populair</span>
-              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: '#FAF8F4', fontStyle: 'italic', fontWeight: 400, marginBottom: 12 }}>Volume Set</h3>
-              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', color: '#C4A265', fontSize: 48, marginBottom: 8 }}>€ 199</div>
-              <p style={{ color: 'rgba(250,248,244,0.5)', fontSize: 14, marginBottom: 20 }}>3 uur behandeltijd · Alles inbegrepen</p>
+              <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: '#FAF8F4', fontStyle: 'italic', fontWeight: 400, marginBottom: 12 }}>Opvullen</h3>
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', color: '#C4A265', fontSize: 48, marginBottom: 8 }}>€ 89</div>
+              <p style={{ color: 'rgba(250,248,244,0.5)', fontSize: 14, marginBottom: 20 }}>2 uur behandeltijd · Opvullen van bestaande set</p>
               <ul style={{ listStyle: 'none', padding: 0, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {['Volume lash techniek', 'Fuller, dramatischer resultaat', 'Foto-reportage', 'Gratis nabehandeling'].map((f, i) => (
+                {['Opvullen op basis van opgeslagen mapping', 'Foto-update na behandeling', 'Aftercare check'].map((f, i) => (
                   <li key={i} style={{ display: 'flex', gap: 10, color: 'rgba(250,248,244,0.7)', fontSize: 14 }}><span style={{ color: '#C4A265' }}>✓</span>{f}</li>
                 ))}
               </ul>
               <a href="#boeken" style={{ display: 'block', marginTop: 28, background: '#C4A265', color: '#0C0A07', padding: '14px 28px', borderRadius: 999, fontSize: 14, fontWeight: 500, letterSpacing: '0.04em', textDecoration: 'none', textAlign: 'center' }}>
-                Boek Volume Set →
+                Boek Opvulbeurt →
               </a>
             </div>
           </div>
@@ -182,15 +182,15 @@ export default function BehandelingPage() {
           <p style={{ color: 'rgba(250,248,244,0.6)', fontSize: 18, maxWidth: 560, margin: '0 auto 44px' }}>
             Kies een datum die jou uitkomt. Chiva bevestigt je boeking binnen 24 uur.
           </p>
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="https://cal.com/luxique" target="_blank" rel="noopener noreferrer" style={{ background: '#C4A265', color: '#0C0A07', padding: '18px 38px', borderRadius: 999, fontSize: 15, fontWeight: 500, letterSpacing: '0.04em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              Boek Classic (€149) →
-            </a>
-            <a href="https://cal.com/luxique" target="_blank" rel="noopener noreferrer" style={{ background: 'transparent', color: '#C4A265', padding: '18px 38px', borderRadius: 999, fontSize: 15, fontWeight: 500, letterSpacing: '0.04em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, border: '1px solid rgba(196,162,101,0.4)' }}>
-              Boek Volume (€199) →
-            </a>
+          <div style={{ maxWidth: 640, margin: '0 auto 40px', borderRadius: 22, overflow: 'hidden', border: '1px solid rgba(196,162,101,0.18)', background: '#14110C' }}>
+            {/* Cal.com inline widget */}
+            <iframe
+              src="https://cal.com/luxique/lash-behandeling?embed=true"
+              style={{ width: '100%', height: 600, border: 'none' }}
+              title="Boek je afspraak"
+            />
           </div>
-          <p style={{ color: 'rgba(250,248,244,0.3)', fontSize: 12, marginTop: 24, letterSpacing: '0.1em' }}>
+          <p style={{ color: 'rgba(250,248,244,0.3)', fontSize: 12, letterSpacing: '0.1em' }}>
             Gratis annuleren tot 24 uur van tevoren · Bevestiging via WhatsApp
           </p>
         </div>
