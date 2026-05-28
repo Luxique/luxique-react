@@ -16,7 +16,7 @@ export default function TechVsArtist() {
               Lash Tech vs. Lash Artist
             </span>
 
-            <h2 className="font-['Outfit'] font-medium text-[clamp(26px,2.8vw,38px)] leading-[1.1] text-[#1A1815] tracking-[-0.02em]">
+            <h2 className="font-['Outfit'] font-medium text-[clamp(32px,4vw,52px)] leading-[1.1] text-[#1A1815] tracking-[-0.02em]">
               Er is een verschil<br />
               tussen wimpers zetten<br />
               <span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">en wimpers creëren.</span>

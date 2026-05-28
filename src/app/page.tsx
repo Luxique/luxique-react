@@ -12,9 +12,9 @@ import FAQ from '@/components/FAQ'
 
 export default function Home() {
   return (
-    <div className="bg-[#FAF8F4] min-h-screen">
+    <div className="bg-[#F3EEE6] min-h-screen">
     <>
-      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#FAF8F4] overflow-hidden">
+      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#F3EEE6] overflow-hidden">
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>
