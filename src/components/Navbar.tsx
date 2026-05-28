@@ -96,7 +96,7 @@ export default function Navbar() {
         {/* Desktop: links pill */}
         <div className="hidden md:flex h-[52px] flex-1 items-center justify-center px-5 gap-8 rounded-full bg-[rgba(22,19,16,0.84)] backdrop-blur-[28px] border border-[rgba(196,162,101,0.15)]">
           {['Behandelingen', 'Academy', 'Over ons'].map(label => (
-            <a key={label} href={label === 'Behandelingen' ? '/#behandelingen' : label === 'Academy' ? '/courses' : '/about'}
+            <a key={label} href={label === 'Behandelingen' ? '/behandelingen' : label === 'Academy' ? '/courses' : '/about'}
               className="text-[12px] tracking-[0.05em] text-[rgba(255,255,255,0.55)] hover:text-[#DFC08A] transition-colors whitespace-nowrap">
               {label}
             </a>
