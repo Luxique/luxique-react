@@ -16,7 +16,7 @@ async function getCourse(slug: string) {
 async function getLessons(courseId: string) {
   const { data } = await supabase
     .from('lessons')
-    .select('id, title, sort_order, is_free, duration_seconds')
+    .select('id, title, sort_order, is_free, duration_seconds, what_you_learn_text')
     .eq('course_id', courseId)
     .order('sort_order')
   return data || []

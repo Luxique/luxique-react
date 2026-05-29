@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
+import { REVIEWS } from '@/lib/reviews'
 
 interface Course {
   id: string
@@ -10,32 +11,31 @@ interface Course {
   hero_badge_text?: string
   hero_title?: string
   hero_title_accent?: string
+  hero_title_suffix?: string
   hero_tagline?: string
   hero_cta_text?: string
   hero_social_proof?: string
+  hero_chips?: Array<{ icon: string; text: string }>
   hero_rating?: number
   hero_image_url?: string
   hero_mux_playback_id?: string
-  show_payment_icons?: boolean
-  trust_microcopy?: string
   differentiators_eyebrow?: string
   differentiators_title?: string
-  differentiators_lead?: string
   differentiators?: Array<{ icon: string; title: string; body: string }>
   landing_blocks?: Array<LandingBlock>
-  show_curriculum?: boolean
   curriculum_eyebrow?: string
   curriculum_title?: string
   curriculum_intro?: string
+  reviews_eyebrow?: string
+  reviews_title?: string
+  price_cents?: number
+  access_duration_text?: string
+  pricing_includes?: string[]
   final_cta_eyebrow?: string
   final_cta_title?: string
   final_cta_title_accent?: string
   final_cta_lead?: string
   final_cta_button_text?: string
-  final_cta_includes?: string[]
-  final_cta_fine_print?: string
-  price_cents?: number
-  level?: string
 }
 
 interface Lesson {
@@ -44,6 +44,7 @@ interface Lesson {
   sort_order: number
   is_free: boolean
   duration_seconds: number
+  what_you_learn_text?: string
 }
 
 interface LandingBlock {
@@ -54,6 +55,7 @@ interface LandingBlock {
 }
 
 export default function CourseLandingClient({ course, lessons }: { course: Course; lessons: Lesson[] }) {
+  const [openLessonIndex, setOpenLessonIndex] = useState(0)
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -64,397 +66,725 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const heroTitle = course.hero_title || course.title || ''
-  const heroAccent = course.hero_title_accent || ''
-  const heroTitleParts = heroAccent ? heroTitle.split(heroAccent) : [heroTitle]
-
-  const priceEuros = course.price_cents ? `€ ${Math.floor(course.price_cents / 100)}` : ''
+  // Sort lessons by sort_order
+  const sortedLessons = [...lessons].sort((a, b) => a.sort_order - b.sort_order)
 
   return (
-    <div className="course-landing" style={{ background: 'var(--cl-dark)', color: 'var(--cl-cream)', fontFamily: "'Outfit', sans-serif", fontWeight: 300, lineHeight: 1.6 }}>
-      {/* Nav */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '22px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(12,10,7,0.6)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--cl-border)' }}>
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, letterSpacing: '0.32em', color: 'var(--cl-cream)' }}>LUXIQUE</div>
-        <button style={{ background: 'var(--cl-gold)', color: 'var(--cl-dark)', padding: '10px 22px', borderRadius: 999, fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer', letterSpacing: '0.04em' }}>
-          {course.hero_cta_text || 'Schrijf je in'}
-        </button>
-      </nav>
-
-      {/* Hero */}
-      <section style={{ padding: '160px 0 100px', position: 'relative', overflow: 'hidden', textAlign: 'center' }}>
-        <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, background: 'radial-gradient(circle, var(--cl-gold-glow) 0%, transparent 60%)', filter: 'blur(80px)', zIndex: 0, pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-          {course.hero_badge_text && (
-            <span style={{ display: 'inline-block', padding: '8px 18px', border: '1px solid var(--cl-border)', borderRadius: 999, background: 'var(--cl-gold-soft)', color: 'var(--cl-gold)', fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', marginBottom: 32 }}>
-              {course.hero_badge_text}
-            </span>
-          )}
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(48px, 7vw, 88px)', color: 'var(--cl-cream)', marginBottom: 24, fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
-            {heroTitleParts[0]}
-            {heroAccent && <span style={{ color: 'var(--cl-gold)' }}>{heroAccent}</span>}
-            {heroTitleParts[1]}
-          </h1>
-          {course.hero_tagline && (
-            <p style={{ fontSize: 19, color: 'var(--cl-cream-dim)', maxWidth: 620, margin: '0 auto 44px', lineHeight: 1.6 }}>
-              {course.hero_tagline}
-            </p>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 18 }}>
-            <button style={{ background: 'var(--cl-gold)', color: 'var(--cl-dark)', padding: '18px 38px', borderRadius: 999, border: 'none', fontFamily: "'Outfit', sans-serif", fontSize: 15, fontWeight: 500, letterSpacing: '0.04em', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 12 }}>
-              {course.hero_cta_text || 'Schrijf je in'} →
-            </button>
-            {course.hero_social_proof && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 14, color: 'var(--cl-cream-dim)', fontSize: 13, marginTop: 8 }}>
-                <span style={{ color: 'var(--cl-gold)', letterSpacing: 1 }}>★★★★★</span>
-                <span>{course.hero_social_proof}</span>
-                {course.hero_rating && (
-                  <>
-                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--cl-cream-mute)' }} />
-                    <span>Gemiddeld {course.hero_rating}/5</span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-          {course.show_payment_icons && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, marginTop: 32, color: 'var(--cl-cream-mute)', fontSize: 11, letterSpacing: '0.1em' }}>
-              <span>VEILIG BETALEN VIA</span>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {['VISA', 'MC', 'iDEAL', 'APPLE', 'KLARNA'].map(p => (
-                  <span key={p} style={{ background: 'var(--cl-dark-3)', border: '1px solid var(--cl-border)', borderRadius: 6, padding: '6px 10px', fontSize: 10, color: 'var(--cl-cream-dim)', fontWeight: 600, letterSpacing: '0.05em' }}>{p}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Hero Video/Image */}
-        {(course.hero_mux_playback_id || course.hero_image_url) && (
-          <div style={{ maxWidth: 880, margin: '72px auto 0', padding: '0 32px', position: 'relative', zIndex: 2 }}>
-            <div style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 22, overflow: 'hidden', background: 'var(--cl-dark-2)', border: '1px solid var(--cl-border)', boxShadow: '0 0 80px var(--cl-gold-glow), 0 30px 60px rgba(0,0,0,0.5)' }}>
-              {course.hero_image_url && (
-                <img src={course.hero_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.65) contrast(1.1)' }} />
-              )}
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'rgba(250,248,244,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
-                  <div style={{ width: 0, height: 0, borderLeft: '22px solid var(--cl-dark)', borderTop: '14px solid transparent', borderBottom: '14px solid transparent', marginLeft: 6 }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-
+    <div className="course-landing-v3">
+      {/* Moving gradient background */}
+      <div className="gradient-bg" />
+      
+      {/* Site Navigation */}
+      <SiteNav _course={course} />
+      
+      {/* Hero Section */}
+      <HeroSection course={course} />
+      
+      {/* Social Proof Logos */}
+      <SocialProofLogos />
+      
       {/* Differentiators */}
-      <section style={{ background: 'var(--cl-dark-2)', borderTop: '1px solid var(--cl-border)', borderBottom: '1px solid var(--cl-border)', padding: '130px 0' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 70 }}>
-            {course.differentiators_eyebrow && <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cl-gold)', fontWeight: 500, marginBottom: 16, display: 'inline-block' }}>{course.differentiators_eyebrow}</span>}
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(36px,5vw,56px)', color: 'var(--cl-cream)', marginBottom: 18, fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
-              {(course.differentiators_title || '').split('\n').map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}
-            </h2>
-            {course.differentiators_lead && <p style={{ color: 'var(--cl-cream-dim)', fontSize: 17, maxWidth: 560, margin: '0 auto' }}>{course.differentiators_lead}</p>}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-            {(course.differentiators || []).map((d, i) => (
-              <div key={i} style={{ background: 'var(--cl-dark-3)', border: '1px solid var(--cl-border)', borderRadius: 22, padding: '44px 36px', transition: 'all 0.4s' }}>
-                <div style={{ width: 56, height: 56, background: 'var(--cl-gold-soft)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 28, color: 'var(--cl-gold)', fontSize: 24 }}>{d.icon}</div>
-                <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, color: 'var(--cl-cream)', marginBottom: 14, fontStyle: 'italic', fontWeight: 400 }}>{d.title}</h3>
-                <p style={{ color: 'var(--cl-cream-dim)', fontSize: 15, lineHeight: 1.7 }}>{d.body}</p>
+      <DifferentiatorsSection course={course} />
+      
+      {/* Flex Blocks */}
+      {(course.landing_blocks || [])
+        .filter(block => !['what_you_learn', 'testimonials'].includes(block.type))
+        .sort((a, b) => a.order - b.order)
+        .map(block => (
+          <FlexBlockRenderer key={block.id} block={block} />
+        ))}
+      
+      {/* Curriculum */}
+      <CurriculumSection 
+        course={course} 
+        lessons={sortedLessons}
+        openLessonIndex={openLessonIndex}
+        setOpenLessonIndex={setOpenLessonIndex}
+      />
+      
+      {/* Reviews */}
+      <ReviewsSection course={course} />
+      
+      {/* Pricing */}
+      <PricingSection course={course} />
+      
+      {/* FAQ */}
+      <FAQSection />
+      
+      {/* Final CTA */}
+      <FinalCTASection course={course} />
+      
+      {/* Sticky CTA */}
+      <StickyCTA course={course} scrolled={scrolled} />
+      
+      {/* Footer */}
+      <Footer />
+    </div>
+  )
+}
+
+// Site Navigation Component
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function SiteNav({ _course }: { _course: Course }) {
+  return (
+    <nav className="site-nav">
+      <div className="nav-pill menu">☰</div>
+      <div className="nav-pill logo">LUXIQUE</div>
+      <div className="nav-pill user">👤</div>
+    </nav>
+  )
+}
+
+// Hero Section Component
+function HeroSection({ course }: { course: Course }) {
+  const heroTitle = course.hero_title || course.title || ''
+  const heroAccent = course.hero_title_accent || ''
+  const heroSuffix = course.hero_title_suffix || ''
+  const heroChips = course.hero_chips || []
+
+  // Split title by accent
+  const titleParts = heroAccent ? heroTitle.split(heroAccent) : [heroTitle]
+
+  return (
+    <section className="hero-box">
+      <div className="hero-content">
+        {course.hero_badge_text && (
+          <span className="badge-top">
+            <span className="dot" />
+            {course.hero_badge_text}
+          </span>
+        )}
+        
+        <h1>
+          {titleParts[0]}
+          {heroAccent && <span className="serif-accent">{heroAccent}</span>}
+          {titleParts[1]}
+          {heroSuffix && <span className="serif-accent">{heroSuffix}</span>}
+        </h1>
+        
+        {course.hero_tagline && (
+          <p className="tagline">{course.hero_tagline}</p>
+        )}
+        
+        {/* Hero Media */}
+        <HeroMedia _course={course} />
+        
+        {/* Floating Chips */}
+        {heroChips.length > 0 && (
+          <div className="float-chip-wrap">
+            {heroChips.slice(0, 4).map((chip, index) => (
+              <div 
+                key={index} 
+                className={`float-chip ${['tl', 'tr', 'bl', 'br'][index]}`}
+              >
+                <span className="chip-icon">{chip.icon}</span>
+                <span>{chip.text}</span>
               </div>
             ))}
           </div>
+        )}
+        
+        {/* CTA Row */}
+        <div className="cta-row">
+          <a href="#pricing" className="btn-primary">
+            {course.hero_cta_text || 'Schrijf je in'} →
+          </a>
+          <a href="#curriculum" className="btn-outline">
+            Bekijk programma
+          </a>
         </div>
-      </section>
-
-      {/* Flex Blocks */}
-      {(course.landing_blocks || []).sort((a, b) => a.order - b.order).map(block => (
-        <FlexBlockRenderer key={block.id} block={block} />
-      ))}
-
-      {/* Curriculum */}
-      {course.show_curriculum && lessons.length > 0 && (
-        <section style={{ background: 'var(--cl-dark-2)', borderTop: '1px solid var(--cl-border)', borderBottom: '1px solid var(--cl-border)', padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-            <div style={{ textAlign: 'center', marginBottom: 70 }}>
-              {course.curriculum_eyebrow && <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cl-gold)', fontWeight: 500, marginBottom: 16, display: 'inline-block' }}>{course.curriculum_eyebrow}</span>}
-              <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(36px,5vw,56px)', color: 'var(--cl-cream)', marginBottom: 18, fontStyle: 'italic', fontWeight: 300, lineHeight: 1.1 }}>
-                {(course.curriculum_title || '').split('\n').map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}
-              </h2>
-            </div>
-            {course.curriculum_intro && <p style={{ textAlign: 'center', color: 'var(--cl-cream-dim)', fontSize: 15, maxWidth: 540, margin: '-40px auto 60px', fontStyle: 'italic', fontFamily: "'Cormorant Garamond', serif" }}>{course.curriculum_intro}</p>}
-            <div style={{ maxWidth: 820, margin: '0 auto', border: '1px solid var(--cl-border)', borderRadius: 22, overflow: 'hidden', background: 'var(--cl-dark)' }}>
-              {lessons.map((lesson, i) => (
-                <div key={lesson.id} style={{ display: 'flex', alignItems: 'center', padding: '24px 32px', gap: 24, borderBottom: i < lessons.length - 1 ? '1px solid var(--cl-border)' : 'none' }}>
-                  <div style={{ fontFamily: "'Cormorant Garamond', serif", color: 'var(--cl-gold)', fontSize: 24, fontStyle: 'italic', width: 40, flexShrink: 0 }}>
-                    {String(lesson.sort_order + 1).padStart(2, '0')}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: 'var(--cl-cream)', fontSize: 16, fontWeight: 400, marginBottom: 4 }}>{lesson.title}</div>
-                    <div style={{ color: 'var(--cl-cream-mute)', fontSize: 12, letterSpacing: '0.05em' }}>
-                      {lesson.duration_seconds ? `${Math.round(lesson.duration_seconds / 60)} minuten` : ''}
-                    </div>
-                  </div>
-                  {lesson.is_free ? (
-                    <span style={{ background: 'var(--cl-gold-soft)', color: 'var(--cl-gold)', padding: '5px 12px', borderRadius: 999, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 500 }}>Gratis Preview</span>
-                  ) : (
-                    <span style={{ color: 'var(--cl-cream-mute)', fontSize: 16 }}>🔒</span>
-                  )}
-                </div>
-              ))}
-            </div>
+        
+        {/* Social Proof */}
+        {course.hero_social_proof && (
+          <div className="price-meta">
+            {course.hero_rating && <span>★★★★★ {course.hero_rating}/5</span>}
+            <span>·</span>
+            <span>{course.hero_social_proof}</span>
+            <span>·</span>
+            <span>Direct toegang</span>
           </div>
-        </section>
-      )}
+        )}
+      </div>
+    </section>
+  )
+}
 
-      {/* Final CTA */}
-      <section style={{ padding: '140px 0', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 1000, height: 600, background: 'radial-gradient(ellipse, var(--cl-gold-glow) 0%, transparent 70%)', filter: 'blur(80px)', zIndex: 0 }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-          {course.final_cta_eyebrow && <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cl-gold)', fontWeight: 500, marginBottom: 16, display: 'inline-block' }}>{course.final_cta_eyebrow}</span>}
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(40px,6vw,64px)', color: 'var(--cl-cream)', marginTop: 16, marginBottom: 24, fontStyle: 'italic', fontWeight: 300, lineHeight: 1.1 }}>
-            {course.final_cta_title || 'Word de '}
-            {course.final_cta_title_accent && <span style={{ color: 'var(--cl-gold)' }}>{course.final_cta_title_accent}</span>}
-            {!course.final_cta_title && !course.final_cta_title_accent && <>Word de <span style={{ color: 'var(--cl-gold)' }}>artist</span><br />die je wil zijn</>}
-          </h2>
-          {course.final_cta_lead && <p style={{ color: 'var(--cl-cream-dim)', fontSize: 18, maxWidth: 580, margin: '0 auto 44px' }}>{course.final_cta_lead}</p>}
-
-          {(course.final_cta_includes || []).length > 0 && (
-            <div style={{ maxWidth: 620, margin: '0 auto 44px', background: 'var(--cl-dark-2)', border: '1px solid var(--cl-border)', borderRadius: 22, padding: 32 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, textAlign: 'left' }}>
-                {course.final_cta_includes!.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', color: 'var(--cl-cream)', fontSize: 14 }}>
-                    <span style={{ color: 'var(--cl-gold)', fontSize: 14 }}>✓</span> {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {priceEuros && (
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', color: 'var(--cl-gold)', fontSize: 56, marginBottom: 8, fontWeight: 300 }}>
-              {priceEuros}
-            </div>
-          )}
-          <div style={{ color: 'var(--cl-cream-mute)', fontSize: 13, marginBottom: 32 }}>
-            {course.final_cta_fine_print || 'Eenmalige betaling · Direct toegang'}
-          </div>
-
-          <button style={{ background: 'var(--cl-gold)', color: 'var(--cl-dark)', padding: '22px 48px', borderRadius: 999, border: 'none', fontFamily: "'Outfit', sans-serif", fontSize: 16, fontWeight: 500, cursor: 'pointer', letterSpacing: '0.04em' }}>
-            {course.final_cta_button_text || 'Schrijf je nu in'} →
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer style={{ padding: '60px 0 100px', textAlign: 'center', color: 'var(--cl-cream-mute)', fontSize: 13, borderTop: '1px solid var(--cl-border)' }}>
-        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, letterSpacing: '0.32em', color: 'var(--cl-cream)', marginBottom: 16 }}>LUXIQUE</div>
-        <p>Eerst begrijpen, dan doen.</p>
-        <p style={{ marginTop: 16, fontSize: 11, letterSpacing: '0.1em' }}>© LUXIQUE ACADEMY · 2026</p>
-      </footer>
-
-      {/* Sticky Bottom CTA */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(20,17,12,0.92)', borderTop: '1px solid var(--cl-border)', padding: '16px 32px', display: scrolled ? 'flex' : 'none', justifyContent: 'space-between', alignItems: 'center', zIndex: 99, backdropFilter: 'blur(20px)' }}>
-        <div>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontStyle: 'italic', color: 'var(--cl-cream)', lineHeight: 1.2 }}>{course.title}</div>
-          <div style={{ fontSize: 10, color: 'var(--cl-cream-mute)', letterSpacing: '0.12em', marginTop: 2 }}>LUXIQUE ACADEMY</div>
-        </div>
-        <button style={{ background: 'var(--cl-gold)', color: 'var(--cl-dark)', padding: '12px 28px', borderRadius: 999, border: 'none', fontFamily: "'Outfit', sans-serif", fontSize: 13, fontWeight: 500, cursor: 'pointer', letterSpacing: '0.04em' }}>
-          {course.hero_cta_text || 'Schrijf je in'} →
-        </button>
+// Hero Media Component
+function HeroMedia({ _course }: { _course: Course }) {
+  return (
+    <div className="hero-media-wrap">
+      <div className="hero-media">
+        {(_course.hero_mux_playback_id || _course.hero_image_url) ? (
+          <>
+            {_course.hero_image_url && (
+              <img 
+                src={_course.hero_image_url} 
+                alt="" 
+                className="hero-image"
+              />
+            )}
+            <div className="play-btn" />
+          </>
+        ) : (
+          <div className="hero-placeholder" />
+        )}
       </div>
     </div>
   )
 }
 
-/* Flex Block Renderer */
-function FlexBlockRenderer({ block }: { block: LandingBlock }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const d = block.data as Record<string, any>
+// Social Proof Logos Component
+function SocialProofLogos() {
+  return (
+    <section className="logos-bar">
+      <div className="container">
+        <div className="logos-label">— Vertrouwd door artists in heel Nederland —</div>
+        <div className="logos-inner">
+          <span className="logo-pill">Bella Lashes</span>
+          <span className="logo-pill">Studio Vink</span>
+          <span className="logo-pill">Lash Atelier</span>
+          <span className="logo-pill">M. Beauty</span>
+          <span className="logo-pill">Eye Couture</span>
+        </div>
+      </div>
+    </section>
+  )
+}
 
-  switch (block.type) {
-    case 'what_you_learn': {
-      const items: string[] = (d.items || [])
-      return (
-        <section style={{ padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-            <SectionHeader eyebrow={d.eyebrow} title={d.title} lead={d.lead} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-              {items.map((item, i) => (
-                <div key={i} style={{ background: 'var(--cl-dark-2)', border: '1px solid var(--cl-border)', borderRadius: 14, padding: '28px 30px', display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-                  <div style={{ flexShrink: 0, width: 32, height: 32, background: 'var(--cl-gold-soft)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cl-gold)', fontSize: 14 }}>✓</div>
-                  <div>
-                    <div style={{ color: 'var(--cl-cream)', fontSize: 16, fontWeight: 500, marginBottom: 6 }}>{item}</div>
+// Differentiators Section Component
+function DifferentiatorsSection({ course }: { course: Course }) {
+  if (!course.differentiators || course.differentiators.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          {course.differentiators_eyebrow && (
+            <span className="eyebrow">— {course.differentiators_eyebrow} —</span>
+          )}
+          <h2>
+            {course.differentiators_title || 'Waarom Luxique'}
+            <br />
+            <span className="serif-accent">anders is</span>
+          </h2>
+        </div>
+        
+        <div className="feat-grid">
+          {course.differentiators.map((item, index) => (
+            <div key={index} className="feat-card">
+              <div className="feat-visual">
+                <div className="icon-big">{item.icon}</div>
+              </div>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Curriculum Section Component
+function CurriculumSection({ 
+  course, 
+  lessons, 
+  openLessonIndex, 
+  setOpenLessonIndex 
+}: { 
+  course: Course
+  lessons: Lesson[]
+  openLessonIndex: number
+  setOpenLessonIndex: (index: number) => void
+}) {
+  if (lessons.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="section" id="curriculum">
+      <div className="container">
+        <div className="sec-head">
+          {course.curriculum_eyebrow && (
+            <span className="eyebrow">— {course.curriculum_eyebrow} —</span>
+          )}
+          <h2>
+            Wat ga je <span className="serif-accent">leren</span>
+          </h2>
+          {course.curriculum_intro && (
+            <p>{course.curriculum_intro}</p>
+          )}
+        </div>
+        
+        <div className="curriculum-wrap">
+          {lessons.map((lesson, index) => (
+            <div 
+              key={lesson.id}
+              className={`lesson-acc ${index === openLessonIndex ? 'open' : ''}`}
+              onClick={() => setOpenLessonIndex(index === openLessonIndex ? -1 : index)}
+            >
+              <div className="lesson-acc-head">
+                <div className="lesson-num">
+                  {String(lesson.sort_order + 1).padStart(2, '0')}
+                </div>
+                <div className="lesson-info">
+                  <h4>{lesson.title}</h4>
+                  <div className="meta">
+                    {lesson.duration_seconds && `${Math.round(lesson.duration_seconds / 60)} minuten`}
+                    {lesson.duration_seconds && ' · '}
+                    Video
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )
-    }
-
-    case 'rich_text': {
-      return (
-        <section style={{ padding: '130px 0' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 32px' }}>
-            {(!!d.eyebrow || !!d.title) && <SectionHeader eyebrow={d.eyebrow} title={d.title} />}
-            {d.body_html && (
-              <div style={{ color: 'var(--cl-cream-dim)', fontSize: 16, lineHeight: 1.8 }} dangerouslySetInnerHTML={{ __html: d.body_html }} />
-            )}
-          </div>
-        </section>
-      )
-    }
-
-    case 'founder_story': {
-      return (
-        <section style={{ padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px', display: 'grid', gridTemplateColumns: '1fr 1.1fr', gap: 80, alignItems: 'center' }}>
-            <div style={{ aspectRatio: '4/5', borderRadius: 22, background: d.photo_url ? `url(${d.photo_url}) center/cover` : 'var(--cl-dark-3)', border: '1px solid var(--cl-border)', filter: 'grayscale(0.15) contrast(1.05)' }} />
-            <div>
-              {d.eyebrow && <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cl-gold)', fontWeight: 500, marginBottom: 18, display: 'block' }}>{d.eyebrow}</span>}
-              {d.title && <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(34px,4vw,48px)', color: 'var(--cl-cream)', marginBottom: 28, fontStyle: 'italic', fontWeight: 300, lineHeight: 1.1 }}>{d.title}</h2>}
-              {d.body_html && <div style={{ color: 'var(--cl-cream-dim)', fontSize: 16, lineHeight: 1.8 }} dangerouslySetInnerHTML={{ __html: d.body_html }} />}
-              {d.quote && (
-                <div style={{ marginTop: 36, paddingLeft: 24, borderLeft: '2px solid var(--cl-gold)', fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontSize: 22, color: 'var(--cl-cream)', lineHeight: 1.4 }}>
-                  <span style={{ color: 'var(--cl-gold)' }}>&ldquo;</span>{d.quote}<span style={{ color: 'var(--cl-gold)' }}>&rdquo;</span>
+                {lesson.is_free ? (
+                  <span className="lesson-badge">Gratis Preview</span>
+                ) : (
+                  <span className="lesson-lock">🔒</span>
+                )}
+                <span className="acc-plus">+</span>
+              </div>
+              
+              {lesson.what_you_learn_text && (
+                <div className="lesson-acc-body">
+                  <p>{lesson.what_you_learn_text}</p>
                 </div>
               )}
             </div>
-          </div>
-        </section>
-      )
-    }
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
-    case 'pain_points': {
-      const points: string[] = (d.points || [])
-      return (
-        <section style={{ background: 'var(--cl-dark-2)', borderTop: '1px solid var(--cl-border)', borderBottom: '1px solid var(--cl-border)', padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-            <SectionHeader eyebrow={d.eyebrow} title={d.title} />
-            <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {points.map((point, i) => (
-                <div key={i} style={{ background: 'var(--cl-dark-3)', border: '1px solid var(--cl-border)', borderRadius: 999, padding: '22px 36px', color: 'var(--cl-cream)', fontSize: 16, textAlign: 'center' }}>
-                  {point}
+// Reviews Section Component
+function ReviewsSection({ course }: { course: Course }) {
+  // Get 6 newest reviews (sorted by date logic - using first 6 for now)
+  const displayReviews = REVIEWS.slice(0, 6)
+
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          {course.reviews_eyebrow && (
+            <span className="eyebrow">— {course.reviews_eyebrow} —</span>
+          )}
+          <h2>
+            Verhalen van<br />onze <span className="serif-accent">artists</span>
+          </h2>
+        </div>
+        
+        <div className="test-grid">
+          {displayReviews.map((review, index) => (
+            <div key={index} className="test-card">
+              <div className="test-stars">
+                {'★'.repeat(review.stars)}
+              </div>
+              <blockquote>
+                {review.text.length > 150 
+                  ? `${review.text.substring(0, 150)}...` 
+                  : review.text
+                }
+              </blockquote>
+              <div className="test-author">
+                <div className="test-avatar" style={{ background: review.color }}>
+                  {review.initials}
                 </div>
-              ))}
+                <div>
+                  <div className="name">{review.name}</div>
+                  <div className="role">Lash Artist</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
-      )
-    }
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
-    case 'faq': {
-      const items = (d.items as Array<{ q: string; a: string }>) || []
-      return (
-        <section style={{ padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-            <SectionHeader eyebrow={d.eyebrow} title={d.title} />
-            <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {items.map((item, i) => (
-                <FaqItem key={i} question={item.q} answer={item.a} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )
-    }
+// Pricing Section Component
+function PricingSection({ course }: { course: Course }) {
+  if (!course.price_cents) {
+    return null
+  }
 
-    case 'testimonials': {
-      const items = (d.items as Array<{ quote: string; name: string; role: string }>) || []
-      return (
-        <section style={{ background: 'var(--cl-dark-2)', borderTop: '1px solid var(--cl-border)', borderBottom: '1px solid var(--cl-border)', padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>
-            <SectionHeader eyebrow={d.eyebrow} title={d.title} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, maxWidth: 980, margin: '0 auto' }}>
-              {items.map((t, i) => (
-                <div key={i} style={{ background: 'var(--cl-dark-3)', border: '1px solid var(--cl-border)', borderRadius: 22, padding: 36 }}>
-                  <div style={{ color: 'var(--cl-gold)', letterSpacing: 2, marginBottom: 16 }}>★★★★★</div>
-                  <blockquote style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontSize: 19, color: 'var(--cl-cream)', lineHeight: 1.5, marginBottom: 24 }}>
-                    &ldquo;{t.quote}&rdquo;
-                  </blockquote>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, var(--cl-gold), var(--cl-dark-3))', flexShrink: 0 }} />
-                    <div>
-                      <div style={{ color: 'var(--cl-cream)', fontSize: 14, fontWeight: 500 }}>{t.name}</div>
-                      <div style={{ color: 'var(--cl-cream-mute)', fontSize: 12 }}>{t.role}</div>
-                    </div>
+  const priceEuros = course.price_cents / 100
+
+  const includesList = course.pricing_includes || [
+    '8 modules · 4 uur video',
+    'Persoonlijke feedback van Chiva',
+    '12 maanden toegang & updates',
+    'Certificaat bij afronding',
+    'Eindtoets en quizzen',
+    '14 dagen niet-goed-geld-terug'
+  ]
+
+  return (
+    <section className="section" id="pricing">
+      <div className="container">
+        <div className="sec-head">
+          <span className="eyebrow">— Investering —</span>
+          <h2>
+            Eén <span className="serif-accent">prijs</span><br />
+            volledige toegang
+          </h2>
+          <p>Geen abonnement. Geen verborgen kosten. Direct beginnen.</p>
+        </div>
+        
+        <div className="pricing-wrap">
+          <div className="pricing-card">
+            <div className="inner">
+              <span className="eyebrow">Medusa Lash Basics</span>
+              <h3>Word een echte lash artist</h3>
+              
+              <div className="price-big">
+                <span className="euro">€</span>
+                {Math.floor(priceEuros)}
+              </div>
+              
+              <div className="price-sub">
+                Eenmalige betaling · {course.access_duration_text || '12 maanden toegang'}
+              </div>
+              
+              <div className="includes">
+                {includesList.map((item, index) => (
+                  <div key={index} className="includes-item">
+                    <span className="check">✓</span>
+                    {item}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              
+              <a href="#" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                Schrijf je nu in →
+              </a>
+              
+              <div className="payment-logos">
+                <span className="pay-logo">VISA</span>
+                <span className="pay-logo">Mastercard</span>
+                <span className="pay-logo">iDEAL</span>
+                <span className="pay-logo">Apple Pay</span>
+                <span className="pay-logo">Klarna</span>
+              </div>
+              
+              <div className="fine">Veilig betalen via Stripe</div>
             </div>
           </div>
-        </section>
-      )
-    }
+        </div>
+      </div>
+    </section>
+  )
+}
 
-    case 'quote': {
-      return (
-        <section style={{ padding: '100px 0' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 32px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic', fontSize: 28, color: 'var(--cl-cream)', lineHeight: 1.4 }}>
-              <span style={{ color: 'var(--cl-gold)', fontSize: 40 }}>&ldquo;</span>
-              {d.quote}
+// FAQ Section Component
+function FAQSection() {
+  const faqItems = [
+    {
+      question: 'Hoe lang heb ik toegang tot de cursus?',
+      answer: 'Levenslang. Zodra je je inschrijft heb je permanent toegang tot alle modules, inclusief toekomstige updates.'
+    },
+    {
+      question: 'Krijg ik persoonlijke feedback van Chiva?',
+      answer: 'Ja. Je kan je werk uploaden voor review en Chiva kijkt het persoonlijk na. Dit is geen anonieme cursus.'
+    },
+    {
+      question: 'Heb ik al ervaring nodig om te starten?',
+      answer: 'Nee. Medusa Lash Basics start bij de absolute basis. Motivatie en geduld zijn wel handig.'
+    },
+    {
+      question: 'Kan ik in termijnen betalen?',
+      answer: 'Ja. Via Klarna kan je in 3 termijnen betalen zonder extra kosten. Direct toegang na eerste betaling.'
+    },
+    {
+      question: 'Krijg ik een certificaat?',
+      answer: 'Ja. Na het succesvol afronden van de eindtoets ontvang je een Luxique Academy certificaat.'
+    }
+  ]
+
+  const [openIndex, setOpenIndex] = useState(0)
+
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          <span className="eyebrow">— Veelgestelde vragen —</span>
+          <h2>Goed om <span className="serif-accent">te weten</span></h2>
+        </div>
+        
+        <div className="faq-wrap">
+          {faqItems.map((item, index) => (
+            <div 
+              key={index}
+              className={`faq-item ${index === openIndex ? 'open' : ''}`}
+              onClick={() => setOpenIndex(index === openIndex ? -1 : index)}
+            >
+              <div className="faq-q">
+                <span>{item.question}</span>
+                <span className="plus">+</span>
+              </div>
+              <div className="faq-a">{item.answer}</div>
             </div>
-            {d.attribution && <div style={{ color: 'var(--cl-cream-mute)', fontSize: 14, marginTop: 20 }}>— {d.attribution}</div>}
-          </div>
-        </section>
-      )
-    }
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
-    case 'image_text': {
-      return (
-        <section style={{ padding: '130px 0' }}>
-          <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px', display: 'grid', gridTemplateColumns: d.image_side === 'right' ? '1.1fr 1fr' : '1fr 1.1fr', gap: 80, alignItems: 'center' }}>
-            {d.image_side !== 'right' && (
-              <div style={{ aspectRatio: '4/5', borderRadius: 22, background: d.image_url ? `url(${d.image_url}) center/cover` : 'var(--cl-dark-3)', border: '1px solid var(--cl-border)' }} />
-            )}
-            <div>
-              {d.eyebrow && <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cl-gold)', fontWeight: 500, marginBottom: 18, display: 'block' }}>{d.eyebrow}</span>}
-              {d.title && <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(34px,4vw,48px)', color: 'var(--cl-cream)', marginBottom: 28, fontStyle: 'italic', fontWeight: 300, lineHeight: 1.1 }}>{d.title}</h2>}
-              {d.body_html && <div style={{ color: 'var(--cl-cream-dim)', fontSize: 16, lineHeight: 1.8 }} dangerouslySetInnerHTML={{ __html: d.body_html }} />}
-            </div>
-            {d.image_side === 'right' && (
-              <div style={{ aspectRatio: '4/5', borderRadius: 22, background: d.image_url ? `url(${d.image_url}) center/cover` : 'var(--cl-dark-3)', border: '1px solid var(--cl-border)' }} />
-            )}
-          </div>
-        </section>
-      )
-    }
+// Final CTA Section Component
+function FinalCTASection({ course }: { course: Course }) {
+  return (
+    <section className="final-cta">
+      <div className="final-cta-content">
+        {course.final_cta_eyebrow && (
+          <span className="eyebrow">— {course.final_cta_eyebrow} —</span>
+        )}
+        <h2>
+          {course.final_cta_title || 'Begin vandaag aan je'}
+          <br />
+          <span className="serif-accent">
+            {course.final_cta_title_accent || 'reis als artist'}
+          </span>
+        </h2>
+        {course.final_cta_lead && (
+          <p>{course.final_cta_lead}</p>
+        )}
+        <a href="#pricing" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }}>
+          {course.final_cta_button_text || 'Schrijf je nu in'} →
+        </a>
+      </div>
+    </section>
+  )
+}
 
+// Sticky CTA Component
+function StickyCTA({ course, scrolled }: { course: Course; scrolled: boolean }) {
+  if (!scrolled) return null
+
+  return (
+    <div className="sticky-cta">
+      <div>
+        <div className="sticky-title">{course.title}</div>
+        <div className="sticky-subtitle">LUXIQUE ACADEMY</div>
+      </div>
+      <a href="#pricing" className="btn-primary">
+        {course.hero_cta_text || 'Schrijf je in'} →
+      </a>
+    </div>
+  )
+}
+
+// Footer Component
+function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="container">
+        <div className="logo">LUXIQUE</div>
+        <p>Eerst begrijpen, dan doen.</p>
+        <p style={{ marginTop: 12, fontSize: 11, letterSpacing: '0.1em' }}>
+          © LUXIQUE ACADEMY · 2026
+        </p>
+      </div>
+    </footer>
+  )
+}
+
+// Flex Block Renderer
+function FlexBlockRenderer({ block }: { block: LandingBlock }) {
+  const d = block.data as Record<string, unknown>
+
+  switch (block.type) {
+    case 'founder_story':
+      return <FounderStoryBlock data={d} />
+    
+    case 'pain_points':
+      return <PainPointsBlock data={d} />
+    
+    case 'quote':
+      return <QuoteBlock data={d} />
+    
+    case 'rich_text':
+      return <RichTextBlock data={d} />
+    
+    case 'image_text':
+      return <ImageTextBlock data={d} />
+    
+    case 'video_caption':
+      return <VideoCaptionBlock data={d} />
+    
     default:
       return null
   }
 }
 
-function SectionHeader({ eyebrow, title, lead }: { eyebrow?: string; title?: string; lead?: string }) {
+// Founder Story Block
+function FounderStoryBlock({ data }: { data: Record<string, unknown> }) {
+  const photo_url = data.photo_url as string | undefined
+  const eyebrow = data.eyebrow as string | undefined
+  const title = data.title as string | undefined
+  const body_html = data.body_html as string | undefined
+  const quote = data.quote as string | undefined
+  
   return (
-    <div style={{ textAlign: 'center', marginBottom: 70 }}>
-      {eyebrow && <span style={{ fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cl-gold)', fontWeight: 500, marginBottom: 16, display: 'inline-block' }}>{eyebrow}</span>}
-      {title && (
-        <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 'clamp(36px,5vw,56px)', color: 'var(--cl-cream)', marginBottom: 18, fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em', lineHeight: 1.1 }}>
-          {title.split('\n').map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}
-        </h2>
-      )}
-      {lead && <p style={{ color: 'var(--cl-cream-dim)', fontSize: 17, maxWidth: 560, margin: '0 auto' }}>{lead}</p>}
-    </div>
+    <section className="section">
+      <div className="container">
+        <div className="about-grid">
+          {photo_url && (
+            <div 
+              className="about-photo"
+              style={{ backgroundImage: `url(${photo_url})` }}
+            />
+          )}
+          <div className="about-text">
+            {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+            {title && <h2>{title}</h2>}
+            {body_html && (
+              <div 
+                className="about-body"
+                dangerouslySetInnerHTML={{ __html: body_html }} 
+              />
+            )}
+            {quote && (
+              <div className="about-quote">
+                &ldquo;{quote}&rdquo;
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false)
+// Pain Points Block
+function PainPointsBlock({ data }: { data: Record<string, unknown> }) {
+  const points = (data.points as string[]) || []
+  const eyebrow = data.eyebrow as string | undefined
+  const title = data.title as string | undefined
+
   return (
-    <div style={{ background: 'var(--cl-dark-2)', border: '1px solid var(--cl-border)', borderRadius: 14, overflow: 'hidden' }}>
-      <div onClick={() => setOpen(!open)} style={{ padding: '24px 28px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--cl-cream)', fontSize: 16, userSelect: 'none' }}>
-        <span>{question}</span>
-        <span style={{ color: 'var(--cl-gold)', fontSize: 22, fontWeight: 300, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.3s' }}>+</span>
-      </div>
-      {open && (
-        <div style={{ color: 'var(--cl-cream-dim)', fontSize: 15, lineHeight: 1.7, padding: '0 28px 24px' }}>
-          {answer}
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+          {title && <h2>{title}</h2>}
         </div>
-      )}
-    </div>
+        
+        <div className="pain-points-wrap">
+          {points.map((point: string, index: number) => (
+            <div key={index} className="pain-point">
+              {point}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Quote Block
+function QuoteBlock({ data }: { data: Record<string, unknown> }) {
+  const quote = data.quote as string | undefined
+  const attribution = data.attribution as string | undefined
+  
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="quote-wrap">
+          <div className="quote-text">
+            <span className="quote-mark">&ldquo;</span>
+            {quote}
+          </div>
+          {attribution && (
+            <div className="quote-attribution">— {attribution}</div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Rich Text Block
+function RichTextBlock({ data }: { data: Record<string, unknown> }) {
+  const eyebrow = data.eyebrow as string | undefined
+  const title = data.title as string | undefined
+  const body_html = data.body_html as string | undefined
+  
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+          {title && <h2>{title}</h2>}
+        </div>
+        
+        <div className="rich-text-content">
+          {body_html && (
+            <div dangerouslySetInnerHTML={{ __html: body_html }} />
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Image Text Block
+function ImageTextBlock({ data }: { data: Record<string, unknown> }) {
+  const imageSide = (data.image_side as string) === 'right' ? 'reverse' : ''
+  const image_url = data.image_url as string | undefined
+  const eyebrow = data.eyebrow as string | undefined
+  const title = data.title as string | undefined
+  const body_html = data.body_html as string | undefined
+
+  return (
+    <section className="section">
+      <div className="container">
+        <div className={`image-text-grid ${imageSide}`}>
+          {image_url && (
+            <div 
+              className="image-text-photo"
+              style={{ backgroundImage: `url(${image_url})` }}
+            />
+          )}
+          <div className="image-text-content">
+            {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+            {title && <h2>{title}</h2>}
+            {body_html && (
+              <div dangerouslySetInnerHTML={{ __html: body_html }} />
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Video Caption Block
+function VideoCaptionBlock({ data }: { data: Record<string, unknown> }) {
+  const video_url = data.video_url as string | undefined
+  const thumbnail_url = data.thumbnail_url as string | undefined
+  const caption = data.caption as string | undefined
+  
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="video-caption-wrap">
+          {video_url && (
+            <div className="video-container">
+              <video controls poster={thumbnail_url}>
+                <source src={video_url} type="video/mp4" />
+              </video>
+            </div>
+          )}
+          {caption && (
+            <div className="video-caption">
+              {caption}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }
