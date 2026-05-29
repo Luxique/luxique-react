@@ -110,7 +110,7 @@ function PrijzenSection() {
         <h2 className="font-['Outfit'] font-medium text-[clamp(32px,4vw,52px)] tracking-[-0.02em] text-[#1A1815] mb-[14px]">
           Heldere <SerifAccent>prijzen</SerifAccent>
         </h2>
-        <p className="text-[#5C564C] text-[16px] max-w-[540px] mx-auto">Geen verrassingen achteraf. Kies wat bij je past.</p>
+        
       </div>
       <div className="grid grid-cols-2 max-[860px]:grid-cols-1 gap-[14px] max-w-[880px] mx-auto">
         <div className="bg-[#F7F2EA] hover:bg-[#FDFCFA] rounded-[22px] px-[36px] py-[44px] text-center transition-all hover:-translate-y-[4px] hover:shadow-[0_20px_50px_rgba(26,24,21,0.06)]">
@@ -160,18 +160,18 @@ function GallerySection() {
       <div className="grid grid-cols-4 max-[860px]:grid-cols-2 max-[560px]:grid-cols-1 gap-[14px]"
         style={{ gridTemplateRows: 'repeat(2, 240px)' }}>
         <div className="col-span-2 row-span-2 max-[560px]:col-span-1 max-[560px]:row-span-1 rounded-[22px] bg-cover bg-center relative overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=900')" }} />
+          style={{ backgroundImage: "url('/images/chiva-portrait.jpg')" }} />
         <div className="rounded-[22px] bg-cover bg-center overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1583241800698-9c2e1f1f2c5e?w=500')" }} />
+          style={{ backgroundImage: "url('/images/chiva-portrait.jpg')" }} />
         <div className="rounded-[22px] bg-cover bg-center overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=500')" }} />
+          style={{ backgroundImage: "url('/images/hero-bg.jpg')" }} />
         <div className="rounded-[22px] bg-[#1A1815] flex items-center justify-center cursor-pointer hover:scale-[1.02] transition-transform relative">
           <div className="w-[64px] h-[64px] rounded-full bg-[#FAF8F4] flex items-center justify-center relative">
             <div className="w-0 h-0 border-l-[18px] border-l-[#1A1815] border-t-[11px] border-t-transparent border-b-[11px] border-b-transparent ml-[6px]" />
           </div>
         </div>
         <div className="rounded-[22px] bg-cover bg-center overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=500')" }} />
+          style={{ backgroundImage: "url('/images/chiva-portrait.jpg')" }} />
       </div>
     </section>
   )
@@ -223,7 +223,7 @@ function BookingSection() {
       <div className="relative z-[1]">
         <Eyebrow>— Plan je afspraak —</Eyebrow>
         <h2 className="font-['Outfit'] font-medium text-[clamp(38px,5vw,68px)] text-[#FAF8F4] mb-[18px] tracking-[-0.02em]">
-          Boek je <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">moment</span>
+          Boek jouw <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">moment</span>
         </h2>
         <p className="text-[rgba(250,248,244,0.7)] text-[17px] max-w-[480px] mx-auto mb-[40px]">
           Kies een datum en tijd die jou uitkomt. Ik kijk ernaar uit je te ontmoeten.
@@ -252,11 +252,11 @@ export default function BehandelingenContent() {
           title="Eerst luisteren,"
           titleAccent="dan kijken"
           paragraphs={[
-            'Elke afspraak begint met een gesprek. Onder het genot van een kopje thee bespreken we jouw wensen, je levensstijl en wat je van je lashes verwacht.',
-            'Geen aanname vooraf — eerst begrijpen wie je bent en wat bij je past, voordat er ook maar één lash wordt geplaatst.',
+            'Elke afspraak begint met een consultatiegesprek. Onder het genot van een kopje thee bespreken we jouw wensen en wat je van je lashes verwacht.',
+            'We gaan eerst begrijpen wat je wilt uitstralen en welke stijl bij je past, voordat er ook maar één lash wordt geplaatst.',
           ]}
           imageLabel="01 · Welkom"
-          imageUrl="https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=900"
+          imageUrl="/images/hero-bg.jpg"
           imageSide="right"
           details={[
             { num: '10 min', label: 'Consultatie' },
@@ -269,11 +269,11 @@ export default function BehandelingenContent() {
           title="Afgestemd op"
           titleAccent="jouw oogvorm"
           paragraphs={[
-            'Op basis van je oogvorm, natuurlijke wimpers en wensen bepaal ik de styling die jouw blik het mooist versterkt — van natuurlijk tot vol.',
-            'Dit is waar techniek kunst wordt. De juiste krul, lengte en dikte maken het verschil tussen \'mooi\' en \'perfect voor jou\'.',
+            'Op basis van je oogvorm, natuurlijke wimpers en wensen bepalen we de styling die jouw blik het mooist versterkt. Van een natuurlijke look tot vol.',
+            'De juiste krul, lengte en dikte maken het verschil tussen \u2018gewoon mooi\u2019 en \u2018perfect voor jou\u2019.',
           ]}
           imageLabel="02 · Ontwerp"
-          imageUrl="https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=900"
+          imageUrl="/images/chiva-portrait.jpg"
           imageSide="left"
         />
 
@@ -282,11 +282,11 @@ export default function BehandelingenContent() {
           title="Met precisie,"
           titleAccent="lash voor lash"
           paragraphs={[
-            'Je ligt comfortabel met gesloten ogen terwijl ik elke lash met precisie plaats. De behandeling is pijnloos — veel klanten doezelen even weg.',
-            'Ik werk uitsluitend met premium materialen die je eigen wimpers gezond en sterk houden.',
+            'Je ligt comfortabel met gesloten ogen terwijl elke lash met precisie wordt opgelegd. De behandeling is geheel pijnloos, sommige klanten doezelen zelfs even weg.',
+            'Er wordt uitsluitend met premium materialen gewerkt die de gezondheid en sterkte van je eigen wimpers behouden.',
           ]}
           imageLabel="03 · Plaatsing"
-          imageUrl="https://images.unsplash.com/photo-1583241800698-9c2e1f1f2c5e?w=900"
+          imageUrl="/images/hero-bg.jpg"
           imageSide="right"
           details={[
             { num: '± 2u', label: 'Nieuwe set' },
@@ -300,10 +300,10 @@ export default function BehandelingenContent() {
           titleAccent="ook thuis"
           paragraphs={[
             'Samen bewonderen we het resultaat. Je gaat naar huis met persoonlijk nazorgadvies zodat je set langer mooi blijft en je wimpers gezond houdt.',
-            'Voor een vol resultaat raad ik aan om elke 2 tot 3 weken langs te komen voor een refill.',
+            'Voor een vol resultaat raden we aan om elke 2 tot 3 weken langs te komen voor een refill.',
           ]}
           imageLabel="04 · Nazorg"
-          imageUrl="https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=900"
+          imageUrl="/images/chiva-portrait.jpg"
           imageSide="left"
         />
       </div>
