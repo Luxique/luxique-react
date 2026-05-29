@@ -249,8 +249,8 @@ export default function BehandelingenContent() {
       <div id="verhaal">
         <StoryRow
           eyebrow="— Stap 01 · De Consultatie —"
-          title="Eerst luisteren,"
-          titleAccent="dan kijken"
+          title="We bespreken"
+          titleAccent="jouw wensen"
           paragraphs={[
             'Elke afspraak begint met een consultatiegesprek. Onder het genot van een kopje thee bespreken we jouw wensen en wat je van je lashes verwacht.',
             'We gaan eerst begrijpen wat je wilt uitstralen en welke stijl bij je past, voordat er ook maar één lash wordt geplaatst.',
@@ -267,7 +267,7 @@ export default function BehandelingenContent() {
         <StoryRow
           eyebrow="— Stap 02 · De Styling —"
           title="Afgestemd op"
-          titleAccent="jouw oogvorm"
+          titleAccent="jouw unieke oogvorm"
           paragraphs={[
             'Op basis van je oogvorm, natuurlijke wimpers en wensen bepalen we de styling die jouw blik het mooist versterkt. Van een natuurlijke look tot vol.',
             'De juiste krul, lengte en dikte maken het verschil tussen \u2018gewoon mooi\u2019 en \u2018perfect voor jou\u2019.',
@@ -279,7 +279,7 @@ export default function BehandelingenContent() {
 
         <StoryRow
           eyebrow="— Stap 03 · Het Werk —"
-          title="Met precisie,"
+          title="Geplaatst met precisie,"
           titleAccent="lash voor lash"
           paragraphs={[
             'Je ligt comfortabel met gesloten ogen terwijl elke lash met precisie wordt opgelegd. De behandeling is geheel pijnloos, sommige klanten doezelen zelfs even weg.',
@@ -296,10 +296,10 @@ export default function BehandelingenContent() {
 
         <StoryRow
           eyebrow="— Stap 04 · De Nazorg —"
-          title="Mooi blijven,"
-          titleAccent="ook thuis"
+          title="Behoud je look,"
+          titleAccent="zo lang mogelijk"
           paragraphs={[
-            'Samen bewonderen we het resultaat. Je gaat naar huis met persoonlijk nazorgadvies zodat je set langer mooi blijft en je wimpers gezond houdt.',
+            'Samen reflecteren we op het resultaat. Je gaat naar huis met persoonlijk nazorgadvies zodat je set langer mooi blijft en je wimpers gezond houdt.',
             'Voor een vol resultaat raden we aan om elke 2 tot 3 weken langs te komen voor een refill.',
           ]}
           imageLabel="04 · Nazorg"
