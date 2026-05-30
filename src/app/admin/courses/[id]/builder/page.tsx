@@ -366,7 +366,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     }
 
     console.log('[saveCourse] ✅ Save complete!')
-    alert('Concept opgeslagen!')
+    alert('Concept opgeslagen! ⏱ Wijzigingen zijn binnen ~1 minuut live op de cursuspagina.')
   }, [course, currentLesson, blocks, currentContext])
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -765,11 +765,83 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                 >+ Chip toevoegen</button>
               </div>
               <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Hero media</label>
-                <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(26,24,21,0.12)]">
-                  <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Mux upload placeholder</span>
-                  <span className="text-[10.5px] text-[rgba(26,24,21,0.3)] font-light">Komt later</span>
-                </div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Hero video</label>
+                {course?.heroMuxPlaybackId ? (
+                  <div className="space-y-2">
+                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
+                      <MuxPlayer
+                        playbackId={course.heroMuxPlaybackId}
+                        metadata={{ video_title: course.title || 'Hero video' }}
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => { updateCourseField('heroMuxPlaybackId', undefined); updateCourseField('heroMuxAssetId', undefined) }}
+                      className="text-[10px] text-red-400 hover:text-red-600 transition"
+                    >Video verwijderen</button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      id="hero-video-upload"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setVideoUploading(true)
+                        setVideoUploadProgress(0)
+                        try {
+                          const res = await fetch('/api/mux/upload-url', { method: 'POST' })
+                          const { upload_url, upload_id } = await res.json()
+                          await new Promise<void>((resolve, reject) => {
+                            const xhr = new XMLHttpRequest()
+                            xhr.upload.onprogress = (ev) => {
+                              if (ev.lengthComputable) setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 100))
+                            }
+                            xhr.onload = () => resolve()
+                            xhr.onerror = () => reject(new Error('Upload failed'))
+                            xhr.open('PUT', upload_url)
+                            xhr.setRequestHeader('Content-Type', file.type)
+                            xhr.send(file)
+                          })
+                          let attempts = 0
+                          while (attempts < 30) {
+                            await new Promise(r => setTimeout(r, 2000))
+                            const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
+                            const { status, asset_id, playback_id } = await statusRes.json()
+                            if (status === 'ready' && playback_id) {
+                              updateCourseField('heroMuxPlaybackId', playback_id)
+                              updateCourseField('heroMuxAssetId', asset_id)
+                              break
+                            }
+                            attempts++
+                          }
+                          if (attempts >= 30) alert('Video verwerking duurt te lang. Probeer opnieuw.')
+                        } catch (err) {
+                          console.error('Hero upload error:', err)
+                          alert('Upload mislukt.')
+                        } finally {
+                          setVideoUploading(false)
+                        }
+                      }}
+                    />
+                    {videoUploading ? (
+                      <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-3 p-4">
+                        <div className="w-3/4 h-[3px] bg-[rgba(26,24,21,0.08)] rounded-full overflow-hidden">
+                          <div style={{ width: `${videoUploadProgress}%`, height: '100%', background: '#C4A265', transition: 'width 0.3s' }} />
+                        </div>
+                        <span className="text-[10.5px] text-[#7A7268]">{videoUploadProgress}% — video wordt verwerkt...</span>
+                      </div>
+                    ) : (
+                      <label htmlFor="hero-video-upload" className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-[1.5px] border-dashed border-[rgba(26,24,21,0.12)] cursor-pointer hover:border-[#C4A265] transition">
+                        <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden</span>
+                        <span className="text-[10.5px] text-[rgba(26,24,21,0.3)] font-light">MP4, MOV — max 500MB</span>
+                      </label>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
