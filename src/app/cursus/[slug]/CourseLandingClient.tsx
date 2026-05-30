@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Review } from '@/lib/reviews'
+import './course-landing-v3.css'
 
 interface Course {
   id: string
