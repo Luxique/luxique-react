@@ -54,7 +54,7 @@ UPDATE courses SET
   hero_tagline = 'Het exacte framework dat Chiva ontwikkelde om beginners te transformeren naar lash artists. Geen kopieer-werk — eerst begrijpen, dan doen.',
   hero_cta_text = 'Schrijf je in',
   hero_social_proof = '★★★★★ 4.9/5 · 47 reviews · Direct toegang',
-  hero_chips = $json$["Stap-voor-stap begeleiding","Persoonlijke feedback","Levenslange toegang","150+ artists opgeleid"]$json$::jsonb,
+  hero_chips = $json$["Stap-voor-stap begeleiding","Persoonlijke feedback","12 maanden toegang","150+ artists opgeleid"]$json$::jsonb,
 
   -- Differentiators
   differentiators_eyebrow = '— Waarom Luxique —',
@@ -78,6 +78,6 @@ UPDATE courses SET
   final_cta_eyebrow = '— Klaar om te starten —',
   final_cta_title = 'Begin vandaag aan je reis als',
   final_cta_title_accent = 'artist',
-  final_cta_lead = 'Direct toegang tot alle modules. Begin meteen of in je eigen tempo. Levenslang van jou.',
+  final_cta_lead = 'Direct toegang tot alle modules. Begin meteen of in je eigen tempo. 12 maanden toegang.',
   final_cta_button_text = 'Schrijf je nu in'
 WHERE slug = 'medusa-lash-basics';
