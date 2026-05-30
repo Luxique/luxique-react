@@ -9,7 +9,6 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities';
 import MuxPlayer from '@mux/mux-player-react'
 import { TextBlock, ImageBlock, QuizBlock, CalloutBlock, DownloadBlock } from './BlockComponents'
-import RichTextField from './RichTextField'
 
 /* ── SortableBlock (module-level, prevents re-mount) ── */
 function SortableBlock({ block, children }: { block: { id: string }, children: React.ReactNode }) {
@@ -114,6 +113,31 @@ interface Course {
   certificate?: boolean
   lessons?: Lesson[]
   quizzes?: Quiz[]
+  // v3 fields
+  heroBadgeText?: string
+  heroTitle?: string
+  heroTitleAccent?: string
+  heroTitleSuffix?: string
+  heroTagline?: string
+  heroCtaText?: string
+  heroSocialProof?: string
+  heroChips?: string[]
+  differentiatorsEyebrow?: string
+  differentiatorsTitle?: string
+  differentiators?: Array<{icon: string, title: string, body: string}>
+  curriculumEyebrow?: string
+  curriculumTitle?: string
+  curriculumIntro?: string
+  reviewsEyebrow?: string
+  reviewsTitle?: string
+  accessDurationText?: string
+  pricingIncludes?: string[]
+  finalCtaEyebrow?: string
+  finalCtaTitle?: string
+  finalCtaTitleAccent?: string
+  finalCtaLead?: string
+  finalCtaButtonText?: string
+  landingBlocks?: Array<{type: string, data: Record<string, unknown>, order: number}>
 }
 
 type ContextType = 'global' | 'lesson' | 'quiz'
@@ -206,7 +230,32 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       intro_video: courseToSave.introVideo || false,
       final_quiz_required: courseToSave.finalQuizRequired || false,
       certificate: courseToSave.certificate || false,
-      status: 'draft'
+      status: 'draft',
+      // v3 fields
+      hero_badge_text: courseToSave.heroBadgeText || null,
+      hero_title: courseToSave.heroTitle || null,
+      hero_title_accent: courseToSave.heroTitleAccent || null,
+      hero_title_suffix: courseToSave.heroTitleSuffix || null,
+      hero_tagline: courseToSave.heroTagline || null,
+      hero_cta_text: courseToSave.heroCtaText || null,
+      hero_social_proof: courseToSave.heroSocialProof || null,
+      hero_chips: courseToSave.heroChips || [],
+      differentiators_eyebrow: courseToSave.differentiatorsEyebrow || null,
+      differentiators_title: courseToSave.differentiatorsTitle || null,
+      differentiators: courseToSave.differentiators || [],
+      curriculum_eyebrow: courseToSave.curriculumEyebrow || null,
+      curriculum_title: courseToSave.curriculumTitle || null,
+      curriculum_intro: courseToSave.curriculumIntro || null,
+      reviews_eyebrow: courseToSave.reviewsEyebrow || null,
+      reviews_title: courseToSave.reviewsTitle || null,
+      access_duration_text: courseToSave.accessDurationText || null,
+      pricing_includes: courseToSave.pricingIncludes || [],
+      final_cta_eyebrow: courseToSave.finalCtaEyebrow || null,
+      final_cta_title: courseToSave.finalCtaTitle || null,
+      final_cta_title_accent: courseToSave.finalCtaTitleAccent || null,
+      final_cta_lead: courseToSave.finalCtaLead || null,
+      final_cta_button_text: courseToSave.finalCtaButtonText || null,
+      landing_blocks: courseToSave.landingBlocks || []
     })
     if (courseError) {
       console.error('[saveCourse] Course upsert FAILED:', courseError)
@@ -270,7 +319,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
 
     console.log('[saveCourse] ✅ Save complete!')
     alert('Concept opgeslagen!')
-  }, [course, currentLesson, blocks])
+  }, [course, currentLesson, blocks, currentContext])
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const publishCourse = async () => {
@@ -361,7 +410,32 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         finalQuizRequired: courseData.final_quiz_required || false,
         certificate: courseData.certificate || false,
         lessons: [],
-        quizzes: []
+        quizzes: [],
+        // v3 field mappings
+        heroBadgeText: courseData.hero_badge_text || undefined,
+        heroTitle: courseData.hero_title || undefined,
+        heroTitleAccent: courseData.hero_title_accent || undefined,
+        heroTitleSuffix: courseData.hero_title_suffix || undefined,
+        heroTagline: courseData.hero_tagline || undefined,
+        heroCtaText: courseData.hero_cta_text || undefined,
+        heroSocialProof: courseData.hero_social_proof || undefined,
+        heroChips: courseData.hero_chips || [],
+        differentiatorsEyebrow: courseData.differentiators_eyebrow || undefined,
+        differentiatorsTitle: courseData.differentiators_title || undefined,
+        differentiators: courseData.differentiators || [],
+        curriculumEyebrow: courseData.curriculum_eyebrow || undefined,
+        curriculumTitle: courseData.curriculum_title || undefined,
+        curriculumIntro: courseData.curriculum_intro || undefined,
+        reviewsEyebrow: courseData.reviews_eyebrow || undefined,
+        reviewsTitle: courseData.reviews_title || undefined,
+        accessDurationText: courseData.access_duration_text || undefined,
+        pricingIncludes: courseData.pricing_includes || [],
+        finalCtaEyebrow: courseData.final_cta_eyebrow || undefined,
+        finalCtaTitle: courseData.final_cta_title || undefined,
+        finalCtaTitleAccent: courseData.final_cta_title_accent || undefined,
+        finalCtaLead: courseData.final_cta_lead || undefined,
+        finalCtaButtonText: courseData.final_cta_button_text || undefined,
+        landingBlocks: courseData.landing_blocks || []
       }
       
       // Fetch lessons for this course
@@ -389,21 +463,24 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
 
   // Auto-create lesson 1 if no lessons exist
   useEffect(() => {
-    if (!course) return
-    if (course.lessons && course.lessons.length > 0) return
-    const firstLesson: Lesson = {
-      id: crypto.randomUUID(),
-      num: 1,
-      name: 'Introductie',
-      free: true,
-      reflectionQuestions: [],
-      blocks: [
-        { id: crypto.randomUUID(), type: 'video' as const },
-        { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
-      ]
-    }
-    setCourse({ ...course, lessons: [firstLesson] })
-  }, [course?.id, course?.lessons?.length])
+    setCourse(prevCourse => {
+      if (!prevCourse) return prevCourse
+      if (prevCourse.lessons && prevCourse.lessons.length > 0) return prevCourse
+      
+      const firstLesson: Lesson = {
+        id: crypto.randomUUID(),
+        num: 1,
+        name: 'Introductie',
+        free: true,
+        reflectionQuestions: [],
+        blocks: [
+          { id: crypto.randomUUID(), type: 'video' as const },
+          { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
+        ]
+      }
+      return { ...prevCourse, lessons: [firstLesson] }
+    })
+  }, [])
 
   const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
@@ -513,7 +590,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     })
   }
 
-  const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Lesson[] | Quiz[] | undefined) => {
+  const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | undefined) => {
     if (!course) return
     setCourse({ ...course, [field]: value })
   }
@@ -531,137 +608,494 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const renderSidebarForm = () => {
     if (currentContext === 'global') {
       return (
-        <div className="space-y-4">
-          {/* Title */}
-          <div>
-            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Cursustitel</label>
-            <input
-              type="text"
-              value={course?.title || ''}
-              onChange={(e) => updateCourseField('title', e.target.value)}
-              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
-              placeholder="bijv. Medusa Lash Basics"
-            />
-          </div>
-
-          {/* Short description */}
-          <div>
-            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Korte beschrijving (tagline)</label>
-            <textarea
-              value={course?.description || ''}
-              onChange={(e) => updateCourseField('description', e.target.value)}
-              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[80px] resize-y"
-              rows={3}
-              placeholder="Wat leren studenten in deze cursus?"
-            />
-          </div>
-
-          {/* Long description */}
-          <div>
-            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Uitgebreide beschrijving</label>
-            <RichTextField
-              content={course?.longDescription || ''}
-              onChange={(html) => updateCourseField('longDescription', html)}
-              variant="block"
-            />
-          </div>
-
-          {/* Price + Level */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Prijs (€)</label>
-              <input
-                type="text"
-                value={course?.priceCents ? (course.priceCents / 100).toFixed(2).replace('.', ',') : '0,00'}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.')
-                  const euros = parseFloat(raw) || 0
-                  updateCourseField('priceCents', Math.round(euros * 100))
-                }}
-                className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                placeholder="197,00"
-              />
+        <div className="space-y-3">
+          {/* HERO Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">HERO</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">VAST</span>
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Niveau</label>
-              <select
-                value={course?.level || 'beginner'}
-                onChange={(e) => updateCourseField('level', e.target.value)}
-                className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none cursor-pointer"
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Gevorderd</option>
-                <option value="expert">Expert</option>
-              </select>
-            </div>
-          </div>
-
-          {/* What you learn */}
-          <div>
-            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Wat leer je?</label>
-            {(course?.whatYouLearn || []).map((item, i) => (
-              <div key={i} className="flex items-center gap-2 mb-1.5">
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Badge tekst</label>
                 <input
                   type="text"
-                  value={item}
-                  onChange={(e) => {
-                    const updated = [...(course?.whatYouLearn || [])]
-                    updated[i] = e.target.value
-                    updateCourseField('whatYouLearn', updated)
-                  }}
-                  className="flex-1 bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                  value={course?.heroBadgeText || ''}
+                  onChange={(e) => updateCourseField('heroBadgeText', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. NIEUW"
                 />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel (deel 1)</label>
+                <input
+                  type="text"
+                  value={course?.heroTitle || ''}
+                  onChange={(e) => updateCourseField('heroTitle', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Medusa Lash"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel accent</label>
+                <input
+                  type="text"
+                  value={course?.heroTitleAccent || ''}
+                  onChange={(e) => updateCourseField('heroTitleAccent', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Basics"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel (deel 2)</label>
+                <input
+                  type="text"
+                  value={course?.heroTitleSuffix || ''}
+                  onChange={(e) => updateCourseField('heroTitleSuffix', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Cursus"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Tagline</label>
+                <textarea
+                  value={course?.heroTagline || ''}
+                  onChange={(e) => updateCourseField('heroTagline', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[60px] resize-y"
+                  rows={2}
+                  placeholder="Korte beschrijving..."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">CTA tekst</label>
+                <input
+                  type="text"
+                  value={course?.heroCtaText || ''}
+                  onChange={(e) => updateCourseField('heroCtaText', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Start nu"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Social proof</label>
+                <input
+                  type="text"
+                  value={course?.heroSocialProof || ''}
+                  onChange={(e) => updateCourseField('heroSocialProof', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. 500+ studenten"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Hero chips</label>
+                {(course?.heroChips || []).map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 mb-1.5">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const updated = [...(course?.heroChips || [])]
+                        updated[i] = e.target.value
+                        updateCourseField('heroChips', updated)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        const updated = (course?.heroChips || []).filter((_, j) => j !== i)
+                        updateCourseField('heroChips', updated)
+                      }}
+                      className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                    >✕</button>
+                  </div>
+                ))}
                 <button
-                  onClick={() => {
-                    const updated = (course?.whatYouLearn || []).filter((_, j) => j !== i)
-                    updateCourseField('whatYouLearn', updated)
+                  onClick={() => updateCourseField('heroChips', [...(course?.heroChips || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
+                >+ Chip toevoegen</button>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Hero media</label>
+                <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(26,24,21,0.12)]">
+                  <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Mux upload placeholder</span>
+                  <span className="text-[10.5px] text-[rgba(26,24,21,0.3)] font-light">Komt later</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* DIFFERENTIATORS Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">DIFFERENTIATORS</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">VAST</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Eyebrow</label>
+                <input
+                  type="text"
+                  value={course?.differentiatorsEyebrow || ''}
+                  onChange={(e) => updateCourseField('differentiatorsEyebrow', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. — Waarom Luxique —"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel</label>
+                <input
+                  type="text"
+                  value={course?.differentiatorsTitle || ''}
+                  onChange={(e) => updateCourseField('differentiatorsTitle', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Waarom kiezen voor Luxique?"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Differentiator kaarten</label>
+                {(course?.differentiators || []).map((item, i) => (
+                  <div key={i} className="bg-white border border-[rgba(26,24,21,0.09)] rounded-lg p-3 mb-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-medium text-[#7A6340]">Kaart {i + 1}</span>
+                      <button
+                        onClick={() => {
+                          const updated = (course?.differentiators || []).filter((_, j) => j !== i)
+                          updateCourseField('differentiators', updated)
+                        }}
+                        className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                      >✕</button>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={item.icon}
+                        onChange={(e) => {
+                          const updated = [...(course?.differentiators || [])]
+                          updated[i] = { ...updated[i], icon: e.target.value }
+                          updateCourseField('differentiators', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                        placeholder="Icon (emoji of naam)"
+                      />
+                      <input
+                        type="text"
+                        value={item.title}
+                        onChange={(e) => {
+                          const updated = [...(course?.differentiators || [])]
+                          updated[i] = { ...updated[i], title: e.target.value }
+                          updateCourseField('differentiators', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                        placeholder="Titel"
+                      />
+                      <textarea
+                        value={item.body}
+                        onChange={(e) => {
+                          const updated = [...(course?.differentiators || [])]
+                          updated[i] = { ...updated[i], body: e.target.value }
+                          updateCourseField('differentiators', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none min-h-[60px] resize-y"
+                        placeholder="Beschrijving"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('differentiators', [...(course?.differentiators || []), { icon: '', title: '', body: '' }])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
+                >+ Kaart toevoegen</button>
+              </div>
+            </div>
+          </div>
+
+          {/* FLEX BLOKKEN Section */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">FLEX BLOKKEN</span>
+            </div>
+            <div className="p-3">
+              <button className="flex items-center justify-center gap-2 p-3 rounded-lg border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                + Flexibel blok toevoegen
+              </button>
+              
+              {(course?.landingBlocks || []).map((block, i) => (
+                <div key={i} className="bg-white border border-[rgba(26,24,21,0.09)] rounded-lg p-3 mt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">{block.type}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <button className="text-[rgba(26,24,21,0.25)] hover:text-[#C4A265] p-1">⤴</button>
+                      <button className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1">✕</button>
+                    </div>
+                  </div>
+                  <div className="text-[12px] text-[#7A7268]">
+                    Mini-form voor {block.type} komt later
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CURRICULUM Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">CURRICULUM</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[rgba(196,162,101,0.2)] text-[#7A6340]">AUTO</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Eyebrow</label>
+                <input
+                  type="text"
+                  value={course?.curriculumEyebrow || ''}
+                  onChange={(e) => updateCourseField('curriculumEyebrow', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. — Wat ga je leren —"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel</label>
+                <input
+                  type="text"
+                  value={course?.curriculumTitle || ''}
+                  onChange={(e) => updateCourseField('curriculumTitle', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Wat ga je leren?"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Intro</label>
+                <textarea
+                  value={course?.curriculumIntro || ''}
+                  onChange={(e) => updateCourseField('curriculumIntro', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[60px] resize-y"
+                  rows={2}
+                  placeholder="Korte introductie..."
+                />
+              </div>
+              <div className="bg-[#F3EEE6] rounded-lg p-3 border border-[rgba(196,162,101,0.2)]">
+                <p className="text-[11px] text-[#7A6340] italic">De lessenlijst komt automatisch uit de lessen die je links toevoegt.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* REVIEWS Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">REVIEWS</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[rgba(196,162,101,0.2)] text-[#7A6340]">AUTO</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Eyebrow</label>
+                <input
+                  type="text"
+                  value={course?.reviewsEyebrow || ''}
+                  onChange={(e) => updateCourseField('reviewsEyebrow', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. — Wat anderen zeggen —"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel</label>
+                <input
+                  type="text"
+                  value={course?.reviewsTitle || ''}
+                  onChange={(e) => updateCourseField('reviewsTitle', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Ervaringen van studenten"
+                />
+              </div>
+              <div className="bg-[#F3EEE6] rounded-lg p-3 border border-[rgba(196,162,101,0.2)]">
+                <p className="text-[11px] text-[#7A6340] italic">Reviews komen automatisch uit de homepage reviews, nieuwste eerst, max 6 getoond.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* PRICING Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">PRICING</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">VAST</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Prijs (€)</label>
+                <input
+                  type="text"
+                  value={course?.priceCents ? (course.priceCents / 100).toFixed(2).replace('.', ',') : '0,00'}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.')
+                    const euros = parseFloat(raw) || 0
+                    updateCourseField('priceCents', Math.round(euros * 100))
                   }}
-                  className="text-[rgba(30,26,20,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
-                >✕</button>
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="1997,00"
+                />
+                <p className="text-[9px] text-[#7A7268] mt-1">wordt naar Stripe gezet</p>
               </div>
-            ))}
-            <button
-              onClick={() => updateCourseField('whatYouLearn', [...(course?.whatYouLearn || []), ''])}
-              className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
-            >+ Item toevoegen</button>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Niveau</label>
+                <select
+                  value={course?.level || 'beginner'}
+                  onChange={(e) => updateCourseField('level', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none cursor-pointer"
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Gevorderd</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Toegangsduur</label>
+                <input
+                  type="text"
+                  value={course?.accessDurationText || ''}
+                  onChange={(e) => updateCourseField('accessDurationText', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. 12 maanden toegang"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Inbegrepen</label>
+                {(course?.pricingIncludes || []).map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 mb-1.5">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const updated = [...(course?.pricingIncludes || [])]
+                        updated[i] = e.target.value
+                        updateCourseField('pricingIncludes', updated)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        const updated = (course?.pricingIncludes || []).filter((_, j) => j !== i)
+                        updateCourseField('pricingIncludes', updated)
+                      }}
+                      className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('pricingIncludes', [...(course?.pricingIncludes || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
+                >+ Item toevoegen</button>
+              </div>
+            </div>
           </div>
 
-          {/* Who is it for */}
-          <div>
-            <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Voor wie is deze cursus?</label>
-            <textarea
-              value={course?.whoIsItFor || ''}
-              onChange={(e) => updateCourseField('whoIsItFor', e.target.value)}
-              className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[50px]"
-              placeholder="Beschrijf de ideale student..."
-            />
+          {/* FINAL CTA Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">FINAL CTA</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">VAST</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Eyebrow</label>
+                <input
+                  type="text"
+                  value={course?.finalCtaEyebrow || ''}
+                  onChange={(e) => updateCourseField('finalCtaEyebrow', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. — Klaar om te starten? —"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel (deel 1)</label>
+                <input
+                  type="text"
+                  value={course?.finalCtaTitle || ''}
+                  onChange={(e) => updateCourseField('finalCtaTitle', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Start vandaag nog"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel accent</label>
+                <input
+                  type="text"
+                  value={course?.finalCtaTitleAccent || ''}
+                  onChange={(e) => updateCourseField('finalCtaTitleAccent', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. met je"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Lead tekst</label>
+                <textarea
+                  value={course?.finalCtaLead || ''}
+                  onChange={(e) => updateCourseField('finalCtaLead', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] min-h-[60px] resize-y"
+                  rows={2}
+                  placeholder="Korte overtuigende tekst..."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Knop tekst</label>
+                <input
+                  type="text"
+                  value={course?.finalCtaButtonText || ''}
+                  onChange={(e) => updateCourseField('finalCtaButtonText', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Inschrijven"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Access toggles */}
-          <div className="border-t border-[rgba(30,26,20,0.09)] pt-3">
-            <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268] block mb-2">Instellingen</span>
-            {(
-              [
-                { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
-                { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
-                { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
-                { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
-              ] as const
-            ).map((item) => (
-              <div key={item.field} className="flex items-center justify-between py-1">
-                <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
-                <label className="relative w-8 h-5 flex-shrink-0 block cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={(course?.[item.field] as boolean) || false}
-                    onChange={(e) => updateCourseField(item.field, e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="absolute inset-0 rounded-full bg-[rgba(30,26,20,0.12)] peer-checked:bg-[#C4A265] transition-colors duration-200"></div>
-                  <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
-                </label>
+          {/* SETTINGS Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">SETTINGS</span>
+            </div>
+            <div className="p-3">
+              <div className="space-y-2">
+                {(
+                  [
+                    { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
+                    { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
+                    { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
+                    { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
+                  ] as const
+                ).map((item) => (
+                  <div key={item.field} className="flex items-center justify-between py-1">
+                    <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
+                    <label className="relative w-8 h-5 flex-shrink-0 block cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(course?.[item.field] as boolean) || false}
+                        onChange={(e) => updateCourseField(item.field, e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] peer-checked:bg-[#C4A265] transition-colors duration-200"></div>
+                      <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
+                    </label>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       )

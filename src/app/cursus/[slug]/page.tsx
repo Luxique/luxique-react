@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase-client'
 import { notFound } from 'next/navigation'
+import { REVIEWS } from '@/lib/reviews'
 import CourseLandingClient from './CourseLandingClient'
 
 export const revalidate = 60
@@ -29,7 +30,7 @@ export default async function CourseLandingPage({ params }: { params: Promise<{ 
 
   const lessons = await getLessons(course.id)
 
-  return <CourseLandingClient course={course} lessons={lessons} />
+  return <CourseLandingClient course={course} lessons={lessons} reviews={REVIEWS} />
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {

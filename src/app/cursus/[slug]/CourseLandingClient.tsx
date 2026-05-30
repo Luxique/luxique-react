@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { REVIEWS } from '@/lib/reviews'
-import './course-landing-v3.css'
+import type { Review } from '@/lib/reviews'
 
 interface Course {
   id: string
@@ -55,7 +54,18 @@ interface LandingBlock {
   data: Record<string, unknown>
 }
 
-export default function CourseLandingClient({ course, lessons }: { course: Course; lessons: Lesson[] }) {
+export default function CourseLandingClient({ 
+  course, 
+  lessons, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  reviews = [],
+  previewMode = false 
+}: { 
+  course: Course; 
+  lessons: Lesson[];
+  reviews?: Review[];
+  previewMode?: boolean;
+}) {
   const [openLessonIndex, setOpenLessonIndex] = useState(0)
   const [scrolled, setScrolled] = useState(false)
 
@@ -71,19 +81,12 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
   const sortedLessons = [...lessons].sort((a, b) => a.sort_order - b.sort_order)
 
   return (
-    <div className="course-landing-v3 relative">
+    <div className="course-landing-v3">
       {/* Moving gradient background */}
-      <div className="fixed inset-0 -z-10">
-        <div 
-          className="absolute inset-0 animate-drift"
-          style={{
-            background: 'radial-gradient(circle at 20% 50%, rgba(196,162,101,0.3), transparent 50%), radial-gradient(circle at 80% 80%, rgba(250,248,244,0.15), transparent 50%), radial-gradient(circle at 40% 20%, rgba(196,162,101,0.2), transparent 50%)',
-            filter: 'blur(40px)'
-          }}
-        />
-        <div className="absolute inset-0 bg-[#0A0807]" />
-      </div>
+      {!previewMode && <div className="gradient-bg" />}
       
+      {/* Site Navigation */}
+      <SiteNav _course={course} />
       
       {/* Hero Section */}
       <HeroSection course={course} />
@@ -111,7 +114,7 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
       />
       
       {/* Reviews */}
-      <ReviewsSection course={course} />
+      <ReviewsSection course={course} reviews={reviews} />
       
       {/* Pricing */}
       <PricingSection course={course} />
@@ -127,27 +130,6 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
       
       {/* Footer */}
       <Footer />
-
-      {/* Moving gradient animation */}
-      <style jsx>{`
-        @keyframes drift {
-          0% {
-            transform: translate(0, 0) rotate(0deg);
-          }
-          33% {
-            transform: translate(-30px, -30px) rotate(120deg);
-          }
-          66% {
-            transform: translate(20px, -60px) rotate(240deg);
-          }
-          100% {
-            transform: translate(0, 0) rotate(360deg);
-          }
-        }
-        .animate-drift {
-          animation: drift 20s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   )
 }
@@ -156,16 +138,10 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SiteNav({ _course }: { _course: Course }) {
   return (
-    <nav className="fixed top-6 left-6 right-6 z-50 flex justify-between items-center">
-      <div className="bg-[rgba(26,22,18,0.92)] backdrop-blur-[12px] border border-[rgba(250,248,244,0.08)] rounded-full px-4 py-3 text-[12px] text-[#FAF8F4]">
-        ☰
-      </div>
-      <div className="bg-[rgba(26,22,18,0.92)] backdrop-blur-[12px] border border-[rgba(250,248,244,0.08)] rounded-full px-6 py-3 text-[14px] font-medium text-[#FAF8F4]">
-        LUXIQUE
-      </div>
-      <div className="bg-[rgba(26,22,18,0.92)] backdrop-blur-[12px] border border-[rgba(250,248,244,0.08)] rounded-full px-4 py-3 text-[12px] text-[#FAF8F4]">
-        👤
-      </div>
+    <nav className="site-nav">
+      <div className="nav-pill menu">☰</div>
+      <div className="nav-pill logo">LUXIQUE</div>
+      <div className="nav-pill user">👤</div>
     </nav>
   )
 }
@@ -177,120 +153,68 @@ function HeroSection({ course }: { course: Course }) {
   const heroSuffix = course.hero_title_suffix || ''
   const heroChips = course.hero_chips || []
 
+  // Split title by accent
+  const titleParts = heroAccent ? heroTitle.split(heroAccent) : [heroTitle]
+
   return (
-    <section className="min-h-screen flex items-center justify-center py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6 w-full">
-        <div className="relative">
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 rounded-[32px] overflow-hidden">
-            {/* Gold radial glow */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(ellipse at top, rgba(196,162,101,0.22) 0%, transparent 55%)'
-              }}
-            />
-            <div 
-              className="absolute inset-0 opacity-40"
-              style={{
-                backgroundImage: 'linear-gradient(rgba(196,162,101,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(196,162,101,0.04) 1px, transparent 1px)',
-                backgroundSize: '60px 60px'
-              }}
-            />
-            <div 
-              className="absolute inset-0 rounded-[32px]"
-              style={{
-                background: 'linear-gradient(to bottom, rgba(10,8,7,0.1), rgba(10,8,7,0.4))'
-              }}
-            />
+    <section className="hero-box">
+      <div className="hero-content">
+        {course.hero_badge_text && (
+          <span className="badge-top">
+            <span className="dot" />
+            {course.hero_badge_text}
+          </span>
+        )}
+        
+        <h1>
+          {titleParts[0]}
+          {heroAccent && <span className="serif-accent">{heroAccent}</span>}
+          {titleParts[1]}
+          {heroSuffix && <span className="serif-accent">{heroSuffix}</span>}
+        </h1>
+        
+        {course.hero_tagline && (
+          <p className="tagline">{course.hero_tagline}</p>
+        )}
+        
+        {/* Hero Media */}
+        <HeroMedia _course={course} />
+        
+        {/* Floating Chips */}
+        {heroChips.length > 0 && (
+          <div className="float-chip-wrap">
+            {heroChips.slice(0, 4).map((chip, index) => (
+              <div 
+                key={index} 
+                className={`float-chip ${['tl', 'tr', 'bl', 'br'][index]}`}
+              >
+                <span className="chip-icon">{chip.icon}</span>
+                <span>{chip.text}</span>
+              </div>
+            ))}
           </div>
-          
-          <div className="relative bg-[rgba(26,22,18,0.82)] backdrop-blur-[8px] rounded-[32px] text-center border border-[rgba(250,248,244,0.08)] p-12 md:p-16">
-            {course.hero_badge_text && (
-              <div className="inline-flex items-center gap-2 bg-[rgba(196,162,101,0.10)] border border-[rgba(196,162,101,0.18)] rounded-full px-4 py-2 text-[12px] text-[#C4A265] mb-8">
-                <span className="w-2 h-2 bg-[#C4A265] rounded-full"></span>
-                {course.hero_badge_text}
-              </div>
-            )}
-            
-            <h1 className="text-[56px] md:text-[72px] leading-[1.1] mb-6">
-              {heroTitle}{' '}
-              {heroAccent && (
-                <span 
-                  className="font-['Cormorant_Garamond'] italic text-[#C4A265]"
-                >
-                  {heroAccent}
-                </span>
-              )}{' '}
-              {heroSuffix}
-            </h1>
-            
-            {course.hero_tagline && (
-              <p className="text-[24px] text-[rgba(250,248,244,0.7)] mb-12">
-                {course.hero_tagline}
-              </p>
-            )}
-            
-            {/* Hero Media */}
-            <HeroMedia _course={course} />
-            
-            {/* Floating Chips */}
-            {heroChips.length > 0 && (
-              <div className="hidden md:block">
-                {heroChips.slice(0, 4).map((chip, index) => (
-                  <div 
-                    key={index} 
-                    className={`absolute bg-[rgba(26,22,18,0.92)] backdrop-blur-[12px] border border-[rgba(250,248,244,0.08)] rounded-full px-4 py-2 text-[12px] text-[#FAF8F4] ${
-                      index === 0 ? '-top-4 -left-4' :
-                      index === 1 ? '-top-4 -right-4' :
-                      index === 2 ? '-bottom-4 -left-4' :
-                      '-bottom-4 -right-4'
-                    }`}
-                  >
-                    <span className="mr-2">{chip.icon}</span>
-                    <span>{chip.text}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Mobile chips */}
-            {heroChips.length > 0 && (
-              <div className="md:hidden flex flex-wrap gap-2 mb-8">
-                {heroChips.slice(0, 4).map((chip, index) => (
-                  <div 
-                    key={index} 
-                    className="bg-[rgba(26,22,18,0.92)] backdrop-blur-[12px] border border-[rgba(250,248,244,0.08)] rounded-full px-4 py-2 text-[12px] text-[#FAF8F4]"
-                  >
-                    <span className="mr-2">{chip.icon}</span>
-                    <span>{chip.text}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {/* CTA Row */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <a href="#pricing" className="bg-[#C4A265] text-[#0A0807] px-8 py-3.5 rounded-full font-medium text-[14px] tracking-[0.02em] hover:bg-[#D4B57A] transition-all text-center">
-                {course.hero_cta_text || 'Schrijf je in'} →
-              </a>
-              <a href="#curriculum" className="bg-[rgba(250,248,244,0.04)] text-[#FAF8F4] px-8 py-3.5 rounded-full border border-[rgba(250,248,244,0.08)] backdrop-blur-[10px] hover:border-[#C4A265] hover:text-[#C4A265] transition-all text-center">
-                Bekijk programma
-              </a>
-            </div>
-            
-            {/* Social Proof */}
-            {course.hero_social_proof && (
-              <div className="flex items-center gap-4 text-[14px] text-[rgba(250,248,244,0.7)]">
-                {course.hero_rating && <span>★★★★★ {course.hero_rating}/5</span>}
-                <span>·</span>
-                <span>{course.hero_social_proof}</span>
-                <span>·</span>
-                <span>Direct toegang</span>
-              </div>
-            )}
-          </div>
+        )}
+        
+        {/* CTA Row */}
+        <div className="cta-row">
+          <a href="#pricing" className="btn-primary">
+            {course.hero_cta_text || 'Schrijf je in'} →
+          </a>
+          <a href="#curriculum" className="btn-outline">
+            Bekijk programma
+          </a>
         </div>
+        
+        {/* Social Proof */}
+        {course.hero_social_proof && (
+          <div className="price-meta">
+            {course.hero_rating && <span>★★★★★ {course.hero_rating}/5</span>}
+            <span>·</span>
+            <span>{course.hero_social_proof}</span>
+            <span>·</span>
+            <span>Direct toegang</span>
+          </div>
+        )}
       </div>
     </section>
   )
@@ -299,27 +223,21 @@ function HeroSection({ course }: { course: Course }) {
 // Hero Media Component
 function HeroMedia({ _course }: { _course: Course }) {
   return (
-    <div className="relative my-12">
-      <div className="aspect-video bg-[rgba(26,22,18,0.4)] border border-[rgba(250,248,244,0.08)] rounded-[22px] overflow-hidden">
+    <div className="hero-media-wrap">
+      <div className="hero-media">
         {(_course.hero_mux_playback_id || _course.hero_image_url) ? (
           <>
             {_course.hero_image_url && (
               <img 
                 src={_course.hero_image_url} 
                 alt="" 
-                className="w-full h-full object-cover"
+                className="hero-image"
               />
             )}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 bg-[#C4A265] rounded-full flex items-center justify-center text-[#0A0807] text-2xl">
-                ▶
-              </div>
-            </div>
+            <div className="play-btn" />
           </>
         ) : (
-          <div className="w-full h-full bg-[rgba(196,162,101,0.1)] flex items-center justify-center text-[rgba(250,248,244,0.5)]">
-            Video preview
-          </div>
+          <div className="hero-placeholder" />
         )}
       </div>
     </div>
@@ -329,19 +247,15 @@ function HeroMedia({ _course }: { _course: Course }) {
 // Social Proof Logos Component
 function SocialProofLogos() {
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-8">
-          <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium">
-            — Vertrouwd door artists in heel Nederland —
-          </div>
-        </div>
-        <div className="flex flex-wrap justify-center gap-4">
-          <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-4 py-2 text-[14px] text-[rgba(250,248,244,0.7)]">Bella Lashes</span>
-          <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-4 py-2 text-[14px] text-[rgba(250,248,244,0.7)]">Studio Vink</span>
-          <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-4 py-2 text-[14px] text-[rgba(250,248,244,0.7)]">Lash Atelier</span>
-          <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-4 py-2 text-[14px] text-[rgba(250,248,244,0.7)]">M. Beauty</span>
-          <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-4 py-2 text-[14px] text-[rgba(250,248,244,0.7)]">Eye Couture</span>
+    <section className="logos-bar">
+      <div className="container">
+        <div className="logos-label">— Vertrouwd door artists in heel Nederland —</div>
+        <div className="logos-inner">
+          <span className="logo-pill">Bella Lashes</span>
+          <span className="logo-pill">Studio Vink</span>
+          <span className="logo-pill">Lash Atelier</span>
+          <span className="logo-pill">M. Beauty</span>
+          <span className="logo-pill">Eye Couture</span>
         </div>
       </div>
     </section>
@@ -355,29 +269,27 @@ function DifferentiatorsSection({ course }: { course: Course }) {
   }
 
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-16">
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
           {course.differentiators_eyebrow && (
-            <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-              — {course.differentiators_eyebrow} —
-            </div>
+            <span className="eyebrow">— {course.differentiators_eyebrow} —</span>
           )}
-          <h2 className="text-[42px] md:text-[48px] leading-[1.2] mb-4">
+          <h2>
             {course.differentiators_title || 'Waarom Luxique'}
             <br />
-            <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">anders is</span>
+            <span className="serif-accent">anders is</span>
           </h2>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="feat-grid">
           {course.differentiators.map((item, index) => (
-            <div key={index} className="bg-[rgba(26,22,18,0.55)] backdrop-blur-[8px] border border-[rgba(250,248,244,0.08)] rounded-[22px] p-8">
-              <div className="h-[140px] rounded-[14px] bg-[radial-gradient(circle,rgba(196,162,101,0.25),transparent)] flex items-center justify-center mb-6">
-                <div className="text-[48px] text-[#C4A265]">{item.icon}</div>
+            <div key={index} className="feat-card">
+              <div className="feat-visual">
+                <div className="icon-big">{item.icon}</div>
               </div>
-              <h3 className="text-[24px] font-semibold text-[#FAF8F4] mb-4">{item.title}</h3>
-              <p className="text-[16px] text-[rgba(250,248,244,0.7)] leading-relaxed">{item.body}</p>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
             </div>
           ))}
         </div>
@@ -403,66 +315,50 @@ function CurriculumSection({
   }
 
   return (
-    <section className="py-[120px]" id="curriculum">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-16">
+    <section className="section" id="curriculum">
+      <div className="container">
+        <div className="sec-head">
           {course.curriculum_eyebrow && (
-            <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-              — {course.curriculum_eyebrow} —
-            </div>
+            <span className="eyebrow">— {course.curriculum_eyebrow} —</span>
           )}
-          <h2 className="text-[42px] md:text-[48px] leading-[1.2] mb-4">
-            Wat ga je <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">leren</span>
+          <h2>
+            Wat ga je <span className="serif-accent">leren</span>
           </h2>
           {course.curriculum_intro && (
-            <p className="text-[18px] text-[rgba(250,248,244,0.7)] max-w-2xl mx-auto">
-              {course.curriculum_intro}
-            </p>
+            <p>{course.curriculum_intro}</p>
           )}
         </div>
         
-        <div className="bg-[rgba(26,22,18,0.6)] backdrop-blur-[8px] border border-[rgba(250,248,244,0.08)] rounded-[22px] overflow-hidden">
+        <div className="curriculum-wrap">
           {lessons.map((lesson, index) => (
             <div 
               key={lesson.id}
-              className={`border-b border-[rgba(250,248,244,0.08)] last:border-b-0 ${
-                index === openLessonIndex ? 'bg-[rgba(196,162,101,0.05)]' : ''
-              }`}
+              className={`lesson-acc ${index === openLessonIndex ? 'open' : ''}`}
+              onClick={() => setOpenLessonIndex(index === openLessonIndex ? -1 : index)}
             >
-              <div 
-                className="flex items-center gap-5 p-5 cursor-pointer"
-                onClick={() => setOpenLessonIndex(index === openLessonIndex ? -1 : index)}
-              >
-                <div className="font-['Cormorant_Garamond'] italic text-[#C4A265] text-[22px]">
+              <div className="lesson-acc-head">
+                <div className="lesson-num">
                   {String(lesson.sort_order + 1).padStart(2, '0')}
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-[18px] font-medium text-[#FAF8F4]">{lesson.title}</h4>
-                  <div className="flex items-center gap-2 text-[14px] text-[rgba(250,248,244,0.5)]">
-                    {lesson.duration_seconds && (
-                      <span>{Math.round(lesson.duration_seconds / 60)} minuten</span>
-                    )}
-                    {lesson.duration_seconds && <span>·</span>}
-                    <span>Video</span>
+                <div className="lesson-info">
+                  <h4>{lesson.title}</h4>
+                  <div className="meta">
+                    {lesson.duration_seconds && `${Math.round(lesson.duration_seconds / 60)} minuten`}
+                    {lesson.duration_seconds && ' · '}
+                    Video
                   </div>
                 </div>
                 {lesson.is_free ? (
-                  <span className="bg-[rgba(196,162,101,0.14)] text-[#C4A265] px-3 py-1 rounded-full text-[10px] tracking-[0.16em] uppercase border border-[rgba(196,162,101,0.18)]">
-                    Gratis Preview
-                  </span>
+                  <span className="lesson-badge">Gratis Preview</span>
                 ) : (
-                  <span className="text-[20px]">🔒</span>
+                  <span className="lesson-lock">🔒</span>
                 )}
-                <span className="text-[24px] text-[rgba(250,248,244,0.5)]">
-                  {index === openLessonIndex ? '−' : '+'}
-                </span>
+                <span className="acc-plus">+</span>
               </div>
               
-              {lesson.what_you_learn_text && index === openLessonIndex && (
-                <div className="px-5 pb-5">
-                  <p className="text-[14px] text-[rgba(250,248,244,0.6)]">
-                    {lesson.what_you_learn_text}
-                  </p>
+              {lesson.what_you_learn_text && (
+                <div className="lesson-acc-body">
+                  <p>{lesson.what_you_learn_text}</p>
                 </div>
               )}
             </div>
@@ -474,46 +370,41 @@ function CurriculumSection({
 }
 
 // Reviews Section Component
-function ReviewsSection({ course }: { course: Course }) {
+function ReviewsSection({ course, reviews = [] }: { course: Course; reviews?: Review[] }) {
   // Get 6 newest reviews (sorted by date logic - using first 6 for now)
-  const displayReviews = REVIEWS.slice(0, 6)
+  const displayReviews = reviews.slice(0, 6)
 
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-16">
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
           {course.reviews_eyebrow && (
-            <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-              — {course.reviews_eyebrow} —
-            </div>
+            <span className="eyebrow">— {course.reviews_eyebrow} —</span>
           )}
-          <h2 className="text-[42px] md:text-[48px] leading-[1.2] mb-4">
-            Verhalen van<br />onze <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">artists</span>
+          <h2>
+            Verhalen van<br />onze <span className="serif-accent">artists</span>
           </h2>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="test-grid">
           {displayReviews.map((review, index) => (
-            <div key={index} className="bg-[rgba(26,22,18,0.55)] backdrop-blur-[8px] border border-[rgba(250,248,244,0.08)] rounded-[22px] p-8">
-              <div className="text-[#C4A265] mb-4 flex items-center gap-2">
-                <span>{'★'.repeat(review.stars)}</span>
-                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] text-[rgba(250,248,244,0.5)]">
-                  {review.source === 'google' ? '🔍 Google' : '💇 Treatwell'}
-                </span>
+            <div key={index} className="test-card">
+              <div className="test-stars">
+                {'★'.repeat(review.stars)}
               </div>
-              <blockquote className="text-[16px] text-[rgba(250,248,244,0.9)] leading-relaxed mb-6">
+              <blockquote>
                 {review.text.length > 150 
                   ? `${review.text.substring(0, 150)}...` 
                   : review.text
                 }
               </blockquote>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-[#FAF8F4] font-medium" style={{ background: review.color }}>
+              <div className="test-author">
+                <div className="test-avatar" style={{ background: review.color }}>
                   {review.initials}
                 </div>
                 <div>
-                  <div className="text-[16px] font-medium text-[#FAF8F4]">{review.name}</div>
-                  <div className="text-[14px] text-[rgba(250,248,244,0.6)]">Lash Artist</div>
+                  <div className="name">{review.name}</div>
+                  <div className="role">Lash Artist</div>
                 </div>
               </div>
             </div>
@@ -542,60 +433,54 @@ function PricingSection({ course }: { course: Course }) {
   ]
 
   return (
-    <section className="py-[120px]" id="pricing">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-16">
-          <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-            — Investering —
-          </div>
-          <h2 className="text-[42px] md:text-[48px] leading-[1.2] mb-4">
-            Eén <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">prijs</span><br />
+    <section className="section" id="pricing">
+      <div className="container">
+        <div className="sec-head">
+          <span className="eyebrow">— Investering —</span>
+          <h2>
+            Eén <span className="serif-accent">prijs</span><br />
             volledige toegang
           </h2>
-          <p className="text-[18px] text-[rgba(250,248,244,0.7)] max-w-2xl mx-auto">
-            Geen abonnement. Geen verborgen kosten. Direct beginnen.
-          </p>
+          <p>Geen abonnement. Geen verborgen kosten. Direct beginnen.</p>
         </div>
         
-        <div className="max-w-md mx-auto">
-          <div className="bg-[rgba(26,22,18,0.65)] backdrop-blur-[10px] border border-[rgba(196,162,101,0.18)] rounded-[32px] p-12 text-center">
-            <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-              Medusa Lash Basics
-            </div>
-            <h3 className="text-[24px] font-medium text-[#FAF8F4] mb-8">Word een echte lash artist</h3>
-            
-            <div className="font-['Cormorant_Garamond'] italic text-[72px] text-[#C4A265] mb-4">
-              <span className="text-[38px] align-super">€</span>
-              {Math.floor(priceEuros)}
-            </div>
-            
-            <div className="text-[14px] text-[rgba(250,248,244,0.7)] mb-8">
-              Eenmalige betaling · {course.access_duration_text || '12 maanden toegang'}
-            </div>
-            
-            <div className="text-left mb-8">
-              {includesList.map((item, index) => (
-                <div key={index} className="flex items-center gap-3 mb-3">
-                  <span className="text-[#C4A265]">✓</span>
-                  <span className="text-[16px] text-[rgba(250,248,244,0.8)]">{item}</span>
-                </div>
-              ))}
-            </div>
-            
-            <a href="#" className="bg-[#C4A265] text-[#0A0807] px-8 py-3.5 rounded-full font-medium text-[14px] tracking-[0.02em] hover:bg-[#D4B57A] transition-all inline-block w-full">
-              Schrijf je nu in →
-            </a>
-            
-            <div className="flex justify-center gap-3 mt-8 mb-4">
-              <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-3 py-1 text-[10px] text-[rgba(250,248,244,0.7)]">VISA</span>
-              <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-3 py-1 text-[10px] text-[rgba(250,248,244,0.7)]">Mastercard</span>
-              <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-3 py-1 text-[10px] text-[rgba(250,248,244,0.7)]">iDEAL</span>
-              <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-3 py-1 text-[10px] text-[rgba(250,248,244,0.7)]">Apple Pay</span>
-              <span className="bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] rounded-[6px] px-3 py-1 text-[10px] text-[rgba(250,248,244,0.7)]">Klarna</span>
-            </div>
-            
-            <div className="text-[12px] text-[rgba(250,248,244,0.5)]">
-              Veilig betalen via Stripe
+        <div className="pricing-wrap">
+          <div className="pricing-card">
+            <div className="inner">
+              <span className="eyebrow">Medusa Lash Basics</span>
+              <h3>Word een echte lash artist</h3>
+              
+              <div className="price-big">
+                <span className="euro">€</span>
+                {Math.floor(priceEuros)}
+              </div>
+              
+              <div className="price-sub">
+                Eenmalige betaling · {course.access_duration_text || '12 maanden toegang'}
+              </div>
+              
+              <div className="includes">
+                {includesList.map((item, index) => (
+                  <div key={index} className="includes-item">
+                    <span className="check">✓</span>
+                    {item}
+                  </div>
+                ))}
+              </div>
+              
+              <a href="#" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                Schrijf je nu in →
+              </a>
+              
+              <div className="payment-logos">
+                <span className="pay-logo">VISA</span>
+                <span className="pay-logo">Mastercard</span>
+                <span className="pay-logo">iDEAL</span>
+                <span className="pay-logo">Apple Pay</span>
+                <span className="pay-logo">Klarna</span>
+              </div>
+              
+              <div className="fine">Veilig betalen via Stripe</div>
             </div>
           </div>
         </div>
@@ -632,41 +517,25 @@ function FAQSection() {
   const [openIndex, setOpenIndex] = useState(0)
 
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-16">
-          <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-            — Veelgestelde vragen —
-          </div>
-          <h2 className="text-[42px] md:text-[48px] leading-[1.2]">
-            Goed om <span className="font-['Cormorant_Garamond'] italic text-[#C4A265]">te weten</span>
-          </h2>
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          <span className="eyebrow">— Veelgestelde vragen —</span>
+          <h2>Goed om <span className="serif-accent">te weten</span></h2>
         </div>
         
-        <div className="max-w-2xl mx-auto">
+        <div className="faq-wrap">
           {faqItems.map((item, index) => (
             <div 
               key={index}
-              className={`bg-[rgba(26,22,18,0.55)] backdrop-blur-[8px] border border-[rgba(250,248,244,0.08)] rounded-[22px] mb-4 overflow-hidden ${
-                index === openIndex ? 'ring-1 ring-[rgba(196,162,101,0.3)]' : ''
-              }`}
+              className={`faq-item ${index === openIndex ? 'open' : ''}`}
+              onClick={() => setOpenIndex(index === openIndex ? -1 : index)}
             >
-              <div 
-                className="flex justify-between items-center p-6 cursor-pointer"
-                onClick={() => setOpenIndex(index === openIndex ? -1 : index)}
-              >
-                <span className="text-[16px] font-medium text-[#FAF8F4]">{item.question}</span>
-                <span className="text-[24px] text-[rgba(250,248,244,0.5)]">
-                  {index === openIndex ? '−' : '+'}
-                </span>
+              <div className="faq-q">
+                <span>{item.question}</span>
+                <span className="plus">+</span>
               </div>
-              {index === openIndex && (
-                <div className="px-6 pb-6">
-                  <p className="text-[16px] text-[rgba(250,248,244,0.7)] leading-relaxed">
-                    {item.answer}
-                  </p>
-                </div>
-              )}
+              <div className="faq-a">{item.answer}</div>
             </div>
           ))}
         </div>
@@ -678,56 +547,24 @@ function FAQSection() {
 // Final CTA Section Component
 function FinalCTASection({ course }: { course: Course }) {
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="relative">
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 rounded-[32px] overflow-hidden">
-            <div 
-              className="absolute inset-0 opacity-40"
-              style={{
-                backgroundImage: 'linear-gradient(rgba(196,162,101,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(196,162,101,0.04) 1px, transparent 1px)',
-                backgroundSize: '60px 60px'
-              }}
-            />
-            <div 
-              className="absolute inset-0 rounded-[32px]"
-              style={{
-                background: 'linear-gradient(to bottom, rgba(10,8,7,0.1), rgba(10,8,7,0.4))'
-              }}
-            />
-          </div>
-          
-          <div className="relative bg-[rgba(26,22,18,0.82)] backdrop-blur-[8px] rounded-[32px] border border-[rgba(250,248,244,0.08)] p-16 text-center">
-            {course.final_cta_eyebrow && (
-              <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-                — {course.final_cta_eyebrow} —
-              </div>
-            )}
-            <h2 className="text-[42px] md:text-[48px] leading-[1.2] mb-6">
-              {course.final_cta_title || 'Begin vandaag aan je'}
-              <br />
-              <span 
-                className="font-['Cormorant_Garamond'] italic"
-                style={{
-                  background: 'linear-gradient(180deg, #FAF8F4 0%, rgba(250,248,244,0.75) 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              >
-                {course.final_cta_title_accent || 'reis als artist'}
-              </span>
-            </h2>
-            {course.final_cta_lead && (
-              <p className="text-[18px] text-[rgba(250,248,244,0.7)] mb-8 max-w-2xl mx-auto">
-                {course.final_cta_lead}
-              </p>
-            )}
-            <a href="#pricing" className="bg-[#C4A265] text-[#0A0807] px-8 py-4 rounded-full font-medium text-[16px] tracking-[0.02em] hover:bg-[#D4B57A] transition-all inline-block">
-              {course.final_cta_button_text || 'Schrijf je nu in'} →
-            </a>
-          </div>
-        </div>
+    <section className="final-cta">
+      <div className="final-cta-content">
+        {course.final_cta_eyebrow && (
+          <span className="eyebrow">— {course.final_cta_eyebrow} —</span>
+        )}
+        <h2>
+          {course.final_cta_title || 'Begin vandaag aan je'}
+          <br />
+          <span className="serif-accent">
+            {course.final_cta_title_accent || 'reis als artist'}
+          </span>
+        </h2>
+        {course.final_cta_lead && (
+          <p>{course.final_cta_lead}</p>
+        )}
+        <a href="#pricing" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }}>
+          {course.final_cta_button_text || 'Schrijf je nu in'} →
+        </a>
       </div>
     </section>
   )
@@ -738,16 +575,14 @@ function StickyCTA({ course, scrolled }: { course: Course; scrolled: boolean }) 
   if (!scrolled) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0A0807]/95 backdrop-blur-xl border-t border-[rgba(196,162,101,0.18)] px-6 py-4">
-      <div className="max-w-[1240px] mx-auto flex items-center justify-between">
-        <div>
-          <div className="text-[18px] font-medium text-[#FAF8F4]">{course.title}</div>
-          <div className="text-[12px] text-[rgba(250,248,244,0.7)]">LUXIQUE ACADEMY</div>
-        </div>
-        <a href="#pricing" className="bg-[#C4A265] text-[#0A0807] px-8 py-3.5 rounded-full font-medium text-[14px] tracking-[0.02em] hover:bg-[#D4B57A] transition-all">
-          {course.hero_cta_text || 'Schrijf je in'} →
-        </a>
+    <div className="sticky-cta">
+      <div>
+        <div className="sticky-title">{course.title}</div>
+        <div className="sticky-subtitle">LUXIQUE ACADEMY</div>
       </div>
+      <a href="#pricing" className="btn-primary">
+        {course.hero_cta_text || 'Schrijf je in'} →
+      </a>
     </div>
   )
 }
@@ -755,11 +590,11 @@ function StickyCTA({ course, scrolled }: { course: Course; scrolled: boolean }) 
 // Footer Component
 function Footer() {
   return (
-    <footer className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6 text-center">
-        <div className="text-[24px] font-medium text-[#FAF8F4] mb-4">LUXIQUE</div>
-        <p className="text-[16px] text-[rgba(250,248,244,0.7)] mb-4">Eerst begrijpen, dan doen.</p>
-        <p className="text-[11px] text-[rgba(250,248,244,0.5)] tracking-[0.1em]">
+    <footer className="site-footer">
+      <div className="container">
+        <div className="logo">LUXIQUE</div>
+        <p>Eerst begrijpen, dan doen.</p>
+        <p style={{ marginTop: 12, fontSize: 11, letterSpacing: '0.1em' }}>
           © LUXIQUE ACADEMY · 2026
         </p>
       </div>
@@ -804,36 +639,28 @@ function FounderStoryBlock({ data }: { data: Record<string, unknown> }) {
   const quote = data.quote as string | undefined
   
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <section className="section">
+      <div className="container">
+        <div className="about-grid">
           {photo_url && (
             <div 
-              className="aspect-[4/3] bg-[rgba(26,22,18,0.4)] border border-[rgba(250,248,244,0.08)] rounded-[22px] overflow-hidden"
-              style={{ backgroundImage: `url(${photo_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+              className="about-photo"
+              style={{ backgroundImage: `url(${photo_url})` }}
             />
           )}
-          <div className={photo_url ? '' : 'lg:col-span-2'}>
-            {eyebrow && (
-              <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-                — {eyebrow} —
-              </div>
-            )}
-            {title && (
-              <h2 className="text-[36px] md:text-[42px] leading-[1.2] mb-6 text-[#FAF8F4]">
-                {title}
-              </h2>
-            )}
+          <div className="about-text">
+            {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+            {title && <h2>{title}</h2>}
             {body_html && (
               <div 
-                className="text-[16px] text-[rgba(250,248,244,0.7)] leading-relaxed mb-6 prose prose-invert"
+                className="about-body"
                 dangerouslySetInnerHTML={{ __html: body_html }} 
               />
             )}
             {quote && (
-              <blockquote className="text-[20px] font-['Cormorant_Garamond'] italic text-[#C4A265] border-l-2 border-[#C4A265] pl-4">
+              <div className="about-quote">
                 &ldquo;{quote}&rdquo;
-              </blockquote>
+              </div>
             )}
           </div>
         </div>
@@ -849,24 +676,16 @@ function PainPointsBlock({ data }: { data: Record<string, unknown> }) {
   const title = data.title as string | undefined
 
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="text-center mb-16">
-          {eyebrow && (
-            <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-              — {eyebrow} —
-            </div>
-          )}
-          {title && (
-            <h2 className="text-[36px] md:text-[42px] leading-[1.2] mb-4 text-[#FAF8F4]">
-              {title}
-            </h2>
-          )}
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+          {title && <h2>{title}</h2>}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="pain-points-wrap">
           {points.map((point: string, index: number) => (
-            <div key={index} className="bg-[rgba(26,22,18,0.55)] backdrop-blur-[8px] border border-[rgba(250,248,244,0.08)] rounded-[22px] p-6 text-[16px] text-[#FAF8F4]">
+            <div key={index} className="pain-point">
               {point}
             </div>
           ))}
@@ -882,17 +701,15 @@ function QuoteBlock({ data }: { data: Record<string, unknown> }) {
   const attribution = data.attribution as string | undefined
   
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-8">
-            — Inspiratie —
+    <section className="section">
+      <div className="container">
+        <div className="quote-wrap">
+          <div className="quote-text">
+            <span className="quote-mark">&ldquo;</span>
+            {quote}
           </div>
-          <blockquote className="text-[32px] md:text-[42px] leading-[1.2] font-['Cormorant_Garamond'] italic text-[#FAF8F4] mb-8">
-            &ldquo;{quote}&rdquo;
-          </blockquote>
           {attribution && (
-            <div className="text-[18px] text-[rgba(250,248,244,0.7)">— {attribution}</div>
+            <div className="quote-attribution">— {attribution}</div>
           )}
         </div>
       </div>
@@ -907,27 +724,17 @@ function RichTextBlock({ data }: { data: Record<string, unknown> }) {
   const body_html = data.body_html as string | undefined
   
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            {eyebrow && (
-              <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-                — {eyebrow} —
-              </div>
-            )}
-            {title && (
-              <h2 className="text-[36px] md:text-[42px] leading-[1.2] mb-4 text-[#FAF8F4]">
-                {title}
-              </h2>
-            )}
-          </div>
-          
-          <div className="text-[16px] text-[rgba(250,248,244,0.7)] leading-relaxed prose prose-invert max-w-none">
-            {body_html && (
-              <div dangerouslySetInnerHTML={{ __html: body_html }} />
-            )}
-          </div>
+    <section className="section">
+      <div className="container">
+        <div className="sec-head">
+          {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+          {title && <h2>{title}</h2>}
+        </div>
+        
+        <div className="rich-text-content">
+          {body_html && (
+            <div dangerouslySetInnerHTML={{ __html: body_html }} />
+          )}
         </div>
       </div>
     </section>
@@ -943,32 +750,20 @@ function ImageTextBlock({ data }: { data: Record<string, unknown> }) {
   const body_html = data.body_html as string | undefined
 
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${
-          imageSide === 'reverse' ? 'lg:flex-row-reverse' : ''
-        }`}>
+    <section className="section">
+      <div className="container">
+        <div className={`image-text-grid ${imageSide}`}>
           {image_url && (
             <div 
-              className="aspect-[4/3] bg-[rgba(26,22,18,0.4)] border border-[rgba(250,248,244,0.08)] rounded-[22px] overflow-hidden"
-              style={{ backgroundImage: `url(${image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+              className="image-text-photo"
+              style={{ backgroundImage: `url(${image_url})` }}
             />
           )}
-          <div className={image_url ? '' : 'lg:col-span-2'}>
-            {eyebrow && (
-              <div className="text-[11px] tracking-[0.26em] uppercase text-[#C4A265] font-medium mb-4">
-                — {eyebrow} —
-              </div>
-            )}
-            {title && (
-              <h2 className="text-[36px] md:text-[42px] leading-[1.2] mb-6 text-[#FAF8F4]">
-                {title}
-              </h2>
-            )}
+          <div className="image-text-content">
+            {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
+            {title && <h2>{title}</h2>}
             {body_html && (
-              <div 
-                className="text-[16px] text-[rgba(250,248,244,0.7)] leading-relaxed prose prose-invert"
-                dangerouslySetInnerHTML={{ __html: body_html }} />
+              <div dangerouslySetInnerHTML={{ __html: body_html }} />
             )}
           </div>
         </div>
@@ -984,18 +779,18 @@ function VideoCaptionBlock({ data }: { data: Record<string, unknown> }) {
   const caption = data.caption as string | undefined
   
   return (
-    <section className="py-[120px]">
-      <div className="max-w-[1240px] mx-auto px-6">
-        <div className="max-w-4xl mx-auto">
+    <section className="section">
+      <div className="container">
+        <div className="video-caption-wrap">
           {video_url && (
-            <div className="aspect-video bg-[rgba(26,22,18,0.4)] border border-[rgba(250,248,244,0.08)] rounded-[22px] overflow-hidden mb-6">
-              <video controls poster={thumbnail_url} className="w-full h-full">
+            <div className="video-container">
+              <video controls poster={thumbnail_url}>
                 <source src={video_url} type="video/mp4" />
               </video>
             </div>
           )}
           {caption && (
-            <div className="text-[14px] text-[rgba(250,248,244,0.6)] text-center">
+            <div className="video-caption">
               {caption}
             </div>
           )}
