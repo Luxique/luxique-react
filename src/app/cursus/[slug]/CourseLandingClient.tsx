@@ -177,15 +177,19 @@ function HeroSection({ course }: { course: Course }) {
   const heroSuffix = course.hero_title_suffix || ''
   const heroChips = course.hero_chips || []
 
-  // Split title by accent
-  const titleParts = heroAccent ? heroTitle.split(heroAccent) : [heroTitle]
-
   return (
     <section className="min-h-screen flex items-center justify-center py-[120px]">
       <div className="max-w-[1240px] mx-auto px-6 w-full">
         <div className="relative">
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 rounded-[32px] overflow-hidden">
+            {/* Gold radial glow */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(ellipse at top, rgba(196,162,101,0.22) 0%, transparent 55%)'
+              }}
+            />
             <div 
               className="absolute inset-0 opacity-40"
               style={{
@@ -201,7 +205,7 @@ function HeroSection({ course }: { course: Course }) {
             />
           </div>
           
-          <div className="relative bg-[rgba(26,22,18,0.82)] backdrop-blur-[8px] rounded-[32px] border border-[rgba(250,248,244,0.08)] p-12 md:p-16">
+          <div className="relative bg-[rgba(26,22,18,0.82)] backdrop-blur-[8px] rounded-[32px] text-center border border-[rgba(250,248,244,0.08)] p-12 md:p-16">
             {course.hero_badge_text && (
               <div className="inline-flex items-center gap-2 bg-[rgba(196,162,101,0.10)] border border-[rgba(196,162,101,0.18)] rounded-full px-4 py-2 text-[12px] text-[#C4A265] mb-8">
                 <span className="w-2 h-2 bg-[#C4A265] rounded-full"></span>
@@ -210,32 +214,15 @@ function HeroSection({ course }: { course: Course }) {
             )}
             
             <h1 className="text-[56px] md:text-[72px] leading-[1.1] mb-6">
-              {titleParts[0]}
+              {heroTitle}{' '}
               {heroAccent && (
                 <span 
-                  className="font-['Cormorant_Garamond'] italic"
-                  style={{
-                    background: 'linear-gradient(180deg, #FAF8F4 0%, rgba(250,248,244,0.75) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}
+                  className="font-['Cormorant_Garamond'] italic text-[#C4A265]"
                 >
                   {heroAccent}
                 </span>
-              )}
-              {titleParts[1]}
-              {heroSuffix && (
-                <span 
-                  className="font-['Cormorant_Garamond'] italic"
-                  style={{
-                    background: 'linear-gradient(180deg, #FAF8F4 0%, rgba(250,248,244,0.75) 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}
-                >
-                  {heroSuffix}
-                </span>
-              )}
+              )}{' '}
+              {heroSuffix}
             </h1>
             
             {course.hero_tagline && (
@@ -508,8 +495,11 @@ function ReviewsSection({ course }: { course: Course }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {displayReviews.map((review, index) => (
             <div key={index} className="bg-[rgba(26,22,18,0.55)] backdrop-blur-[8px] border border-[rgba(250,248,244,0.08)] rounded-[22px] p-8">
-              <div className="text-[#C4A265] mb-4">
-                {'★'.repeat(review.stars)}
+              <div className="text-[#C4A265] mb-4 flex items-center gap-2">
+                <span>{'★'.repeat(review.stars)}</span>
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-[rgba(250,248,244,0.06)] border border-[rgba(250,248,244,0.08)] text-[rgba(250,248,244,0.5)]">
+                  {review.source === 'google' ? '🔍 Google' : '💇 Treatwell'}
+                </span>
               </div>
               <blockquote className="text-[16px] text-[rgba(250,248,244,0.9)] leading-relaxed mb-6">
                 {review.text.length > 150 
