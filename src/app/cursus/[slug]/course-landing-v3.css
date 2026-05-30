@@ -68,10 +68,6 @@
     66% {
       transform: translate(-3%, 4%) rotate(-2deg) scale(1.04);
     }
-    100% {
-      transform: translate(2%, 2%) rotate(2deg) scale(1.1);
-    }
-  }
 
   h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; color: var(--cream); }
   .serif { font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.005em; }

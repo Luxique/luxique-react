@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import type { Review } from '@/lib/reviews'
+// CRITICAL: do not remove — course landing styles. If missing = unstyled page.
+import './course-landing-v3.css'
 
 interface Course {
   id: string
