@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { REVIEWS } from '@/lib/reviews'
+import type { Review } from '@/lib/reviews'
 
 interface Course {
   id: string
@@ -54,7 +54,18 @@ interface LandingBlock {
   data: Record<string, unknown>
 }
 
-export default function CourseLandingClient({ course, lessons }: { course: Course; lessons: Lesson[] }) {
+export default function CourseLandingClient({ 
+  course, 
+  lessons, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  reviews = [],
+  previewMode = false 
+}: { 
+  course: Course; 
+  lessons: Lesson[];
+  reviews?: Review[];
+  previewMode?: boolean;
+}) {
   const [openLessonIndex, setOpenLessonIndex] = useState(0)
   const [scrolled, setScrolled] = useState(false)
 
@@ -72,7 +83,7 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
   return (
     <div className="course-landing-v3">
       {/* Moving gradient background */}
-      <div className="gradient-bg" />
+      {!previewMode && <div className="gradient-bg" />}
       
       {/* Site Navigation */}
       <SiteNav _course={course} />
@@ -103,7 +114,7 @@ export default function CourseLandingClient({ course, lessons }: { course: Cours
       />
       
       {/* Reviews */}
-      <ReviewsSection course={course} />
+      <ReviewsSection course={course} reviews={reviews} />
       
       {/* Pricing */}
       <PricingSection course={course} />
@@ -359,9 +370,9 @@ function CurriculumSection({
 }
 
 // Reviews Section Component
-function ReviewsSection({ course }: { course: Course }) {
+function ReviewsSection({ course, reviews = [] }: { course: Course; reviews?: Review[] }) {
   // Get 6 newest reviews (sorted by date logic - using first 6 for now)
-  const displayReviews = REVIEWS.slice(0, 6)
+  const displayReviews = reviews.slice(0, 6)
 
   return (
     <section className="section">
