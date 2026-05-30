@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Review } from '@/lib/reviews'
-import './course-landing-v3.css'
 
 interface Course {
   id: string
@@ -68,15 +67,7 @@ export default function CourseLandingClient({
   previewMode?: boolean;
 }) {
   const [openLessonIndex, setOpenLessonIndex] = useState(0)
-  const [scrolled, setScrolled] = useState(false)
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > window.innerHeight * 0.8)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   // Sort lessons by sort_order
   const sortedLessons = [...lessons].sort((a, b) => a.sort_order - b.sort_order)
@@ -85,9 +76,6 @@ export default function CourseLandingClient({
     <div className="course-landing-v3">
       {/* Moving gradient background */}
       {!previewMode && <div className="gradient-bg" />}
-      
-      {/* Site Navigation */}
-      <SiteNav _course={course} />
       
       {/* Hero Section */}
       <HeroSection course={course} />
@@ -125,12 +113,6 @@ export default function CourseLandingClient({
       
       {/* Final CTA */}
       <FinalCTASection course={course} />
-      
-      {/* Sticky CTA */}
-      <StickyCTA course={course} scrolled={scrolled} />
-      
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }
@@ -572,36 +554,8 @@ function FinalCTASection({ course }: { course: Course }) {
 }
 
 // Sticky CTA Component
-function StickyCTA({ course, scrolled }: { course: Course; scrolled: boolean }) {
-  if (!scrolled) return null
-
-  return (
-    <div className="sticky-cta">
-      <div>
-        <div className="sticky-title">{course.title}</div>
-        <div className="sticky-subtitle">LUXIQUE ACADEMY</div>
-      </div>
-      <a href="#pricing" className="btn-primary">
-        {course.hero_cta_text || 'Schrijf je in'} →
-      </a>
-    </div>
-  )
-}
 
 // Footer Component
-function Footer() {
-  return (
-    <footer className="site-footer">
-      <div className="container">
-        <div className="logo">LUXIQUE</div>
-        <p>Eerst begrijpen, dan doen.</p>
-        <p style={{ marginTop: 12, fontSize: 11, letterSpacing: '0.1em' }}>
-          © LUXIQUE ACADEMY · 2026
-        </p>
-      </div>
-    </footer>
-  )
-}
 
 // Flex Block Renderer
 function FlexBlockRenderer({ block }: { block: LandingBlock }) {

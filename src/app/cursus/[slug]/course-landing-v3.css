@@ -24,7 +24,7 @@
   }
 
       .course-landing-v3 {
-    background: var(--dark);
+    background: linear-gradient(160deg, #0C0A07 0%, #0E1A14 100%);
     color: var(--cream);
     font-family: var(--font-body);
     font-weight: 300;
@@ -56,10 +56,12 @@
     opacity: 0.4;
     pointer-events: none;
   }
-  @keyframes drift {
-    0% {
-      transform: translate(0, 0) rotate(0deg) scale(1);
-    }
+  @keyframes drift2 {
+    0% { transform: translate(0,0) rotate(0deg) scale(1.05); }
+    33% { transform: translate(4%,-3%) rotate(3deg) scale(1.12); }
+    66% { transform: translate(-3%,4%) rotate(-2deg) scale(1.08); }
+    100% { transform: translate(2%,2%) rotate(2deg) scale(1.14); }
+  }
     33% {
       transform: translate(4%, -3%) rotate(3deg) scale(1.08);
     }
