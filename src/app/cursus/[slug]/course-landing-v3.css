@@ -33,19 +33,29 @@
     position: relative;
   }
 
-  /* Organic moving dark-to-gold-green gradient background */
+  /* Multiple organic blobs - gold and green */
   .course-landing-v3::before {
     content: '';
     position: fixed;
-    inset: -40%;
+    inset: -30%;
     z-index: -2;
     background:
-      radial-gradient(ellipse 48% 42% at 20% 28%, rgba(196,162,101,0.22) 0%, transparent 52%),
-      radial-gradient(ellipse 52% 48% at 82% 60%, rgba(20,54,40,0.80) 0%, transparent 55%),
-      radial-gradient(ellipse 45% 45% at 55% 88%, rgba(196,162,101,0.16) 0%, transparent 50%),
-      radial-gradient(ellipse 40% 38% at 70% 15%, rgba(16,40,30,0.65) 0%, transparent 48%);
-    filter: blur(65px);
-    animation: drift2 24s ease-in-out infinite alternate;
+      /* Gold blob - top left */
+      radial-gradient(ellipse 35% 32% at 15% 20%, rgba(196,162,101,0.22) 0%, transparent 50%),
+      /* Green blob - top right area */
+      radial-gradient(ellipse 30% 28% at 75% 18%, rgba(20,54,40,0.55) 0%, transparent 48%),
+      /* Gold blob - center right */
+      radial-gradient(ellipse 32% 30% at 85% 55%, rgba(217,188,133,0.18) 0%, transparent 50%),
+      /* Green blob - center */
+      radial-gradient(ellipse 28% 25% at 45% 50%, rgba(16,40,30,0.50) 0%, transparent 45%),
+      /* Gold blob - bottom center */
+      radial-gradient(ellipse 38% 35% at 50% 85%, rgba(196,162,101,0.18) 0%, transparent 50%),
+      /* Green blob - bottom left */
+      radial-gradient(ellipse 30% 28% at 20% 75%, rgba(20,54,40,0.45) 0%, transparent 48%),
+      /* Small gold accent - top center */
+      radial-gradient(ellipse 20% 18% at 55% 12%, rgba(196,162,101,0.14) 0%, transparent 42%);
+    filter: blur(50px);
+    animation: blobDrift1 20s ease-in-out infinite alternate;
     pointer-events: none;
   }
   .course-landing-v3::after {
@@ -57,18 +67,49 @@
     opacity: 0.4;
     pointer-events: none;
   }
-  @keyframes drift2 {
-    0% { transform: translate(0,0) rotate(0deg) scale(1.05); }
-    33% { transform: translate(4%,-3%) rotate(3deg) scale(1.12); }
-    66% { transform: translate(-3%,4%) rotate(-2deg) scale(1.08); }
-    100% { transform: translate(2%,2%) rotate(2deg) scale(1.14); }
+
+  .gradient-bg-2 {
+    position: fixed;
+    inset: -35%;
+    z-index: -2;
+    background:
+      radial-gradient(ellipse 25% 22% at 65% 35%, rgba(20,54,40,0.40) 0%, transparent 45%),
+      radial-gradient(ellipse 28% 25% at 25% 60%, rgba(196,162,101,0.15) 0%, transparent 48%),
+      radial-gradient(ellipse 22% 20% at 80% 80%, rgba(196,162,101,0.12) 0%, transparent 40%);
+    filter: blur(45px);
+    animation: blobDrift2 26s ease-in-out infinite alternate;
+    pointer-events: none;
   }
-    33% {
-      transform: translate(4%, -3%) rotate(3deg) scale(1.08);
-    }
-    66% {
-      transform: translate(-3%, 4%) rotate(-2deg) scale(1.04);
-    }
+
+  .gradient-bg-3 {
+    position: fixed;
+    inset: -25%;
+    z-index: -2;
+    background:
+      radial-gradient(ellipse 20% 18% at 40% 30%, rgba(217,188,133,0.12) 0%, transparent 40%),
+      radial-gradient(ellipse 25% 22% at 70% 70%, rgba(16,40,30,0.35) 0%, transparent 45%),
+      radial-gradient(ellipse 18% 16% at 15% 45%, rgba(196,162,101,0.10) 0%, transparent 38%);
+    filter: blur(40px);
+    animation: blobDrift3 32s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes blobDrift1 {
+    0% { transform: translate(0,0) rotate(0deg) scale(1); }
+    50% { transform: translate(3%,-2%) rotate(2deg) scale(1.06); }
+    100% { transform: translate(-2%,3%) rotate(-1deg) scale(1.03); }
+  }
+
+  @keyframes blobDrift2 {
+    0% { transform: translate(0,0) rotate(0deg) scale(1.02); }
+    50% { transform: translate(-3%,2%) rotate(-2deg) scale(1.08); }
+    100% { transform: translate(2%,-3%) rotate(1deg) scale(1.05); }
+  }
+
+  @keyframes blobDrift3 {
+    0% { transform: translate(0,0) rotate(1deg) scale(1.03); }
+    50% { transform: translate(2%,3%) rotate(-1deg) scale(1.07); }
+    100% { transform: translate(-1%,-2%) rotate(2deg) scale(1.04); }
+  }
 
   h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; color: var(--cream); }
   .serif { font-family: var(--font-serif); font-style: italic; font-weight: 400; letter-spacing: -0.005em; }

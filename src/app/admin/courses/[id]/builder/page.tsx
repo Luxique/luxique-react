@@ -4,6 +4,8 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
+import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -141,6 +143,52 @@ interface Course {
 }
 
 type ContextType = 'global' | 'lesson' | 'quiz'
+
+function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[]) {
+  return {
+    course: {
+      id: builderCourse.id,
+      title: builderCourse.title,
+      slug: builderCourse.title?.toLowerCase().replace(/\s+/g, '-') || '',
+      description: builderCourse.description,
+      hero_badge_text: builderCourse.heroBadgeText,
+      hero_title: builderCourse.heroTitle,
+      hero_title_accent: builderCourse.heroTitleAccent,
+      hero_title_suffix: builderCourse.heroTitleSuffix,
+      hero_tagline: builderCourse.heroTagline,
+      hero_cta_text: builderCourse.heroCtaText,
+      hero_social_proof: builderCourse.heroSocialProof,
+      hero_chips: (builderCourse.heroChips || []).map((chip: string) => ({ icon: '✓', text: chip })),
+      hero_image_url: builderCourse.heroImageUrl,
+      hero_mux_playback_id: builderCourse.heroMuxPlaybackId,
+      differentiators_eyebrow: builderCourse.differentiatorsEyebrow,
+      differentiators_title: builderCourse.differentiatorsTitle,
+      differentiators: builderCourse.differentiators,
+      curriculum_eyebrow: builderCourse.curriculumEyebrow,
+      curriculum_title: builderCourse.curriculumTitle,
+      curriculum_intro: builderCourse.curriculumIntro,
+      reviews_eyebrow: builderCourse.reviewsEyebrow,
+      reviews_title: builderCourse.reviewsTitle,
+      price_cents: builderCourse.priceCents,
+      access_duration_text: builderCourse.accessDurationText,
+      pricing_includes: builderCourse.pricingIncludes,
+      final_cta_eyebrow: builderCourse.finalCtaEyebrow,
+      final_cta_title: builderCourse.finalCtaTitle,
+      final_cta_title_accent: builderCourse.finalCtaTitleAccent,
+      final_cta_lead: builderCourse.finalCtaLead,
+      final_cta_button_text: builderCourse.finalCtaButtonText,
+      landing_blocks: (builderCourse.landingBlocks || []).map((b: {type: string, data: Record<string, unknown>, order: number}, i: number) => ({ id: `block-${i}`, ...b })),
+    },
+    lessons: (builderLessons || []).map(l => ({
+      id: l.id,
+      title: l.name,
+      sort_order: l.num,
+      is_free: l.free || false,
+      duration_seconds: 0,
+      what_you_learn_text: '',
+    }))
+  }
+}
 
 function uid() { return crypto.randomUUID() }
 
@@ -1424,138 +1472,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         return null
     }
   }
-
-  const renderPreview = () => {
-    // Preview is puur een spiegel van blocks state. Geen hardcoded content.
-    if (blocks.length === 0) {
-      return (
-        <div style={{ textAlign: 'center', padding: 32, color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-          Geen blokken toegevoegd
-        </div>
-      )
-    }
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {blocks.map(block => {
-          const content = typeof block.content === 'object' && block.content !== null ? block.content : {}
-
-          if (block.type === 'video') {
-            const playbackId = (content as {mux_playback_id?: string}).mux_playback_id
-            if (playbackId) {
-              return (
-                <div key={block.id} style={{ width: '100%', borderRadius: 8, overflow: 'hidden' }}>
-                  <MuxPlayer
-                    playbackId={playbackId}
-                    streamType="on-demand"
-                    style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8 }}
-                  />
-                </div>
-              )
-            }
-            return (
-              <div key={block.id} style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(196,162,101,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265' }}>▶</div>
-              </div>
-            )
-          }
-
-          if (block.type === 'text') {
-            return (
-              <div key={block.id} style={{ marginBottom: 12 }}>
-                {block.title && (
-                  <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, color: 'rgba(250,248,244,0.88)', marginBottom: 4, lineHeight: 1.2 }}>
-                    {block.title}
-                  </p>
-                )}
-                {block.subtitle && (
-                  <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.5)', marginBottom: 6 }}>
-                    {block.subtitle}
-                  </p>
-                )}
-                {typeof block.content === 'string' && block.content && (
-                  <div style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.38)', lineHeight: 1.75 }} className="[&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_s]:line-through [&_del]:line-through [&_strong]:font-semibold [&_em]:italic [&_mark]:rounded-sm [&_mark]:px-0.5" dangerouslySetInnerHTML={{ __html: block.content }} />
-                )}
-                {!block.title && !block.subtitle && !block.content && (
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.15)', fontStyle: 'italic' }}>Tekst blok — nog leeg</p>
-                )}
-              </div>
-            )
-          }
-
-          if (block.type === 'image') {
-            return (
-              <div key={block.id} style={{ marginBottom: 12 }}>
-                {block.url ? (
-                  <img src={block.url} alt={block.caption || ''} style={{ width: '100%', borderRadius: 8, display: 'block' }} />
-                ) : (
-                  <div style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(255,255,255,0.04)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>Afbeelding</span>
-                  </div>
-                )}
-                {block.caption && <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 4 }}>{block.caption}</p>}
-              </div>
-            )
-          }
-
-          if (block.type === 'quiz') {
-            return (
-              <div key={block.id} style={{ marginBottom: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, border: '1px solid rgba(255,255,255,0.07)' }}>
-                <p style={{ fontSize: 13, color: 'rgba(250,248,244,0.7)', marginBottom: 8, fontWeight: 500 }}>
-                  {block.question || 'Quizvraag — nog leeg'}
-                </p>
-                {(block.options || []).map((opt: { text: string; correct: boolean }, i: number) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: opt.correct ? 'rgba(80,190,120,0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${opt.correct ? 'rgba(80,190,120,0.4)' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: opt.correct ? 'rgba(80,190,120,0.9)' : 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-                      {String.fromCharCode(65 + i)}
-                    </div>
-                    <span style={{ fontSize: 12, color: opt.correct ? 'rgba(80,190,120,0.8)' : 'rgba(255,255,255,0.35)' }}>
-                      {opt.text || `Antwoord ${String.fromCharCode(65 + i)}`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )
-          }
-
-          if (block.type === 'callout') {
-            return (
-              <div key={block.id} style={{ marginBottom: 12, background: 'rgba(196,162,101,0.07)', borderLeft: '3px solid rgba(196,162,101,0.35)', borderRadius: '0 8px 8px 0', padding: '10px 14px' }}>
-                <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.55)', lineHeight: 1.6 }}>
-                  {typeof block.content === 'string' && block.content ? block.content : 'Tip / Note — nog leeg'}
-                </p>
-              </div>
-            )
-          }
-
-          if (block.type === 'download') {
-            return (
-              <div key={block.id} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(196,162,101,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C4A265', flexShrink: 0, fontSize: 14 }}>↓</div>
-                <div>
-                  <p style={{ fontSize: 12.5, color: 'rgba(250,248,244,0.7)', fontWeight: 500 }}>{block.fileName || 'Downloadbestand'}</p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{block.fileDescription || 'Klik om te downloaden'}</p>
-                </div>
-              </div>
-            )
-          }
-
-          if (block.type === 'divider') {
-            return (
-              <div key={block.id} style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
-                <span style={{ color: 'rgba(196,162,101,0.25)', fontSize: 10 }}>✦</span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(196,162,101,0.12)' }} />
-              </div>
-            )
-          }
-
-          return null
-        })}
-      </div>
-    )
-  }
-
   const getBlockTypeLabel = (type: BlockType) => {
     const labels: Record<BlockType, string> = {
       video: 'Video',
@@ -1862,51 +1778,22 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           )}
         </div>
 
-        {/* Preview */}
-        <div className="w-[320px] bg-[#161310] border-l border-[rgba(255,255,255,0.05)] overflow-y-auto flex flex-col">
-          <div className="sticky top-0 bg-[#161310] z-10">
-            <div className="p-3.5 border-b border-[rgba(255,255,255,0.06)] flex items-center justify-between">
-              <span className="text-[9.5px] font-bold tracking-[0.22em] uppercase text-[rgba(196,162,101,0.5)]">
-                Student preview
-              </span>
-              <div className="flex gap-1">
-                <button className="w-6 h-6 rounded-lg border border-[rgba(255,255,255,0.08)] bg-transparent flex items-center justify-center text-[rgba(255,255,255,0.28)]">
-                  <svg width="12" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/>
-                    <path d="M8 21h8m-4-4v4"/>
-                  </svg>
-                </button>
-                <button className="w-6 h-6 rounded-lg border border-[rgba(255,255,255,0.08)] bg-transparent flex items-center justify-center text-[rgba(255,255,255,0.28)]">
-                  <svg width="10" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <rect x="5" y="2" width="14" height="20" rx="2"/>
-                    <path d="M12 18h.01"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Lesson Indicator */}
-            <div className="flex items-center gap-2 p-3.5 border-b border-[rgba(255,255,255,0.05)]">
-              <span className="font-['Cormorant_Garamond'] text-[13px] text-[rgba(196,162,101,0.5)] italic">✦</span>
-              <span className="text-[12px] font-medium text-[rgba(250,248,244,0.65)]">
-                {currentContext === 'global' && 'Cursus overzicht'}
-                {currentContext === 'lesson' && currentLesson && `Les ${currentLesson.num} — ${currentLesson.name}`}
-                {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
-              </span>
-              <span className={`text-[8.5px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full ml-auto ${
-                currentContext === 'global' ? 'bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.3)] border border-[rgba(255,255,255,0.08)]' :
-                currentContext === 'lesson' ? (currentLesson?.free ? 'bg-[#C4A265] text-white' : 'bg-[rgba(255,255,255,0.07)] text-[rgba(255,255,255,0.3)] border border-[rgba(255,255,255,0.08)]') :
-                'bg-[rgba(80,190,120,0.08)] text-[rgba(80,190,120,0.9)] border border-[rgba(80,190,120,0.22)]'
-              }`}>
-                {currentContext === 'global' && ''}
-                {currentContext === 'lesson' && (currentLesson?.free ? 'Gratis preview' : 'Account vereist')}
-                {currentContext === 'quiz' && 'Toets'}
-              </span>
-            </div>
+        {/* Preview pane */}
+        <div className="w-[420px] flex-shrink-0 bg-[#0A0807] overflow-y-auto relative">
+          <div className="sticky top-0 z-10 bg-[rgba(10,8,7,0.9)] backdrop-blur-xl border-b border-[rgba(196,162,101,0.18)] px-5 py-3">
+            <span className="text-[10px] tracking-[0.2em] uppercase text-[#C4A265] font-medium">Live Preview</span>
           </div>
-
-          <div className="p-3.5">
-            {renderPreview()}
+          <div className="transform scale-[0.38] origin-top-left w-[263%]">
+            {course && (
+              <CourseLandingClient
+                {...mapBuilderToLandingProps(
+                  course,
+                  currentLesson ? course.lessons || [] : course.lessons || []
+                )}
+                reviews={REVIEWS}
+                previewMode={true}
+              />
+            )}
           </div>
         </div>
       </div>

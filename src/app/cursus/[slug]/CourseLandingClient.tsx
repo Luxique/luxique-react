@@ -76,8 +76,10 @@ export default function CourseLandingClient({
 
   return (
     <div className="course-landing-v3">
-      {/* Moving gradient background */}
+      {/* Moving gradient blobs */}
       {!previewMode && <div className="gradient-bg" />}
+      {!previewMode && <div className="gradient-bg-2" />}
+      {!previewMode && <div className="gradient-bg-3" />}
       
       {/* Hero Section */}
       <HeroSection course={course} />
