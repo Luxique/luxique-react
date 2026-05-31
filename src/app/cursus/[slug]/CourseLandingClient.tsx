@@ -191,7 +191,7 @@ function HeroSection({ course }: { course: Course }) {
         <div className="cta-row">
           <a href="#pricing" className="btn-primary">
             <span className="flow" />
-            <span>{course.hero_cta_text || 'Schrijf je in'} →</span>
+            <span>{course.hero_cta_text || 'Join the Academy'} →</span>
           </a>
           <a href="#curriculum" className="btn-outline">
             Bekijk programma

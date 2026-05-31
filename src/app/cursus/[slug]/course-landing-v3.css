@@ -362,11 +362,11 @@
 
   /* CTA row */
   .cta-row {
-    margin-top: 44px;
+    margin-top: 20px;
     display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
   }
   .price-meta {
-    margin-top: 18px;
+    margin-top: 10px;
     color: var(--cream-mute);
     font-size: 12px;
     letter-spacing: 0.05em;
