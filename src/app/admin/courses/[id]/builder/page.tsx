@@ -802,24 +802,32 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                       setHeroUploading(false)
                       setHeroProcessing(true)
                       let attempts = 0
-                      while (attempts < 30) {
+                      let savedPlaybackId: string | null = null
+                      while (attempts < 90) {
                         await new Promise(r => setTimeout(r, 2000))
                         const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
                         const data = await statusRes.json()
-                        console.log(`[HERO UPLOAD] Poll ${attempts+1}:`, JSON.stringify(data))
+                        console.log(`[HERO UPLOAD] Poll ${attempts+1}: status=${data.status}, playback_id=${data.playback_id || 'none'}`)
                         const { status, asset_id, playback_id } = data
-                        if (status === 'ready' && playback_id) {
-                          console.log('[HERO UPLOAD] ✅ Ready! playback_id:', playback_id)
+                        
+                        // Save playback_id as soon as it exists — don't wait for 'ready'
+                        if (playback_id && !savedPlaybackId) {
+                          console.log('[HERO UPLOAD] ✅ Got playback_id:', playback_id, '(status:', status, ')')
+                          savedPlaybackId = playback_id
                           setCourse(prev => prev ? { ...prev, heroMuxPlaybackId: playback_id, heroMuxAssetId: asset_id } : prev)
                           setHeroProcessing(false)
                           break
                         }
+                        
+                        if (status === 'ready') {
+                          console.log('[HERO UPLOAD] ✅ Asset ready!')
+                          break
+                        }
                         attempts++
                       }
-                      if (attempts >= 30) {
-                        console.error('[HERO UPLOAD] ❌ Timed out after 30 polls')
-                        alert('Video verwerking duurt te lang.')
-                        setHeroProcessing(false)
+                      if (!savedPlaybackId && attempts >= 90) {
+                        console.error('[HERO UPLOAD] ❌ Timed out after 90 polls (3 min)')
+                        // Non-destructive: keep processing state, don't reset
                       }
                     } catch (err) {
                       console.error('[HERO UPLOAD] ❌ Error:', err)
