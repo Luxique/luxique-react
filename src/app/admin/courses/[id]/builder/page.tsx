@@ -217,6 +217,8 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const [previewWidth, setPreviewWidth] = useState(420)
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
   const heroVideoInputRef = useRef<HTMLInputElement>(null)
+  const [heroUploading, setHeroUploading] = useState(false)
+  const [heroProcessing, setHeroProcessing] = useState(false)
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -779,11 +781,12 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   onChange={async (e) => {
                     const file = e.target.files?.[0]
                     if (!file) return
-                    setVideoUploading(true)
-                    setVideoUploadProgress(0)
+                    setHeroUploading(true)
+                    setHeroProcessing(false)
                     try {
                       const res = await fetch('/api/mux/upload-url', { method: 'POST' })
                       const { upload_url, upload_id } = await res.json()
+                      console.log('[HERO UPLOAD] Got upload URL, starting upload...')
                       await new Promise<void>((resolve, reject) => {
                         const xhr = new XMLHttpRequest()
                         xhr.upload.onprogress = (ev) => {
@@ -795,24 +798,34 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                         xhr.setRequestHeader('Content-Type', file.type)
                         xhr.send(file)
                       })
+                      console.log('[HERO UPLOAD] Upload complete, polling for asset...')
+                      setHeroUploading(false)
+                      setHeroProcessing(true)
                       let attempts = 0
                       while (attempts < 30) {
                         await new Promise(r => setTimeout(r, 2000))
                         const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
-                        const { status, asset_id, playback_id } = await statusRes.json()
+                        const data = await statusRes.json()
+                        console.log(`[HERO UPLOAD] Poll ${attempts+1}:`, JSON.stringify(data))
+                        const { status, asset_id, playback_id } = data
                         if (status === 'ready' && playback_id) {
-                          updateCourseField('heroMuxPlaybackId', playback_id)
-                          updateCourseField('heroMuxAssetId', asset_id)
+                          console.log('[HERO UPLOAD] ✅ Ready! playback_id:', playback_id)
+                          setCourse(prev => prev ? { ...prev, heroMuxPlaybackId: playback_id, heroMuxAssetId: asset_id } : prev)
+                          setHeroProcessing(false)
                           break
                         }
                         attempts++
                       }
-                      if (attempts >= 30) alert('Video verwerking duurt te lang.')
+                      if (attempts >= 30) {
+                        console.error('[HERO UPLOAD] ❌ Timed out after 30 polls')
+                        alert('Video verwerking duurt te lang.')
+                        setHeroProcessing(false)
+                      }
                     } catch (err) {
-                      console.error('Hero upload error:', err)
+                      console.error('[HERO UPLOAD] ❌ Error:', err)
                       alert('Upload mislukt.')
-                    } finally {
-                      setVideoUploading(false)
+                      setHeroUploading(false)
+                      setHeroProcessing(false)
                     }
                   }}
                 />
@@ -824,12 +837,17 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                       style={{ width: '100%', aspectRatio: '16/9' }}
                     />
                   </div>
-                ) : videoUploading ? (
+                ) : heroUploading ? (
                   <div style={{ padding: 20, textAlign: 'center' }}>
                     <div style={{ width: '100%', height: 4, background: '#F0EDE6', borderRadius: 2, overflow: 'hidden' }}>
                       <div style={{ width: `${videoUploadProgress}%`, height: '100%', background: '#C4A265', transition: 'width 0.3s' }} />
                     </div>
-                    <p style={{ fontSize: 11, color: '#7A7268', marginTop: 8 }}>{videoUploadProgress}% — video wordt verwerkt...</p>
+                    <p style={{ fontSize: 11, color: '#7A7268', marginTop: 8 }}>{videoUploadProgress}% — video wordt geüpload...</p>
+                  </div>
+                ) : heroProcessing ? (
+                  <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4">
+                    <div className="w-5 h-5 border-2 border-[#C4A265] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[10.5px] text-[#7A7268]">Video wordt verwerkt door Mux...</span>
                   </div>
                 ) : (
                   <div
