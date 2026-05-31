@@ -215,8 +215,8 @@ function HeroSection({ course }: { course: Course }) {
 // Hero Media Component
 function HeroMedia({ _course }: { _course: Course }) {
   return (
-    <div className="hero-media-wrap">
-      <div className="hero-media">
+    <div className="hero-stage">
+      <div className="hero-media-glow">
         {_course.hero_mux_playback_id ? (
           <LuxiqueMuxPlayer
             playbackId={_course.hero_mux_playback_id}
