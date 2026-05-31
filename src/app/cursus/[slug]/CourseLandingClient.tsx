@@ -407,7 +407,7 @@ function PricingSection({ course }: { course: Course }) {
               
               <a href="#" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
                 <span className="flow" />
-                <span>Schrijf je nu in →</span>
+                <span>Join the Academy →</span>
               </a>
               
               <div className="payment-logos">
@@ -503,7 +503,7 @@ function FinalCTASection({ course }: { course: Course }) {
         )}
         <a href="#pricing" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }}>
           <span className="flow" />
-          <span>{course.final_cta_button_text || 'Schrijf je nu in'} →</span>
+          <span>{course.final_cta_button_text || 'Join the Academy'} →</span>
         </a>
       </div>
     </section>
