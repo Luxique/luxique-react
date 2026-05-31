@@ -216,10 +216,10 @@
 
   /* === HERO BOX (CreateSell style) === */
   .hero-box {
-    margin: 0 14px;
-    padding: 28px 40px 20px;
-    height: calc(100svh - 66px - 20px);
-    max-height: calc(100svh - 66px - 20px);
+    margin: 80px 14px 0;
+    padding: 24px 40px 16px;
+    height: calc(100svh - 80px - 14px - 14px);
+    max-height: calc(100svh - 80px - 14px - 14px);
     display: flex;
     flex-direction: column;
     justify-content: center;
