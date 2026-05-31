@@ -189,7 +189,8 @@ function HeroSection({ course }: { course: Course }) {
         {/* CTA Row */}
         <div className="cta-row">
           <a href="#pricing" className="btn-primary">
-            {course.hero_cta_text || 'Schrijf je in'} →
+            <span className="flow" />
+            <span>{course.hero_cta_text || 'Schrijf je in'} →</span>
           </a>
           <a href="#curriculum" className="btn-outline">
             Bekijk programma
@@ -282,7 +283,7 @@ function DifferentiatorsSection({ course }: { course: Course }) {
         
         <div className="feat-grid">
           {course.differentiators.map((item, index) => (
-            <div key={index} className="feat-card">
+            <div key={index} className={`diff-tile ${index === 1 ? 'green' : ''}`}>
               <div className="feat-visual">
                 <div className="icon-big">{item.icon}</div>
               </div>
@@ -443,8 +444,9 @@ function PricingSection({ course }: { course: Course }) {
         </div>
         
         <div className="pricing-wrap">
-          <div className="pricing-card">
-            <div className="inner">
+          <div className="pricing-stage">
+            <div className="pricing-card">
+              <div className="inner">
               <span className="eyebrow">Medusa Lash Basics</span>
               <h3>Word een echte lash artist</h3>
               
@@ -467,7 +469,8 @@ function PricingSection({ course }: { course: Course }) {
               </div>
               
               <a href="#" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                Schrijf je nu in →
+                <span className="flow" />
+                <span>Schrijf je nu in →</span>
               </a>
               
               <div className="payment-logos">
@@ -480,6 +483,7 @@ function PricingSection({ course }: { course: Course }) {
               
               <div className="fine">Veilig betalen via Stripe</div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -561,7 +565,8 @@ function FinalCTASection({ course }: { course: Course }) {
           <p>{course.final_cta_lead}</p>
         )}
         <a href="#pricing" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }}>
-          {course.final_cta_button_text || 'Schrijf je nu in'} →
+          <span className="flow" />
+          <span>{course.final_cta_button_text || 'Schrijf je nu in'} →</span>
         </a>
       </div>
     </section>
