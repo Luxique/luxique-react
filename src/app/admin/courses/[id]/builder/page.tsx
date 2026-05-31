@@ -9,7 +9,7 @@ import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import MuxPlayer from '@mux/mux-player-react'
+import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import { TextBlock, ImageBlock, QuizBlock, CalloutBlock, DownloadBlock } from './BlockComponents'
 
 /* ── SortableBlock (module-level, prevents re-mount) ── */
@@ -839,10 +839,10 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                 />
                 {course?.heroMuxPlaybackId ? (
                   <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
-                    <MuxPlayer
+                    <LuxiqueMuxPlayer
                       playbackId={course.heroMuxPlaybackId}
-                      streamType="on-demand"
-                      style={{ width: '100%', aspectRatio: '16/9' }}
+                      variant="hero"
+                      title={course.title || 'Hero video'}
                     />
                   </div>
                 ) : heroUploading ? (
@@ -1508,10 +1508,10 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             {typeof block.content === 'object' && block.content !== null && block.content.mux_playback_id ? (
               // Show video thumbnail/preview
               <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
-                <MuxPlayer
+                <LuxiqueMuxPlayer
                   playbackId={block.content.mux_playback_id as string}
-                  streamType="on-demand"
-                  style={{ width: '100%', aspectRatio: '16/9' }}
+                  variant="lesson"
+                  title={block.content.video_title as string || 'Les video'}
                 />
               </div>
             ) : videoUploading ? (
@@ -1961,9 +1961,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                             <div key={block.id} className="bg-white rounded-lg p-6 shadow-sm">
                               {block.type === 'video' && typeof block.content === 'object' && block.content?.mux_playback_id && (
                                 <div className="aspect-video bg-black rounded-lg mb-4">
-                                  <MuxPlayer
+                                  <LuxiqueMuxPlayer
                                     playbackId={block.content.mux_playback_id as string}
-                                    style={{ width: '100%', height: '100%' }}
+                                    variant="lesson"
                                   />
                                 </div>
                               )}

@@ -1125,3 +1125,64 @@ em { font-style: italic; font-weight: 400; }
   --cl-radius-sm: 14px;
   --cl-gap: 14px;
 }
+
+/* ── MuxPlayer Gold Theming ── */
+mux-player {
+  --media-accent-color: #C4A265;
+  --media-range-track-background: rgba(255,255,255,0.15);
+  --media-range-bar-color: #C4A265;
+  --media-range-thumb-color: #C4A265;
+  --media-range-thumb-width: 12px;
+  --media-range-thumb-height: 12px;
+  --media-range-thumb-border-radius: 50%;
+  --media-text-color: rgba(255,255,255,0.85);
+  --media-font-family: 'Outfit', sans-serif;
+  --media-control-hover-background: rgba(196,162,101,0.15);
+  color: rgba(255,255,255,0.85);
+  font-family: 'Outfit', sans-serif;
+}
+
+mux-player:focus,
+mux-player:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+mux-player [part="play button"],
+mux-player::part(play-button) {
+  --media-button-icon-width: 28px;
+  --media-button-icon-height: 28px;
+  color: #C4A265;
+  background: rgba(10,8,7,0.6);
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  backdrop-filter: blur(8px);
+}
+
+mux-player [part="play button"]:hover,
+mux-player::part(play-button):hover {
+  background: rgba(196,162,101,0.25);
+}
+
+/* Hide default blue focus ring */
+mux-player *:focus-visible {
+  outline-color: #C4A265;
+}
+
+/* Hero variant — minimal controls */
+.hero-mux-player {
+  --seek-backward-button: none;
+  --seek-forward-button: none;
+  --pip-button: none;
+  --mute-button: none;
+  --volume-range: none;
+  --fullscreen-button: none;
+}
+
+/* Lesson variant — fullscreen allowed */
+.lesson-mux-player {
+  --seek-backward-button: none;
+  --seek-forward-button: none;
+  --pip-button: none;
+}

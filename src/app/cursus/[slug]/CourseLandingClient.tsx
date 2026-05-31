@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { Review } from '@/lib/reviews'
-import MuxPlayer from '@mux/mux-player-react'
+import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 // CRITICAL: do not remove — course landing styles. If missing = unstyled page.
 import './course-landing-v3.css'
 
@@ -214,9 +214,10 @@ function HeroMedia({ _course }: { _course: Course }) {
     <div className="hero-media-wrap">
       <div className="hero-media">
         {_course.hero_mux_playback_id ? (
-          <MuxPlayer
+          <LuxiqueMuxPlayer
             playbackId={_course.hero_mux_playback_id}
-            metadata={{ video_title: _course.title || 'Hero video' }}
+            variant="hero"
+            title={_course.title || 'Hero video'}
             style={{ width: '100%', height: '100%', borderRadius: '12px' }}
           />
         ) : _course.hero_image_url ? (
