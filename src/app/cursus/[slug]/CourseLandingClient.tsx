@@ -75,6 +75,7 @@ export default function CourseLandingClient({
   const [openLessonIndex, setOpenLessonIndex] = useState(0)
   const [user, setUser] = useState<{ id: string; email: string } | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [enrolled, setEnrolled] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -83,6 +84,17 @@ export default function CourseLandingClient({
       }
     })
   }, [])
+
+  // Check enrollment when user is loaded
+  useEffect(() => {
+    if (!user) return
+    fetch(`/api/enrollments/check?user_id=${user.id}&course_id=${course.id}`)
+      .then(r => r.json())
+      .then(data => {
+        setEnrolled(data.enrolled === true)
+      })
+      .catch(() => {})
+  }, [user, course.id])
 
   const handleAuthSuccess = (u: { id: string; email: string }) => {
     setUser(u)
@@ -121,8 +133,18 @@ export default function CourseLandingClient({
       setShowAuthModal(true)
       return
     }
-    // B4.5 will handle access check
-    console.log('Lesson clicked:', lesson.title)
+    // Free lesson: always allow
+    if (lesson.is_free) {
+      setOpenLessonIndex(prev => prev === sortedLessons.indexOf(lesson) ? -1 : sortedLessons.indexOf(lesson))
+      return
+    }
+    // Paid lesson: check enrollment
+    if (!enrolled) {
+      // Show paywall — scroll to pricing
+      document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+    setOpenLessonIndex(prev => prev === sortedLessons.indexOf(lesson) ? -1 : sortedLessons.indexOf(lesson))
   }
 
   // Sort lessons by sort_order

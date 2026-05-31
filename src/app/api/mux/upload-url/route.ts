@@ -1,17 +1,25 @@
 import Mux from '@mux/mux-node'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Mux client BINNEN de functie aanmaken
+    const body = await request.json().catch(() => ({}))
+    const isFree = body.is_free === true
+
     const mux = new Mux({
       tokenId: process.env.MUX_TOKEN_ID!,
       tokenSecret: process.env.MUX_TOKEN_SECRET!,
     })
 
+    // Free preview lessons use public playback, paid content uses signed tokens
+    // Required env vars for signed playback:
+    //   MUX_SIGNING_KEY_ID — from Mux Dashboard → Settings → API Keys → Signing Keys
+    //   MUX_SIGNING_PRIVATE_KEY — the private key file contents (.pem)
+    const playbackPolicy: ('public' | 'signed')[] = isFree ? ['public'] : ['signed']
+
     const upload = await mux.video.uploads.create({
       new_asset_settings: {
-        playback_policy: ['public'],
+        playback_policy: playbackPolicy,
         mp4_support: 'none',
       },
       cors_origin: '*',

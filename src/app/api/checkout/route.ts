@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       success_url: success_url || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/dashboard?enrolled=1`,
       cancel_url: cancel_url || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/courses`,
       metadata: { course_id, user_id },
+      client_reference_id: user_id,
     })
 
     return NextResponse.json({ url: session.url })
