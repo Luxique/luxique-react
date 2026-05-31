@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const Stripe = (await import('stripe')).default
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
-    const { course_id, user_id, email } = await request.json()
+    const { course_id, user_id, email, success_url, cancel_url } = await request.json()
 
     if (!course_id || !user_id || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
             quantity: 1,
           }],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/dashboard?enrolled=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/courses`,
+      success_url: success_url || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/dashboard?enrolled=1`,
+      cancel_url: cancel_url || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/courses`,
       metadata: { course_id, user_id },
     })
 

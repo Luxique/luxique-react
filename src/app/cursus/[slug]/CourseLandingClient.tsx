@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Review } from '@/lib/reviews'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import AmbientGlow from '@/components/AmbientGlow'
+import AuthModal from '@/components/AuthModal'
+import { supabase } from '@/lib/supabase-client'
 // CRITICAL: do not remove — course landing styles. If missing = unstyled page.
 import './course-landing-v3.css'
 
@@ -71,7 +73,57 @@ export default function CourseLandingClient({
   previewMode?: boolean;
 }) {
   const [openLessonIndex, setOpenLessonIndex] = useState(0)
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        setUser({ id: data.session.user.id, email: data.session.user.email ?? '' })
+      }
+    })
+  }, [])
+
+  const handleAuthSuccess = (u: { id: string; email: string }) => {
+    setUser(u)
+    setShowAuthModal(false)
+  }
+
+  const handleJoinCTA = async () => {
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+    // B4.4: proceed to checkout
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          course_id: course.id,
+          user_id: user.id,
+          email: user.email,
+          success_url: `${window.location.origin}/cursus/${course.slug}?enrolled=1`,
+          cancel_url: `${window.location.origin}/cursus/${course.slug}?canceled=1`,
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      alert('Er ging iets mis bij het starten van de betaling.')
+    }
+  }
+
+  const handleLessonClick = (lesson: Lesson) => {
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+    // B4.5 will handle access check
+    console.log('Lesson clicked:', lesson.title)
+  }
 
   // Sort lessons by sort_order
   const sortedLessons = [...lessons].sort((a, b) => a.sort_order - b.sort_order)
@@ -105,6 +157,7 @@ export default function CourseLandingClient({
         lessons={sortedLessons}
         openLessonIndex={openLessonIndex}
         setOpenLessonIndex={setOpenLessonIndex}
+        onLessonClick={handleLessonClick}
       />
       
       {/* Reviews */}
@@ -113,13 +166,20 @@ export default function CourseLandingClient({
       <MiniReviewsWall reviews={reviews} />
       
       {/* Pricing */}
-      <PricingSection course={course} />
+      <PricingSection course={course} onJoin={handleJoinCTA} user={user} />
       
       {/* FAQ */}
       <FAQSection />
       
       {/* Final CTA */}
-      <FinalCTASection course={course} />
+      <FinalCTASection course={course} onJoin={handleJoinCTA} user={user} />
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   )
 }
@@ -285,12 +345,14 @@ function CurriculumSection({
   course, 
   lessons, 
   openLessonIndex, 
-  setOpenLessonIndex 
+  setOpenLessonIndex,
+  onLessonClick
 }: { 
   course: Course
   lessons: Lesson[]
   openLessonIndex: number
   setOpenLessonIndex: (index: number) => void
+  onLessonClick?: (lesson: Lesson) => void
 }) {
   if (lessons.length === 0) {
     return null
@@ -316,7 +378,10 @@ function CurriculumSection({
             <div 
               key={lesson.id}
               className={`lesson-acc ${index === openLessonIndex ? 'open' : ''}`}
-              onClick={() => setOpenLessonIndex(index === openLessonIndex ? -1 : index)}
+              onClick={() => {
+                setOpenLessonIndex(index === openLessonIndex ? -1 : index)
+                onLessonClick?.(lesson)
+              }}
             >
               <div className="lesson-acc-head">
                 <div className="lesson-num">
@@ -352,7 +417,7 @@ function CurriculumSection({
 }
 
 // Reviews Section Component
-function PricingSection({ course }: { course: Course }) {
+function PricingSection({ course, onJoin, user }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null }) {
   if (!course.price_cents) {
     return null
   }
@@ -405,10 +470,10 @@ function PricingSection({ course }: { course: Course }) {
                 ))}
               </div>
               
-              <a href="#" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+              <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
                 <span className="flow" />
-                <span>Join the Academy →</span>
-              </a>
+                <span>{user ? 'Join the Academy →' : 'Join the Academy →'}</span>
+              </button>
               
               <div className="payment-logos">
                 <span className="pay-logo">VISA</span>
@@ -484,7 +549,8 @@ function FAQSection() {
 }
 
 // Final CTA Section Component
-function FinalCTASection({ course }: { course: Course }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function FinalCTASection({ course, onJoin, user: _user }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null }) {
   return (
     <section className="final-cta">
       <div className="final-cta-content">
@@ -501,10 +567,10 @@ function FinalCTASection({ course }: { course: Course }) {
         {course.final_cta_lead && (
           <p>{course.final_cta_lead}</p>
         )}
-        <a href="#pricing" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }}>
+        <button type="button" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
           <span className="flow" />
           <span>{course.final_cta_button_text || 'Join the Academy'} →</span>
-        </a>
+        </button>
       </div>
     </section>
   )
