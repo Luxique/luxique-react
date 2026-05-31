@@ -1273,3 +1273,142 @@
 @media (prefers-reduced-motion: reduce) {
   .mini-review-card { animation: none !important; }
 }
+
+/* ═══════════════════════════════════════
+   REVIEWS WALL — scrolling wall before pricing
+   ═══════════════════════════════════════ */
+
+.reviews-wall-section {
+  padding: 80px 0 0;
+}
+
+.reviews-wall {
+  position: relative;
+  height: 560px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  padding: 0 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 120px, #000 calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 120px, #000 calc(100% - 40px), transparent 100%);
+}
+
+@media (max-width: 720px) {
+  .reviews-wall {
+    grid-template-columns: repeat(2, 1fr);
+    height: 480px;
+  }
+  .rw-col:nth-child(3) { display: none; }
+}
+
+.rw-col { position: relative; }
+
+.rw-col-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: rw-scroll-up var(--rw-dur, 46s) linear infinite;
+  will-change: transform;
+}
+
+.rw-col:nth-child(1) .rw-col-inner { --rw-dur: 46s; }
+.rw-col:nth-child(2) .rw-col-inner { --rw-dur: 62s; animation-delay: -8s; }
+.rw-col:nth-child(3) .rw-col-inner { --rw-dur: 54s; animation-delay: -20s; }
+
+.rw-col:hover .rw-col-inner { animation-play-state: paused; }
+
+@keyframes rw-scroll-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+/* Light glow where cards "emerge" */
+.rw-glow {
+  position: relative;
+  height: 90px;
+  margin-top: -30px;
+  pointer-events: none;
+  background: radial-gradient(60% 120% at 50% 100%,
+    rgba(250,248,244,0.16), rgba(196,162,101,0.10) 40%, transparent 72%);
+  filter: blur(2px);
+}
+
+.rw-line {
+  height: 1px;
+  max-width: 1100px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, rgba(250,248,244,0.5), transparent);
+  box-shadow: 0 0 14px 2px rgba(250,248,244,0.18);
+}
+
+/* Review card */
+.rw-card {
+  background: rgba(255,250,240,0.025);
+  border: 1px solid rgba(196,162,101,0.10);
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  backdrop-filter: blur(2px);
+}
+
+.rw-stars {
+  color: #B89A63;
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+
+.rw-quote {
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 300;
+  color: rgba(250,248,244,0.74);
+  margin-bottom: 14px;
+}
+
+.rw-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,250,240,0.05);
+}
+
+.rw-who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.rw-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  flex-shrink: 0;
+}
+
+.rw-name {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(250,248,244,0.8);
+}
+
+.rw-src {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: rgba(250,248,244,0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rw-col-inner { animation: none !important; }
+}
