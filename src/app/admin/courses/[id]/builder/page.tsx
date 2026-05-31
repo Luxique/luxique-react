@@ -212,6 +212,11 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const videoFileInputRef = useRef<HTMLInputElement>(null)
   const [videoUploading, setVideoUploading] = useState(false)
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
+  
+  // Preview state
+  const [previewWidth, setPreviewWidth] = useState(420)
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [heroUploadSuccess, setHeroUploadSuccess] = useState(false)
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -812,8 +817,11 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                             const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
                             const { status, asset_id, playback_id } = await statusRes.json()
                             if (status === 'ready' && playback_id) {
+                              console.log('[HERO VIDEO UPLOAD] Asset ready:', { asset_id, playback_id })
                               updateCourseField('heroMuxPlaybackId', playback_id)
                               updateCourseField('heroMuxAssetId', asset_id)
+                              setHeroUploadSuccess(true)
+                              setTimeout(() => setHeroUploadSuccess(false), 3000) // Hide success indicator after 3 seconds
                               break
                             }
                             attempts++
@@ -827,6 +835,14 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                         }
                       }}
                     />
+                    {heroUploadSuccess && (
+                      <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-[11px] text-green-700 font-medium">Video geüpload ✓</span>
+                      </div>
+                    )}
                     {videoUploading ? (
                       <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-3 p-4">
                         <div className="w-3/4 h-[3px] bg-[rgba(26,24,21,0.08)] rounded-full overflow-hidden">
@@ -1851,21 +1867,149 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         </div>
 
         {/* Preview pane */}
-        <div className="w-[420px] flex-shrink-0 bg-[#0A0807] overflow-y-auto relative">
-          <div className="sticky top-0 z-10 bg-[rgba(10,8,7,0.9)] backdrop-blur-xl border-b border-[rgba(196,162,101,0.18)] px-5 py-3">
+        <div 
+          className="bg-[#0A0807] overflow-hidden relative" 
+          style={{ 
+            width: `${previewWidth}px`,
+            height: 'calc(100vh - 60px)'
+          }}
+        >
+          {/* Preview header with device toggle */}
+          <div className="sticky top-0 z-10 bg-[rgba(10,8,7,0.9)] backdrop-blur-xl border-b border-[rgba(196,162,101,0.18)] px-5 py-3 flex items-center justify-between">
             <span className="text-[10px] tracking-[0.2em] uppercase text-[#C4A265] font-medium">Live Preview</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  setPreviewDevice('desktop')
+                  setPreviewWidth(420)
+                }}
+                className={`p-1.5 rounded-lg transition ${previewDevice === 'desktop' ? 'bg-[rgba(196,162,101,0.2)] text-[#C4A265]' : 'text-[rgba(196,162,101,0.5)] hover:text-[#C4A265]'}`}
+                title="Desktop weergave"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="14" rx="2" />
+                  <path d="M7 8h10M7 12h7" />
+                </svg>
+              </button>
+              <button 
+                onClick={() => {
+                  setPreviewDevice('mobile')
+                  setPreviewWidth(375)
+                }}
+                className={`p-1.5 rounded-lg transition ${previewDevice === 'mobile' ? 'bg-[rgba(196,162,101,0.2)] text-[#C4A265]' : 'text-[rgba(196,162,101,0.5)] hover:text-[#C4A265]'}`}
+                title="Mobile weergave"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="6" y="3" width="12" height="18" rx="2" />
+                  <path d="M10 7h4M10 11h4" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <div className="transform scale-[0.38] origin-top-left w-[263%]">
-            {course && (
-              <CourseLandingClient
-                {...mapBuilderToLandingProps(
-                  course,
-                  currentLesson ? course.lessons || [] : course.lessons || []
-                )}
-                reviews={REVIEWS}
-                previewMode={true}
-              />
-            )}
+          
+          {/* Scrollable content area */}
+          <div 
+            className="overflow-y-auto overflow-x-hidden" 
+            style={{ height: 'calc(100vh - 100px)' }}
+          >
+            <div className="transform scale-[0.38] origin-top-left w-[263%]">
+              {/* Context-based preview rendering */}
+              {course && (
+                <>
+                  {currentContext === 'global' && (
+                    <CourseLandingClient
+                      {...mapBuilderToLandingProps(
+                        course,
+                        currentLesson ? course.lessons || [] : course.lessons || []
+                      )}
+                      reviews={REVIEWS}
+                      previewMode={true}
+                    />
+                  )}
+                  
+                  {currentContext === 'lesson' && currentLesson && (
+                    <div className="bg-[#FAF8F4] min-h-screen p-8">
+                      <div className="max-w-4xl mx-auto">
+                        <div className="mb-8">
+                          <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">
+                            Les {currentLesson.num}: {currentLesson.name}
+                          </h1>
+                          <p className="text-[#7A7268]">
+                            {currentLesson.duration && (
+                              <>Duur: {Math.floor(currentLesson.duration / 60)}u {currentLesson.duration % 60}min</>
+                            )}
+                            {currentLesson.free && (
+                              <span className="ml-4 px-2 py-1 bg-[#C4A265] text-white text-xs rounded-full">Gratis</span>
+                            )}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-6">
+                          {blocks.map((block) => (
+                            <div key={block.id} className="bg-white rounded-lg p-6 shadow-sm">
+                              {block.type === 'video' && typeof block.content === 'object' && block.content?.mux_playback_id && (
+                                <div className="aspect-video bg-black rounded-lg mb-4">
+                                  <MuxPlayer
+                                    playbackId={block.content.mux_playback_id as string}
+                                    style={{ width: '100%', height: '100%' }}
+                                  />
+                                </div>
+                              )}
+                              
+                              {block.type === 'text' && (
+                                <div>
+                                  {block.title && (
+                                    <h3 className="text-xl font-semibold text-[#1E1A14] mb-3">{block.title}</h3>
+                                  )}
+                                  {block.subtitle && (
+                                    <h4 className="text-lg text-[#7A6340] mb-3">{block.subtitle}</h4>
+                                  )}
+                                  {block.content && (
+                                    <div className="text-[#1E1A14] leading-relaxed">{block.content as string}</div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {currentContext === 'quiz' && currentQuiz && (
+                    <div className="bg-[#FAF8F4] min-h-screen p-8">
+                      <div className="max-w-4xl mx-auto">
+                        <div className="mb-8">
+                          <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">{currentQuiz.name}</h1>
+                          <p className="text-[#7A7268]">
+                            Type: {currentQuiz.type === 'intermediate' ? 'Tussentijdse toets' : 'Eindtoets'}
+                            {currentQuiz.minPassingScore && (
+                              <span className="ml-4">Minimale score: {currentQuiz.minPassingScore}%</span>
+                            )}
+                          </p>
+                        </div>
+                        
+                        <div className="bg-white rounded-lg p-8 shadow-sm text-center">
+                          <div className="text-6xl mb-4">❓</div>
+                          <h2 className="text-2xl font-semibold text-[#1E1A14] mb-4">Quiz Preview</h2>
+                          <p className="text-[#7A7268] mb-6">
+                            Deze quiz bevat {blocks.length} vragen{currentQuiz.minPassingScore && ` met een minimale slagingsscore van ${currentQuiz.minPassingScore}%`}.
+                          </p>
+                          <div className="flex justify-center gap-4">
+                            <button className="px-6 py-3 bg-[#C4A265] text-white rounded-lg font-medium">
+                              Start Quiz
+                            </button>
+                            <button className="px-6 py-3 border border-[#C4A265] text-[#C4A265] rounded-lg font-medium">
+                              Oefenen
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
