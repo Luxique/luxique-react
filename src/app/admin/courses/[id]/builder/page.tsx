@@ -216,7 +216,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   // Preview state
   const [previewWidth, setPreviewWidth] = useState(420)
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
-  const [heroUploadSuccess, setHeroUploadSuccess] = useState(false)
+  const heroVideoInputRef = useRef<HTMLInputElement>(null)
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -771,91 +771,77 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               </div>
               <div>
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Hero video</label>
+                <input
+                  ref={heroVideoInputRef}
+                  type="file"
+                  accept="video/*"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setVideoUploading(true)
+                    setVideoUploadProgress(0)
+                    try {
+                      const res = await fetch('/api/mux/upload-url', { method: 'POST' })
+                      const { upload_url, upload_id } = await res.json()
+                      await new Promise<void>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest()
+                        xhr.upload.onprogress = (ev) => {
+                          if (ev.lengthComputable) setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 100))
+                        }
+                        xhr.onload = () => resolve()
+                        xhr.onerror = () => reject(new Error('Upload failed'))
+                        xhr.open('PUT', upload_url)
+                        xhr.setRequestHeader('Content-Type', file.type)
+                        xhr.send(file)
+                      })
+                      let attempts = 0
+                      while (attempts < 30) {
+                        await new Promise(r => setTimeout(r, 2000))
+                        const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
+                        const { status, asset_id, playback_id } = await statusRes.json()
+                        if (status === 'ready' && playback_id) {
+                          updateCourseField('heroMuxPlaybackId', playback_id)
+                          updateCourseField('heroMuxAssetId', asset_id)
+                          break
+                        }
+                        attempts++
+                      }
+                      if (attempts >= 30) alert('Video verwerking duurt te lang.')
+                    } catch (err) {
+                      console.error('Hero upload error:', err)
+                      alert('Upload mislukt.')
+                    } finally {
+                      setVideoUploading(false)
+                    }
+                  }}
+                />
                 {course?.heroMuxPlaybackId ? (
-                  <div className="space-y-2">
-                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden">
-                      <MuxPlayer
-                        playbackId={course.heroMuxPlaybackId}
-                        metadata={{ video_title: course.title || 'Hero video' }}
-                        style={{ width: '100%', height: '100%' }}
-                      />
+                  <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
+                    <MuxPlayer
+                      playbackId={course.heroMuxPlaybackId}
+                      streamType="on-demand"
+                      style={{ width: '100%', aspectRatio: '16/9' }}
+                    />
+                  </div>
+                ) : videoUploading ? (
+                  <div style={{ padding: 20, textAlign: 'center' }}>
+                    <div style={{ width: '100%', height: 4, background: '#F0EDE6', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ width: `${videoUploadProgress}%`, height: '100%', background: '#C4A265', transition: 'width 0.3s' }} />
                     </div>
-                    <button
-                      onClick={() => { updateCourseField('heroMuxPlaybackId', undefined); updateCourseField('heroMuxAssetId', undefined) }}
-                      className="text-[10px] text-red-400 hover:text-red-600 transition"
-                    >Video verwijderen</button>
+                    <p style={{ fontSize: 11, color: '#7A7268', marginTop: 8 }}>{videoUploadProgress}% — video wordt verwerkt...</p>
                   </div>
                 ) : (
-                  <div>
-                    <input
-                      type="file"
-                      accept="video/*"
-                      id="hero-video-upload"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]
-                        if (!file) return
-                        setVideoUploading(true)
-                        setVideoUploadProgress(0)
-                        try {
-                          const res = await fetch('/api/mux/upload-url', { method: 'POST' })
-                          const { upload_url, upload_id } = await res.json()
-                          await new Promise<void>((resolve, reject) => {
-                            const xhr = new XMLHttpRequest()
-                            xhr.upload.onprogress = (ev) => {
-                              if (ev.lengthComputable) setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 100))
-                            }
-                            xhr.onload = () => resolve()
-                            xhr.onerror = () => reject(new Error('Upload failed'))
-                            xhr.open('PUT', upload_url)
-                            xhr.setRequestHeader('Content-Type', file.type)
-                            xhr.send(file)
-                          })
-                          let attempts = 0
-                          while (attempts < 30) {
-                            await new Promise(r => setTimeout(r, 2000))
-                            const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
-                            const { status, asset_id, playback_id } = await statusRes.json()
-                            if (status === 'ready' && playback_id) {
-                              console.log('[HERO VIDEO UPLOAD] Asset ready:', { asset_id, playback_id })
-                              updateCourseField('heroMuxPlaybackId', playback_id)
-                              updateCourseField('heroMuxAssetId', asset_id)
-                              setHeroUploadSuccess(true)
-                              setTimeout(() => setHeroUploadSuccess(false), 3000) // Hide success indicator after 3 seconds
-                              break
-                            }
-                            attempts++
-                          }
-                          if (attempts >= 30) alert('Video verwerking duurt te lang. Probeer opnieuw.')
-                        } catch (err) {
-                          console.error('Hero upload error:', err)
-                          alert('Upload mislukt.')
-                        } finally {
-                          setVideoUploading(false)
-                        }
-                      }}
-                    />
-                    {heroUploadSuccess && (
-                      <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-[11px] text-green-700 font-medium">Video geüpload ✓</span>
-                      </div>
-                    )}
-                    {videoUploading ? (
-                      <div className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-3 p-4">
-                        <div className="w-3/4 h-[3px] bg-[rgba(26,24,21,0.08)] rounded-full overflow-hidden">
-                          <div style={{ width: `${videoUploadProgress}%`, height: '100%', background: '#C4A265', transition: 'width 0.3s' }} />
-                        </div>
-                        <span className="text-[10.5px] text-[#7A7268]">{videoUploadProgress}% — video wordt verwerkt...</span>
-                      </div>
-                    ) : (
-                      <label htmlFor="hero-video-upload" className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-[1.5px] border-dashed border-[rgba(26,24,21,0.12)] cursor-pointer hover:border-[#C4A265] transition">
-                        <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden</span>
-                        <span className="text-[10.5px] text-[rgba(26,24,21,0.3)] font-light">MP4, MOV — max 500MB</span>
-                      </label>
-                    )}
+                  <div
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); heroVideoInputRef.current?.click() }}
+                    style={{ cursor: 'pointer' }}
+                    className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] hover:bg-[rgba(196,162,101,0.04)] hover:border-[rgba(196,162,101,0.3)] transition"
+                  >
+                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.4 }}>
+                      <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                    </svg>
+                    <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden via Mux</span>
+                    <span className="text-[10.5px] text-[rgba(30,26,20,0.3)] font-light">MP4, MOV of MKV · klik om te kiezen</span>
                   </div>
                 )}
               </div>
