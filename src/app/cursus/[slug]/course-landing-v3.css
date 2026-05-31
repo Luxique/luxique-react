@@ -217,13 +217,12 @@
   /* === HERO BOX (CreateSell style) === */
   .hero-box {
     margin: -14px 14px 0;
-    padding: 28px 40px 4px;
-    height: calc(100svh - 52px - 14px - 14px);
-    max-height: calc(100svh - 52px - 14px - 14px);
-    max-height: calc(100svh - 80px - 14px - 14px);
+    padding: 20px 40px 8px;
+    height: calc(100svh - 66px - 14px);
+    max-height: calc(100svh - 66px - 14px);
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     border: 1px solid var(--border-soft);
     background: radial-gradient(ellipse at top, rgba(196, 162, 101, 0.14) 0%, transparent 50%),
