@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Review } from '@/lib/reviews'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
+import AmbientGlow from '@/components/AmbientGlow'
 // CRITICAL: do not remove — course landing styles. If missing = unstyled page.
 import './course-landing-v3.css'
 
@@ -145,7 +146,9 @@ function HeroSection({ course }: { course: Course }) {
   const titleParts = heroAccent ? heroTitle.split(heroAccent) : [heroTitle]
 
   return (
-    <section className="hero-box">
+    <section className="hero-box section-glow-wrap">
+      <AmbientGlow color="gold" position="top-left" intensity="medium" />
+      <AmbientGlow color="green" position="bottom-right" intensity="subtle" />
       <div className="hero-content">
         {course.hero_badge_text && (
           <span className="badge-top">
@@ -262,7 +265,9 @@ function DifferentiatorsSection({ course }: { course: Course }) {
   }
 
   return (
-    <section className="section">
+    <section className="section section-glow-wrap">
+      <AmbientGlow color="green" position="top-right" intensity="subtle" grain />
+      <AmbientGlow color="gold" position="bottom-left" intensity="subtle" />
       <div className="container">
         <div className="sec-head">
           {course.differentiators_eyebrow && (

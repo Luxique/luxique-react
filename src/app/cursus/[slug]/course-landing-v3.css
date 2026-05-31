@@ -850,3 +850,143 @@
     .hero-box h1 { font-size: 36px; }
     .about-quote { font-size: 16px; }
   }
+
+/* ═══════════════════════════════════════
+   AMBIENT GLOW + PARTICLE SYSTEM
+   ═══════════════════════════════════════ */
+
+.ambient-glow {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/* ── Position variants ── */
+.glow-top-left {
+  top: -20%;
+  left: -20%;
+  width: 70%;
+  height: 70%;
+}
+.glow-top-right {
+  top: -20%;
+  right: -20%;
+  width: 70%;
+  height: 70%;
+}
+.glow-bottom-left {
+  bottom: -20%;
+  left: -20%;
+  width: 70%;
+  height: 70%;
+}
+.glow-bottom-right {
+  bottom: -20%;
+  right: -20%;
+  width: 70%;
+  height: 70%;
+}
+.glow-top-center {
+  top: -25%;
+  left: 15%;
+  width: 70%;
+  height: 60%;
+}
+.glow-bottom-center {
+  bottom: -25%;
+  left: 15%;
+  width: 70%;
+  height: 60%;
+}
+
+/* ── Color variants ── */
+.glow-gold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(196,162,101,0.25) 0%, transparent 70%);
+  filter: blur(60px);
+  mix-blend-mode: screen;
+}
+.glow-green::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(20,54,40,0.30) 0%, transparent 70%);
+  filter: blur(60px);
+  mix-blend-mode: screen;
+}
+.glow-both::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(196,162,101,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 60%, rgba(20,54,40,0.25) 0%, transparent 60%);
+  filter: blur(60px);
+  mix-blend-mode: screen;
+}
+
+/* ── Intensity variants ── */
+.glow-subtle::before { opacity: 0.35; }
+.glow-medium::before { opacity: 0.6; }
+.glow-strong::before { opacity: 0.85; }
+
+/* ── Drift animations (slow, luxurious) ── */
+.glow-top-left::before { animation: glowDrift1 28s ease-in-out infinite alternate; }
+.glow-top-right::before { animation: glowDrift2 34s ease-in-out infinite alternate; }
+.glow-bottom-left::before { animation: glowDrift3 24s ease-in-out infinite alternate; }
+.glow-bottom-right::before { animation: glowDrift4 30s ease-in-out infinite alternate; }
+.glow-top-center::before { animation: glowDrift5 26s ease-in-out infinite alternate; }
+.glow-bottom-center::before { animation: glowDrift6 32s ease-in-out infinite alternate; }
+
+@keyframes glowDrift1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(8%, 6%) scale(1.08); }
+}
+@keyframes glowDrift2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-6%, 8%) scale(1.05); }
+}
+@keyframes glowDrift3 {
+  0% { transform: translate(0, 0) scale(1.02); }
+  100% { transform: translate(5%, -7%) scale(1.06); }
+}
+@keyframes glowDrift4 {
+  0% { transform: translate(0, 0) scale(1.03); }
+  100% { transform: translate(-7%, 5%) scale(1.04); }
+}
+@keyframes glowDrift5 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(3%, 6%) scale(1.07); }
+}
+@keyframes glowDrift6 {
+  0% { transform: translate(0, 0) scale(1.01); }
+  100% { transform: translate(-4%, -5%) scale(1.05); }
+}
+
+/* ── Grain/particle layer ── */
+.grain-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* ── prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-glow::before { animation: none !important; }
+  .gradient-bg, .gradient-bg-2, .gradient-bg-3 { animation: none !important; }
+}
+
+/* ── Section containers: allow glow positioning ── */
+.section-glow-wrap {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
