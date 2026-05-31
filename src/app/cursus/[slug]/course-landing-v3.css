@@ -1163,3 +1163,113 @@
   z-index: 2;
   animation: hotspot 9s ease-in-out infinite alternate;
 }
+
+/* ═══════════════════════════════════════
+   MINI REVIEWS — replaces logos-bar
+   ═══════════════════════════════════════ */
+
+.mini-reviews-section {
+  position: relative;
+  padding: 20px 0 60px;
+  overflow: hidden;
+}
+
+.mini-reviews-track {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (max-width: 768px) {
+  .mini-reviews-track {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 0 16px;
+  }
+}
+
+.mini-review-card {
+  background: rgba(20,17,12,0.7);
+  border: 1px solid rgba(196,162,101,0.12);
+  border-radius: 14px;
+  padding: 18px 16px;
+  backdrop-filter: blur(12px);
+  animation: miniFloat 6s ease-in-out var(--delay, 0s) infinite alternate;
+  transition: transform 0.3s, border-color 0.3s;
+}
+
+.mini-review-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(196,162,101,0.25);
+}
+
+@keyframes miniFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+.mini-review-stars {
+  color: #C4A265;
+  font-size: 12px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.mini-review-text {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(250,248,244,0.75);
+  font-weight: 300;
+  margin-bottom: 12px;
+}
+
+.mini-review-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-review-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.mini-review-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(250,248,244,0.6);
+}
+
+.mini-review-source {
+  font-size: 9px;
+  color: rgba(250,248,244,0.35);
+  margin-left: auto;
+  text-transform: capitalize;
+}
+
+/* Bottom fade overlay */
+.mini-reviews-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(transparent, var(--bg, #0C0A07));
+  pointer-events: none;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-review-card { animation: none !important; }
+}

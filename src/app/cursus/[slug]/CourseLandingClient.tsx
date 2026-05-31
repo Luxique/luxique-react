@@ -87,7 +87,7 @@ export default function CourseLandingClient({
       <HeroSection course={course} />
       
       {/* Social Proof Logos */}
-      <SocialProofLogos />
+      <MiniReviews reviews={reviews} />
       
       {/* Differentiators */}
       <DifferentiatorsSection course={course} />
@@ -242,19 +242,28 @@ function HeroMedia({ _course }: { _course: Course }) {
 }
 
 // Social Proof Logos Component
-function SocialProofLogos() {
+function MiniReviews({ reviews }: { reviews: Review[] }) {
+  // Pick 6 diverse reviews (mix of sources, short ones)
+  const miniReviews = reviews
+    .filter(r => r.text.length < 200)
+    .slice(0, 6)
+
   return (
-    <section className="logos-bar">
-      <div className="container">
-        <div className="logos-label">— Vertrouwd door artists in heel Nederland —</div>
-        <div className="logos-inner">
-          <span className="logo-pill">Bella Lashes</span>
-          <span className="logo-pill">Studio Vink</span>
-          <span className="logo-pill">Lash Atelier</span>
-          <span className="logo-pill">M. Beauty</span>
-          <span className="logo-pill">Eye Couture</span>
-        </div>
+    <section className="mini-reviews-section">
+      <div className="mini-reviews-track">
+        {miniReviews.map((r, i) => (
+          <div key={i} className="mini-review-card" style={{ '--delay': `${i * 0.15}s` } as React.CSSProperties}>
+            <div className="mini-review-stars">{'★'.repeat(r.stars)}</div>
+            <p className="mini-review-text">&ldquo;{r.text.length > 100 ? r.text.slice(0, 97) + '...' : r.text}&rdquo;</p>
+            <div className="mini-review-author">
+              <span className="mini-review-avatar" style={{ background: r.color }}>{r.initials}</span>
+              <span className="mini-review-name">{r.name}</span>
+              <span className="mini-review-source">{r.source === 'google' ? '🔍' : '💇'} {r.source}</span>
+            </div>
+          </div>
+        ))}
       </div>
+      <div className="mini-reviews-fade" />
     </section>
   )
 }
