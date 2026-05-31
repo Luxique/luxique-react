@@ -87,7 +87,6 @@ export default function CourseLandingClient({
       <HeroSection course={course} />
       
       {/* Social Proof Logos */}
-      <MiniReviews reviews={reviews} />
       
       {/* Differentiators */}
       <DifferentiatorsSection course={course} />
@@ -109,7 +108,6 @@ export default function CourseLandingClient({
       />
       
       {/* Reviews */}
-      <ReviewsSection course={course} reviews={reviews} />
       
       {/* Mini Reviews Wall */}
       <MiniReviewsWall reviews={reviews} />
@@ -245,33 +243,6 @@ function HeroMedia({ _course }: { _course: Course }) {
 }
 
 // Social Proof Logos Component
-function MiniReviews({ reviews }: { reviews: Review[] }) {
-  // Pick 6 diverse reviews (mix of sources, short ones)
-  const miniReviews = reviews
-    .filter(r => r.text.length < 200)
-    .slice(0, 6)
-
-  return (
-    <section className="mini-reviews-section">
-      <div className="mini-reviews-track">
-        {miniReviews.map((r, i) => (
-          <div key={i} className="mini-review-card" style={{ '--delay': `${i * 0.15}s` } as React.CSSProperties}>
-            <div className="mini-review-stars">{'★'.repeat(r.stars)}</div>
-            <p className="mini-review-text">&ldquo;{r.text.length > 100 ? r.text.slice(0, 97) + '...' : r.text}&rdquo;</p>
-            <div className="mini-review-author">
-              <span className="mini-review-avatar" style={{ background: r.color }}>{r.initials}</span>
-              <span className="mini-review-name">{r.name}</span>
-              <span className="mini-review-source">{r.source === 'google' ? '🔍' : '💇'} {r.source}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mini-reviews-fade" />
-    </section>
-  )
-}
-
-// Differentiators Section Component
 function DifferentiatorsSection({ course }: { course: Course }) {
   if (!course.differentiators || course.differentiators.length === 0) {
     return null
@@ -381,52 +352,6 @@ function CurriculumSection({
 }
 
 // Reviews Section Component
-function ReviewsSection({ course, reviews = [] }: { course: Course; reviews?: Review[] }) {
-  // Get 6 newest reviews (sorted by date logic - using first 6 for now)
-  const displayReviews = reviews.slice(0, 6)
-
-  return (
-    <section className="section">
-      <div className="container">
-        <div className="sec-head">
-          {course.reviews_eyebrow && (
-            <span className="eyebrow">— {course.reviews_eyebrow} —</span>
-          )}
-          <h2>
-            Verhalen van<br />onze <span className="serif-accent">artists</span>
-          </h2>
-        </div>
-        
-        <div className="test-grid">
-          {displayReviews.map((review, index) => (
-            <div key={index} className="test-card">
-              <div className="test-stars">
-                {'★'.repeat(review.stars)}
-              </div>
-              <blockquote>
-                {review.text.length > 150 
-                  ? `${review.text.substring(0, 150)}...` 
-                  : review.text
-                }
-              </blockquote>
-              <div className="test-author">
-                <div className="test-avatar" style={{ background: review.color }}>
-                  {review.initials}
-                </div>
-                <div>
-                  <div className="name">{review.name}</div>
-                  <div className="role">Lash Artist</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// Pricing Section Component
 function PricingSection({ course }: { course: Course }) {
   if (!course.price_cents) {
     return null
@@ -587,7 +512,8 @@ function FinalCTASection({ course }: { course: Course }) {
 
 // Sticky CTA Component
 
-// Mini Reviews Wall Component
+// Footer Component
+
 function MiniReviewsWall({ reviews }: { reviews: Review[] }) {
   const cols = [[], [], []] as Review[][]
   reviews.forEach((r, i) => cols[i % 3].push(r))
