@@ -217,7 +217,7 @@
   /* === HERO BOX (CreateSell style) === */
   .hero-box {
     margin: -14px 14px 0;
-    padding: 28px 40px 16px;
+    padding: 28px 40px 4px;
     height: calc(100svh - 52px - 14px - 14px);
     max-height: calc(100svh - 52px - 14px - 14px);
     max-height: calc(100svh - 80px - 14px - 14px);
