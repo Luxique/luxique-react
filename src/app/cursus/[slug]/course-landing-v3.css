@@ -217,7 +217,7 @@
   /* === HERO BOX (CreateSell style) === */
   .hero-box {
     margin: -14px 14px 0;
-    padding: 20px 40px 8px;
+    padding: 24px 40px 70px;
     height: calc(100svh - 66px - 14px);
     max-height: calc(100svh - 66px - 14px);
     display: flex;
@@ -362,11 +362,11 @@
 
   /* CTA row */
   .cta-row {
-    margin-top: 2px;
+    margin-top: 16px;
     display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
   }
   .price-meta {
-    margin-top: 4px;
+    margin-top: 6px;
     color: var(--cream-mute);
     font-size: 12px;
     letter-spacing: 0.05em;
