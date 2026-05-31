@@ -19,13 +19,15 @@ export async function POST(request: NextRequest) {
 
     const { data: course } = await supabase
       .from('courses')
-      .select('title, price, stripe_price_id')
+      .select('title, price_cents, stripe_price_id')
       .eq('id', course_id)
       .single()
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
+
+    const unitAmount = course.price_cents || 199700
 
     const session = await stripe.checkout.sessions.create({
       customer_email: email,
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
             price_data: {
               currency: 'eur',
               product_data: { name: `LXQ Academy — ${course.title}` },
-              unit_amount: Math.round((course.price || 0) * 100),
+              unit_amount: unitAmount,
             },
             quantity: 1,
           }],

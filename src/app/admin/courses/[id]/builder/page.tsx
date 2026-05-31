@@ -107,6 +107,7 @@ interface Course {
   whatYouLearn?: string[]
   whoIsItFor?: string
   priceCents?: number
+  stripePriceId?: string
   level?: string
   galleryUrls?: string[]
   firstLessonFree?: boolean
@@ -380,9 +381,33 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const publishCourse = async () => {
     if (!course) return
     await saveCourse()
+
+    // Stripe Price sync: create a Stripe Price if none exists
+    let stripePriceId = course.stripePriceId
+    if (!stripePriceId && course.priceCents) {
+      try {
+        const res = await fetch('/api/stripe/create-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            course_id: course.id,
+            price_cents: course.priceCents,
+            title: course.title,
+          }),
+        })
+        const data = await res.json()
+        if (data.stripe_price_id) stripePriceId = data.stripe_price_id
+      } catch (e) {
+        console.error('Stripe price creation failed:', e)
+      }
+    }
+
+    const updatePayload: Record<string, unknown> = { status: 'published', is_published: true }
+    if (stripePriceId) updatePayload.stripe_price_id = stripePriceId
+
     const { error } = await supabase
       .from('courses')
-      .update({ status: 'published' })
+      .update(updatePayload)
       .eq('id', course.id)
     if (error) { alert('Fout bij publiceren'); return }
     alert('Cursus gepubliceerd! Zichtbaar op de academy pagina.')
@@ -458,6 +483,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         whatYouLearn: courseData.what_you_learn || [],
         whoIsItFor: courseData.who_is_it_for || undefined,
         priceCents: courseData.price_cents || 0,
+        stripePriceId: courseData.stripe_price_id || undefined,
         level: courseData.level || 'beginner',
         galleryUrls: courseData.gallery_urls || [],
         firstLessonFree: courseData.first_lesson_free || false,
