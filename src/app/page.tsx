@@ -9,10 +9,12 @@ import ComparisonTable from '@/components/ComparisonTable'
 import AcademyHomeSection from '@/components/AcademyHomeSection'
 import ReviewsSection from '@/components/ReviewsSection'
 import FAQ from '@/components/FAQ'
+import EmailConfirmHandler from '@/components/EmailConfirmHandler'
 
 export default function Home() {
   return (
     <div className="bg-[#F3EEE6] min-h-screen">
+    <EmailConfirmHandler />
     <>
       <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#F3EEE6] overflow-hidden">
         <Hero />
