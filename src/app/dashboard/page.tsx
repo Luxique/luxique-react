@@ -14,6 +14,17 @@ export default function DashboardPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'academy' | 'treatments'>('overview')
+  const [profileFirstName, setProfileFirstName] = useState<string>('')
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('profiles')
+      .select('first_name')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => setProfileFirstName(data?.first_name || ''))
+  }, [user])
 
   useEffect(() => {
     if (!loading && !user) router.push('/login?redirect=/dashboard')
@@ -49,7 +60,7 @@ export default function DashboardPage() {
     )
   }
 
-  const firstName = user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || ''
+  const firstName = profileFirstName || user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || ''
 
   const tabs = [
     { key: 'overview' as const, label: 'Overzicht' },

@@ -312,3 +312,69 @@ Volgorde:
 ---
 
 *Einde handoff. Bij twijfel over schema: verifieer tegen information_schema voordat je query't. Bij twijfel over architectuur: content is data, structuur is code. Werk gefaseerd, push klein, laat CJ checken.*
+
+---
+
+## 8. B4 — KOOP-EN-TOEGANG-FLOW (mei/juni 2026)
+
+### Status per component
+
+**B4.1 — Publish Fix ✅**
+- `publishCourse()` in builder zet nu `status: 'published'` + `is_published: true` tegelijk
+- Bestand: `src/app/admin/courses/[id]/builder/page.tsx`
+
+**B4.2 — Stripe Price Sync ✅**
+- Nieuw: `src/app/api/stripe/create-price/route.ts`
+- Bij publish: als geen `stripe_price_id` → auto-create Stripe Price
+- Checkout route gebruikt nu `price_cents` (199700) ipv foute `price` kolom (1200.0)
+- Stripe staat op **LIVE keys** (`sk_live_`/`pk_live_`)
+
+**B4.3 — Auth Modal ✅**
+- Nieuw: `src/components/AuthModal.tsx`
+- Email + wachtwoord (Supabase Auth) — volledig werkend
+- Google + Apple knoppen — klaar, nette error als provider niet geconfigureerd
+- Les-klik / CTA-klik zonder login → modal opent
+- Styling: gold/cream/dark glassmorphism
+
+**B4.4 — Checkout (tot betaalscherm) ✅**
+- Ingelogd + "Join the Academy" → `/api/checkout` → Stripe betaalscherm (€1997)
+- success_url: `/cursus/{slug}?enrolled=1`
+- cancel_url: `/cursus/{slug}?canceled=1`
+
+**B4.5 — Webhook → Enrollment (logica klaar, secret nog leeg) ✅**
+- `src/app/api/webhooks/stripe/route.ts` — vult echt schema met idempotency
+- Kolommen: status='active', payment_method='stripe', stripe_payment_intent_id, paid_amount_cents, etc.
+- **STRIPE_WEBHOOK_SECRET is leeg in .env.local** — signature verificatie faalt
+- CJ moet: Stripe Dashboard → Developers → Webhooks → Add endpoint → URL `https://www.luxique.nl/api/webhooks/stripe`, event `checkout.session.completed` → signing secret in env
+
+**B4.6 — Access Gating + Mux Signed (code klaar, niet live) ✅**
+- Nieuw: `src/app/api/enrollments/check/route.ts`
+- Les-toegang: gratis → altijd, betaald → enrollment check
+- Mux upload: betaald → `signed`, gratis → `public`
+- `src/app/api/mux/playback-token/route.ts` — enrollment check voor signed tokens
+- `src/components/LuxiqueMuxPlayer.tsx` — signed token support
+- Migratie-script: `scripts/mux-migrate-to-signed.ts` — **NOG NIET GEDRAAID** (wacht op access-test)
+- Mux signing keys in `.env.local` + Vercel: `MUX_SIGNING_KEY_ID`, `MUX_SIGNING_PRIVATE_KEY`
+
+### Geparkeerd (wacht op Chiva/Stripe)
+- STRIPE_WEBHOOK_SECRET invullen + endpoint registreren
+- Eerste betaaltest (LIVE keys — geen test keys beschikbaar, Chiva op vakantie/2FA)
+- Mux migratie-script draaien (flip betaalde assets naar signed)
+
+### Rollen & Access
+- Alleen `student` (role_level 0, default) en `admin` (role_level 100)
+- Access-gating: kijkt naar `is_enrolled(course_id)` (enrollments tabel) + `is_admin()` (role_level >= 100)
+- NIET naar de role-kolom zelf
+
+### 🔴 OPEN BUG — Signup "Database error saving new user"
+- **Symptoom:** elke signup (nieuw email) faalt met "Database error saving new user"
+- **Al geprobeerd:**
+  1. ✅ Trigger `handle_new_user()` geüpdatet: vult nu `email`, `role='student'`, `role_level=0` (was alleen id + role_level)
+  2. ✅ FK `profiles_id_fkey` gedropt (verwees naar niet-bestaande `users` tabel)
+- **MAAR fout blijft** — derde oorzaak onbekend
+- **Volgende stap (NA compact):**
+  - Letterlijke fout uit Supabase Postgres/Auth logs ophalen
+  - Verifiëren: `SELECT conname, confrelid::regclass FROM pg_constraint WHERE conrelid = 'profiles'::regclass;`
+  - Verifiëren: `SELECT tgname, tgrelid::regclass, tgenabled FROM pg_trigger WHERE tgname LIKE '%new_user%';`
+  - Check op meer NOT NULL kolommen zonder default
+  - Check op tweede trigger of check-constraint

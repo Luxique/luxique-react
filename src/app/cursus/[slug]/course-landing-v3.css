@@ -1428,3 +1428,66 @@
 @media (prefers-reduced-motion: reduce) {
   .rw-col-inner { animation: none !important; }
 }
+
+/* Enrollment Success Banner */
+.enroll-success-banner {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  width: min(480px, calc(100% - 28px));
+  animation: slideDown 0.4s ease-out;
+}
+.enroll-success-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(26, 22, 18, 0.95);
+  border: 1px solid rgba(196, 162, 101, 0.3);
+  border-radius: 14px;
+  padding: 18px 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.enroll-success-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C4A265, #a8893f);
+  color: #0A0807;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.enroll-success-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: #FAF8F4;
+  margin: 0;
+}
+.enroll-success-sub {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  color: rgba(250, 248, 244, 0.5);
+  margin: 2px 0 0;
+}
+.enroll-success-close {
+  background: none;
+  border: none;
+  color: rgba(250, 248, 244, 0.3);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+.enroll-success-close:hover { color: #FAF8F4; }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

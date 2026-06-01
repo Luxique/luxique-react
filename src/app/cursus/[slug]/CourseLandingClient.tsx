@@ -76,6 +76,8 @@ export default function CourseLandingClient({
   const [user, setUser] = useState<{ id: string; email: string } | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [enrolled, setEnrolled] = useState(false)
+  const [showEnrollSuccess, setShowEnrollSuccess] = useState(false)
+  const [profileFirstName, setProfileFirstName] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -94,7 +96,21 @@ export default function CourseLandingClient({
         setEnrolled(data.enrolled === true)
       })
       .catch(() => {})
+    // Fetch profile name
+    supabase.from('profiles').select('first_name').eq('id', user.id).single()
+      .then(({ data }) => { if (data?.first_name) setProfileFirstName(data.first_name) })
   }, [user, course.id])
+
+  // Enrollment success from Stripe redirect
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('enrolled') === '1') {
+        setShowEnrollSuccess(true)
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    }
+  }, [])
 
   const handleAuthSuccess = (u: { id: string; email: string }) => {
     setUser(u)
@@ -156,8 +172,22 @@ export default function CourseLandingClient({
       {!previewMode && <div className="gradient-bg" />}
       {!previewMode && <div className="gradient-bg-2" />}
       {!previewMode && <div className="gradient-bg-3" />}
-      
-      {/* Hero Section */}
+
+      {/* Enrollment Success Banner */}
+      {showEnrollSuccess && (
+        <div className="enroll-success-banner">
+          <div className="enroll-success-content">
+            <span className="enroll-success-icon">✓</span>
+            <div>
+              <p className="enroll-success-title">
+                {profileFirstName ? `Hey ${profileFirstName},` : 'Geweldig,'} welkom bij de Academy!
+              </p>
+              <p className="enroll-success-sub">Je bent ingeschreven. Start nu met je eerste les.</p>
+            </div>
+            <button className="enroll-success-close" onClick={() => setShowEnrollSuccess(false)}>✕</button>
+          </div>
+        </div>
+      )}
       <HeroSection course={course} />
       
       {/* Social Proof Logos */}

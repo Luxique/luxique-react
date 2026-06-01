@@ -13,9 +13,20 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
   const [tab, setTab] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+
+  const getPasswordStrength = (pw: string): { valid: boolean; hint: string } => {
+    if (pw.length === 0) return { valid: false, hint: '' }
+    if (pw.length < 8) return { valid: false, hint: 'Minimaal 8 tekens nodig' }
+    const hasLetter = /[a-zA-Z]/.test(pw)
+    const hasNumber = /[0-9]/.test(pw)
+    if (!hasLetter || !hasNumber) return { valid: false, hint: 'Gebruik letters én cijfers' }
+    return { valid: true, hint: 'Wachtwoord sterk genoeg ✓' }
+  }
 
   if (!open) return null
 
@@ -33,6 +44,22 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           onAuthSuccess({ id: data.user.id, email: data.user.email ?? email })
         }
       } else {
+        // Registration validations
+        if (!getPasswordStrength(password).valid) {
+          setError('Wachtwoord is niet sterk genoeg.')
+          setLoading(false)
+          return
+        }
+        if (password !== confirmPassword) {
+          setError('Wachtwoorden komen niet overeen.')
+          setLoading(false)
+          return
+        }
+        if (!termsAccepted) {
+          setError('Je moet akkoord gaan met de voorwaarden.')
+          setLoading(false)
+          return
+        }
         const { data, error: err } = await supabase.auth.signUp({ email, password })
         if (err) throw err
         if (data.user) {
@@ -63,11 +90,15 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
     }
   }
 
+  const pwStrength = getPasswordStrength(password)
+
   const close = () => {
     setError(null)
     setMessage(null)
     setEmail('')
     setPassword('')
+    setConfirmPassword('')
+    setTermsAccepted(false)
     onClose()
   }
 
@@ -137,11 +168,56 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
-              placeholder="Minimaal 6 tekens"
+              minLength={8}
+              placeholder="Minimaal 8 tekens, letters + cijfers"
               autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
             />
+            {tab === 'register' && password.length > 0 && (
+              <span className={`auth-pw-hint ${pwStrength.valid ? 'valid' : 'invalid'}`}>
+                {pwStrength.hint}
+              </span>
+            )}
           </label>
+
+          {tab === 'register' && (
+            <label className="auth-label">
+              Wachtwoord bevestigen
+              <input
+                type="password"
+                className={`auth-input ${confirmPassword && confirmPassword !== password ? 'input-error' : ''}`}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="Herhaal je wachtwoord"
+                autoComplete="new-password"
+              />
+              {confirmPassword && confirmPassword !== password && (
+                <span className="auth-pw-hint invalid">Wachtwoorden komen niet overeen</span>
+              )}
+            </label>
+          )}
+
+          {tab === 'register' && (
+            <label className="auth-checkbox-label">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="auth-checkbox"
+              />
+              <span>
+                Ik ga akkoord met de{' '}
+                <a href="/voorwaarden" target="_blank" rel="noopener noreferrer" className="auth-link">
+                  algemene voorwaarden
+                </a>{' '}
+                en{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="auth-link">
+                  privacyverklaring
+                </a>
+              </span>
+            </label>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
           {message && <div className="auth-message">{message}</div>}
@@ -335,6 +411,42 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
         }
         .auth-submit:hover:not(:disabled) { opacity: 0.9; }
         .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+        .auth-pw-hint {
+          font-family: 'Outfit', sans-serif;
+          font-size: 12px;
+          margin-top: 2px;
+        }
+        .auth-pw-hint.valid { color: #34A853; }
+        .auth-pw-hint.invalid { color: #fca5a5; }
+        .auth-input.input-error {
+          border-color: rgba(220, 38, 38, 0.4);
+        }
+        .auth-checkbox-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-family: 'Outfit', sans-serif;
+          font-size: 13px;
+          color: rgba(250, 248, 244, 0.6);
+          cursor: pointer;
+          line-height: 1.5;
+        }
+        .auth-checkbox {
+          accent-color: #C4A265;
+          width: 16px;
+          height: 16px;
+          margin-top: 2px;
+          flex-shrink: 0;
+          cursor: pointer;
+        }
+        .auth-link {
+          color: #C4A265;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+        .auth-link:hover {
+          color: #d4b87a;
+        }
       `}</style>
     </div>
   )

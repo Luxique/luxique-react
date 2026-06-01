@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       payment_intent?: string | { id: string }
       amount_total?: number
       currency?: string
+      customer_details?: { name?: string | null }
     }
 
     // Extract user_id from metadata or client_reference_id
@@ -100,6 +101,31 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Webhook: enrollment created', { user_id, course_id, amount: amount_total })
+
+    // Update profile name from Stripe checkout (if profile has no first_name yet)
+    const customerName = session.customer_details?.name
+    if (customerName && user_id) {
+      const nameParts = customerName.trim().split(/\s+/)
+      const first_name = nameParts[0] || null
+      const last_name = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null
+
+      if (first_name) {
+        // Only set name if not already set (don't overwrite user's chosen name)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('id', user_id)
+          .single()
+
+        if (profile && !profile.first_name) {
+          await supabase
+            .from('profiles')
+            .update({ first_name, last_name })
+            .eq('id', user_id)
+          console.log('Webhook: profile name updated from checkout', { user_id, first_name, last_name })
+        }
+      }
+    }
   }
 
   return NextResponse.json({ received: true })

@@ -141,15 +141,19 @@ CREATE POLICY "profiles_insert" ON profiles FOR INSERT TO authenticated WITH CHE
 -- 7. Signup trigger — auto-create profile with role_level=0
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
 BEGIN
-  INSERT INTO profiles (id, role_level, created_at)
-  VALUES (NEW.id, 0, now())
+  INSERT INTO public.profiles (id, email, role, role_level, created_at)
+  VALUES (NEW.id, NEW.email, 'student', 0, now())
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
