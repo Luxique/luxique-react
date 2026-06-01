@@ -58,7 +58,10 @@ export default function Navbar() {
           >
             Concept opslaan
           </button>
-          <button className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition cursor-pointer">
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('builder-publish'))}
+            className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition cursor-pointer"
+          >
             Publiceren →
           </button>
         </div>

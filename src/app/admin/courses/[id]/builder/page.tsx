@@ -464,8 +464,13 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     const handleSave = () => { saveCourse() }
+    const handlePublish = () => { publishCourse() }
     window.addEventListener('builder-save', handleSave)
-    return () => window.removeEventListener('builder-save', handleSave)
+    window.addEventListener('builder-publish', handlePublish)
+    return () => {
+      window.removeEventListener('builder-save', handleSave)
+      window.removeEventListener('builder-publish', handlePublish)
+    }
   }, [saveCourse])
 
   const loadCourse = async (id: string) => {
