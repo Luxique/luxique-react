@@ -8,12 +8,12 @@ import './course-interior.css'
 
 interface Lesson {
   id: string
-  name: string
+  title: string
   slug: string
   sort_order: number
   lesson_type: 'content' | 'quiz' | 'exam'
   duration_seconds?: number
-  free?: boolean
+  is_free?: boolean
 }
 
 interface Course {
@@ -52,7 +52,7 @@ export default function CourseInteriorPage() {
 
         const { data: lessons } = await supabase
           .from('lessons')
-          .select('id, name, slug, sort_order, lesson_type, duration_seconds, free')
+          .select('id, title, slug, sort_order, lesson_type, duration_seconds, is_free')
           .eq('course_id', data.id)
           .order('sort_order')
 
@@ -114,7 +114,7 @@ export default function CourseInteriorPage() {
   }
 
   const getLessonTitle = (lesson: Lesson) => {
-    return lesson.name || 'Naamloos'
+    return lesson.title || 'Naamloos'
   }
 
   if (loading || checkingEnrollment) {
@@ -192,7 +192,7 @@ export default function CourseInteriorPage() {
       <div className="ci-lessons">
         {lessons.map((lesson, index) => {
           const status = getLessonStatus(lesson, index)
-          const locked = !hasAccess && !lesson.free
+          const locked = !hasAccess && !lesson.is_free
           const isExam = lesson.lesson_type === 'exam'
           const isQuiz = lesson.lesson_type === 'quiz'
 
