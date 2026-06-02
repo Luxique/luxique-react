@@ -65,7 +65,9 @@ interface Block {
   url?: string
   caption?: string
   question?: string
-  options?: Array<{ id: string; text: string; correct: boolean }>
+  media?: { type: 'image' | 'video' | null; url: string } | null
+  option_type?: 'text' | 'image'
+  options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
   points?: number
   quizType?: 'intermediate' | 'final'
   autoplay?: boolean
@@ -726,8 +728,19 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     }
   }
 
+  const isQuizLesson = currentLesson?.lesson_type === 'quiz' || currentLesson?.lesson_type === 'exam'
+
+  const contentBlockTypes: BlockType[] = ['video', 'text', 'image', 'callout', 'download', 'divider']
+  const quizBlockTypes: BlockType[] = ['quiz']
+  const availableBlockTypes = isQuizLesson ? quizBlockTypes : contentBlockTypes
+
   const addBlock = (type: BlockType) => {
-    const newBlock: Block = { id: uid(), type }
+    const newBlock: Block = type === 'quiz'
+      ? { id: uid(), type, question: '', option_type: 'text', options: [
+          { id: uid(), text: '', image_url: '', correct: false },
+          { id: uid(), text: '', image_url: '', correct: false },
+        ] }
+      : { id: uid(), type }
     setBlocks([...blocks, newBlock])
     setPickerOpen(false)
   }
@@ -1995,7 +2008,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
-              Blok toevoegen
+              {isQuizLesson ? '+ Vraag toevoegen' : 'Blok toevoegen'}
             </button>
 
             {/* Block Picker Dropdown */}
@@ -2014,7 +2027,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                     width: 340
                   }}
                 >
-                {(['video', 'text', 'image', 'quiz', 'callout', 'download', 'divider'] as BlockType[]).map((type) => (
+                {(availableBlockTypes).map((type) => (
                   <button
                     key={type}
                     onClick={() => {

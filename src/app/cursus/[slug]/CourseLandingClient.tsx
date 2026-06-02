@@ -449,7 +449,7 @@ function CurriculumSection({
                   {String(lesson.sort_order + 1).padStart(2, '0')}
                 </div>
                 <div className="lesson-info">
-                  <h4>{lesson.title}</h4>
+                  <h4>{lesson.lesson_type === 'quiz' ? `Quiz: ${lesson.title}` : lesson.lesson_type === 'exam' ? `Eindtoets: ${lesson.title}` : lesson.title}</h4>
                   <div className="meta">
                     {lesson.lesson_type === 'quiz' ? 'Quiz' : lesson.lesson_type === 'exam' ? 'Eindtoets' : lesson.duration_seconds > 0 ? `${Math.round(lesson.duration_seconds / 60)} min · Video` : 'Video'}
                   </div>
