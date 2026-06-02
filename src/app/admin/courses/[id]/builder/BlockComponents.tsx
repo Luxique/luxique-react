@@ -157,7 +157,7 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
     onUpdate(block.id, { media: { type: 'image', url: publicUrl } })
   }
 
-  const checkSVG = <svg viewBox="0 0 100 100" width="12" height="12"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z" fill="#fff"/></svg>
+  const checkSVG = <svg viewBox="0 0 100 100" width="14" height="14"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z" fill="#fff"/></svg>
 
   return (
     <div style={{ border: '1px solid rgba(12,10,7,0.10)', borderRadius: 16, overflow: 'hidden' }}>
@@ -236,7 +236,8 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderTop: '1px solid rgba(12,10,7,0.10)' }}>
                     <span
                       onClick={() => toggleCorrect(i)}
-                      style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${opt.correct ? '#5E8463' : '#cfc8ba'}`, background: opt.correct ? '#5E8463' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}
+                      style={{ width: 24, height: 24, borderRadius: '50%', border: `2px solid ${opt.correct ? '#5E8463' : '#d8d2c6'}`, background: opt.correct ? '#5E8463' : '#F2EEE6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}
+                      title={opt.correct ? 'Juist antwoord (klik om uit te vinken)' : 'Klik = juist antwoord'}
                     >
                       <span style={{ opacity: opt.correct ? 1 : 0 }}>{checkSVG}</span>
                     </span>
@@ -270,7 +271,8 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
                 {/* Correct check */}
                 <span
                   onClick={() => toggleCorrect(i)}
-                  style={{ width: 26, height: 26, borderRadius: '50%', border: `2px solid ${opt.correct ? '#5E8463' : '#cfc8ba'}`, background: opt.correct ? '#5E8463' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}
+                  style={{ width: 28, height: 28, borderRadius: '50%', border: `2px solid ${opt.correct ? '#5E8463' : '#d8d2c6'}`, background: opt.correct ? '#5E8463' : '#F2EEE6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}
+                  title={opt.correct ? 'Juist antwoord (klik om uit te vinken)' : 'Klik = juist antwoord'}
                 >
                   <span style={{ opacity: opt.correct ? 1 : 0 }}>{checkSVG}</span>
                 </span>

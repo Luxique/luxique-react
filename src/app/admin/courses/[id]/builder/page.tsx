@@ -1434,6 +1434,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Les info</span>
             </div>
             <div className="space-y-3">
+              {currentLesson.lesson_type === 'content' && (
               <div>
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Lesnaam</label>
                 <input 
@@ -1444,6 +1445,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   placeholder="Naam van deze les"
                 />
               </div>
+              )}
               <div>
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Geschatte duur</label>
                 <div className="flex gap-2">
@@ -2152,7 +2154,10 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                         </div>
                         
                         <div className="space-y-6">
-                          {blocks.map((block) => (
+                          {blocks.filter(block => {
+                            const isQuiz = currentLesson.lesson_type === 'quiz' || currentLesson.lesson_type === 'exam'
+                            return isQuiz ? block.type === 'quiz' : block.type !== 'quiz'
+                          }).map((block) => (
                             <div key={block.id} className="bg-white rounded-lg p-6 shadow-sm">
                               {block.type === 'video' && typeof block.content === 'object' && block.content?.mux_playback_id && (
                                 <div className="aspect-video bg-black rounded-lg mb-4">
@@ -2176,6 +2181,47 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                                   )}
                                 </div>
                               )}
+                              {block.type === 'quiz' && (() => {
+                                const correctCount = (block.options || []).filter(o => o.correct).length
+                                const multiAnswer = correctCount > 1
+                                return (
+                                  <div style={{ background: '#0C0A07', borderRadius: 18, padding: '42px 38px', position: 'relative', overflow: 'hidden' }}>
+                                    <div style={{ position: 'absolute', top: '-30%', left: '50%', transform: 'translateX(-50%)', width: '80%', height: 320, background: 'radial-gradient(50% 60% at 50% 50%, rgba(196,162,101,0.16), transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+                                    <div style={{ position: 'relative', zIndex: 1 }}>
+                                      {/* Progress dots */}
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 30 }}>
+                                        {blocks.filter(b => b.type === 'quiz').map((_, qi) => (
+                                          <span key={qi} style={{ width: qi === blocks.indexOf(block) ? 22 : 7, height: 7, borderRadius: qi === blocks.indexOf(block) ? 4 : '50%', background: qi === blocks.indexOf(block) ? '#C4A265' : 'rgba(228,201,138,0.25)' }} />
+                                        ))}
+                                      </div>
+                                      <div style={{ textAlign: 'center', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: '#C4A265', marginBottom: 14 }}>
+                                        Vraag {blocks.filter(b => b.type === 'quiz').indexOf(block) + 1} van {blocks.filter(b => b.type === 'quiz').length}
+                                      </div>
+                                      <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#EDE7DB', textAlign: 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
+                                      <div style={{ textAlign: 'center', fontSize: 12, color: '#8C8579', fontStyle: 'italic', marginBottom: 30 }}>{multiAnswer ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}</div>
+                                      {(block.option_type || 'text') === 'image' ? (
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                                          {(block.options || []).map((opt, oi) => (
+                                            <div key={oi} style={{ border: '2px solid rgba(228,201,138,0.12)', borderRadius: 16, overflow: 'hidden', cursor: 'default', position: 'relative' }}>
+                                              <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#2a2218,#1a150e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? '' : '⛶'}</div>
+                                              <span style={{ position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#fff', background: opt.correct ? '#7BA081' : 'transparent', opacity: opt.correct ? 1 : 0 }}>{opt.correct ? '✓' : ''}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+                                          {(block.options || []).map((opt, oi) => (
+                                            <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', border: '1.5px solid rgba(228,201,138,0.12)', borderRadius: 14, background: 'rgba(255,255,255,0.02)' }}>
+                                              <span style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid rgba(228,201,138,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', color: '#E4C98A', fontSize: 15 }}>{String.fromCharCode(65 + oi)}</span>
+                                              <span style={{ flex: 1, fontSize: 16, color: '#EDE7DB' }}>{opt.text || `Optie ${String.fromCharCode(65 + oi)}`}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </div>
                           ))}
                         </div>
