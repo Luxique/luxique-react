@@ -121,7 +121,7 @@ export default function IsDitIetsVoorJou() {
       </div>
 
       <style jsx>{`
-        .vdj-section { position:relative; overflow:hidden; padding:100px 0 92px; background:radial-gradient(120% 80% at 50% 0%, #15110B, #0C0A07 60%); }
+        .vdj-section { position:relative; overflow:hidden; padding:100px 0 92px; }
 
         /* Ambient */
         .vdj-ambient { position:absolute; inset:0; pointer-events:none; overflow:hidden; }

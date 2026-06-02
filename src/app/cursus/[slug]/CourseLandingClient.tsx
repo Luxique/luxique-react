@@ -492,8 +492,9 @@ function PricingSection({ course, onJoin, user, lessons }: { course: Course; onJ
   const durationStr = totalMinutes > 0 ? [hoursLabel, minsLabel].filter(Boolean).join(' ') : ''
   const firstInclude = durationStr ? `${lessonCount} lessen · ${durationStr} video` : `${lessonCount} lessen`
 
-  const includesList = course.pricing_includes?.length ? course.pricing_includes : [
-    firstInclude,
+  const includesList = course.pricing_includes?.length
+    ? [firstInclude, ...course.pricing_includes.slice(1)]
+    : [
     'Persoonlijke feedback van Chiva',
     '12 maanden toegang & updates',
     'Certificaat bij afronding',

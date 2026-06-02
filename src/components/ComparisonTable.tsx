@@ -26,7 +26,7 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
   const isDark = theme === 'dark'
 
   return (
-    <section className={isDark ? 'comp-section comp-dark' : 'comp-section'}>
+    <section className={isDark ? 'comp-section' : 'comp-section'}>
       <div className="comp-page-width">
         <div className="comp-grid">
           <div className={isDark ? 'comp-content comp-content-dark' : 'comp-content'}>
@@ -88,7 +88,6 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
 
       <style jsx>{`
         .comp-section { position:relative; overflow:hidden; padding:90px 0 70px; }
-        .comp-dark { background:#0C0A07; }
         .comp-page-width { margin:0 auto; width:100%; max-width:1180px; padding:0 40px; }
         .comp-grid { display:grid; grid-template-columns:1fr 1.05fr; gap:64px; align-items:center; }
 
