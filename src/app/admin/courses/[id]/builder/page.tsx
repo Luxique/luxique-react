@@ -205,6 +205,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const [blocks, setBlocks] = useState<Block[]>([])
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
+  const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const addBlockButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -753,24 +754,28 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, ...updates } : b))
   }, [])
 
-  const addLesson = () => {
+  const addLesson = (type: 'content' | 'quiz' | 'exam' = 'content') => {
     if (!course) return
-    const defaultBlocks: Block[] = [
-      { id: uid(), type: 'text', title: '', subtitle: '', content: '' },
-      { id: uid(), type: 'video', autoplay: false, subtitles: false },
-      { id: uid(), type: 'text', title: '', subtitle: '', content: '' }
-    ]
+    const defaultBlocks: Block[] = type === 'content'
+      ? [
+          { id: uid(), type: 'text', title: '', subtitle: '', content: '' },
+          { id: uid(), type: 'video', autoplay: false, subtitles: false },
+          { id: uid(), type: 'text', title: '', subtitle: '', content: '' }
+        ]
+      : [] // quiz/exam get no default blocks — questions built in later step
     
+    const prefix = type === 'quiz' ? 'Quiz' : type === 'exam' ? 'Eindtoets' : `Les ${lessonNumber}`
     const newLesson: Lesson = {
       id: uid(),
       num: lessonNumber,
-      name: `Les ${lessonNumber}`,
+      name: prefix,
       free: false,
-      lesson_type: 'content',
+      lesson_type: type,
       reflectionQuestions: [],
       blocks: defaultBlocks
     }
     setLessonNumber(lessonNumber + 1)
+    setShowLessonTypeMenu(false)
     setCourse({
       ...course,
       lessons: [...(course.lessons || []), newLesson]
@@ -1458,18 +1463,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
                 </label>
               </div>
-              <div className="flex items-center justify-between mt-3">
-                <span className="text-[12px] font-light text-[#1E1A14]">Les type</span>
-                <select
-                  value={currentLesson.lesson_type || 'content'}
-                  onChange={(e) => updateLessonField('lesson_type', e.target.value)}
-                  className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] px-2 py-1 text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)] cursor-pointer"
-                >
-                  <option value="content">Content</option>
-                  <option value="quiz">Tussentijdse quiz</option>
-                  <option value="exam">Eindtoets</option>
-                </select>
-              </div>
             </div>
           </div>
           
@@ -1887,15 +1880,33 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               ))}
             </div>
             
-            <button
-              onClick={addLesson}
-              className="flex items-center gap-1.5 p-1.5 px-2 rounded-lg border border-dashed border-[rgba(196,162,101,0.22)] bg-transparent cursor-pointer w-full text-[rgba(196,162,101,0.5)] text-[11px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition mt-1"
-            >
-              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Les of toets toevoegen
-            </button>
+            <div className="relative mt-1">
+              <button
+                onClick={() => setShowLessonTypeMenu(!showLessonTypeMenu)}
+                className="flex items-center gap-1.5 p-1.5 px-2 rounded-lg border border-dashed border-[rgba(196,162,101,0.22)] bg-transparent cursor-pointer w-full text-[rgba(196,162,101,0.5)] text-[11px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition"
+              >
+                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Les of toets toevoegen
+              </button>
+              {showLessonTypeMenu && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-[rgba(30,26,20,0.09)] overflow-hidden z-50">
+                  <button onClick={() => addLesson('content')} className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer">
+                    <span className="w-2 h-2 rounded-full bg-[rgba(80,190,120,0.6)]"></span>
+                    Les
+                  </button>
+                  <button onClick={() => addLesson('quiz')} className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer">
+                    <span className="w-2 h-2 rounded-full bg-[rgba(100,140,220,0.6)]"></span>
+                    Tussentijdse quiz
+                  </button>
+                  <button onClick={() => addLesson('exam')} className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer">
+                    <span className="w-2 h-2 rounded-full bg-[rgba(220,120,80,0.6)]"></span>
+                    Eindtoets
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sidebar Form — only for lesson/quiz context */}
@@ -1918,7 +1929,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             <div className="flex-1">
               <div className="font-['Cormorant_Garamond'] text-[17px] font-medium text-[#1E1A14] tracking-[-0.01em]">
                 {currentContext === 'global' && 'Cursus overzicht'}
-                {currentContext === 'lesson' && currentLesson && `Les ${currentLesson.num} — ${currentLesson.name}`}
+                {currentContext === 'lesson' && currentLesson && `${currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${currentLesson.num}`} — ${currentLesson.name}`}
                 {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
               </div>
               <div className="text-[11px] text-[#7A7268] font-light">
@@ -2098,7 +2109,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                       <div className="max-w-4xl mx-auto">
                         <div className="mb-8">
                           <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">
-                            Les {currentLesson.num}: {currentLesson.name}
+                            {currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${currentLesson.num}`}: {currentLesson.name}
                           </h1>
                           <p className="text-[#7A7268]">
                             {currentLesson.duration && (
