@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
@@ -23,6 +23,12 @@ interface Course {
   lessons?: Lesson[]
 }
 
+interface ProgressRecord {
+  lesson_id: string
+  completed: boolean
+  last_position_seconds?: number
+}
+
 type LessonStatus = 'done' | 'current' | 'todo'
 
 export default function CourseInteriorPage() {
@@ -34,6 +40,8 @@ export default function CourseInteriorPage() {
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
   const [checkingEnrollment, setCheckingEnrollment] = useState(true)
+  const [progress, setProgress] = useState<Map<string, ProgressRecord>>(new Map())
+  const [marking, setMarking] = useState<string | null>(null)
 
   // Fetch course + lessons
   useEffect(() => {
@@ -70,13 +78,11 @@ export default function CourseInteriorPage() {
       setCheckingEnrollment(false)
       return
     }
-    // Admin always has access
     if (role === 'admin') {
       setEnrolled(true)
       setCheckingEnrollment(false)
       return
     }
-    // Check enrollment via API
     fetch(`/api/enrollments/check?user_id=${user.id}&course_id=${course.id}`)
       .then(r => r.json())
       .then(data => setEnrolled(!!data.enrolled))
@@ -84,21 +90,80 @@ export default function CourseInteriorPage() {
       .finally(() => setCheckingEnrollment(false))
   }, [user, course, role])
 
+  // Fetch progress (Step B)
+  useEffect(() => {
+    if (!user || !course) return
+    const fetchProgress = async () => {
+      const { data } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id, completed, last_position_seconds')
+        .eq('user_id', user!.id)
+        .in('lesson_id', course!.lessons?.map(l => l.id) || [])
+      if (data) {
+        const map = new Map<string, ProgressRecord>()
+        data.forEach((r: ProgressRecord & { lesson_id: string }) => {
+          map.set(r.lesson_id, r)
+        })
+        setProgress(map)
+      }
+    }
+    fetchProgress()
+  }, [user, course])
+
   const isAdmin = role === 'admin'
   const hasAccess = enrolled || isAdmin
   const lessons = course?.lessons || []
 
-  // For now: no persisted progress — all lessons are "todo" for non-admin
-  // First lesson is "current" if not enrolled (or no progress)
-  const getLessonStatus = (_lesson: Lesson, index: number): LessonStatus => {
-    // Step B will add real progress — for now:
-    if (index === 0) return 'current'
+  // Mark lesson as completed (test button)
+  const markComplete = useCallback(async (lessonId: string) => {
+    if (!user || !course) return
+    setMarking(lessonId)
+    try {
+      const existing = progress.get(lessonId)
+      if (existing) {
+        await supabase
+          .from('lesson_progress')
+          .update({ completed: true, completed_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('lesson_id', lessonId)
+      } else {
+        await supabase
+          .from('lesson_progress')
+          .insert({
+            user_id: user.id,
+            lesson_id: lessonId,
+            course_id: course.id,
+            completed: true,
+            completed_at: new Date().toISOString(),
+          })
+      }
+      // Update local state
+      setProgress(prev => {
+        const next = new Map(prev)
+        next.set(lessonId, { ...prev.get(lessonId)!, completed: true })
+        return next
+      })
+    } finally {
+      setMarking(null)
+    }
+  }, [user, course, progress])
+
+  // Determine lesson status from progress
+  const getLessonStatus = (lesson: Lesson): LessonStatus => {
+    const rec = progress.get(lesson.id)
+    if (rec?.completed) return 'done'
     return 'todo'
   }
 
   const getNextLesson = (): Lesson | null => {
-    const current = lessons.find((_, i) => getLessonStatus(_, i) === 'current')
-    return current || lessons[0] || null
+    // First not-done lesson
+    const next = lessons.find((l) => getLessonStatus(l) !== 'done')
+    return next || lessons[0] || null
+  }
+
+  // Find the "current" lesson (first non-done, for highlighting)
+  const getCurrentLessonIndex = (): number => {
+    return lessons.findIndex((l) => getLessonStatus(l) !== 'done')
   }
 
   const formatDuration = (seconds?: number) => {
@@ -111,10 +176,6 @@ export default function CourseInteriorPage() {
     if (lesson.lesson_type === 'quiz') return 'Tussentijdse toets'
     if (lesson.lesson_type === 'exam') return 'Eindtoets'
     return `Les ${index + 1}`
-  }
-
-  const getLessonTitle = (lesson: Lesson) => {
-    return lesson.title || 'Naamloos'
   }
 
   if (loading || checkingEnrollment) {
@@ -135,11 +196,11 @@ export default function CourseInteriorPage() {
   }
 
   const nextLesson = getNextLesson()
-  const completedCount = lessons.filter((_, i) => getLessonStatus(_, i) === 'done').length
+  const currentIdx = getCurrentLessonIndex()
+  const completedCount = lessons.filter((l) => getLessonStatus(l) === 'done').length
   const totalCount = lessons.length
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
-  // Not logged in
   if (!user) {
     return (
       <div className="ci-wrap" style={{ paddingTop: 120 }}>
@@ -151,6 +212,8 @@ export default function CourseInteriorPage() {
       </div>
     )
   }
+
+  const checkSVG = <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
 
   return (
     <div className="ci-wrap" style={{ paddingTop: 100 }}>
@@ -176,7 +239,7 @@ export default function CourseInteriorPage() {
           </div>
           <div className="body">
             <div className="k">Ga verder waar je was</div>
-            <div className="t">{getLessonLabel(nextLesson, lessons.indexOf(nextLesson))} — {getLessonTitle(nextLesson)}</div>
+            <div className="t">{getLessonLabel(nextLesson, lessons.indexOf(nextLesson))} — {nextLesson.title || 'Naamloos'}</div>
             <div className="meta">Video · {formatDuration(nextLesson.duration_seconds) || 'Binnenkort'}</div>
           </div>
           {hasAccess ? (
@@ -191,25 +254,21 @@ export default function CourseInteriorPage() {
       <h2 className="ci-section-title">Alle onderdelen</h2>
       <div className="ci-lessons">
         {lessons.map((lesson, index) => {
-          const status = getLessonStatus(lesson, index)
+          const status = getLessonStatus(lesson)
+          const isCurrent = index === currentIdx && status !== 'done'
           const locked = !hasAccess && !lesson.is_free
           const isExam = lesson.lesson_type === 'exam'
           const isQuiz = lesson.lesson_type === 'quiz'
+          const isMarking = marking === lesson.id
 
           return (
             <div
               key={lesson.id}
-              className={`ci-lesson ${status === 'current' ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''}`}
-              onClick={() => {
-                if (locked) return
-                // TODO: navigate to lesson view (Step B)
-              }}
+              className={`ci-lesson ${isCurrent ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''}`}
             >
-              <span className={`status ${status}`}>
-                {status === 'done' && (
-                  <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
-                )}
-                {status === 'todo' && <span className="n">{isExam ? '✦' : index + 1}</span>}
+              <span className={`status ${status === 'done' ? 'done' : isCurrent ? 'current' : 'todo'}`}>
+                {status === 'done' && checkSVG}
+                {status === 'todo' && !isCurrent && <span className="n">{isExam ? '✦' : index + 1}</span>}
               </span>
               <div className="info">
                 <div className="num">
@@ -217,14 +276,30 @@ export default function CourseInteriorPage() {
                   {isQuiz && <span className="ci-badge quiz">Quiz</span>}
                   {isExam && <span className="ci-badge exam">Examen</span>}
                 </div>
-                <div className="name">{getLessonTitle(lesson)}</div>
+                <div className="name">{lesson.title || 'Naamloos'}</div>
               </div>
               <div className="right">
                 {locked ? (
                   <span className="lock-icon">🔒</span>
+                ) : status === 'done' ? (
+                  <span className="ci-result pass">Afgerond ✓</span>
                 ) : (
                   <>
-                    {isExam && !locked && <span className="dur">85% nodig</span>}
+                    {hasAccess && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); markComplete(lesson.id) }}
+                        disabled={isMarking}
+                        style={{
+                          fontSize: 11, padding: '4px 10px', borderRadius: 8,
+                          border: '1px solid rgba(94,132,99,0.3)', background: 'rgba(94,132,99,0.08)',
+                          color: '#5E8463', cursor: 'pointer', fontWeight: 500,
+                          opacity: isMarking ? 0.5 : 1,
+                        }}
+                      >
+                        {isMarking ? '...' : '✓ Voltooid'}
+                      </button>
+                    )}
+                    {isExam && <span className="dur">85% nodig</span>}
                     {!isExam && <span className="dur">{formatDuration(lesson.duration_seconds)}</span>}
                     <span className="chev">›</span>
                   </>
