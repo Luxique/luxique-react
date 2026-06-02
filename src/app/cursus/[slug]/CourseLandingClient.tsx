@@ -6,6 +6,7 @@ import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import AmbientGlow from '@/components/AmbientGlow'
 import AuthModal from '@/components/AuthModal'
 import ComparisonTable from '@/components/ComparisonTable'
+import IsDitIetsVoorJou from '@/components/IsDitIetsVoorJou'
 import { supabase } from '@/lib/supabase-client'
 // CRITICAL: do not remove — course landing styles. If missing = unstyled page.
 import './course-landing-v3.css'
@@ -196,8 +197,8 @@ export default function CourseLandingClient({
       {/* Differentiators */}
       <DifferentiatorsSection course={course} />
 
-      {/* Comparison Table */}
-      <ComparisonTable />
+      {/* Is dit iets voor jou? */}
+      <IsDitIetsVoorJou />
 
       {/* Flex Blocks */}
       {(course.landing_blocks || [])
@@ -215,6 +216,9 @@ export default function CourseLandingClient({
         setOpenLessonIndex={setOpenLessonIndex}
         onLessonClick={handleLessonClick}
       />
+
+      {/* Comparison Table — dark theme */}
+      <ComparisonTable theme="dark" />
       
       {/* Reviews */}
       
