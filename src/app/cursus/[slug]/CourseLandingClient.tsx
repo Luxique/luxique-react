@@ -226,7 +226,7 @@ export default function CourseLandingClient({
       <MiniReviewsWall reviews={reviews} />
       
       {/* Pricing */}
-      <PricingSection course={course} onJoin={handleJoinCTA} user={user} />
+      <PricingSection course={course} onJoin={handleJoinCTA} user={user} lessons={sortedLessons} />
       
       {/* FAQ */}
       <FAQSection />
@@ -450,15 +450,15 @@ function CurriculumSection({
                 <div className="lesson-info">
                   <h4>{lesson.title}</h4>
                   <div className="meta">
-                    {lesson.duration_seconds && `${Math.round(lesson.duration_seconds / 60)} minuten`}
-                    {lesson.duration_seconds && ' · '}
-                    Video
+                    {lesson.duration_seconds > 0 ? `${Math.round(lesson.duration_seconds / 60)} min · ` : ''}Video
                   </div>
                 </div>
                 {lesson.is_free ? (
                   <span className="lesson-badge">Gratis Preview</span>
                 ) : (
-                  <span className="lesson-lock">🔒</span>
+                  <span className="lesson-lock">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </span>
                 )}
                 <span className="acc-plus">+</span>
               </div>
@@ -477,15 +477,23 @@ function CurriculumSection({
 }
 
 // Reviews Section Component
-function PricingSection({ course, onJoin, user }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null }) {
+function PricingSection({ course, onJoin, user, lessons }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null; lessons: Lesson[] }) {
   if (!course.price_cents) {
     return null
   }
 
   const priceEuros = course.price_cents / 100
 
-  const includesList = course.pricing_includes || [
-    '8 modules · 4 uur video',
+  const lessonCount = lessons.length
+  const totalSeconds = lessons.reduce((sum, l) => sum + (l.duration_seconds || 0), 0)
+  const totalMinutes = Math.round(totalSeconds / 60)
+  const hoursLabel = totalMinutes >= 60 ? `${Math.floor(totalMinutes / 60)} uur` : ''
+  const minsLabel = totalMinutes % 60 > 0 ? `${totalMinutes % 60} min` : ''
+  const durationStr = totalMinutes > 0 ? [hoursLabel, minsLabel].filter(Boolean).join(' ') : ''
+  const firstInclude = durationStr ? `${lessonCount} lessen · ${durationStr} video` : `${lessonCount} lessen`
+
+  const includesList = course.pricing_includes?.length ? course.pricing_includes : [
+    firstInclude,
     'Persoonlijke feedback van Chiva',
     '12 maanden toegang & updates',
     'Certificaat bij afronding',

@@ -599,7 +599,8 @@
     cursor: pointer;
     user-select: none;
   }
-  .lesson-acc-head:hover { background: rgba(196, 162, 101, 0.03); }
+  .lesson-acc-head:hover { background: rgba(196, 162, 101, 0.03); box-shadow: inset 0 0 20px -8px rgba(196,162,101,0.08); }
+  .lesson-acc.open .lesson-acc-head { border-bottom: 1px solid var(--border-soft); }
   .lesson-num {
     font-family: var(--font-serif);
     font-style: italic;
@@ -630,14 +631,23 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     font-weight: 500;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(196,162,101,0.3);
     flex-shrink: 0;
+    box-shadow: 0 0 16px -4px rgba(196,162,101,0.25);
   }
   .lesson-lock {
-    color: var(--cream-mute);
-    font-size: 14px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(196,162,101,0.35);
+    background: rgba(196,162,101,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
   }
+  .lesson-lock svg { width: 12px; height: 12px; }
+  .lesson-lock svg path { fill: #C4A265; }
   .acc-plus {
     color: var(--gold);
     font-size: 22px;
@@ -859,7 +869,7 @@
     overflow: hidden;
     transition: border-color 0.3s;
   }
-  .faq-item:hover { border-color: var(--border); }
+  .faq-item:hover { border-color: var(--border); box-shadow: 0 0 20px -6px rgba(196,162,101,0.08); }
   .faq-q {
     padding: 22px 26px; cursor: pointer;
     display: flex; justify-content: space-between; align-items: center;
