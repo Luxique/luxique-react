@@ -117,7 +117,6 @@ ImageBlock.displayName = 'ImageBlock'
 
 /* ── QuizBlock ── */
 export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
-  const showMedia = block.media?.type != null
   const optionType = block.option_type || 'text'
 
   const addOption = () => {
@@ -140,7 +139,7 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
     const opts = (block.options || []).map((o, j) => j === idx ? { ...o, correct: !o.correct } : o)
     onUpdate(block.id, { options: opts })
   }
-  
+
   const handleImageUpload = async (idx: number, file: File) => {
     const path = `quiz-options/${crypto.randomUUID()}-${file.name}`
     const { error: uploadErr } = await supabase.storage.from('course-media').upload(path, file)
@@ -158,126 +157,144 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Vraagtekst */}
-      <RichTextField
-        content={block.question || ''}
-        onChange={(html) => onUpdate(block.id, { question: html })}
-        variant="inline"
-        placeholder="Typ je vraag..."
-      />
-
-      {/* Media header toggle */}
-      <div className="flex items-center gap-2">
-        <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-[#7A7268]">
-          <input
-            type="checkbox"
-            checked={showMedia}
-            onChange={(e) => {
-              if (e.target.checked) {
-                onUpdate(block.id, { media: { type: 'image', url: '' } })
-              } else {
-                onUpdate(block.id, { media: null })
-              }
-            }}
-            className="accent-[#C4A265]"
-          />
-          Media bij deze vraag
-        </label>
-        {showMedia && (
-          <select
-            value={block.media?.type || 'image'}
-            onChange={(e) => onUpdate(block.id, { media: { type: e.target.value as 'image' | 'video', url: block.media?.url || '' } })}
-            className="text-[10px] border border-[rgba(30,26,20,0.09)] rounded px-1 py-0.5"
-          >
-            <option value="image">Foto</option>
-            <option value="video">Video</option>
-          </select>
-        )}
-      </div>
-      {showMedia && block.media?.type === 'image' && (
-        <div className="border border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-3 text-center">
-          {block.media.url ? (
-            <div className="relative">
-              <img src={block.media.url} alt="Media" className="max-h-32 mx-auto rounded" />
-              <button onClick={() => onUpdate(block.id, { media: { type: block.media?.type || 'image', url: '' } })} className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
-            </div>
-          ) : (
-            <label className="cursor-pointer text-[11px] text-[#7A7268]">
-              Klik om foto te uploaden
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleMediaHeaderUpload(f) }} />
-            </label>
+    <div className="bg-white rounded-xl border border-[rgba(30,26,20,0.06)] overflow-hidden">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-3 py-2 bg-[rgba(30,26,20,0.02)] border-b border-[rgba(30,26,20,0.06)]">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A7268]">Vraag</span>
+          {/* Media toggle */}
+          <label className="flex items-center gap-1 cursor-pointer text-[10px] text-[#7A7268]">
+            <input
+              type="checkbox"
+              checked={block.media?.type != null}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  onUpdate(block.id, { media: { type: 'image', url: '' } })
+                } else {
+                  onUpdate(block.id, { media: null })
+                }
+              }}
+              className="accent-[#C4A265]"
+            />
+            Media
+          </label>
+          {block.media?.type != null && (
+            <select
+              value={block.media?.type || 'image'}
+              onChange={(e) => onUpdate(block.id, { media: { type: e.target.value as 'image' | 'video', url: block.media?.url || '' } })}
+              className="text-[10px] border border-[rgba(30,26,20,0.09)] rounded px-1 py-0.5"
+            >
+              <option value="image">Foto</option>
+              <option value="video">Video</option>
+            </select>
           )}
         </div>
-      )}
-
-      {/* Optie-type keuze */}
-      <div className="flex items-center gap-2 pt-1">
-        <span className="text-[10px] text-[#7A7268]">Opties:</span>
-        <label className="flex items-center gap-1 cursor-pointer text-[10px]">
-          <input type="radio" name={`opt-type-${block.id}`} checked={optionType === 'text'} onChange={() => onUpdate(block.id, { option_type: 'text' })} className="accent-[#C4A265]" />
-          Tekst
-        </label>
-        <label className="flex items-center gap-1 cursor-pointer text-[10px]">
-          <input type="radio" name={`opt-type-${block.id}`} checked={optionType === 'image'} onChange={() => onUpdate(block.id, { option_type: 'image' })} className="accent-[#C4A265]" />
-          Foto
-        </label>
+        {/* Option type */}
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-[#7A7268]">Antwoorden:</span>
+          <label className="flex items-center gap-0.5 cursor-pointer text-[10px]">
+            <input type="radio" name={`opt-type-${block.id}`} checked={optionType === 'text'} onChange={() => onUpdate(block.id, { option_type: 'text' })} className="accent-[#C4A265]" />
+            Tekst
+          </label>
+          <label className="flex items-center gap-0.5 cursor-pointer text-[10px]">
+            <input type="radio" name={`opt-type-${block.id}`} checked={optionType === 'image'} onChange={() => onUpdate(block.id, { option_type: 'image' })} className="accent-[#C4A265]" />
+            Foto
+          </label>
+        </div>
       </div>
 
-      {/* Opties */}
-      <div className="space-y-2">
-        {(block.options || []).map((opt, i) => (
-          <div key={opt.id || i} className="flex items-center gap-2 group">
-            {/* Correct checkbox */}
-            <div
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9.5px] font-medium cursor-pointer transition flex-shrink-0 ${opt.correct ? 'bg-[rgba(80,190,120,0.15)] border-[rgba(80,190,120,0.4)] text-[rgba(80,190,120,0.9)]' : 'bg-[#F0EDE6] border-[rgba(30,26,20,0.12)] text-[#7A7268]'}`}
-              onClick={() => toggleCorrect(i)}
-              title={opt.correct ? 'Juist antwoord (klik om uit te vinken)' : 'Klik om als juist aan te merken'}
-            >
-              {opt.correct ? '✓' : String.fromCharCode(65 + i)}
-            </div>
-
-            {/* Optie content */}
-            {optionType === 'image' ? (
-              <div className="flex-1 border border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-2 text-center min-h-[48px] flex items-center justify-center">
-                {opt.image_url ? (
-                  <img src={opt.image_url} alt={opt.text} className="max-h-12 mx-auto rounded" />
-                ) : (
-                  <label className="cursor-pointer text-[10px] text-[#7A7268]">
-                    Upload foto
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f) }} />
-                  </label>
-                )}
+      {/* Question content area */}
+      <div className="p-4 space-y-3">
+        {/* Media header */}
+        {block.media?.type != null && (
+          <div className="border border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-3 text-center">
+            {block.media.url ? (
+              <div className="relative inline-block">
+                <img src={block.media.url} alt="Media" className="max-h-32 mx-auto rounded" />
+                <button onClick={() => onUpdate(block.id, { media: { type: block.media?.type || 'image', url: '' } })} className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
               </div>
             ) : (
-              <RichTextField
-                content={opt.text || ''}
-                onChange={(html) => updateOption(i, { text: html })}
-                variant="inline"
-                className="flex-1"
-                placeholder={`Optie ${String.fromCharCode(65 + i)}`}
-              />
+              <label className="cursor-pointer text-[11px] text-[#7A7268]">
+                📷 Klik om {block.media.type === 'video' ? 'video' : 'foto'} te uploaden
+                <input type="file" accept={block.media.type === 'video' ? 'video/*' : 'image/*'} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleMediaHeaderUpload(f) }} />
+              </label>
             )}
-
-            {/* Delete */}
-            <button
-              onClick={() => removeOption(i)}
-              className="w-5 h-5 rounded-full text-[10px] text-[rgba(30,26,20,0.2)] hover:text-[rgba(220,80,80,0.7)] hover:bg-[rgba(220,80,80,0.06)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition flex-shrink-0"
-              title="Verwijder optie"
-            >
-              ✕
-            </button>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Add option */}
-      <button
-        onClick={addOption}
-        className="text-[11px] text-[rgba(80,190,120,0.6)] hover:text-[rgba(80,190,120,0.9)] transition p-1"
-      >
-        + Optie toevoegen
-      </button>
+        {/* Question text */}
+        <div className="font-['Cormorant_Garamond'] text-[18px] text-[#1E1A14]">
+          <RichTextField
+            content={block.question || ''}
+            onChange={(html) => onUpdate(block.id, { question: html })}
+            variant="inline"
+            placeholder="Typ je vraag..."
+          />
+        </div>
+
+        {/* Answer options */}
+        {optionType === 'image' ? (
+          <div className="grid grid-cols-2 gap-2">
+            {(block.options || []).map((opt, i) => (
+              <div key={opt.id || i} className="group relative">
+                <div
+                  className={`rounded-xl border-2 overflow-hidden transition cursor-pointer ${opt.correct ? 'border-[rgba(80,190,120,0.5)] bg-[rgba(80,190,120,0.04)]' : 'border-[rgba(30,26,20,0.08)] hover:border-[rgba(196,162,101,0.3)]'}`}
+                  onClick={() => toggleCorrect(i)}
+                >
+                  <div className="aspect-square flex items-center justify-center bg-[rgba(30,26,20,0.03)] min-h-[80px]">
+                    {opt.image_url ? (
+                      <img src={opt.image_url} alt={opt.text} className="w-full h-full object-cover" />
+                    ) : (
+                      <label className="cursor-pointer text-[10px] text-[#7A7268] p-4" onClick={(e) => e.stopPropagation()}>
+                        📷 Upload
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f) }} />
+                      </label>
+                    )}
+                  </div>
+                  <div className="px-2 py-1.5 text-center text-[11px] text-[#7A7268]">
+                    {String.fromCharCode(65 + i)}
+                    {opt.correct && <span className="ml-1 text-[rgba(80,190,120,0.8)]">✓</span>}
+                  </div>
+                </div>
+                <button onClick={() => removeOption(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white rounded-full shadow text-[10px] text-[rgba(30,26,20,0.3)] hover:text-[rgba(220,80,80,0.7)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition">✕</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {(block.options || []).map((opt, i) => (
+              <div key={opt.id || i} className="group relative">
+                <div
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition cursor-pointer ${opt.correct ? 'border-[rgba(80,190,120,0.5)] bg-[rgba(80,190,120,0.04)]' : 'border-[rgba(30,26,20,0.06)] hover:border-[rgba(196,162,101,0.25)] hover:bg-[rgba(196,162,101,0.02)]'}`}
+                  onClick={() => toggleCorrect(i)}
+                >
+                  <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] font-medium flex-shrink-0 transition ${opt.correct ? 'bg-[rgba(80,190,120,0.15)] border-[rgba(80,190,120,0.4)] text-[rgba(80,190,120,0.9)]' : 'bg-white border-[rgba(30,26,20,0.1)] text-[#7A7268]'}`}>
+                    {opt.correct ? '✓' : String.fromCharCode(65 + i)}
+                  </span>
+                  <div className="flex-1" onClick={(e) => e.stopPropagation()}>
+                    <RichTextField
+                      content={opt.text || ''}
+                      onChange={(html) => updateOption(i, { text: html })}
+                      variant="inline"
+                      className="text-[13px] text-[#1E1A14]"
+                      placeholder={`Optie ${String.fromCharCode(65 + i)}`}
+                    />
+                  </div>
+                </div>
+                <button onClick={() => removeOption(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white rounded-full shadow text-[10px] text-[rgba(30,26,20,0.3)] hover:text-[rgba(220,80,80,0.7)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add option */}
+        <button
+          onClick={addOption}
+          className="w-full py-2 rounded-xl border-2 border-dashed border-[rgba(30,26,20,0.08)] text-[11px] text-[#7A7268] hover:border-[rgba(196,162,101,0.3)] hover:text-[#C4A265] transition cursor-pointer"
+        >
+          + Optie toevoegen
+        </button>
+      </div>
     </div>
   )
 })

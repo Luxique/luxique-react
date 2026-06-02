@@ -717,14 +717,31 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         content: b.content?.content,
         url: b.content?.url,
         question: b.content?.question,
+        media: b.content?.media,
+        option_type: b.content?.option_type,
         options: b.content?.options,
       })))
     } else {
-      // Geen blokken: zet standaard blokken
-      setBlocks([
-        { id: crypto.randomUUID(), type: 'video' as const },
-        { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
-      ])
+      // Geen blokken: zet standaard blokken op basis van lesson_type
+      const lessonData = course?.lessons?.find(l => l.id === lessonId)
+      if (lessonData?.lesson_type === 'quiz' || lessonData?.lesson_type === 'exam') {
+        // Quiz/exam: automatisch één leeg vraag-blok
+        setBlocks([{
+          id: crypto.randomUUID(),
+          type: 'quiz' as const,
+          question: '',
+          option_type: 'text',
+          options: [
+            { id: crypto.randomUUID(), text: '', image_url: '', correct: false },
+            { id: crypto.randomUUID(), text: '', image_url: '', correct: false },
+          ]
+        }])
+      } else {
+        setBlocks([
+          { id: crypto.randomUUID(), type: 'video' as const },
+          { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
+        ])
+      }
     }
   }
 
@@ -1854,7 +1871,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <span className={`text-[12px] font-medium block leading-tight ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'text-[#7A6340]' : 'text-[#1E1A14]'}`}>
-                      Les {lesson.num}
+                      {lesson.lesson_type === 'quiz' ? 'Quiz' : lesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${lesson.num}`}
                     </span>
                     <span className="text-[10px] text-[#7A7268] font-light">{lesson.name}</span>
                   </div>
