@@ -53,6 +53,7 @@ interface Lesson {
   is_free: boolean
   duration_seconds: number
   what_you_learn_text?: string
+  lesson_type?: 'content' | 'quiz' | 'exam'
 }
 
 interface LandingBlock {
@@ -450,7 +451,7 @@ function CurriculumSection({
                 <div className="lesson-info">
                   <h4>{lesson.title}</h4>
                   <div className="meta">
-                    {lesson.duration_seconds > 0 ? `${Math.round(lesson.duration_seconds / 60)} min · ` : ''}Video
+                    {lesson.lesson_type === 'quiz' ? 'Quiz' : lesson.lesson_type === 'exam' ? 'Eindtoets' : lesson.duration_seconds > 0 ? `${Math.round(lesson.duration_seconds / 60)} min · Video` : 'Video'}
                   </div>
                 </div>
                 {lesson.is_free ? (

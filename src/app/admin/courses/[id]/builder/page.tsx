@@ -79,6 +79,7 @@ interface Lesson {
   num: number
   name: string
   free: boolean
+  lesson_type?: 'content' | 'quiz' | 'exam'
   duration?: number // Store as total minutes
   reflectionQuestions?: string[]
   blocks?: Block[]
@@ -330,6 +331,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         is_free: lesson.free,
         sort_order: lesson.num - 1,
         duration_seconds: (lesson.duration || 0) * 60,
+        lesson_type: lesson.lesson_type || 'content',
       })
       if (lessonError) {
         console.error(`[saveCourse] Lesson "${lesson.name}" upsert FAILED:`, lessonError)
@@ -457,6 +459,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             course_id: courseToSave.id,
             is_free: lesson.free || false,
             sort_order: lesson.num || 0,
+            lesson_type: lesson.lesson_type || 'content',
           })
           if (lessonError) console.error('Lesson upsert failed:', lessonError)
 
@@ -643,6 +646,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           num: lesson.sort_order + 1,
           name: lesson.title,
           free: lesson.is_free,
+          lesson_type: lesson.lesson_type || 'content',
           duration: lesson.duration_seconds ? Math.floor(lesson.duration_seconds / 60) : undefined,
           reflectionQuestions: [],
           blocks: [] // Will be loaded separately
@@ -762,6 +766,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
       num: lessonNumber,
       name: `Les ${lessonNumber}`,
       free: false,
+      lesson_type: 'content',
       reflectionQuestions: [],
       blocks: defaultBlocks
     }
@@ -1452,6 +1457,18 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   <div className="absolute inset-0 rounded-full bg-[rgba(30,26,20,0.12)] peer-checked:bg-[#C4A265] transition-colors duration-200"></div>
                   <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
                 </label>
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <span className="text-[12px] font-light text-[#1E1A14]">Les type</span>
+                <select
+                  value={currentLesson.lesson_type || 'content'}
+                  onChange={(e) => updateLessonField('lesson_type', e.target.value)}
+                  className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] px-2 py-1 text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)] cursor-pointer"
+                >
+                  <option value="content">Content</option>
+                  <option value="quiz">Tussentijdse quiz</option>
+                  <option value="exam">Eindtoets</option>
+                </select>
               </div>
             </div>
           </div>
