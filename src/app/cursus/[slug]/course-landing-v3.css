@@ -942,7 +942,7 @@
   }
 
   /* === RESPONSIVE === */
-  @media (max-width: 900px) {
+@media (max-width: 900px) {
     .feat-grid, .test-grid { grid-template-columns: 1fr; }
     .learn-grid { grid-template-columns: 1fr; }
     .about-grid { grid-template-columns: 1fr; gap: 40px; }
@@ -961,6 +961,8 @@
     nav.site-nav .pill.icon { width: 40px; height: 40px; }
     nav.site-nav .pill.logo { font-size: 14px; padding: 10px 18px; }
     .container, .container-tight, .container-narrow { padding: 0 16px; }
+    /* Reduce GPU load on tablets */
+    .gradient-bg-2, .gradient-bg-3 { display: none; }
   }
   @media (max-width: 560px) {
     .hero-box h1 { font-size: 32px; }
@@ -975,6 +977,36 @@
     .hero-box { padding: 28px 16px 16px; margin: 0 4px; }
     .hero-social-proof { gap: 12px; flex-wrap: wrap; }
     .pricing-wrap { padding: 24px 16px; }
+    /* ===== MOBILE GPU RELIEF ===== */
+    /* Disable all animated blobs - biggest scroll-killer */
+    .course-landing-v3::before,
+    .course-landing-v3::after {
+      display: none;
+    }
+    .gradient-bg-2, .gradient-bg-3 {
+      display: none;
+    }
+    /* Disable glow section blobs */
+    .glow-top-left::before, .glow-top-right::before,
+    .glow-bottom-left::before, .glow-bottom-right::before,
+    .glow-top-center::before, .glow-bottom-center::before {
+      display: none;
+    }
+    /* Disable pricing glow animations */
+    .pricing-stage::before, .pricing-stage::after {
+      display: none;
+    }
+    /* Simplify backdrop-filters */
+    .hero-box, .hero-box::before, nav.site-nav .pill,
+    .lesson-item, .faq-item, .mini-review-card {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    /* Stop all animations */
+    *, *::before, *::after {
+      animation-duration: 0.001s !important;
+      animation-iteration-count: 1 !important;
+    }
   }
 
 /* ═══════════════════════════════════════
