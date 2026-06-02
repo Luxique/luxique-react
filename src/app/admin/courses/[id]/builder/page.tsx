@@ -1811,9 +1811,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   `}</style>
 
   return (
-    <div className="min-h-screen bg-[#F0EDE6] overflow-hidden" style={{ fontFamily: "'Outfit', sans-serif" }}>
+    <div className="bg-[#F0EDE6] overflow-hidden fixed inset-0" style={{ fontFamily: "'Outfit', sans-serif" }}>
       {/* Main App */}
-      <div className="flex" style={{ height: '100vh', paddingTop: '50px' }}>
+      <div className="flex h-full pt-[50px]">
         {/* Sidebar */}
         <div className="w-[260px] bg-[#FAF8F4] border-r border-[rgba(30,26,20,0.09)] overflow-y-auto flex flex-col">
           <div className="p-2.5 border-b border-[rgba(30,26,20,0.09)]">
@@ -2106,7 +2106,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             width: '12px',
             cursor: 'col-resize',
             zIndex: 50,
-            height: 'calc(100vh - 60px)',
+            height: '100%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -2130,7 +2130,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           className="bg-[#0A0807] overflow-hidden relative" 
           style={{ 
             width: `${previewWidth}px`,
-            height: 'calc(100vh - 60px)',
+            height: '100%',
             flexShrink: 0,
           }}
         >
@@ -2170,7 +2170,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           {/* Scrollable content area */}
           <div 
             className="overflow-y-auto overflow-x-hidden" 
-            style={{ height: 'calc(100vh - 100px)' }}
+            style={{ height: 'calc(100% - 40px)' }}
           >
             <div style={{ position: 'relative', overflow: 'hidden' }}>
             <div style={{ 

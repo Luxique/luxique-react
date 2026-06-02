@@ -956,14 +956,25 @@
       text-align: center;
       margin-top: 20px;
     }
-    section.section { padding: 80px 0; }
-    .final-cta { padding: 70px 24px; margin: 0 8px 8px; }
+    section.section { padding: 60px 0; }
+    .final-cta { padding: 50px 20px; margin: 0 8px 8px; }
     nav.site-nav .pill.icon { width: 40px; height: 40px; }
     nav.site-nav .pill.logo { font-size: 14px; padding: 10px 18px; }
+    .container, .container-tight, .container-narrow { padding: 0 16px; }
   }
   @media (max-width: 560px) {
-    .hero-box h1 { font-size: 36px; }
+    .hero-box h1 { font-size: 32px; }
+    .hero-box .tagline { font-size: 15px; }
     .about-quote { font-size: 16px; }
+    section.section { padding: 48px 0; }
+    section.section h2 { font-size: clamp(28px, 7vw, 36px); }
+    .final-cta { padding: 40px 16px; }
+    .final-cta h2 { font-size: 28px; }
+    .feat-card { padding: 20px; }
+    .about-grid { gap: 28px; }
+    .hero-box { padding: 28px 16px 16px; margin: 0 4px; }
+    .hero-social-proof { gap: 12px; flex-wrap: wrap; }
+    .pricing-wrap { padding: 24px 16px; }
   }
 
 /* ═══════════════════════════════════════
