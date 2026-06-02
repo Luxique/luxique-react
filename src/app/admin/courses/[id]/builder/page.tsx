@@ -1957,7 +1957,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               {publishing ? 'Publiceren...' : 'Publiceren'}
             </button>
             <a
-              href={`/cursus/${course?.title?.toLowerCase().replace(/\s+/g, '-') || ''}`}
+              href={`/academy/${course?.title?.toLowerCase().replace(/\s+/g, '-') || ''}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[rgba(196,162,101,0.3)] text-[#7A6340] text-[12px] font-medium hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer no-underline"

@@ -3,302 +3,236 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
-// MuxPlayer will be dynamically imported to avoid SSR issues
+import { useAuth } from '@/lib/auth-context'
+import './course-interior.css'
+
+interface Lesson {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  lesson_type: 'content' | 'quiz' | 'exam'
+  duration_seconds?: number
+  free?: boolean
+}
 
 interface Course {
   id: string
   title: string
   slug: string
-  description?: string
-  short_description?: string
-  thumbnail_url?: string
-  price: number
-  level: string
-  is_published: boolean
-  first_lesson_free: boolean
-  intro_video_mux_id?: string
-  status: string
   lessons?: Lesson[]
 }
 
-interface Lesson {
-  id: string
-  title: string
-  slug: string
-  description?: string
-  duration_seconds?: number
-  is_free: boolean
-  sort_order: number
-}
+type LessonStatus = 'done' | 'current' | 'todo'
 
-export default function CoursePage() {
+export default function CourseInteriorPage() {
   const params = useParams()
   const slug = params.slug as string
-  const [course, setCourse] = useState<Course | null>(null)
-  const [lessons, setLessons] = useState<Lesson[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { user, role } = useAuth()
 
+  const [course, setCourse] = useState<Course | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [enrolled, setEnrolled] = useState(false)
+  const [checkingEnrollment, setCheckingEnrollment] = useState(true)
+
+  // Fetch course + lessons
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        // Fetch course by slug
-        const { data: courseData, error: courseError } = await supabase
+        const { data, error } = await supabase
           .from('courses')
-          .select('*')
+          .select('id, title, slug')
           .eq('slug', slug)
-          .eq('is_published', true)
           .single()
 
-        if (courseError) {
-          throw courseError
-        }
-
-        if (!courseData) {
-          setError('Cursus niet gevonden')
+        if (error || !data) {
+          setLoading(false)
           return
         }
 
-        setCourse(courseData)
-
-        // Fetch lessons for this course
-        const { data: lessonsData, error: lessonsError } = await supabase
+        const { data: lessons } = await supabase
           .from('lessons')
-          .select('*')
-          .eq('course_id', courseData.id)
+          .select('id, name, slug, sort_order, lesson_type, duration_seconds, free')
+          .eq('course_id', data.id)
           .order('sort_order')
 
-        if (lessonsError) {
-          console.error('Error fetching lessons:', lessonsError)
-        } else {
-          setLessons(lessonsData || [])
-        }
-      } catch (err) {
-        console.error('Error fetching course:', err)
-        setError('Er is een fout opgetreden bij het laden van de cursus')
+        setCourse({ ...data, lessons: lessons || [] })
       } finally {
         setLoading(false)
       }
     }
-
-    if (slug) {
-      fetchCourse()
-    }
+    if (slug) fetchCourse()
   }, [slug])
+
+  // Check enrollment
+  useEffect(() => {
+    if (!user || !course) {
+      setCheckingEnrollment(false)
+      return
+    }
+    // Admin always has access
+    if (role === 'admin') {
+      setEnrolled(true)
+      setCheckingEnrollment(false)
+      return
+    }
+    // Check enrollment via API
+    fetch(`/api/enrollments/check?user_id=${user.id}&course_id=${course.id}`)
+      .then(r => r.json())
+      .then(data => setEnrolled(!!data.enrolled))
+      .catch(() => setEnrolled(false))
+      .finally(() => setCheckingEnrollment(false))
+  }, [user, course, role])
+
+  const isAdmin = role === 'admin'
+  const hasAccess = enrolled || isAdmin
+  const lessons = course?.lessons || []
+
+  // For now: no persisted progress — all lessons are "todo" for non-admin
+  // First lesson is "current" if not enrolled (or no progress)
+  const getLessonStatus = (_lesson: Lesson, index: number): LessonStatus => {
+    // Step B will add real progress — for now:
+    if (index === 0) return 'current'
+    return 'todo'
+  }
+
+  const getNextLesson = (): Lesson | null => {
+    const current = lessons.find((_, i) => getLessonStatus(_, i) === 'current')
+    return current || lessons[0] || null
+  }
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return ''
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    
-    if (hours > 0) {
-      return `${hours}u ${minutes}min`
-    }
-    return `${minutes} min`
+    const m = Math.round(seconds / 60)
+    return m > 0 ? `${m} min` : ''
   }
 
-  if (loading) {
+  const getLessonLabel = (lesson: Lesson, index: number) => {
+    if (lesson.lesson_type === 'quiz') return 'Tussentijdse toets'
+    if (lesson.lesson_type === 'exam') return 'Eindtoets'
+    return `Les ${index + 1}`
+  }
+
+  const getLessonTitle = (lesson: Lesson) => {
+    return lesson.name || 'Naamloos'
+  }
+
+  if (loading || checkingEnrollment) {
     return (
-      <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center">
-        <div className="text-[#7A7268] text-[16px]">Cursus wordt geladen...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FAF8F4' }}>
+        <div style={{ color: '#7A7268', fontSize: 16 }}>Cursus wordt geladen...</div>
       </div>
     )
   }
 
-  if (error || !course) {
+  if (!course) {
     return (
-      <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center flex-col gap-4">
-        <div className="text-[#7A7268] text-[16px]">{error || 'Cursus niet gevonden'}</div>
-        <a href="/academy" className="text-[14px] text-[#C4A265] hover:underline">
-          ← Terug naar academie
-        </a>
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4" style={{ background: '#FAF8F4' }}>
+        <div style={{ color: '#7A7268', fontSize: 16 }}>Cursus niet gevonden</div>
+        <a href="/academy" style={{ fontSize: 14, color: '#C4A265' }}>← Terug naar academie</a>
+      </div>
+    )
+  }
+
+  const nextLesson = getNextLesson()
+  const completedCount = lessons.filter((_, i) => getLessonStatus(_, i) === 'done').length
+  const totalCount = lessons.length
+  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+
+  // Not logged in
+  if (!user) {
+    return (
+      <div className="ci-wrap" style={{ paddingTop: 120 }}>
+        <div className="ci-login-prompt">
+          <h2>Log in om verder te gaan</h2>
+          <p>Je moet ingelogd zijn om deze cursus te bekijken.</p>
+          <a href={`/auth/login?redirect=/academy/${slug}`} className="ci-login-btn">Inloggen</a>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4]">
-      {/* Hero Section */}
-      <div className="relative">
-        {course.intro_video_mux_id ? (
-          <div className="w-full aspect-video bg-black flex items-center justify-center">
-            <div className="text-white text-center">
-              <div className="w-16 h-16 bg-[#C4A265] rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </div>
-              <p className="text-lg font-medium">Intro video</p>
-              <p className="text-sm opacity-75">Klik om te starten</p>
-            </div>
-          </div>
-        ) : (
-          <div 
-            className="w-full aspect-video bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: course.thumbnail_url 
-                ? `url(${course.thumbnail_url})` 
-                : 'linear-gradient(135deg, #C4A265 0%, #7A6340 100%)'
-            }}
-          />
-        )}
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-medium bg-[#C4A265] text-white px-3 py-1 rounded-full">
-                {course.level}
-              </span>
-              {course.first_lesson_free && (
-                <span className="text-sm font-medium bg-white/20 text-white px-3 py-1 rounded-full">
-                  Eerste les gratis
-                </span>
-              )}
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              {course.title}
-            </h1>
-            {course.short_description && (
-              <p className="text-lg md:text-xl text-white/90 mb-6">
-                {course.short_description}
-              </p>
-            )}
-          </div>
+    <div className="ci-wrap" style={{ paddingTop: 100 }}>
+      {/* Header */}
+      <div className="ci-eyebrow">Academy · jouw cursus</div>
+      <h1>{course.title?.split(' ').map((w, i) => i === course.title.split(' ').length - 1 ? <em key={i}>{w}</em> : w + ' ')}</h1>
+      <p className="ci-sub">Welkom terug. Je bent goed op weg.</p>
+
+      {/* Progress */}
+      <div className="ci-progress-wrap">
+        <div className="ci-progress-meta">
+          <span className="label">{completedCount} van {totalCount} onderdelen voltooid</span>
+          <span className="pct">{progressPct}%</span>
         </div>
+        <div className="ci-bar"><div className="ci-bar-fill" style={{ width: `${progressPct}%` }} /></div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Course Description */}
-            {course.description && (
-              <div className="bg-white rounded-lg p-6 mb-8">
-                <h2 className="text-2xl font-bold mb-4 text-[#1E1A14]">Over deze cursus</h2>
-                <div className="prose prose-lg text-[#7A7268]">
-                  {course.description.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Lessons List */}
-            <div className="bg-white rounded-lg p-6">
-              <h2 className="text-2xl font-bold mb-6 text-[#1E1A14]">Cursusinhoud</h2>
-              <div className="space-y-4">
-                {lessons.map((lesson, index) => (
-                  <div 
-                    key={lesson.id} 
-                    className={`p-4 rounded-lg border transition-all ${
-                      lesson.is_free 
-                        ? 'border-[#C4A265] bg-[#FAF8F4]' 
-                        : 'border-[#E8E3DB] hover:border-[#C4A265] hover:bg-[#FAF8F4]'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="w-8 h-8 rounded-full bg-[#C4A265] text-white flex items-center justify-center text-sm font-medium">
-                            {index + 1}
-                          </span>
-                          <h3 className="text-lg font-semibold text-[#1E1A14]">
-                            {lesson.title}
-                          </h3>
-                          {lesson.is_free && (
-                            <span className="text-xs font-medium bg-[#C4A265] text-white px-2 py-1 rounded-full">
-                              Gratis
-                            </span>
-                          )}
-                        </div>
-                        {lesson.description && (
-                          <p className="text-[#7A7268] text-sm mb-2 ml-11">
-                            {lesson.description}
-                          </p>
-                        )}
-                        {lesson.duration_seconds && (
-                          <div className="flex items-center gap-4 text-sm text-[#7A7268] ml-11">
-                            <span>⏱️ {formatDuration(lesson.duration_seconds)}</span>
-                          </div>
-                        )}
-                      </div>
-                      <button 
-                        className={`ml-4 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          lesson.is_free
-                            ? 'bg-[#C4A265] text-white hover:bg-[#7A6340]'
-                            : 'bg-[#E8E3DB] text-[#7A7268] hover:bg-[#C4A265] hover:text-white'
-                        }`}
-                      >
-                        {lesson.is_free ? 'Bekijken' : 'Inschrijven'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Continue card */}
+      {nextLesson && (
+        <div className="ci-continue">
+          <div className="thumb">
+            <span className="play-btn" />
           </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* Course Card */}
-            <div className="bg-white rounded-lg p-6 sticky top-8">
-              <div className="text-center mb-6">
-                <div className="text-3xl font-bold text-[#1E1A14] mb-2">
-                  €{(course.price / 100).toFixed(2)}
-                </div>
-                <div className="text-[#7A7268] text-sm">
-                  Eenmalige betaling
-                </div>
-              </div>
-
-              <button className="w-full bg-[#C4A265] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#7A6340] transition-colors mb-4">
-                Direct inschrijven
-              </button>
-
-              {course.first_lesson_free && (
-                <button className="w-full border border-[#C4A265] text-[#C4A265] py-3 px-6 rounded-lg font-semibold hover:bg-[#FAF8F4] transition-colors">
-                  Eerste les gratis proberen
-                </button>
-              )}
-
-              <div className="mt-6 pt-6 border-t border-[#E8E3DB]">
-                <h3 className="font-semibold text-[#1E1A14] mb-3">Inbegrepen</h3>
-                <ul className="space-y-2 text-sm text-[#7A7268]">
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#C4A265]">✓</span>
-                    Levenslange toegang
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#C4A265]">✓</span>
-                    Certificaat bij afronding
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#C4A265]">✓</span>
-                    Toegang op alle apparaten
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#C4A265]">✓</span>
-                    Updates van de cursus
-                  </li>
-                </ul>
-              </div>
-
-              {/* Admin Link */}
-              <div className="mt-6 pt-6 border-t border-[#E8E3DB]">
-                <a 
-                  href={`/admin/courses/${course.id}/builder`}
-                  className="text-xs text-[#7A7268] hover:text-[#C4A265] transition-colors"
-                >
-                  → Cursus beheren (admin)
-                </a>
-              </div>
-            </div>
+          <div className="body">
+            <div className="k">Ga verder waar je was</div>
+            <div className="t">{getLessonLabel(nextLesson, lessons.indexOf(nextLesson))} — {getLessonTitle(nextLesson)}</div>
+            <div className="meta">Video · {formatDuration(nextLesson.duration_seconds) || 'Binnenkort'}</div>
           </div>
+          {hasAccess ? (
+            <button className="go">Verder kijken →</button>
+          ) : (
+            <a href={`/cursus/${slug}`} className="go">Inschrijven →</a>
+          )}
         </div>
+      )}
+
+      {/* Lessons */}
+      <h2 className="ci-section-title">Alle onderdelen</h2>
+      <div className="ci-lessons">
+        {lessons.map((lesson, index) => {
+          const status = getLessonStatus(lesson, index)
+          const locked = !hasAccess && !lesson.free
+          const isExam = lesson.lesson_type === 'exam'
+          const isQuiz = lesson.lesson_type === 'quiz'
+
+          return (
+            <div
+              key={lesson.id}
+              className={`ci-lesson ${status === 'current' ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''}`}
+              onClick={() => {
+                if (locked) return
+                // TODO: navigate to lesson view (Step B)
+              }}
+            >
+              <span className={`status ${status}`}>
+                {status === 'done' && (
+                  <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
+                )}
+                {status === 'todo' && <span className="n">{isExam ? '✦' : index + 1}</span>}
+              </span>
+              <div className="info">
+                <div className="num">
+                  {getLessonLabel(lesson, index)}
+                  {isQuiz && <span className="ci-badge quiz">Quiz</span>}
+                  {isExam && <span className="ci-badge exam">Examen</span>}
+                </div>
+                <div className="name">{getLessonTitle(lesson)}</div>
+              </div>
+              <div className="right">
+                {locked ? (
+                  <span className="lock-icon">🔒</span>
+                ) : (
+                  <>
+                    {isExam && !locked && <span className="dur">85% nodig</span>}
+                    {!isExam && <span className="dur">{formatDuration(lesson.duration_seconds)}</span>}
+                    <span className="chev">›</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
