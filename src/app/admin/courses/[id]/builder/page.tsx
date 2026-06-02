@@ -1927,8 +1927,46 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           </div>
 
           {/* Sidebar Form — only for lesson/quiz context */}
-          <div className="flex-1 p-2.5">
+          <div className="flex-1 p-2.5 overflow-y-auto">
             {currentContext !== 'global' && renderSidebarForm()}
+          </div>
+
+          {/* Action buttons */}
+          <div className="p-2.5 border-t border-[rgba(30,26,20,0.09)] space-y-2">
+            <button
+              onClick={() => saveCourse()}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[rgba(30,26,20,0.06)] text-[#1E1A14] text-[12px] font-medium hover:bg-[rgba(30,26,20,0.1)] transition cursor-pointer"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/>
+              </svg>
+              Concept opslaan
+            </button>
+            <button
+              onClick={() => publishCourse()}
+              disabled={publishing}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#C4A265] text-white text-[12px] font-medium hover:bg-[#b3954f] transition cursor-pointer disabled:opacity-50"
+            >
+              {publishing ? (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12l5 5L20 7"/>
+                </svg>
+              )}
+              {publishing ? 'Publiceren...' : 'Publiceren'}
+            </button>
+            <a
+              href={`/cursus/${course?.title?.toLowerCase().replace(/\s+/g, '-') || ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[rgba(196,162,101,0.3)] text-[#7A6340] text-[12px] font-medium hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer no-underline"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              Bekijk live cursus
+            </a>
           </div>
         </div>
 
@@ -2206,9 +2244,15 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                               {block.type === 'quiz' && (() => {
                                 const correctCount = (block.options || []).filter(o => o.correct).length
                                 const multiAnswer = correctCount > 1
+                                const hasMedia = block.media && block.media.url
                                 return (
-                                  <div style={{ background: '#0C0A07', borderRadius: 18, padding: '42px 38px', position: 'relative', overflow: 'hidden' }}>
-                                    <div style={{ position: 'absolute', top: '-30%', left: '50%', transform: 'translateX(-50%)', width: '80%', height: 320, background: 'radial-gradient(50% 60% at 50% 50%, rgba(196,162,101,0.16), transparent 70%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
+                                  <div style={{ background: '#FAF8F4', borderRadius: 18, padding: '42px 38px', position: 'relative', overflow: 'hidden' }}>
+                                    {/* Media header */}
+                                    {hasMedia && (
+                                      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                        <img src={block.media!.url} alt="Media" style={{ maxHeight: 200, borderRadius: 12, maxWidth: '100%' }} />
+                                      </div>
+                                    )}
                                     <div style={{ position: 'relative', zIndex: 1 }}>
                                       {/* Progress dots */}
                                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 30 }}>
@@ -2219,22 +2263,22 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                                       <div style={{ textAlign: 'center', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: '#C4A265', marginBottom: 14 }}>
                                         Vraag {blocks.filter(b => b.type === 'quiz').indexOf(block) + 1} van {blocks.filter(b => b.type === 'quiz').length}
                                       </div>
-                                      <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#EDE7DB', textAlign: 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
+                                      <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#2C2A25', textAlign: 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
                                       <div style={{ textAlign: 'center', fontSize: 12, color: '#8C8579', fontStyle: 'italic', marginBottom: 30 }}>{multiAnswer ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}</div>
                                       {(block.option_type || 'text') === 'image' ? (
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                                           {(block.options || []).map((opt, oi) => (
                                             <div key={oi} style={{ border: '2px solid rgba(228,201,138,0.12)', borderRadius: 16, overflow: 'hidden', cursor: 'default', position: 'relative' }}>
-                                              <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#2a2218,#1a150e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? <img src={opt.image_url} alt={opt.text || ''} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '⛶'}</div>
+                                              <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#e8e2d6,#d8d2c6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? <img src={opt.image_url} alt={opt.text || ''} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '⛶'}</div>
                                             </div>
                                           ))}
                                         </div>
                                       ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
                                           {(block.options || []).map((opt, oi) => (
-                                            <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', border: '1.5px solid rgba(228,201,138,0.12)', borderRadius: 14, background: 'rgba(255,255,255,0.02)' }}>
-                                              <span style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid rgba(228,201,138,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', color: '#E4C98A', fontSize: 15 }}>{String.fromCharCode(65 + oi)}</span>
-                                              <span style={{ flex: 1, fontSize: 16, color: '#EDE7DB' }}>{opt.text || `Optie ${String.fromCharCode(65 + oi)}`}</span>
+                                            <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', border: '1.5px solid rgba(44,42,37,0.12)', borderRadius: 14, background: '#fff' }}>
+                                              <span style={{ width: 30, height: 30, borderRadius: '50%', border: '1.5px solid rgba(196,162,101,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', color: '#C4A265', fontSize: 15 }}>{String.fromCharCode(65 + oi)}</span>
+                                              <span style={{ flex: 1, fontSize: 16, color: '#2C2A25' }}>{opt.text || `Optie ${String.fromCharCode(65 + oi)}`}</span>
                                             </div>
                                           ))}
                                         </div>
