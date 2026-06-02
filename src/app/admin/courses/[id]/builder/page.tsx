@@ -378,39 +378,145 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   }, [course, currentLesson, blocks, currentContext])
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const publishCourse = async () => {
-    if (!course) return
-    await saveCourse()
+  const [publishing, setPublishing] = useState(false)
 
-    // Stripe Price sync: create a Stripe Price if none exists
-    let stripePriceId = course.stripePriceId
-    if (!stripePriceId && course.priceCents) {
-      try {
-        const res = await fetch('/api/stripe/create-price', {
+  const publishCourse = async () => {
+    if (!course || publishing) return
+    setPublishing(true)
+    try {
+      // First, save course content (but override status to published in ONE update)
+      let courseToSave = course
+      if (currentLesson) {
+        courseToSave = {
+          ...course,
+          lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
+        }
+      }
+
+      // Save lessons + blocks first (same as saveCourse)
+      const { error: courseError } = await supabase.from('courses').upsert({
+        id: courseToSave.id,
+        title: courseToSave.title,
+        slug: toSlug(courseToSave.title || 'nieuwe-cursus'),
+        description: courseToSave.description || null,
+        long_description: courseToSave.longDescription || null,
+        hero_image_url: courseToSave.heroImageUrl || null,
+        hero_mux_playback_id: courseToSave.heroMuxPlaybackId || null,
+        hero_mux_asset_id: courseToSave.heroMuxAssetId || null,
+        what_you_learn: courseToSave.whatYouLearn || [],
+        who_is_it_for: courseToSave.whoIsItFor || null,
+        price_cents: courseToSave.priceCents || 0,
+        level: courseToSave.level || 'beginner',
+        gallery_urls: courseToSave.galleryUrls || [],
+        is_first_lesson_free: courseToSave.firstLessonFree || false,
+        intro_video: courseToSave.introVideo || false,
+        final_quiz_required: courseToSave.finalQuizRequired || false,
+        certificate: courseToSave.certificate || false,
+        // v3 fields
+        hero_badge_text: courseToSave.heroBadgeText || null,
+        hero_title: courseToSave.heroTitle || null,
+        hero_title_accent: courseToSave.heroTitleAccent || null,
+        hero_title_suffix: courseToSave.heroTitleSuffix || null,
+        hero_tagline: courseToSave.heroTagline || null,
+        hero_cta_text: courseToSave.heroCtaText || null,
+        hero_social_proof: courseToSave.heroSocialProof || null,
+        hero_chips: courseToSave.heroChips || [],
+        differentiators_eyebrow: courseToSave.differentiatorsEyebrow || null,
+        differentiators_title: courseToSave.differentiatorsTitle || null,
+        differentiators: courseToSave.differentiators || [],
+        curriculum_eyebrow: courseToSave.curriculumEyebrow || null,
+        curriculum_title: courseToSave.curriculumTitle || null,
+        curriculum_intro: courseToSave.curriculumIntro || null,
+        reviews_eyebrow: courseToSave.reviewsEyebrow || null,
+        reviews_title: courseToSave.reviewsTitle || null,
+        access_duration_text: courseToSave.accessDurationText || '12 maanden toegang',
+        pricing_includes: courseToSave.pricingIncludes || [],
+        final_cta_eyebrow: courseToSave.finalCtaEyebrow || null,
+        final_cta_title: courseToSave.finalCtaTitle || null,
+        final_cta_title_accent: courseToSave.finalCtaTitleAccent || null,
+        final_cta_lead: courseToSave.finalCtaLead || null,
+        final_cta_button_text: courseToSave.finalCtaButtonText || null,
+        // PUBLISH in one shot — no intermediate draft state
+        status: 'published',
+        is_published: true,
+      })
+
+      if (courseError) {
+        console.error('[publishCourse] Course upsert failed:', courseError)
+        alert('Fout bij opslaan: ' + courseError.message)
+        return
+      }
+
+      // Save lessons + blocks (same logic as saveCourse)
+      if (courseToSave.lessons) {
+        for (const lesson of courseToSave.lessons) {
+          const { error: lessonError } = await supabase.from('lessons').upsert({
+            id: lesson.id,
+            title: lesson.name,
+            slug: toSlug(lesson.name),
+            course_id: courseToSave.id,
+            is_free: lesson.free || false,
+            sort_order: lesson.num || 0,
+          })
+          if (lessonError) console.error('Lesson upsert failed:', lessonError)
+
+          const lessonBlocks = lesson.blocks || []
+          for (let i = 0; i < lessonBlocks.length; i++) {
+            const block = lessonBlocks[i]
+            const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
+            await supabase.from('blocks').upsert({
+              id: block.id,
+              lesson_id: lesson.id,
+              course_id: courseToSave.id,
+              type: block.type,
+              sort_order: i,
+              content: {
+                title: block.title,
+                subtitle: block.subtitle,
+                content: block.content,
+                url: block.url,
+                caption: block.caption,
+                question: block.question,
+                options: block.options,
+                fileName: block.fileName,
+                fileDescription: block.fileDescription,
+                mux_asset_id: (blockContent as Record<string,unknown>).mux_asset_id,
+                mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
+              }
+            })
+          }
+        }
+      }
+
+      // Stripe Price sync — NON-BLOCKING
+      if (!courseToSave.stripePriceId && courseToSave.priceCents) {
+        fetch('/api/stripe/create-price', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            course_id: course.id,
-            price_cents: course.priceCents,
-            title: course.title,
+            course_id: courseToSave.id,
+            price_cents: courseToSave.priceCents,
+            title: courseToSave.title,
           }),
         })
-        const data = await res.json()
-        if (data.stripe_price_id) stripePriceId = data.stripe_price_id
-      } catch (e) {
-        console.error('Stripe price creation failed:', e)
+          .then(r => r.json())
+          .then(data => {
+            if (data.stripe_price_id) {
+              supabase.from('courses').update({ stripe_price_id: data.stripe_price_id }).eq('id', courseToSave.id).then(() => {
+                console.log('[publishCourse] Stripe price linked')
+              })
+            }
+          })
+          .catch(e => console.error('[publishCourse] Stripe price sync failed (non-blocking):', e))
       }
+
+      alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
+    } catch (err) {
+      console.error('[publishCourse] Error:', err)
+      alert('Onverwachte fout bij publiceren.')
+    } finally {
+      setPublishing(false)
     }
-
-    const updatePayload: Record<string, unknown> = { status: 'published', is_published: true }
-    if (stripePriceId) updatePayload.stripe_price_id = stripePriceId
-
-    const { error } = await supabase
-      .from('courses')
-      .update(updatePayload)
-      .eq('id', course.id)
-    if (error) { alert('Fout bij publiceren'); return }
-    alert('Cursus gepubliceerd! Zichtbaar op de academy pagina.')
   }
 
   // Design tokens from mockup

@@ -5,6 +5,7 @@ import type { Review } from '@/lib/reviews'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import AmbientGlow from '@/components/AmbientGlow'
 import AuthModal from '@/components/AuthModal'
+import ComparisonTable from '@/components/ComparisonTable'
 import { supabase } from '@/lib/supabase-client'
 // CRITICAL: do not remove — course landing styles. If missing = unstyled page.
 import './course-landing-v3.css'
@@ -194,7 +195,10 @@ export default function CourseLandingClient({
       
       {/* Differentiators */}
       <DifferentiatorsSection course={course} />
-      
+
+      {/* Comparison Table */}
+      <ComparisonTable />
+
       {/* Flex Blocks */}
       {(course.landing_blocks || [])
         .filter(block => !['what_you_learn', 'testimonials'].includes(block.type))
