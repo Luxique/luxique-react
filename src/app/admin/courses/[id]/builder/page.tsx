@@ -2237,7 +2237,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                                     <h4 className="text-lg text-[#7A6340] mb-3">{block.subtitle}</h4>
                                   )}
                                   {block.content && (
-                                    <div className="text-[#1E1A14] leading-relaxed">{block.content as string}</div>
+                                    <div className="text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
                                   )}
                                 </div>
                               )}
@@ -2266,7 +2266,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                                       <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#2C2A25', textAlign: 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
                                       <div style={{ textAlign: 'center', fontSize: 12, color: '#8C8579', fontStyle: 'italic', marginBottom: 30 }}>{multiAnswer ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}</div>
                                       {(block.option_type || 'text') === 'image' ? (
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 10 }}>
                                           {(block.options || []).map((opt, oi) => (
                                             <div key={oi} style={{ border: '2px solid rgba(228,201,138,0.12)', borderRadius: 16, overflow: 'hidden', cursor: 'default', position: 'relative' }}>
                                               <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#e8e2d6,#d8d2c6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? <img src={opt.image_url} alt={opt.text || ''} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '⛶'}</div>

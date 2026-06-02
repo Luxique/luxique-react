@@ -220,7 +220,7 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         {optionType === 'image' ? (
           /* Photo grid — mockup b-photo-grid */
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 12 }}>
               {(block.options || []).map((opt, i) => (
                 <div key={opt.id || i} style={{ border: `1.5px solid ${opt.correct ? '#5E8463' : 'rgba(12,10,7,0.10)'}`, borderRadius: 14, overflow: 'hidden', background: '#fff', position: 'relative' }}>
                   <div style={{ aspectRatio: '1', background: opt.image_url ? 'transparent' : '#ede7db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb4a6', fontSize: 24 }}>
