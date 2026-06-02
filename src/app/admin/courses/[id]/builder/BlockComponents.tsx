@@ -143,17 +143,17 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
 
   const handleImageUpload = async (idx: number, file: File) => {
     const path = `quiz-options/${crypto.randomUUID()}-${file.name}`
-    const { error: uploadErr } = await supabase.storage.from('course-media').upload(path, file)
+    const { error: uploadErr } = await supabase.storage.from('course-images').upload(path, file)
     if (uploadErr) { console.error('Upload failed:', uploadErr); return }
-    const { data: { publicUrl } } = supabase.storage.from('course-media').getPublicUrl(path)
+    const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(path)
     updateOption(idx, { image_url: publicUrl })
   }
 
   const handleMediaHeaderUpload = async (file: File) => {
     const path = `quiz-media/${crypto.randomUUID()}-${file.name}`
-    const { error: uploadErr } = await supabase.storage.from('course-media').upload(path, file)
+    const { error: uploadErr } = await supabase.storage.from('course-images').upload(path, file)
     if (uploadErr) { console.error('Upload failed:', uploadErr); return }
-    const { data: { publicUrl } } = supabase.storage.from('course-media').getPublicUrl(path)
+    const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(path)
     onUpdate(block.id, { media: { type: 'image', url: publicUrl } })
   }
 

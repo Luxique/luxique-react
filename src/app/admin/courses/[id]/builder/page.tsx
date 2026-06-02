@@ -2203,8 +2203,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                                           {(block.options || []).map((opt, oi) => (
                                             <div key={oi} style={{ border: '2px solid rgba(228,201,138,0.12)', borderRadius: 16, overflow: 'hidden', cursor: 'default', position: 'relative' }}>
-                                              <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#2a2218,#1a150e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? '' : '⛶'}</div>
-                                              <span style={{ position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#fff', background: opt.correct ? '#7BA081' : 'transparent', opacity: opt.correct ? 1 : 0 }}>{opt.correct ? '✓' : ''}</span>
+                                              <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#2a2218,#1a150e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? <img src={opt.image_url} alt={opt.text || ''} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '⛶'}</div>
                                             </div>
                                           ))}
                                         </div>
