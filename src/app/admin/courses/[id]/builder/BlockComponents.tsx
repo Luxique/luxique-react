@@ -118,6 +118,7 @@ ImageBlock.displayName = 'ImageBlock'
 /* ── QuizBlock ── */
 export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
   const optionType = block.option_type || 'text'
+  const hasMedia = block.media?.type != null
 
   const addOption = () => {
     const opts = [...(block.options || [])]
@@ -156,144 +157,130 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
     onUpdate(block.id, { media: { type: 'image', url: publicUrl } })
   }
 
+  const checkSVG = <svg viewBox="0 0 100 100" width="12" height="12"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z" fill="#fff"/></svg>
+
   return (
-    <div className="bg-white rounded-xl border border-[rgba(30,26,20,0.06)] overflow-hidden">
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-[rgba(30,26,20,0.02)] border-b border-[rgba(30,26,20,0.06)]">
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A7268]">Vraag</span>
+    <div style={{ border: '1px solid rgba(12,10,7,0.10)', borderRadius: 16, overflow: 'hidden' }}>
+      {/* Header — mockup b-block-head */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#F2EEE6', borderBottom: '1px solid rgba(12,10,7,0.10)' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#9E7E45', fontWeight: 600 }}>
+          ◆ Vraag
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           {/* Media toggle */}
-          <label className="flex items-center gap-1 cursor-pointer text-[10px] text-[#7A7268]">
-            <input
-              type="checkbox"
-              checked={block.media?.type != null}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  onUpdate(block.id, { media: { type: 'image', url: '' } })
-                } else {
-                  onUpdate(block.id, { media: null })
-                }
-              }}
-              className="accent-[#C4A265]"
-            />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#8C8579', cursor: 'pointer' }}>
+            <span style={{ width: 30, height: 17, borderRadius: 10, background: hasMedia ? '#5E8463' : '#d8d2c6', position: 'relative', display: 'inline-block', transition: 'background .2s' }}
+              onClick={() => {
+                if (hasMedia) { onUpdate(block.id, { media: null }) }
+                else { onUpdate(block.id, { media: { type: 'image', url: '' } }) }
+              }}>
+              <span style={{ position: 'absolute', width: 13, height: 13, borderRadius: '50%', background: '#fff', top: 2, left: hasMedia ? 15 : 2, transition: 'left .2s' }} />
+            </span>
             Media
           </label>
-          {block.media?.type != null && (
-            <select
-              value={block.media?.type || 'image'}
-              onChange={(e) => onUpdate(block.id, { media: { type: e.target.value as 'image' | 'video', url: block.media?.url || '' } })}
-              className="text-[10px] border border-[rgba(30,26,20,0.09)] rounded px-1 py-0.5"
-            >
-              <option value="image">Foto</option>
-              <option value="video">Video</option>
-            </select>
-          )}
-        </div>
-        {/* Option type */}
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] text-[#7A7268]">Antwoorden:</span>
-          <label className="flex items-center gap-0.5 cursor-pointer text-[10px]">
-            <input type="radio" name={`opt-type-${block.id}`} checked={optionType === 'text'} onChange={() => onUpdate(block.id, { option_type: 'text' })} className="accent-[#C4A265]" />
-            Tekst
-          </label>
-          <label className="flex items-center gap-0.5 cursor-pointer text-[10px]">
-            <input type="radio" name={`opt-type-${block.id}`} checked={optionType === 'image'} onChange={() => onUpdate(block.id, { option_type: 'image' })} className="accent-[#C4A265]" />
-            Foto
-          </label>
+          {/* Tekst/Foto segment */}
+          <div style={{ display: 'inline-flex', border: '1px solid rgba(12,10,7,0.10)', borderRadius: 8, overflow: 'hidden' }}>
+            <span onClick={() => onUpdate(block.id, { option_type: 'text' })} style={{ padding: '5px 14px', fontSize: 12, color: optionType === 'text' ? '#fff' : '#8C8579', background: optionType === 'text' ? '#C4A265' : 'transparent', cursor: 'pointer', transition: 'all .2s' }}>Tekst</span>
+            <span onClick={() => onUpdate(block.id, { option_type: 'image' })} style={{ padding: '5px 14px', fontSize: 12, color: optionType === 'image' ? '#fff' : '#8C8579', background: optionType === 'image' ? '#C4A265' : 'transparent', cursor: 'pointer', transition: 'all .2s' }}>Foto</span>
+          </div>
         </div>
       </div>
 
-      {/* Question content area */}
-      <div className="p-4 space-y-3">
+      {/* Body — mockup b-body */}
+      <div style={{ padding: '22px 20px' }}>
         {/* Media header */}
-        {block.media?.type != null && (
-          <div className="border border-dashed border-[rgba(30,26,20,0.12)] rounded-lg p-3 text-center">
-            {block.media.url ? (
-              <div className="relative inline-block">
-                <img src={block.media.url} alt="Media" className="max-h-32 mx-auto rounded" />
-                <button onClick={() => onUpdate(block.id, { media: { type: block.media?.type || 'image', url: '' } })} className="absolute top-1 right-1 w-5 h-5 bg-black/50 text-white rounded-full text-[10px] flex items-center justify-center">✕</button>
+        {hasMedia && (
+          <div style={{ border: '1.5px dashed rgba(12,10,7,0.12)', borderRadius: 14, padding: 16, textAlign: 'center', marginBottom: 16 }}>
+            {block.media?.url ? (
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <img src={block.media.url} alt="Media" style={{ maxHeight: 160, borderRadius: 8 }} />
+                <button onClick={() => onUpdate(block.id, { media: { type: block.media?.type || 'image', url: '' } })} style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, background: 'rgba(0,0,0,0.5)', color: '#fff', borderRadius: '50%', border: 'none', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
               </div>
             ) : (
-              <label className="cursor-pointer text-[11px] text-[#7A7268]">
-                📷 Klik om {block.media.type === 'video' ? 'video' : 'foto'} te uploaden
-                <input type="file" accept={block.media.type === 'video' ? 'video/*' : 'image/*'} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleMediaHeaderUpload(f) }} />
+              <label style={{ cursor: 'pointer', fontSize: 12, color: '#8C8579' }}>
+                📷 Klik om {block.media?.type === 'video' ? 'video' : 'foto'} te uploaden
+                <input type="file" accept={block.media?.type === 'video' ? 'video/*' : 'image/*'} style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleMediaHeaderUpload(f) }} />
               </label>
             )}
           </div>
         )}
 
-        {/* Question text */}
-        <div className="font-['Cormorant_Garamond'] text-[18px] text-[#1E1A14]">
-          <RichTextField
-            content={block.question || ''}
-            onChange={(html) => onUpdate(block.id, { question: html })}
-            variant="inline"
-            placeholder="Typ je vraag..."
-          />
-        </div>
+        {/* Question input — Cormorant 22px, bottom border */}
+        <input
+          value={block.question || ''}
+          onChange={(e) => onUpdate(block.id, { question: e.target.value })}
+          placeholder="Typ je vraag..."
+          style={{ width: '100%', border: 'none', borderBottom: '2px solid rgba(12,10,7,0.10)', background: 'transparent', fontFamily: '"Cormorant Garamond", serif', fontSize: 22, color: '#2C2A25', padding: '6px 2px 12px', marginBottom: 8, outline: 'none', display: 'block' }}
+          onFocus={(e) => { e.currentTarget.style.borderBottomColor = '#C4A265' }}
+          onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'rgba(12,10,7,0.10)' }}
+        />
+        <p style={{ fontSize: 12, color: '#8C8579', margin: '4px 2px 20px', fontStyle: 'italic' }}>Vink de bolletjes aan bij de juiste antwoord(en). Meerdere mag.</p>
 
-        {/* Answer options */}
+        {/* Options */}
         {optionType === 'image' ? (
-          <div className="grid grid-cols-2 gap-2">
-            {(block.options || []).map((opt, i) => (
-              <div key={opt.id || i} className="group relative">
-                <div
-                  className={`rounded-xl border-2 overflow-hidden transition cursor-pointer ${opt.correct ? 'border-[rgba(80,190,120,0.5)] bg-[rgba(80,190,120,0.04)]' : 'border-[rgba(30,26,20,0.08)] hover:border-[rgba(196,162,101,0.3)]'}`}
-                  onClick={() => toggleCorrect(i)}
-                >
-                  <div className="aspect-square flex items-center justify-center bg-[rgba(30,26,20,0.03)] min-h-[80px]">
+          /* Photo grid — mockup b-photo-grid */
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {(block.options || []).map((opt, i) => (
+                <div key={opt.id || i} style={{ border: `1.5px solid ${opt.correct ? '#5E8463' : 'rgba(12,10,7,0.10)'}`, borderRadius: 14, overflow: 'hidden', background: '#fff', position: 'relative' }}>
+                  <div style={{ aspectRatio: '1', background: opt.image_url ? 'transparent' : '#ede7db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb4a6', fontSize: 24 }}>
                     {opt.image_url ? (
-                      <img src={opt.image_url} alt={opt.text} className="w-full h-full object-cover" />
+                      <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <label className="cursor-pointer text-[10px] text-[#7A7268] p-4" onClick={(e) => e.stopPropagation()}>
-                        📷 Upload
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f) }} />
+                      <label style={{ cursor: 'pointer', padding: 16 }} onClick={(e) => e.stopPropagation()}>
+                        ⛶ Upload
+                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(i, f) }} />
                       </label>
                     )}
                   </div>
-                  <div className="px-2 py-1.5 text-center text-[11px] text-[#7A7268]">
-                    {String.fromCharCode(65 + i)}
-                    {opt.correct && <span className="ml-1 text-[rgba(80,190,120,0.8)]">✓</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderTop: '1px solid rgba(12,10,7,0.10)' }}>
+                    <span
+                      onClick={() => toggleCorrect(i)}
+                      style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${opt.correct ? '#5E8463' : '#cfc8ba'}`, background: opt.correct ? '#5E8463' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}
+                    >
+                      <span style={{ opacity: opt.correct ? 1 : 0 }}>{checkSVG}</span>
+                    </span>
+                    <span style={{ fontSize: 13, color: '#8C8579' }}>Foto {String.fromCharCode(65 + i)}</span>
                   </div>
+                  <button onClick={() => removeOption(i)} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: 22, height: 22, fontSize: 12, color: '#c9b8b6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
                 </div>
-                <button onClick={() => removeOption(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white rounded-full shadow text-[10px] text-[rgba(30,26,20,0.3)] hover:text-[rgba(220,80,80,0.7)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition">✕</button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <button onClick={addOption} style={{ width: '100%', border: '1.5px dashed #C4A265', background: 'transparent', color: '#9E7E45', borderRadius: 12, padding: 13, fontFamily: 'Outfit', fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer', marginTop: 12 }}>+ Foto-optie toevoegen</button>
+          </>
         ) : (
-          <div className="space-y-1.5">
+          /* Text options — mockup b-opt */
+          <>
             {(block.options || []).map((opt, i) => (
-              <div key={opt.id || i} className="group relative">
-                <div
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition cursor-pointer ${opt.correct ? 'border-[rgba(80,190,120,0.5)] bg-[rgba(80,190,120,0.04)]' : 'border-[rgba(30,26,20,0.06)] hover:border-[rgba(196,162,101,0.25)] hover:bg-[rgba(196,162,101,0.02)]'}`}
+              <div key={opt.id || i} style={{
+                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+                border: `1.5px solid ${opt.correct ? '#5E8463' : 'rgba(12,10,7,0.10)'}`,
+                borderRadius: 12, marginBottom: 12, background: opt.correct ? 'rgba(94,132,99,0.06)' : '#fff',
+                transition: 'border-color .2s, background .2s'
+              }}>
+                {/* Letter */}
+                <span style={{ flex: '0 0 22px', fontFamily: '"Cormorant Garamond", serif', fontStyle: 'italic', fontSize: 16, color: '#8C8579', textAlign: 'center' }}>{String.fromCharCode(65 + i)}</span>
+                {/* Input */}
+                <input
+                  value={opt.text || ''}
+                  onChange={(e) => updateOption(i, { text: e.target.value })}
+                  placeholder={`Optie ${String.fromCharCode(65 + i)}`}
+                  style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 15, color: '#2C2A25', outline: 'none' }}
+                />
+                {/* Correct check */}
+                <span
                   onClick={() => toggleCorrect(i)}
+                  style={{ width: 26, height: 26, borderRadius: '50%', border: `2px solid ${opt.correct ? '#5E8463' : '#cfc8ba'}`, background: opt.correct ? '#5E8463' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s', flexShrink: 0 }}
                 >
-                  <span className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] font-medium flex-shrink-0 transition ${opt.correct ? 'bg-[rgba(80,190,120,0.15)] border-[rgba(80,190,120,0.4)] text-[rgba(80,190,120,0.9)]' : 'bg-white border-[rgba(30,26,20,0.1)] text-[#7A7268]'}`}>
-                    {opt.correct ? '✓' : String.fromCharCode(65 + i)}
-                  </span>
-                  <div className="flex-1" onClick={(e) => e.stopPropagation()}>
-                    <RichTextField
-                      content={opt.text || ''}
-                      onChange={(html) => updateOption(i, { text: html })}
-                      variant="inline"
-                      className="text-[13px] text-[#1E1A14]"
-                      placeholder={`Optie ${String.fromCharCode(65 + i)}`}
-                    />
-                  </div>
-                </div>
-                <button onClick={() => removeOption(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white rounded-full shadow text-[10px] text-[rgba(30,26,20,0.3)] hover:text-[rgba(220,80,80,0.7)] flex items-center justify-center opacity-0 group-hover:opacity-100 transition">✕</button>
+                  <span style={{ opacity: opt.correct ? 1 : 0 }}>{checkSVG}</span>
+                </span>
+                {/* Delete */}
+                <span onClick={() => removeOption(i)} style={{ color: '#c9b8b6', cursor: 'pointer', fontSize: 15, padding: '2px 6px' }}>✕</span>
               </div>
             ))}
-          </div>
+            <button onClick={addOption} style={{ width: '100%', border: '1.5px dashed #C4A265', background: 'transparent', color: '#9E7E45', borderRadius: 12, padding: 13, fontFamily: 'Outfit', fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer' }}>+ Optie toevoegen</button>
+          </>
         )}
-
-        {/* Add option */}
-        <button
-          onClick={addOption}
-          className="w-full py-2 rounded-xl border-2 border-dashed border-[rgba(30,26,20,0.08)] text-[11px] text-[#7A7268] hover:border-[rgba(196,162,101,0.3)] hover:text-[#C4A265] transition cursor-pointer"
-        >
-          + Optie toevoegen
-        </button>
       </div>
     </div>
   )
