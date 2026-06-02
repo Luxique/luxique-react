@@ -211,7 +211,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   const [pickerOpen, setPickerOpen] = useState(false)
   const addBlockButtonRef = useRef<HTMLButtonElement>(null)
 
-  const [questionNumber, setQuestionNumber] = useState(1)
   
   // Video upload state
   const videoFileInputRef = useRef<HTMLInputElement>(null)
@@ -221,6 +220,31 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   // Preview state
   const [previewWidth, setPreviewWidth] = useState(420)
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop')
+  const [isDraggingSplitter, setIsDraggingSplitter] = useState(false)
+
+  // Splitter drag handler
+  const handleSplitterMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDraggingSplitter(true)
+    const startX = e.clientX
+    const startWidth = previewWidth
+    const onMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX
+      const newWidth = Math.max(280, Math.min(900, startWidth + delta))
+      setPreviewWidth(newWidth)
+    }
+    const onUp = () => {
+      setIsDraggingSplitter(false)
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [previewWidth])
   const heroVideoInputRef = useRef<HTMLInputElement>(null)
   const [heroUploading, setHeroUploading] = useState(false)
   const [heroProcessing, setHeroProcessing] = useState(false)
@@ -809,16 +833,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
     setCourse({
       ...course,
       lessons: [...(course.lessons || []), newLesson]
-    })
-  }
-
-  const addReflectionQuestion = () => {
-    if (!currentLesson) return
-    const newQuestions = [...(currentLesson.reflectionQuestions || []), `Reflectievraag ${questionNumber}`]
-    setQuestionNumber(questionNumber + 1)
-    setCurrentLesson({
-      ...currentLesson,
-      reflectionQuestions: newQuestions
     })
   }
 
@@ -1498,36 +1512,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             </div>
           </div>
           
-          <div className="border-b border-[rgba(30,26,20,0.09)] pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268]">Reflectievragen na les</span>
-            </div>
-            <p className="text-[11px] text-[#7A7268] font-light leading-relaxed mb-3">
-              Studenten beantwoorden deze vragen na de les — geen score, puur reflectie.
-            </p>
-            <div className="space-y-2">
-              {currentLesson.reflectionQuestions?.map((question, index) => (
-                <div key={index} className="bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-2 flex items-start gap-2">
-                  <span className="font-['Cormorant_Garamond'] text-[13px] text-[rgba(196,162,101,0.5)] italic">1</span>
-                  <input 
-                    type="text"
-                    value={question}
-                    className="flex-1 bg-transparent outline-none text-[12px] text-[#1E1A14] leading-relaxed"
-                    placeholder="bijv. Wat viel je op aan..."
-                  />
-                </div>
-              ))}
-            </div>
-            <button 
-              onClick={addReflectionQuestion}
-              className="w-full flex items-center gap-2 p-2 rounded-[7px] border border-dashed border-[rgba(196,162,101,0.2)] bg-transparent text-[rgba(196,162,101,0.5)] text-[11px] hover:border-[rgba(196,162,101,0.4)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition"
-            >
-              <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-              Vraag toevoegen
-            </button>
-          </div>
+
         </div>
       )
     }
@@ -2075,12 +2060,40 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
           )}
         </div>
 
+        {/* Draggable Splitter Handle */}
+        <div
+          onMouseDown={handleSplitterMouseDown}
+          className={`relative flex-shrink-0 group ${isDraggingSplitter ? '' : ''}`}
+          style={{
+            width: '12px',
+            cursor: 'col-resize',
+            zIndex: 50,
+            height: 'calc(100vh - 60px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: isDraggingSplitter ? 'rgba(196,162,101,0.15)' : 'transparent',
+            transition: isDraggingSplitter ? 'none' : 'background 0.2s',
+          }}
+          onMouseEnter={(e) => { if (!isDraggingSplitter) (e.currentTarget as HTMLDivElement).style.background = 'rgba(196,162,101,0.08)' }}
+          onMouseLeave={(e) => { if (!isDraggingSplitter) (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
+        >
+          <div style={{
+            width: 4,
+            height: 40,
+            borderRadius: 2,
+            background: isDraggingSplitter ? '#C4A265' : 'rgba(196,162,101,0.25)',
+            transition: isDraggingSplitter ? 'none' : 'background 0.2s',
+          }} />
+        </div>
+
         {/* Preview pane */}
         <div 
           className="bg-[#0A0807] overflow-hidden relative" 
           style={{ 
             width: `${previewWidth}px`,
-            height: 'calc(100vh - 60px)'
+            height: 'calc(100vh - 60px)',
+            flexShrink: 0,
           }}
         >
           {/* Preview header with device toggle */}
@@ -2121,10 +2134,19 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
             className="overflow-y-auto overflow-x-hidden" 
             style={{ height: 'calc(100vh - 100px)' }}
           >
-            <div className="transform scale-[0.38] origin-top-left w-[263%]">
+            <div style={{ position: 'relative', overflow: 'hidden' }}>
+            <div style={{ 
+              transform: previewDevice === 'mobile' ? `scale(${previewWidth / 375})` : `scale(${previewWidth / 1100})`,
+              transformOrigin: 'top left',
+              width: previewDevice === 'mobile' ? '375px' : '1100px',
+            }}>
               {/* Context-based preview rendering */}
               {course && (
-                <>
+                <div style={{
+                  width: previewDevice === 'mobile' ? '375px' : undefined,
+                  minWidth: previewDevice === 'mobile' ? '375px' : undefined,
+                  margin: previewDevice === 'mobile' ? '0 auto' : undefined,
+                }}>
                   {currentContext === 'global' && (
                     <CourseLandingClient
                       {...mapBuilderToLandingProps(
@@ -2137,7 +2159,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   )}
                   
                   {currentContext === 'lesson' && currentLesson && (
-                    <div className="bg-[#FAF8F4] min-h-screen p-8">
+                    <div className="bg-[#FAF8F4] min-h-screen p-4 sm:p-8">
                       <div className="max-w-4xl mx-auto">
                         <div className="mb-8">
                           <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">
@@ -2229,7 +2251,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   )}
                   
                   {currentContext === 'quiz' && currentQuiz && (
-                    <div className="bg-[#FAF8F4] min-h-screen p-8">
+                    <div className="bg-[#FAF8F4] min-h-screen p-4 sm:p-8">
                       <div className="max-w-4xl mx-auto">
                         <div className="mb-8">
                           <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">{currentQuiz.name}</h1>
@@ -2259,9 +2281,10 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                       </div>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
+            </div> {/* end overflow wrapper */}
           </div>
         </div>
       </div>

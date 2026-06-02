@@ -378,3 +378,72 @@ Volgorde:
   - Verifiëren: `SELECT tgname, tgrelid::regclass, tgenabled FROM pg_trigger WHERE tgname LIKE '%new_user%';`
   - Check op meer NOT NULL kolommen zonder default
   - Check op tweede trigger of check-constraint
+
+---
+
+## 12. QUIZ / LESSON-TYPE SYSTEEM (juni 2026)
+
+### Wat is gebouwd
+
+**Stap 1 — Datamodel (commit fab8372):**
+- `lessons.lesson_type` kolom: `TEXT DEFAULT 'content' CHECK (lesson_type IN ('content', 'quiz', 'exam'))`
+- Bestaande lessen automatisch `content` — geen regressie
+- Builder Lesson interface + beide upsert-flows schrijven `lesson_type` naar DB
+- Server page query: `lesson_type` toegevoegd aan select
+
+**Stap 2 — UX: dropdown bij "+" knop (commit 26a9eee):**
+- "+ Les of toets toevoegen" opent dropdown: Les (content) / Tussentijdse quiz / Eindtoets
+- Type bepaalt `lesson_type`, naam-prefix, en default blocks
+- Type-selector uit zijpaneel verwijderd (wordt alleen bij aanmaken gekozen)
+- Sidebar-labels: quiz→"Quiz: [titel]", exam→"Eindtoets: [titel]", content→"Les X"
+
+**Stap 3 — Quiz Builder (commits 8edac47, 20669bb, 2d6694b, 3731f82, 142b5a7):**
+- QuizBlock herschreven 1-op-1 naar CJ's HTML mockup
+- Header: `#F2EEE6` bg, ◆ Vraag label, goud Tekst/Foto segment, media-toggle pill
+- Vraag-input: Cormorant Garamond 22px, bottom-border, goud bij focus
+- Tekst-opties: letter (italic Cormorant A/B/C), invoerveld, groene aanvinkcirkel (28px) met SVG-vinkje, verwijder ✕, cream achtergrond, groen bij correct
+- Foto-opties: 2-koloms grid, aspect-ratio 1, upload-placeholder ⛶, check circle in footer
+- Media-header: pill-toggle + upload (foto/video)
+- "+ Optie toevoegen" werkt (was stuk, nu gefixt)
+- jsonb structuur per quiz-blok:
+  ```json
+  {
+    "question": "...",
+    "media": { "type": "image"|"video"|null, "url": "..." },
+    "option_type": "text"|"image",
+    "options": [{ "id": "uuid", "text": "...", "image_url": "...", "correct": true }]
+  }
+  ```
+- Upload bucket: `course-images` (NIET `course-media` — die bestaat niet!)
+- Lesnaam-veld verborgen bij quiz/exam in zijpaneel
+- Multi-answer: telt correct-flags → 1 = "Kies één antwoord", 2+ = "Meerdere antwoorden mogelijk"
+- Preview toont quiz-blokken met dark-theme cursist-weergave
+- Correct-flags verborgen in cursist-weergave (geen antwoord-lek)
+
+**Auto-defaults bij laden:**
+- Quiz/exam les zonder blocks → auto 1 leeg quiz-blok met 2 opties
+- Content les zonder blocks → video + text (ongewijzigd)
+- Block picker: quiz-les toont alleen quiz-type; content-les verbergt quiz-type
+
+### Belangrijke valkuilen
+
+1. **Upload bucket = `course-images`** — NIET `course-media` (die bestaat niet in Supabase). Elke quiz foto-upload (opties + media-header) moet deze bucket gebruiken.
+
+2. **Sidebar les-label regel 1874** — er zijn MEERDERE render-locaties voor les-labels in de builder. De lessenlijst-items (regel ~1857) en het detail-paneel (regel ~1932) zijn verschillende plekken. Beide moeten `lesson_type` checken.
+
+3. **DB waarden overschrijven code-fallbacks** — de `pricing_includes[0]` in de DB bevatte "8 modules · 4 uur video" waardoor de dynamische telling "5 lessen" nooit bereikt werd. Fix: code vervangt altijd `[0]` door dynamische telling.
+
+4. **Correct-flags mogen NOOIT lekken naar cursist** — alleen zichtbaar in builder. De preview-render moet correct-badges weglaten.
+
+### Bestanden (quiz/lesson-type relevant)
+- `src/app/admin/courses/[id]/builder/page.tsx` — Lesson interface, addLesson, loadBlocksForLesson, preview render, sidebar labels
+- `src/app/admin/courses/[id]/builder/BlockComponents.tsx` — QuizBlock (mockup-design), Block interface
+- `src/app/cursus/[slug]/CourseLandingClient.tsx` — Lesson interface, curriculum accordion, type-prefix in title, meta-text
+- `src/app/cursus/[slug]/page.tsx` — server query select
+
+### Nog open (stap 4/5 + polish)
+- **Interactieve quiz-cursist-weergave (stap 4)**: fout→rood, 2× fout→reveal juist, goed→groen, volgende-knop. Mockup-JS-logica beschikbaar als referentie.
+- **Eindtoets-flow (stap 5)**: score bijhouden, slaaggrens, alleen foute vragen herkansen, eindscherm met samenvatting.
+- **Polish-punten**: CJ heeft nog een polish-lijst (komt na compact).
+- **Duration-seconds invullen**: alle 5 Medusa-lessen hebben `duration_seconds: 0` — toont geen duur. Moet later via Mux metadata of handmatig.
+- **Oude `quizzes` sectie**: builder heeft nog een legacy `course.quizzes` array + aparte sidebar-sectie. Kan opgeschoond worden nu quiz-lessen via `lesson_type` gaan.
