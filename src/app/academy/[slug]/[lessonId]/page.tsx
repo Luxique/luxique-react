@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import '@mux/mux-player'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import './lesson-page.css'
@@ -39,6 +38,7 @@ export default function LessonPage() {
   const [videoCompleted, setVideoCompleted] = useState(false)
 
   // Rail
+  const muxPlayerRef = useRef<HTMLElement>(null)
   const [railOpen, setRailOpen] = useState(() => {
     if (typeof window === 'undefined') return true
     return localStorage.getItem('lux-rail-open') !== 'closed'
@@ -117,6 +117,33 @@ export default function LessonPage() {
     }, { onConflict: 'user_id,lesson_id' })
     setProgress(prev => { const n = new Map(prev); n.set(targetId, { ...prev.get(targetId)!, completed: true }); return n })
   }, [user, lesson, lessonId])
+
+  // Mux player native event listeners for completion detection
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const player = muxPlayerRef.current as any
+    if (!player || !hasVideoBlock) return
+
+    const handleTimeUpdate = () => {
+      if (!player.duration || !player.currentTime) return
+      if (player.currentTime / player.duration >= 0.9) {
+        const rec = progress.get(lessonId)
+        if (!rec?.completed) markComplete()
+      }
+    }
+    const handleEnded = () => {
+      const rec = progress.get(lessonId)
+      if (!rec?.completed) markComplete()
+    }
+
+    player.addEventListener('timeupdate', handleTimeUpdate)
+    player.addEventListener('ended', handleEnded)
+    return () => {
+      player.removeEventListener('timeupdate', handleTimeUpdate)
+      player.removeEventListener('ended', handleEnded)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasVideoBlock, lessonId])
 
   const handleQuizAnswer = (blockId: string, optionId: string) => {
     if (quizResults[blockId]) return
@@ -233,21 +260,13 @@ export default function LessonPage() {
                     return pid ? (
                       <>
                         <div className="video" style={{ position: 'relative' }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <mux-player
+                            ref={muxPlayerRef}
                             playback-id={pid}
                             stream-type="on-demand"
                             start-time={resumeSec > 0 ? resumeSec : undefined}
                             style={{ width: '100%', height: '100%', '--controls': '', aspectRatio: '16/9' } as React.CSSProperties}
                             title={block.title || 'Video'}
-                            onTimeUpdate={(e: React.SyntheticEvent<HTMLElement>) => {
-                              const player = e.currentTarget as unknown as HTMLVideoElement
-                              if (!player?.duration || !player?.currentTime) return
-                              const pct = player.currentTime / player.duration
-                              if (pct >= 0.9 && !done) {
-                                markComplete()
-                              }
-                            }}
                           />
                           <div className="video-scrub" style={{ width: done ? '100%' : '0%' }} />
                         </div>
