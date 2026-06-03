@@ -280,15 +280,19 @@ export default function LessonPage() {
                   })()}
 
                   {/* TITEL + TEKST */}
-                  {block.type === 'text' && (
-                    <div className="tt">
-                      {block.title && <h2>{block.title}</h2>}
-                      {block.subtitle && <div className="subtitle">{block.subtitle}</div>}
-                      {block.content && typeof block.content === 'string' && (
-                        <div dangerouslySetInnerHTML={{ __html: block.content }} />
-                      )}
-                    </div>
-                  )}
+                  {block.type === 'text' && (() => {
+                    const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
+                    const title = (c?.title as string) || block.title
+                    const subtitle = (c?.subtitle as string) || block.subtitle
+                    const body = typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : '')
+                    return (
+                      <div className="tt">
+                        {title && <h2>{title}</h2>}
+                        {subtitle && <div className="subtitle">{subtitle}</div>}
+                        {body && <div dangerouslySetInnerHTML={{ __html: body }} />}
+                      </div>
+                    )
+                  })()}
 
                   {/* FOTO */}
                   {block.type === 'image' && (() => {
@@ -322,10 +326,15 @@ export default function LessonPage() {
 
                   {/* QUIZ — reuse existing quiz UI */}
                   {block.type === 'quiz' && (() => {
+                    const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
+                    const question = (c?.question as string) || block.question
+                    const options = (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options
+                    const optionType = (c?.option_type as string) || block.option_type
+                    const media = (c?.media as { type: string; url: string } | null) || block.media
                     const result = quizResults[block.id]
                     const chosenId = quizAnswers[block.id]
-                    const correctOpt = block.options?.find(o => o.correct)
-                    const isImage = block.option_type === 'image'
+                    const correctOpt = options?.find(o => o.correct)
+                    const isImage = optionType === 'image'
                     return (
                       <div className="quiz-block">
                         {quizBlocks.length > 1 && (
@@ -336,14 +345,14 @@ export default function LessonPage() {
                           </div>
                         )}
                         <div className="quiz-counter">Vraag {quizBlocks.indexOf(block) + 1} van {quizBlocks.length}</div>
-                        {block.media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={block.media.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
-                        <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
+                        {block.media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={media?.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
+                        <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{question || 'Typ je vraag...'}</h3>
                         <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 20 }}>
-                          {(block.options?.filter(o => o.correct).length || 0) > 1 ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}
+                          {(options?.filter(o => o.correct).length || 0) > 1 ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}
                         </div>
                         {isImage ? (
                           <div className="quiz-image-grid">
-                            {(block.options || []).map(opt => {
+                            {(options || []).map(opt => {
                               const isChosen = chosenId === opt.id; const isCorrect = opt.correct
                               let border = '1.5px solid var(--line)'
                               if (result === 'correct' && isChosen) border = '2px solid var(--green)'
@@ -358,7 +367,7 @@ export default function LessonPage() {
                           </div>
                         ) : (
                           <div className="quiz-options">
-                            {(block.options || []).map((opt, oi) => {
+                            {(options || []).map((opt, oi) => {
                               const isChosen = chosenId === opt.id; const isCorrect = opt.correct
                               let bg: string = 'var(--paper)', border: string = '1.5px solid var(--line)'; const color = 'var(--ink)'
                               if (result === 'correct' && isChosen) { bg = 'var(--green-soft)'; border = '1.5px solid var(--green)' }
