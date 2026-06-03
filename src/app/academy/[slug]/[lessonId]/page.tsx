@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import '@mux/mux-player'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import './lesson-page.css'
