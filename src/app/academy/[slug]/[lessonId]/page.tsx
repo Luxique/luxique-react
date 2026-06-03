@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import '@mux/mux-player'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import './lesson-page.css'
@@ -102,10 +103,10 @@ export default function LessonPage() {
   const quizBlocks = blocks.filter(b => b.type === 'quiz')
   const videoBlock = blocks.find(b => b.type === 'video')
   const hasVideoBlock = !!videoBlock
-  const canProceed = !hasVideoBlock || videoCompleted
+  const isLessonComplete = !!progress.get(lessonId)?.completed || videoCompleted
+  const canProceed = !hasVideoBlock || isLessonComplete
 
   /* ── Handlers ─────────────────────────────────── */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const markComplete = useCallback(async (lid?: string) => {
     const targetId = lid || lessonId
     if (!user || !lesson) return
@@ -225,24 +226,29 @@ export default function LessonPage() {
                   {/* VIDEO */}
                   {block.type === 'video' && (() => {
                     const content = typeof block.content === 'object' ? block.content : {}
-                    const pid = (content as Record<string, unknown>)?.mux_playback_id
+                    const pid = (content as Record<string, unknown>)?.mux_playback_id as string | undefined
                     const rec = progress.get(lessonId)
+                    const done = !!rec?.completed
                     const resumeSec = rec?.last_position_seconds || 0
-                    const resumeMin = Math.floor(resumeSec / 60)
-                    const done = rec?.completed || videoCompleted
                     return pid ? (
                       <>
-                        <div className="video">
-                          <iframe
-                            src={`https://stream.mux.com/${pid}.m3u8`}
-                            allow="autoplay; fullscreen" title={block.title || 'Video'}
-                            style={{ width: '100%', height: '100%', border: 'none', position: 'absolute', inset: 0 }}
+                        <div className="video" style={{ position: 'relative' }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <mux-player
+                            playback-id={pid}
+                            stream-type="on-demand"
+                            start-time={resumeSec > 0 ? resumeSec : undefined}
+                            style={{ width: '100%', height: '100%', '--controls': '', aspectRatio: '16/9' } as React.CSSProperties}
+                            title={block.title || 'Video'}
+                            onTimeUpdate={(e: React.SyntheticEvent<HTMLElement>) => {
+                              const player = e.currentTarget as unknown as HTMLVideoElement
+                              if (!player?.duration || !player?.currentTime) return
+                              const pct = player.currentTime / player.duration
+                              if (pct >= 0.9 && !done) {
+                                markComplete()
+                              }
+                            }}
                           />
-                          {resumeSec > 0 && !done && (
-                            <div className="video-resume">
-                              <span>↺ Hervat vanaf {resumeMin}:{String(resumeSec % 60).padStart(2, '0')}</span>
-                            </div>
-                          )}
                           <div className="video-scrub" style={{ width: done ? '100%' : '0%' }} />
                         </div>
                         <div className="vid-meta">
@@ -370,7 +376,7 @@ export default function LessonPage() {
                   <button
                     className={`next-btn ${canProceed ? 'ready' : ''}`}
                     onClick={() => nextLesson ? router.push(`/academy/${slug}/${nextLesson.id}`) : router.push(`/academy/${slug}`)}
-                    disabled={!canProceed && hasVideoBlock && !videoCompleted}
+                    disabled={!canProceed && hasVideoBlock}
                   >
                     {nextLesson ? `${nextLesson.title} →` : 'Terug naar overzicht →'}
                   </button>
