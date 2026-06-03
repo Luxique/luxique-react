@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import './course-interior.css'
@@ -33,6 +33,7 @@ type LessonStatus = 'done' | 'current' | 'todo'
 
 export default function CourseInteriorPage() {
   const params = useParams()
+  const router = useRouter()
   const slug = params.slug as string
   const { user, role } = useAuth()
 
@@ -243,7 +244,7 @@ export default function CourseInteriorPage() {
             <div className="meta">Video · {formatDuration(nextLesson.duration_seconds) || 'Binnenkort'}</div>
           </div>
           {hasAccess ? (
-            <button className="go">Verder kijken →</button>
+            <button className="go" onClick={() => nextLesson && router.push(`/academy/${slug}/${nextLesson.id}`)}>Verder kijken →</button>
           ) : (
             <a href={`/cursus/${slug}`} className="go">Inschrijven →</a>
           )}
@@ -265,6 +266,8 @@ export default function CourseInteriorPage() {
             <div
               key={lesson.id}
               className={`ci-lesson ${isCurrent ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''}`}
+              onClick={() => { if (!locked) router.push(`/academy/${slug}/${lesson.id}`) }}
+              style={{ cursor: locked ? 'default' : 'pointer' }}
             >
               <span className={`status ${status === 'done' ? 'done' : isCurrent ? 'current' : 'todo'}`}>
                 {status === 'done' && checkSVG}
