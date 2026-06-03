@@ -105,6 +105,7 @@ export default function LessonPage() {
   const canProceed = !hasVideoBlock || videoCompleted
 
   /* ── Handlers ─────────────────────────────────── */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const markComplete = useCallback(async (lid?: string) => {
     const targetId = lid || lessonId
     if (!user || !lesson) return
@@ -358,9 +359,7 @@ export default function LessonPage() {
               ))}
 
               {/* Mark complete */}
-              <div style={{ marginTop: 32, textAlign: 'center' }}>
-                <button onClick={() => markComplete()} className="lp-mark-btn">✓ Markeer als voltooid</button>
-              </div>
+              {/* Auto-complete via video ~90% */}
 
               {/* Next/Prev navigation */}
               <div className="next-wrap">
