@@ -18,10 +18,29 @@ interface Block {
   question?: string; media?: { type: string; url: string; caption?: string } | null
   option_type?: 'text' | 'image'
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
-  file_name?: string; file_size?: number; file_url?: string
-  subtitle?: string
+  file_name?: string; file_size?: number; file_url?: string; subtitle?: string
 }
 interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number }
+
+/* ── Helpers ───────────────────────────────────── */
+function extractBlockContent(block: Block) {
+  const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
+  return {
+    title: (c?.title as string) || block.title,
+    subtitle: (c?.subtitle as string) || block.subtitle,
+    body: typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : ''),
+    muxPlaybackId: (c?.mux_playback_id as string) || undefined,
+    question: (c?.question as string) || block.question,
+    options: (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
+    optionType: (c?.option_type as string) || block.option_type,
+    media: (c?.media as { type: string; url: string; caption?: string } | null) || block.media,
+    imageUrl: (c?.url as string) || block.media?.url,
+    caption: (c?.caption as string) || block.media?.caption,
+    fileName: (block.title || (c?.file_name as string)) || 'Bestand',
+    fileSize: c?.file_size as number | undefined,
+    fileUrl: (c?.file_url as string) || block.file_url || '#',
+  }
+}
 
 /* ── Component ─────────────────────────────────── */
 export default function LessonPage() {
@@ -40,15 +59,17 @@ export default function LessonPage() {
 
   // Rail
   const muxPlayerRef = useRef<HTMLElement>(null)
+  const lastBlockRef = useRef<HTMLDivElement>(null)
   const [railOpen, setRailOpen] = useState(() => {
     if (typeof window === 'undefined') return true
     return localStorage.getItem('lux-rail-open') !== 'closed'
   })
   const [railMobileOpen, setRailMobileOpen] = useState(false)
 
-  // Quiz
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})
-  const [quizResults, setQuizResults] = useState<Record<string, 'correct' | 'wrong' | 'revealed'>>({})
+  // Quiz: track attempts per question block
+  const [quizAttempts, setQuizAttempts] = useState<Record<string, number>>({})      // blockId → attempt count
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})         // blockId → chosen optionId
+  const [quizResults, setQuizResults] = useState<Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>>({})
 
   /* ── Data fetching ────────────────────────────── */
   useEffect(() => {
@@ -57,13 +78,10 @@ export default function LessonPage() {
         const { data: ld } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id').eq('id', lessonId).single()
         if (!ld) { setLoading(false); return }
         setLesson(ld)
-
         const { data: cd } = await supabase.from('courses').select('title').eq('id', ld.course_id).single()
         if (cd) setCourseTitle(cd.title)
-
         const { data: als } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id').eq('course_id', ld.course_id).order('sort_order')
         setAllLessons(als || [])
-
         const { data: bdata } = await supabase.from('blocks').select('*').eq('lesson_id', lessonId).order('sort_order')
         setBlocks(bdata || [])
       } finally { setLoading(false) }
@@ -89,24 +107,40 @@ export default function LessonPage() {
       })
   }, [user, allLessons])
 
-  // Persist rail state
   useEffect(() => { localStorage.setItem('lux-rail-open', railOpen ? 'open' : 'closed') }, [railOpen])
 
   /* ── Derived ──────────────────────────────────── */
   const hasAccess = enrolled || role === 'admin'
   const isLocked = !hasAccess && !lesson?.is_free
   const currentIdx = allLessons.findIndex(l => l.id === lessonId)
-  const prevLesson = currentIdx > 0 ? allLessons[currentIdx - 1] : null
-  const nextLesson = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null
+  const prevLessonNav = currentIdx > 0 ? allLessons[currentIdx - 1] : null
+  const nextLessonNav = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null
   const completedCount = allLessons.filter(l => progress.get(l.id)?.completed).length
   const totalCount = allLessons.length
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   const quizBlocks = blocks.filter(b => b.type === 'quiz')
+  const isQuizLesson = lesson?.lesson_type === 'quiz' || lesson?.lesson_type === 'exam'
+
+  // Video detection
   const videoBlock = blocks.find(b => b.type === 'video')
   const videoContent = typeof videoBlock?.content === 'object' ? videoBlock.content as Record<string, unknown> : null
   const hasPlayableVideo = !!(videoContent?.mux_playback_id)
+
+  // Quiz completion: all quiz blocks have been answered (correct or revealed)
+  const quizComplete = quizBlocks.length > 0 && quizBlocks.every(b => {
+    const r = quizResults[b.id]
+    return r === 'correct' || r === 'revealed'
+  })
+
+  // Overall lesson completion
   const isLessonComplete = !!progress.get(lessonId)?.completed || videoCompleted
-  const canProceed = !hasPlayableVideo || isLessonComplete
+
+  // Can proceed to next lesson?
+  const canProceed = isQuizLesson
+    ? quizComplete                           // Quiz lesson: all questions answered
+    : hasPlayableVideo
+      ? isLessonComplete                     // Content with video: video watched
+      : isLessonComplete                     // Content without video: scrolled to end (or marked)
 
   /* ── Handlers ─────────────────────────────────── */
   const markComplete = useCallback(async (lid?: string) => {
@@ -120,12 +154,18 @@ export default function LessonPage() {
     setProgress(prev => { const n = new Map(prev); n.set(targetId, { ...prev.get(targetId)!, completed: true }); return n })
   }, [user, lesson, lessonId])
 
-  // Mux player native event listeners for completion detection
+  // When quiz becomes complete, mark lesson as complete
+  useEffect(() => {
+    if (isQuizLesson && quizComplete && !isLessonComplete) {
+      markComplete()
+    }
+  }, [isQuizLesson, quizComplete, isLessonComplete, markComplete])
+
+  // Mux player native event listeners
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const player = muxPlayerRef.current as any
     if (!player || !hasPlayableVideo) return
-
     const handleTimeUpdate = () => {
       if (!player.duration || !player.currentTime) return
       if (player.currentTime / player.duration >= 0.9) {
@@ -137,67 +177,84 @@ export default function LessonPage() {
       const rec = progress.get(lessonId)
       if (!rec?.completed) markComplete()
     }
-
     player.addEventListener('timeupdate', handleTimeUpdate)
     player.addEventListener('ended', handleEnded)
-    return () => {
-      player.removeEventListener('timeupdate', handleTimeUpdate)
-      player.removeEventListener('ended', handleEnded)
-    }
+    return () => { player.removeEventListener('timeupdate', handleTimeUpdate); player.removeEventListener('ended', handleEnded) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasPlayableVideo, lessonId])
 
+  // Scroll-to-end completion for content lessons without video
+  useEffect(() => {
+    if (!lastBlockRef.current || hasPlayableVideo || isQuizLesson || isLessonComplete) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) markComplete()
+    }, { threshold: 0.5 })
+    observer.observe(lastBlockRef.current)
+    return () => observer.disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks, hasPlayableVideo, isQuizLesson, isLessonComplete, markComplete])
+
+  // Quiz answer handler — 2 attempts max
   const handleQuizAnswer = (blockId: string, optionId: string) => {
-    if (quizResults[blockId]) return
+    const currentResult = quizResults[blockId]
+    // Already finalized (correct or revealed) — no more changes
+    if (currentResult === 'correct' || currentResult === 'revealed') return
+    // Currently showing "try again" — allow retry
+    if (currentResult === 'tryAgain') {
+      // Reset for second attempt
+      setQuizResults(p => { const n = { ...p }; delete n[blockId]; return n })
+      setQuizAnswers(p => { const n = { ...p }; delete n[blockId]; return n })
+    }
+
     const b = blocks.find(bl => bl.id === blockId)
-    const opts = (() => {
-      const c = typeof b?.content === 'object' ? b.content as Record<string, unknown> : null
-      return (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || b?.options || []
-    })()
+    const opts = extractBlockContent(b!).options
     const chosen = opts.find(o => o.id === optionId)
     if (!chosen) return
+
+    const attempts = (quizAttempts[blockId] || 0) + 1
+    setQuizAttempts(p => ({ ...p, [blockId]: attempts }))
     setQuizAnswers(p => ({ ...p, [blockId]: optionId }))
-    if (chosen.correct) { setQuizResults(p => ({ ...p, [blockId]: 'correct' })) }
-    else { setQuizResults(p => ({ ...p, [blockId]: 'wrong' })); setTimeout(() => setQuizResults(p => ({ ...p, [blockId]: 'revealed' })), 1500) }
+
+    if (chosen.correct) {
+      setQuizResults(p => ({ ...p, [blockId]: 'correct' }))
+    } else if (attempts >= 2) {
+      // 2nd wrong answer → reveal correct answer
+      setQuizResults(p => ({ ...p, [blockId]: 'revealed' }))
+    } else {
+      // 1st wrong answer → try again
+      setQuizResults(p => ({ ...p, [blockId]: 'tryAgain' }))
+    }
   }
 
   const fmtDur = (s?: number) => { if (!s) return ''; const m = Math.round(s / 60); return m > 0 ? `${m} min` : '' }
-
-  const getLessonStatus = (l: Lesson) => {
-    if (progress.get(l.id)?.completed) return 'done' as const
-    return 'todo' as const
-  }
+  const getLessonStatus = (l: Lesson) => progress.get(l.id)?.completed ? 'done' as const : 'todo' as const
 
   /* ── Loading / not found ──────────────────────── */
   if (loading) return <div className="lp-loader"><div>Cursus wordt geladen...</div></div>
   if (!lesson) return <div className="lp-loader"><div>Les niet gevonden</div><a href={`/academy/${slug}`} className="lp-link">← Terug naar cursus</a></div>
 
-  /* ── Rail lesson items ────────────────────────── */
+  /* ── Rail ─────────────────────────────────────── */
   const railItems = allLessons.map((l, i) => {
     const status = getLessonStatus(l)
     const isActive = l.id === lessonId
-    const isLockedItem = !hasAccess && !l.is_free
-    // Linear lock: not accessible if previous lesson not done (unless admin or already done)
-    const prevLesson = i > 0 ? allLessons[i - 1] : null
-    const prevDone = !prevLesson || getLessonStatus(prevLesson) === 'done'
-    const isLinearLocked = role !== 'admin' && !isLockedItem && !prevDone && status !== 'done'
-    const isClickLocked = isLockedItem || isLinearLocked
+    const isLockedPay = !hasAccess && !l.is_free
+    const prevL = i > 0 ? allLessons[i - 1] : null
+    const prevDone = !prevL || getLessonStatus(prevL) === 'done'
+    const isLinearLocked = role !== 'admin' && !isLockedPay && !prevDone && status !== 'done'
+    const isClickLocked = isLockedPay || isLinearLocked
     const isQuizItem = l.lesson_type === 'quiz' || l.lesson_type === 'exam'
     let sqCls = 'available'
     if (status === 'done') sqCls = 'done'
     else if (isActive) sqCls = 'current'
-    else if (isLockedItem) sqCls = 'locked-pay'
+    else if (isLockedPay) sqCls = 'locked-pay'
     else if (isLinearLocked) sqCls = 'locked-linear'
-    else sqCls = 'available'
 
     return (
       <a key={l.id} className={`ri ${isActive ? 'active' : ''} ${isClickLocked ? 'is-grey' : ''}`}
         onClick={() => { if (!isClickLocked) router.push(`/academy/${slug}/${l.id}`); setRailMobileOpen(false) }}>
         <span className={`sq ${sqCls}`}>
           {status === 'done' ? <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
-            : isLockedItem ? '🔒'
-            : isQuizItem ? '✦'
-            : i + 1}
+            : isLockedPay ? '🔒' : isQuizItem ? '✦' : i + 1}
         </span>
         <span className="nm">{l.title}</span>
         {l.is_free && <span className="freebadge">Gratis</span>}
@@ -206,23 +263,19 @@ export default function LessonPage() {
   })
 
   /* ── Render ───────────────────────────────────── */
+  const checkSVG = <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
+
   return (
     <div className="lp-shell">
-      {/* Mobile rail overlay */}
       {railMobileOpen && <div className="lp-rail-overlay" onClick={() => setRailMobileOpen(false)} />}
 
-      {/* Rail */}
       <nav className={`lp-rail ${railOpen ? 'expanded' : ''} ${railMobileOpen ? 'mobile-open' : ''}`}>
         <div className="rail-head">
           <span className="rail-brand">{courseTitle}</span>
-          <button className="rail-toggle" onClick={() => { setRailOpen(!railOpen); setRailMobileOpen(false) }}>
-            {railOpen ? '‹' : '›'}
-          </button>
+          <button className="rail-toggle" onClick={() => { setRailOpen(!railOpen); setRailMobileOpen(false) }}>{railOpen ? '‹' : '›'}</button>
         </div>
         <div className="rail-prog">
-          <div className="ring" style={{ background: `conic-gradient(var(--gold) ${progressPct}%, var(--cream-2) 0)` }}>
-            <span>{progressPct}%</span>
-          </div>
+          <div className="ring" style={{ background: `conic-gradient(var(--gold) ${progressPct}%, var(--cream-2) 0)` }}><span>{progressPct}%</span></div>
           <div className="prog-full">
             <span className="lbl">{completedCount} van {totalCount} voltooid · {progressPct}%</span>
             <div className="bar"><i style={{ width: `${progressPct}%` }} /></div>
@@ -231,26 +284,21 @@ export default function LessonPage() {
         <div className="rail-list">{railItems}</div>
       </nav>
 
-      {/* Main */}
       <div className="lp-main">
-        {/* Topbar */}
         <div className="lp-topbar">
           <a className="back" onClick={() => router.push(`/academy/${slug}`)}>← Terug naar overzicht</a>
           <div className="nav-mini">
-            {/* Mobile rail toggle */}
             <button className="rail-mobile-btn" onClick={() => setRailMobileOpen(true)}>☰ Lessen</button>
-            {prevLesson && <button onClick={() => router.push(`/academy/${slug}/${prevLesson.id}`)}>← Vorige</button>}
-            {nextLesson && <button onClick={() => router.push(`/academy/${slug}/${nextLesson.id}`)}>Volgende →</button>}
+            {prevLessonNav && <button onClick={() => router.push(`/academy/${slug}/${prevLessonNav.id}`)}>← Vorige</button>}
+            {nextLessonNav && <button onClick={() => router.push(`/academy/${slug}/${nextLessonNav.id}`)}>Volgende →</button>}
           </div>
         </div>
 
-        {/* Stage */}
         <div className="lp-stage">
           <div className="crumb">Les {currentIdx + 1} van {totalCount}</div>
           <h1 className="lesson-title">{lesson.title}</h1>
           {lesson.duration_seconds ? <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8 }}>Video · {fmtDur(lesson.duration_seconds)}</div> : null}
 
-          {/* Locked */}
           {isLocked ? (
             <div className="lp-paywall">
               <div className="t">Dit is een voorproefje</div>
@@ -259,168 +307,150 @@ export default function LessonPage() {
             </div>
           ) : (
             <>
-              {/* Content blocks */}
-              {blocks.map(block => (
-                <div key={block.id} className="blk">
-                  {/* VIDEO */}
-                  {block.type === 'video' && (() => {
-                    const content = typeof block.content === 'object' ? block.content : {}
-                    const pid = (content as Record<string, unknown>)?.mux_playback_id as string | undefined
-                    const rec = progress.get(lessonId)
-                    const done = !!rec?.completed
-                    const resumeSec = rec?.last_position_seconds || 0
-                    return pid ? (
-                      <>
-                        <div className="video" style={{ position: 'relative' }}>
-                          <mux-player
-                            ref={muxPlayerRef}
-                            playback-id={pid}
-                            stream-type="on-demand"
-                            start-time={resumeSec > 0 ? resumeSec : undefined}
-                            style={{ width: '100%', height: '100%', '--controls': '', aspectRatio: '16/9' } as React.CSSProperties}
-                            title={block.title || 'Video'}
-                          />
-                          <div className="video-scrub" style={{ width: done ? '100%' : '0%' }} />
-                        </div>
-                        <div className="vid-meta">
-                          <span className="l">Video · {fmtDur(lesson.duration_seconds)}</span>
-                          {done && <span className="ctag show"><svg viewBox="0 0 100 100" width="13" height="13"><path fill="#5E8463" d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg> Voltooid</span>}
-                        </div>
-                      </>
-                    ) : <div className="video"><div style={{ color: '#888' }}>Video wordt verwerkt...</div></div>
-                  })()}
+              {blocks.map((block, blockIdx) => {
+                const bc = extractBlockContent(block)
+                const isLastBlock = blockIdx === blocks.length - 1
 
-                  {/* TITEL + TEKST */}
-                  {block.type === 'text' && (() => {
-                    const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
-                    const title = (c?.title as string) || block.title
-                    const subtitle = (c?.subtitle as string) || block.subtitle
-                    const body = typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : '')
-                    return (
+                return (
+                  <div key={block.id} className="blk" ref={isLastBlock && !hasPlayableVideo && !isQuizLesson ? lastBlockRef : undefined}>
+
+                    {/* VIDEO */}
+                    {block.type === 'video' && (() => {
+                      const rec = progress.get(lessonId)
+                      const done = !!rec?.completed
+                      const resumeSec = rec?.last_position_seconds || 0
+                      return bc.muxPlaybackId ? (
+                        <>
+                          <div className="video" style={{ position: 'relative' }}>
+                            <mux-player ref={muxPlayerRef} playback-id={bc.muxPlaybackId} stream-type="on-demand"
+                              start-time={resumeSec > 0 ? resumeSec : undefined}
+                              style={{ width: '100%', height: '100%', '--controls': '', aspectRatio: '16/9' } as React.CSSProperties}
+                              title={block.title || 'Video'} />
+                            <div className="video-scrub" style={{ width: done ? '100%' : '0%' }} />
+                          </div>
+                          <div className="vid-meta">
+                            <span className="l">Video · {fmtDur(lesson.duration_seconds)}</span>
+                            {done && <span className="ctag show">{checkSVG} Voltooid</span>}
+                          </div>
+                        </>
+                      ) : <div className="video"><div style={{ color: '#888' }}>Video wordt verwerkt...</div></div>
+                    })()}
+
+                    {/* TEXT */}
+                    {block.type === 'text' && (
                       <div className="tt">
-                        {title && <h2>{title}</h2>}
-                        {subtitle && <div className="subtitle">{subtitle}</div>}
-                        {body && <div dangerouslySetInnerHTML={{ __html: body }} />}
+                        {bc.title && <h2>{bc.title}</h2>}
+                        {bc.subtitle && <div className="subtitle">{bc.subtitle}</div>}
+                        {bc.body && <div dangerouslySetInnerHTML={{ __html: bc.body }} />}
                       </div>
-                    )
-                  })()}
+                    )}
 
-                  {/* FOTO */}
-                  {block.type === 'image' && (() => {
-                    const content = typeof block.content === 'object' ? block.content as Record<string, unknown> : {}
-                    const url = (content?.url as string) || (block.media?.url)
-                    return (
+                    {/* IMAGE */}
+                    {block.type === 'image' && (
                       <>
-                        <div className="photo">{url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : '⛶'}</div>
-                        {((content?.caption as string) || block.media?.caption) && <div className="photo-cap">{(content?.caption as string) || block.media?.caption}</div>}
+                        <div className="photo">{bc.imageUrl ? <img src={bc.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : '⛶'}</div>
+                        {bc.caption && <div className="photo-cap">{bc.caption}</div>}
                       </>
-                    )
-                  })()}
+                    )}
 
-                  {/* DOWNLOAD */}
-                  {block.type === 'download' && (() => {
-                    const content = typeof block.content === 'object' ? block.content as Record<string, unknown> : {}
-                    const name: string = (block.title || (content?.file_name as string)) || 'Bestand'
-                    const fileSize = content?.file_size as number | undefined
-                    const size = fileSize ? `${(fileSize / 1024 / 1024).toFixed(1)} MB` : ''
-                    const url = (content?.file_url as string) || block.file_url || '#'
-                    return (
-                      <a className="download" href={url} target="_blank" rel="noopener">
+                    {/* DOWNLOAD */}
+                    {block.type === 'download' && (
+                      <a className="download" href={bc.fileUrl} target="_blank" rel="noopener">
                         <span className="ic">↓</span>
-                        <span><span className="nm">{name}</span>{size ? <span className="sz" style={{ display: 'block', marginTop: 2 }}>{size}</span> : null}</span>
+                        <span><span className="nm">{bc.fileName}</span>{bc.fileSize ? <span className="sz" style={{ display: 'block', marginTop: 2 }}>{`${(bc.fileSize / 1024 / 1024).toFixed(1)} MB`}</span> : null}</span>
                       </a>
-                    )
-                  })()}
+                    )}
 
-                  {/* DIVIDER */}
-                  {block.type === 'divider' && <div className="divider" />}
+                    {/* DIVIDER */}
+                    {block.type === 'divider' && <div className="divider" />}
 
-                  {/* QUIZ — reuse existing quiz UI */}
-                  {block.type === 'quiz' && (() => {
-                    const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
-                    const question = (c?.question as string) || block.question
-                    const options = (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options
-                    const optionType = (c?.option_type as string) || block.option_type
-                    const media = (c?.media as { type: string; url: string } | null) || block.media
-                    const result = quizResults[block.id]
-                    const chosenId = quizAnswers[block.id]
-                    const correctOpt = options?.find(o => o.correct)
-                    const isImage = optionType === 'image'
-                    return (
-                      <div className="quiz-block">
-                        {quizBlocks.length > 1 && (
-                          <div className="quiz-dots">
-                            {quizBlocks.map((qb) => (
-                              <span key={qb.id} className={qb.id === block.id ? 'active' : quizResults[qb.id] ? 'answered' : ''} />
-                            ))}
+                    {/* QUIZ */}
+                    {block.type === 'quiz' && (() => {
+                      const result = quizResults[block.id]
+                      const chosenId = quizAnswers[block.id]
+                      const correctOpt = bc.options.find(o => o.correct)
+                      const isImage = bc.optionType === 'image'
+
+                      return (
+                        <div className="quiz-block">
+                          {quizBlocks.length > 1 && (
+                            <div className="quiz-dots">
+                              {quizBlocks.map(qb => (
+                                <span key={qb.id} className={qb.id === block.id ? 'active' : quizResults[qb.id] ? 'answered' : ''} />
+                              ))}
+                            </div>
+                          )}
+                          <div className="quiz-counter">Vraag {quizBlocks.indexOf(block) + 1} van {quizBlocks.length}</div>
+                          {bc.media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={bc.media.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
+                          <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{bc.question || 'Typ je vraag...'}</h3>
+                          <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 20 }}>
+                            {(bc.options.filter(o => o.correct).length || 0) > 1 ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}
                           </div>
-                        )}
-                        <div className="quiz-counter">Vraag {quizBlocks.indexOf(block) + 1} van {quizBlocks.length}</div>
-                        {media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={media?.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
-                        <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{question || 'Typ je vraag...'}</h3>
-                        <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 20 }}>
-                          {(options?.filter(o => o.correct).length || 0) > 1 ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}
+
+                          {isImage ? (
+                            <div className="quiz-image-grid">
+                              {bc.options.map(opt => {
+                                const isChosen = chosenId === opt.id; const isCorrect = opt.correct
+                                let border = '1.5px solid var(--line)'
+                                if (result === 'correct' && isChosen) border = '2px solid var(--green)'
+                                if ((result === 'wrong' || result === 'tryAgain') && isChosen) border = '2px solid var(--red)'
+                                if (result === 'revealed' && isCorrect) border = '2px solid var(--green)'
+                                return <div key={opt.id} onClick={() => handleQuizAnswer(block.id, opt.id)} style={{ border, borderRadius: 12, overflow: 'hidden', cursor: (result === 'correct' || result === 'revealed') ? 'default' : 'pointer' }}>
+                                  <div style={{ aspectRatio: '1', background: 'var(--cream-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {opt.image_url ? <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28, color: 'var(--muted)' }}>⛶</span>}
+                                  </div>
+                                </div>
+                              })}
+                            </div>
+                          ) : (
+                            <div className="quiz-options">
+                              {bc.options.map((opt, oi) => {
+                                const isChosen = chosenId === opt.id; const isCorrect = opt.correct
+                                let bg: string = 'var(--paper)', border: string = '1.5px solid var(--line)'; const color = 'var(--ink)'
+                                if (result === 'correct' && isChosen) { bg = 'var(--green-soft)'; border = '1.5px solid var(--green)' }
+                                if ((result === 'wrong' || result === 'tryAgain') && isChosen) { bg = '#F5EAEA'; border = '1.5px solid var(--red)' }
+                                if (result === 'revealed' && isCorrect) { bg = 'var(--green-soft)'; border = '1.5px solid var(--green)' }
+                                if (result === 'revealed' && isChosen && !isCorrect) { bg = '#F5EAEA'; border = '1.5px solid var(--red)' }
+                                return (
+                                  <div key={opt.id} onClick={() => handleQuizAnswer(block.id, opt.id)} className="quiz-opt" style={{ background: bg, border, color }}>
+                                    <span className="quiz-opt-letter">{String.fromCharCode(65 + oi)}</span>
+                                    <span style={{ flex: 1 }}>{opt.text || `Optie ${String.fromCharCode(65 + oi)}`}</span>
+                                    {result === 'correct' && isChosen && <span style={{ color: 'var(--green)', fontWeight: 600, fontSize: 13 }}>✓ Goed!</span>}
+                                    {(result === 'wrong' || result === 'tryAgain') && isChosen && <span style={{ color: 'var(--red)', fontWeight: 600, fontSize: 13 }}>✕ Fout</span>}
+                                    {result === 'revealed' && isCorrect && !isChosen && <span style={{ color: 'var(--green)', fontSize: 12 }}>Juist antwoord</span>}
+                                    {result === 'revealed' && isChosen && !isCorrect && <span style={{ color: 'var(--red)', fontSize: 12 }}>Jouw keuze</span>}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+
+                          {/* Feedback */}
+                          {result === 'correct' && <div className="quiz-feedback correct">✓ Goed gedaan!</div>}
+                          {result === 'tryAgain' && <div className="quiz-feedback" style={{ background: 'rgba(181,99,92,0.08)', color: 'var(--red)' }}>✕ Niet goed — probeer het nog een keer!</div>}
+                          {result === 'revealed' && correctOpt && <div className="quiz-feedback reveal">Het juiste antwoord is: <strong>{correctOpt.text}</strong></div>}
                         </div>
-                        {isImage ? (
-                          <div className="quiz-image-grid">
-                            {(options || []).map(opt => {
-                              const isChosen = chosenId === opt.id; const isCorrect = opt.correct
-                              let border = '1.5px solid var(--line)'
-                              if (result === 'correct' && isChosen) border = '2px solid var(--green)'
-                              if (result === 'wrong' && isChosen) border = '2px solid var(--red)'
-                              if (result === 'revealed' && isCorrect) border = '2px solid var(--green)'
-                              return <div key={opt.id} onClick={() => handleQuizAnswer(block.id, opt.id)} style={{ border, borderRadius: 12, overflow: 'hidden', cursor: result ? 'default' : 'pointer' }}>
-                                <div style={{ aspectRatio: '1', background: 'var(--cream-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                  {opt.image_url ? <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28, color: 'var(--muted)' }}>⛶</span>}
-                                </div>
-                              </div>
-                            })}
-                          </div>
-                        ) : (
-                          <div className="quiz-options">
-                            {(options || []).map((opt, oi) => {
-                              const isChosen = chosenId === opt.id; const isCorrect = opt.correct
-                              let bg: string = 'var(--paper)', border: string = '1.5px solid var(--line)'; const color = 'var(--ink)'
-                              if (result === 'correct' && isChosen) { bg = 'var(--green-soft)'; border = '1.5px solid var(--green)' }
-                              if (result === 'wrong' && isChosen) { bg = '#F5EAEA'; border = '1.5px solid var(--red)' }
-                              if (result === 'revealed' && isCorrect) { bg = 'var(--green-soft)'; border = '1.5px solid var(--green)' }
-                              return (
-                                <div key={opt.id} onClick={() => handleQuizAnswer(block.id, opt.id)} className="quiz-opt" style={{ background: bg, border, color }}>
-                                  <span className="quiz-opt-letter">{String.fromCharCode(65 + oi)}</span>
-                                  <span style={{ flex: 1 }}>{opt.text || `Optie ${String.fromCharCode(65 + oi)}`}</span>
-                                  {result === 'correct' && isChosen && <span style={{ color: 'var(--green)', fontWeight: 600, fontSize: 13 }}>✓ Goed!</span>}
-                                  {result === 'wrong' && isChosen && <span style={{ color: 'var(--red)', fontWeight: 600, fontSize: 13 }}>✕ Fout</span>}
-                                  {result === 'revealed' && isCorrect && !isChosen && <span style={{ color: 'var(--green)', fontSize: 12 }}>Juist antwoord</span>}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                        {result === 'correct' && <div className="quiz-feedback correct">✓ Goed gedaan!</div>}
-                        {result === 'revealed' && correctOpt && <div className="quiz-feedback reveal">Het juiste antwoord is: <strong>{correctOpt.text}</strong></div>}
-                      </div>
-                    )
-                  })()}
-                </div>
-              ))}
-
-              {/* Mark complete */}
-              {/* Auto-complete via video ~90% */}
+                      )
+                    })()}
+                  </div>
+                )
+              })}
 
               {/* Next/Prev navigation */}
               <div className="next-wrap">
-                {prevLesson ? (
-                  <button className="next-prev" onClick={() => router.push(`/academy/${slug}/${prevLesson.id}`)}>← {prevLesson.title}</button>
+                {prevLessonNav ? (
+                  <button className="next-prev" onClick={() => router.push(`/academy/${slug}/${prevLessonNav.id}`)}>← {prevLessonNav.title}</button>
                 ) : <div />}
                 <div>
                   <button
                     className={`next-btn ${canProceed ? 'ready' : ''}`}
-                    onClick={() => nextLesson ? router.push(`/academy/${slug}/${nextLesson.id}`) : router.push(`/academy/${slug}`)}
-                    disabled={!canProceed && hasPlayableVideo}
+                    onClick={() => nextLessonNav ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : router.push(`/academy/${slug}`)}
+                    disabled={!canProceed}
                   >
-                    {nextLesson ? `${nextLesson.title} →` : 'Terug naar overzicht →'}
+                    {nextLessonNav ? `${nextLessonNav.title} →` : 'Terug naar overzicht →'}
                   </button>
                   {!canProceed && hasPlayableVideo && <div className="next-hint">Kijk de video af om verder te gaan</div>}
+                  {!canProceed && isQuizLesson && <div className="next-hint">Rond de quiz af om verder te gaan</div>}
                 </div>
               </div>
             </>
