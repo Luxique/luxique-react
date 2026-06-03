@@ -103,9 +103,10 @@ export default function LessonPage() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   const quizBlocks = blocks.filter(b => b.type === 'quiz')
   const videoBlock = blocks.find(b => b.type === 'video')
-  const hasVideoBlock = !!videoBlock
+  const videoContent = typeof videoBlock?.content === 'object' ? videoBlock.content as Record<string, unknown> : null
+  const hasPlayableVideo = !!(videoContent?.mux_playback_id)
   const isLessonComplete = !!progress.get(lessonId)?.completed || videoCompleted
-  const canProceed = !hasVideoBlock || isLessonComplete
+  const canProceed = !hasPlayableVideo || isLessonComplete
 
   /* ── Handlers ─────────────────────────────────── */
   const markComplete = useCallback(async (lid?: string) => {
@@ -123,7 +124,7 @@ export default function LessonPage() {
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const player = muxPlayerRef.current as any
-    if (!player || !hasVideoBlock) return
+    if (!player || !hasPlayableVideo) return
 
     const handleTimeUpdate = () => {
       if (!player.duration || !player.currentTime) return
@@ -144,12 +145,16 @@ export default function LessonPage() {
       player.removeEventListener('ended', handleEnded)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasVideoBlock, lessonId])
+  }, [hasPlayableVideo, lessonId])
 
   const handleQuizAnswer = (blockId: string, optionId: string) => {
     if (quizResults[blockId]) return
-    const block = blocks.find(b => b.id === blockId)
-    const chosen = block?.options?.find(o => o.id === optionId)
+    const b = blocks.find(bl => bl.id === blockId)
+    const opts = (() => {
+      const c = typeof b?.content === 'object' ? b.content as Record<string, unknown> : null
+      return (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || b?.options || []
+    })()
+    const chosen = opts.find(o => o.id === optionId)
     if (!chosen) return
     setQuizAnswers(p => ({ ...p, [blockId]: optionId }))
     if (chosen.correct) { setQuizResults(p => ({ ...p, [blockId]: 'correct' })) }
@@ -172,16 +177,22 @@ export default function LessonPage() {
     const status = getLessonStatus(l)
     const isActive = l.id === lessonId
     const isLockedItem = !hasAccess && !l.is_free
+    // Linear lock: not accessible if previous lesson not done (unless admin or already done)
+    const prevLesson = i > 0 ? allLessons[i - 1] : null
+    const prevDone = !prevLesson || getLessonStatus(prevLesson) === 'done'
+    const isLinearLocked = role !== 'admin' && !isLockedItem && !prevDone && status !== 'done'
+    const isClickLocked = isLockedItem || isLinearLocked
     const isQuizItem = l.lesson_type === 'quiz' || l.lesson_type === 'exam'
     let sqCls = 'available'
     if (status === 'done') sqCls = 'done'
     else if (isActive) sqCls = 'current'
     else if (isLockedItem) sqCls = 'locked-pay'
+    else if (isLinearLocked) sqCls = 'locked-linear'
     else sqCls = 'available'
 
     return (
-      <a key={l.id} className={`ri ${isActive ? 'active' : ''} ${isLockedItem ? 'is-grey' : ''}`}
-        onClick={() => { if (!isLockedItem) router.push(`/academy/${slug}/${l.id}`); setRailMobileOpen(false) }}>
+      <a key={l.id} className={`ri ${isActive ? 'active' : ''} ${isClickLocked ? 'is-grey' : ''}`}
+        onClick={() => { if (!isClickLocked) router.push(`/academy/${slug}/${l.id}`); setRailMobileOpen(false) }}>
         <span className={`sq ${sqCls}`}>
           {status === 'done' ? <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
             : isLockedItem ? '🔒'
@@ -345,7 +356,7 @@ export default function LessonPage() {
                           </div>
                         )}
                         <div className="quiz-counter">Vraag {quizBlocks.indexOf(block) + 1} van {quizBlocks.length}</div>
-                        {block.media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={media?.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
+                        {media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={media?.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
                         <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{question || 'Typ je vraag...'}</h3>
                         <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 20 }}>
                           {(options?.filter(o => o.correct).length || 0) > 1 ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}
@@ -405,11 +416,11 @@ export default function LessonPage() {
                   <button
                     className={`next-btn ${canProceed ? 'ready' : ''}`}
                     onClick={() => nextLesson ? router.push(`/academy/${slug}/${nextLesson.id}`) : router.push(`/academy/${slug}`)}
-                    disabled={!canProceed && hasVideoBlock}
+                    disabled={!canProceed && hasPlayableVideo}
                   >
                     {nextLesson ? `${nextLesson.title} →` : 'Terug naar overzicht →'}
                   </button>
-                  {!canProceed && hasVideoBlock && <div className="next-hint">Kijk de video af om verder te gaan</div>}
+                  {!canProceed && hasPlayableVideo && <div className="next-hint">Kijk de video af om verder te gaan</div>}
                 </div>
               </div>
             </>
