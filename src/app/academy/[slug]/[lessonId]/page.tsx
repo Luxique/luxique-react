@@ -20,7 +20,7 @@ interface Block {
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
 }
-interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number }
+interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }
 
 /* ── Helpers ───────────────────────────────────── */
 function extractBlockContent(block: Block) {
@@ -100,12 +100,34 @@ export default function LessonPage() {
   // Progress
   useEffect(() => {
     if (!user || allLessons.length === 0) return
-    supabase.from('lesson_progress').select('lesson_id,completed,last_position_seconds')
+    supabase.from('lesson_progress').select('lesson_id,completed,last_position_seconds,quiz_answers')
       .eq('user_id', user!.id).in('lesson_id', allLessons.map(l => l.id))
       .then(({ data }) => {
-        if (data) { const m = new Map<string, ProgressRec>(); data.forEach((r: { lesson_id: string; completed: boolean; last_position_seconds?: number }) => m.set(r.lesson_id, r)); setProgress(m) }
+        if (data) {
+          const m = new Map<string, ProgressRec>(); 
+          data.forEach((r: { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }) => {
+            m.set(r.lesson_id, r)
+            // Restore quiz state from DB for current lesson
+            if (r.lesson_id === lessonId && r.quiz_answers && typeof r.quiz_answers === 'object') {
+              const qa = r.quiz_answers
+              const attempts: Record<string, number> = {}
+              const answers: Record<string, string> = {}
+              const results: Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'> = {}
+              Object.entries(qa).forEach(([blockId, val]) => {
+                const v = val as { chosen: string; attempts: number; result: string }
+                attempts[blockId] = v.attempts
+                answers[blockId] = v.chosen
+                results[blockId] = v.result as 'correct' | 'wrong' | 'tryAgain' | 'revealed'
+              })
+              setQuizAttempts(attempts)
+              setQuizAnswers(answers)
+              setQuizResults(results)
+            }
+          })
+          setProgress(m)
+        }
       })
-  }, [user, allLessons])
+  }, [user, allLessons, lessonId])
 
   useEffect(() => { localStorage.setItem('lux-rail-open', railOpen ? 'open' : 'closed') }, [railOpen])
 
@@ -212,19 +234,41 @@ export default function LessonPage() {
     if (!chosen) return
 
     const attempts = (quizAttempts[blockId] || 0) + 1
-    setQuizAttempts(p => ({ ...p, [blockId]: attempts }))
+    setQuizAttempts(p => {
+      const next = { ...p, [blockId]: attempts }
+      // Build updated state for persist
+      const newResults = { ...quizResults }; if (chosen.correct) { newResults[blockId] = 'correct' } else if (attempts >= 2) { newResults[blockId] = 'revealed' } else { newResults[blockId] = 'tryAgain' }
+      const newAnswers = { ...quizAnswers, [blockId]: optionId }
+      persistQuizState(next, newAnswers, newResults as Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>)
+      return next
+    })
     setQuizAnswers(p => ({ ...p, [blockId]: optionId }))
 
     if (chosen.correct) {
       setQuizResults(p => ({ ...p, [blockId]: 'correct' }))
     } else if (attempts >= 2) {
-      // 2nd wrong answer → reveal correct answer
       setQuizResults(p => ({ ...p, [blockId]: 'revealed' }))
     } else {
-      // 1st wrong answer → try again
       setQuizResults(p => ({ ...p, [blockId]: 'tryAgain' }))
     }
   }
+
+  // Save quiz state to DB
+  const persistQuizState = useCallback(async (newAttempts: Record<string, number>, newAnswers: Record<string, string>, newResults: Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>) => {
+    if (!user || !lesson) return
+    const qa: Record<string, { chosen: string; attempts: number; result: string }> = {}
+    Object.keys(newResults).forEach(blockId => {
+      qa[blockId] = {
+        chosen: newAnswers[blockId] || '',
+        attempts: newAttempts[blockId] || 0,
+        result: newResults[blockId],
+      }
+    })
+    await supabase.from('lesson_progress').upsert({
+      user_id: user.id, lesson_id: lessonId, course_id: lesson.course_id,
+      quiz_answers: qa,
+    }, { onConflict: 'user_id,lesson_id' })
+  }, [user, lesson, lessonId])
 
   const fmtDur = (s?: number) => { if (!s) return ''; const m = Math.round(s / 60); return m > 0 ? `${m} min` : '' }
   const getLessonStatus = (l: Lesson) => progress.get(l.id)?.completed ? 'done' as const : 'todo' as const
