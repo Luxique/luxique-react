@@ -6,7 +6,7 @@
  * 2. Click "Add endpoint"
  * 3. Endpoint URL: https://www.luxique.nl/api/webhooks/stripe
  *    (or your staging domain)
- * 4. Events to listen for: checkout.session.completed
+ * 4. Events to listen for: checkout.session.completed, checkout.session.async_payment_succeeded
  * 5. After creating, click the endpoint → "Signing secret" → Reveal
  * 6. Add to .env.local: STRIPE_WEBHOOK_SECRET=whsec_xxxxx
  * 7. Redeploy.
@@ -33,7 +33,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  if (event.type === 'checkout.session.completed') {
+  // Extract session data — handles both sync (completed) and async (payment_succeeded) events
+  const isEnrollmentEvent =
+    event.type === 'checkout.session.completed' ||
+    event.type === 'checkout.session.async_payment_succeeded'
+
+  if (isEnrollmentEvent) {
     const session = event.data.object as {
       metadata?: { course_id?: string; user_id?: string }
       client_reference_id?: string
@@ -126,6 +131,17 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+  }
+
+  // Klarna / async payment failed — log it
+  if (event.type === 'checkout.session.async_payment_failed') {
+    const session = event.data.object as {
+      metadata?: { course_id?: string; user_id?: string }
+      client_reference_id?: string
+    }
+    const user_id = session.metadata?.user_id || session.client_reference_id
+    const course_id = session.metadata?.course_id
+    console.warn('Webhook: async payment FAILED', { user_id, course_id, event_type: event.type })
   }
 
   return NextResponse.json({ received: true })
