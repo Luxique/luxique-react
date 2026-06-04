@@ -16,6 +16,8 @@ interface Course {
   is_first_lesson_free: boolean | null
   intro_video_mux_id: string | null
   thumbnail_time: number | null
+  thumbnail_url: string | null
+  duration_text: string | null
 }
 
 interface Props {

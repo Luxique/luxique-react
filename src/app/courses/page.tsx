@@ -15,6 +15,9 @@ interface Course {
   is_first_lesson_free: boolean | null
   intro_video_mux_id: string | null
   thumbnail_time: number | null
+  thumbnail_url: string | null
+  duration_text: string | null
+  short_description: string | null
 }
 
 export default function CoursesPage() {
@@ -24,12 +27,14 @@ export default function CoursesPage() {
   useEffect(() => {
     supabase
       .from('courses')
-      .select('id, title, subtitle, slug, level, price, status, is_first_lesson_free, intro_video_mux_id, thumbnail_time')
+      .select('id, title, short_description, slug, level, price, status, is_first_lesson_free, intro_video_mux_id, thumbnail_time, thumbnail_url, duration_text')
       .eq('status', 'published')
       .order('created_at', { ascending: true })
       .then(({ data, error }) => {
         if (error) console.error('Courses fetch error:', error)
-        setCourses(data ?? [])
+        // Map short_description → subtitle for AcademySection compatibility
+        const mapped = (data ?? []).map(c => ({ ...c, subtitle: c.short_description }))
+        setCourses(mapped)
         setLoading(false)
       })
   }, [])

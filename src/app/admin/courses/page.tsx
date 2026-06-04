@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 
 /* ── Types ── */
 interface Course {
@@ -167,7 +167,7 @@ export default function CoursesOverviewPage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('courses')
         .insert({
           title: newCourse.title,
