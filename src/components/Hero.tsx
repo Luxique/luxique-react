@@ -41,7 +41,7 @@ export default function Hero() {
       {/* ═══════════════════════════════════════════
           DESKTOP HERO (≥768px) — Full-bleed light variant
           ═══════════════════════════════════════════ */}
-      <div className="hidden md:block w-full px-[14px] pb-[14px]">
+      <div className="hidden md:block w-full px-[14px] pb-[14px] pt-[8px]">
         <section className="hero-v2">
           {/* Background image (slides) */}
           {SLIDES.map((slide, i) => (
@@ -82,6 +82,15 @@ export default function Hero() {
             <div className="hero-v2-cta">
               <a href="/courses" className="hero-v2-cta-primary">Bekijk de academy</a>
               <a href="/behandelingen" className="hero-v2-cta-ghost">Boek een treatment</a>
+            </div>
+          </div>
+
+          {/* Per-slide review badge — bottom-left */}
+          <div className="hero-v2-review" style={{ opacity: 1 }}>
+            <div className="hero-v2-review-avatar">{review.name[0]}</div>
+            <div>
+              <div className="hero-v2-review-name">{review.name}</div>
+              <div className="hero-v2-review-text">&ldquo;{review.text}&rdquo;</div>
             </div>
           </div>
 
