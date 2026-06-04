@@ -1,0 +1,221 @@
+/* ═══════════════════════════════════════════════════
+   HERO V2 — Desktop Full-Bleed Light Variant (≥768px)
+   Tokens 1:1 from CJ's mockup
+   ═══════════════════════════════════════════════════ */
+
+.hero-v2 {
+  position: relative;
+  height: calc(100vh - 64px - 14px * 3);
+  min-height: 620px;
+  border-radius: 22px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.hero-v2-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  z-index: 0;
+  transition: opacity 850ms ease-in-out;
+}
+
+/* Lighter veil — brightens slightly so cream glass feels native */
+.hero-v2-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(120% 90% at 50% 45%, rgba(250,248,244, 0.06), rgba(12,10,7, 0.22) 80%),
+    linear-gradient(to bottom, rgba(12,10,7, 0.16), rgba(12,10,7, 0) 26%, rgba(12,10,7, 0) 64%, rgba(12,10,7, 0.34));
+}
+
+/* Watermark */
+.hero-v2-watermark {
+  position: absolute;
+  z-index: 2;
+  bottom: -2%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(80px, 14vw, 200px);
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Top-right behandeling tag — light version */
+.hero-v2-tag {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 3;
+  background: rgba(250, 248, 244, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 14px;
+  padding: 11px 16px;
+  text-align: right;
+}
+.hero-v2-tag-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 18px;
+  color: #0C0A07;
+  line-height: 1;
+}
+.hero-v2-tag-sub {
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: #6b6357;
+  margin-top: 5px;
+}
+
+/* Centered light frosted glass box */
+.hero-v2-glass {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(540px, 86%);
+  background: rgba(250, 248, 244, 0.72);
+  backdrop-filter: blur(26px) saturate(115%);
+  -webkit-backdrop-filter: blur(26px) saturate(115%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 26px;
+  padding: 46px 44px 40px;
+  text-align: center;
+  box-shadow:
+    0 30px 80px -24px rgba(12, 10, 7, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: hero-v2-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes hero-v2-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -44%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Reviews pill */
+.hero-v2-reviews {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(196, 162, 101, 0.35);
+  padding: 6px 14px;
+  border-radius: 30px;
+  margin-bottom: 24px;
+}
+.hero-v2-stars {
+  color: #9E7E45;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.hero-v2-reviews-text {
+  font-size: 12px;
+  color: #6b6357;
+  font-weight: 400;
+}
+
+/* Title */
+.hero-v2-h1 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  color: #0C0A07;
+  line-height: 0.96;
+  letter-spacing: -0.01em;
+  font-size: clamp(46px, 6vw, 74px);
+}
+.hero-v2-h1 em {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 400;
+  color: #9E7E45;
+  font-size: clamp(40px, 5.4vw, 66px);
+  margin-top: 2px;
+}
+
+/* Description */
+.hero-v2-p {
+  margin: 22px auto 0;
+  max-width: 400px;
+  font-size: 15.5px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: #3d382f;
+}
+
+/* CTAs */
+.hero-v2-cta {
+  display: flex;
+  gap: 13px;
+  justify-content: center;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+.hero-v2-cta a {
+  padding: 13px 26px;
+  border-radius: 32px;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.hero-v2-cta-primary {
+  background: #C4A265;
+  color: #0C0A07;
+  box-shadow: 0 10px 30px -8px rgba(196, 162, 101, 0.55);
+}
+.hero-v2-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 38px -8px rgba(196, 162, 101, 0.7);
+}
+.hero-v2-cta-ghost {
+  background: rgba(255, 255, 255, 0.55);
+  color: #0C0A07;
+  border: 1px solid rgba(12, 10, 7, 0.22);
+}
+.hero-v2-cta-ghost:hover {
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateY(-2px);
+}
+
+/* Slider dots */
+.hero-v2-dots {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+.hero-v2-dot {
+  width: 26px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.45);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: width 0.3s, background 0.3s;
+}
+.hero-v2-dot.on {
+  background: #FAF8F4;
+  width: 34px;
+}
