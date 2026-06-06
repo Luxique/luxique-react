@@ -187,6 +187,7 @@ export default function CourseLandingClient({
               </p>
               <p className="enroll-success-sub">Je bent ingeschreven. Start nu met je eerste les.</p>
             </div>
+            <a href={`/courses/${course.slug}/learn`} className="enroll-success-btn">Ga naar cursus →</a>
             <button className="enroll-success-close" onClick={() => setShowEnrollSuccess(false)}>✕</button>
           </div>
         </div>
@@ -227,7 +228,7 @@ export default function CourseLandingClient({
       <MiniReviewsWall reviews={reviews} />
       
       {/* Pricing */}
-      <PricingSection course={course} onJoin={handleJoinCTA} user={user} lessons={sortedLessons} />
+      <PricingSection course={course} onJoin={handleJoinCTA} user={user} lessons={sortedLessons} enrolled={enrolled} courseSlug={course.slug} />
       
       {/* FAQ */}
       <FAQSection />
@@ -478,7 +479,7 @@ function CurriculumSection({
 }
 
 // Reviews Section Component
-function PricingSection({ course, onJoin, user, lessons }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null; lessons: Lesson[] }) {
+function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null; lessons: Lesson[]; enrolled: boolean; courseSlug: string }) {
   if (!course.price_cents) {
     return null
   }
@@ -540,10 +541,14 @@ function PricingSection({ course, onJoin, user, lessons }: { course: Course; onJ
                 ))}
               </div>
               
-              <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
-                <span className="flow" />
-                <span>{user ? 'Join the Academy →' : 'Join the Academy →'}</span>
-              </button>
+              {enrolled ? (
+                <a href={`/courses/${courseSlug}/learn`} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>Ga naar cursus →</a>
+              ) : (
+                <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
+                  <span className="flow" />
+                  <span>{user ? 'Join the Academy →' : 'Join the Academy →'}</span>
+                </button>
+              )}
               
               <div className="payment-logos">
                 <span className="pay-logo">VISA</span>

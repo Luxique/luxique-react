@@ -1544,6 +1544,20 @@
   transition: color 0.2s;
 }
 .enroll-success-close:hover { color: #FAF8F4; }
+.enroll-success-btn {
+  background: #c9a86a;
+  color: #171510;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.enroll-success-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,106,0.25); }
 @keyframes slideDown {
   from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }

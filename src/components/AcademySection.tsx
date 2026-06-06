@@ -130,7 +130,7 @@ export default function AcademySection({ courses, loading }: Props) {
                           </span>
                           <span className="lxq-price-terms">Eenmalig · incl. btw</span>
                         </div>
-                        <a href={`/courses/${course.slug}`} className="lxq-btn-primary lxq-btn-full">Join the Academy →</a>
+                        <a href={`/cursus/${course.slug}`} className="lxq-btn-primary lxq-btn-full">Join the Academy →</a>
                         <span className="lxq-micro">Eerste les gratis met een account</span>
                       </div>
                     </div>
