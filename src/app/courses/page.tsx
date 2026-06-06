@@ -11,6 +11,7 @@ interface Course {
   slug: string
   level: string | null
   price: number | null
+  price_cents: number | null
   status: string
   is_first_lesson_free: boolean | null
   intro_video_mux_id: string | null
@@ -18,6 +19,9 @@ interface Course {
   thumbnail_url: string | null
   duration_text: string | null
   short_description: string | null
+  description: string | null
+  what_you_learn: string[] | null
+  access_duration_text: string | null
 }
 
 export default function CoursesPage() {
@@ -27,12 +31,11 @@ export default function CoursesPage() {
   useEffect(() => {
     supabase
       .from('courses')
-      .select('id, title, short_description, slug, level, price, status, is_first_lesson_free, intro_video_mux_id, thumbnail_time, thumbnail_url, duration_text')
+      .select('id, title, short_description, description, slug, level, price, price_cents, status, is_first_lesson_free, intro_video_mux_id, thumbnail_time, thumbnail_url, duration_text, what_you_learn, access_duration_text')
       .eq('status', 'published')
       .order('created_at', { ascending: true })
       .then(({ data, error }) => {
         if (error) console.error('Courses fetch error:', error)
-        // Map short_description → subtitle for AcademySection compatibility
         const mapped = (data ?? []).map(c => ({ ...c, subtitle: c.short_description }))
         setCourses(mapped)
         setLoading(false)
