@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) {
+    console.error('STRIPE_SECRET_KEY is not set')
+    return NextResponse.json({ error: 'Payment system not configured. Please contact support.' }, { status: 500 })
+  }
+
   try {
     const Stripe = (await import('stripe')).default
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    const stripe = new Stripe(secretKey)
 
     const { course_id, user_id, email, success_url, cancel_url } = await request.json()
 
@@ -28,10 +34,12 @@ export async function POST(request: NextRequest) {
     }
 
     const unitAmount = course.price_cents || 199700
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'
 
     const session = await stripe.checkout.sessions.create({
       customer_email: email,
-      payment_method_types: ['ideal', 'card'],
+      // iDEAL, Card, Klarna — Stripe shows available options automatically
+      payment_method_types: ['ideal', 'card', 'klarna'],
       line_items: course.stripe_price_id
         ? [{ price: course.stripe_price_id, quantity: 1 }]
         : [{
@@ -43,8 +51,8 @@ export async function POST(request: NextRequest) {
             quantity: 1,
           }],
       mode: 'payment',
-      success_url: success_url || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/dashboard?enrolled=1`,
-      cancel_url: cancel_url || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/courses`,
+      success_url: success_url || `${baseUrl}/dashboard?enrolled=1`,
+      cancel_url: cancel_url || `${baseUrl}/courses/${course_id}`,
       metadata: { course_id, user_id },
       client_reference_id: user_id,
     })
@@ -52,6 +60,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url })
   } catch (err: unknown) {
     console.error('Stripe checkout error:', String(err))
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: 'Checkout failed. Please try again.' }, { status: 500 })
   }
 }
