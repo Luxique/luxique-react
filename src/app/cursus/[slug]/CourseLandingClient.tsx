@@ -125,7 +125,12 @@ export default function CourseLandingClient({
       setShowAuthModal(true)
       return
     }
-    // B4.4: proceed to checkout
+    // Already enrolled? Go to player
+    if (enrolled) {
+      window.location.href = `/courses/${course.slug}/learn`
+      return
+    }
+    // Proceed to Stripe checkout
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
@@ -234,7 +239,7 @@ export default function CourseLandingClient({
       <FAQSection />
       
       {/* Final CTA */}
-      <FinalCTASection course={course} onJoin={handleJoinCTA} user={user} />
+      <FinalCTASection course={course} onJoin={handleJoinCTA} user={user} enrolled={enrolled} courseSlug={course.slug} />
 
       {/* Auth Modal */}
       <AuthModal
@@ -542,11 +547,19 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
               </div>
               
               {enrolled ? (
-                <a href={`/courses/${courseSlug}/learn`} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>Ga naar cursus →</a>
+                <a href={`/courses/${courseSlug}/learn`} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
+                  <span className="flow" />
+                  <span>Ga naar de cursus →</span>
+                </a>
+              ) : !user ? (
+                <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
+                  <span className="flow" />
+                  <span>Maak gratis account</span>
+                </button>
               ) : (
                 <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
                   <span className="flow" />
-                  <span>{user ? 'Join the Academy →' : 'Join the Academy →'}</span>
+                  <span>Koop cursus — € {course.price_cents ? (course.price_cents / 100).toLocaleString('nl-NL') : '0'}</span>
                 </button>
               )}
               
@@ -625,7 +638,7 @@ function FAQSection() {
 
 // Final CTA Section Component
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function FinalCTASection({ course, onJoin, user: _user }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null }) {
+function FinalCTASection({ course, onJoin, user, enrolled, courseSlug }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null; enrolled: boolean; courseSlug: string }) {
   return (
     <section className="final-cta">
       <div className="final-cta-content">
@@ -642,10 +655,22 @@ function FinalCTASection({ course, onJoin, user: _user }: { course: Course; onJo
         {course.final_cta_lead && (
           <p>{course.final_cta_lead}</p>
         )}
-        <button type="button" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
-          <span className="flow" />
-          <span>{course.final_cta_button_text || 'Join the Academy'} →</span>
-        </button>
+        {enrolled ? (
+          <a href={`/courses/${courseSlug}/learn`} className="btn-primary" style={{ fontSize: 16, padding: '20px 44px', textDecoration: 'none' }}>
+            <span className="flow" />
+            <span>Ga naar de cursus →</span>
+          </a>
+        ) : !user ? (
+          <button type="button" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
+            <span className="flow" />
+            <span>Maak gratis account</span>
+          </button>
+        ) : (
+          <button type="button" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
+            <span className="flow" />
+            <span>Koop cursus — € {course.price_cents ? (course.price_cents / 100).toLocaleString('nl-NL') : '0'}</span>
+          </button>
+        )}
       </div>
     </section>
   )
