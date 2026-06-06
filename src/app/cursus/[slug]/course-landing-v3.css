@@ -179,6 +179,11 @@
     transform: translateY(-2px);
     box-shadow: 0 14px 40px rgba(196, 162, 101, 0.35);
   }
+  a.btn-primary {
+    display: inline-flex;
+    border-radius: 999px;
+    overflow: hidden;
+  }
   
   /* CTA met FLOWY ORGANISCHE inner gradient */
   .btn-primary .flow {
@@ -790,6 +795,7 @@
     opacity: 0.08;
     animation: rotate 20s linear infinite;
     pointer-events: none;
+    border-radius: inherit;
   }
   @keyframes rotate {
     to { transform: rotate(360deg); }

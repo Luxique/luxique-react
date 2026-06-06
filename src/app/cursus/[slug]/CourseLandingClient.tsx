@@ -146,6 +146,9 @@ export default function CourseLandingClient({
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
+      } else {
+        console.error('Checkout error:', data)
+        alert(data.error || 'Er ging iets mis bij het starten van de betaling.')
       }
     } catch {
       alert('Er ging iets mis bij het starten van de betaling.')
