@@ -127,7 +127,7 @@ export default function CourseLandingClient({
     }
     // Already enrolled? Go to player
     if (enrolled) {
-      window.location.href = `/courses/${course.slug}/learn`
+      window.location.href = `/academy/${course.slug}`
       return
     }
     // Proceed to Stripe checkout
@@ -195,7 +195,7 @@ export default function CourseLandingClient({
               </p>
               <p className="enroll-success-sub">Je bent ingeschreven. Start nu met je eerste les.</p>
             </div>
-            <a href={`/courses/${course.slug}/learn`} className="enroll-success-btn">Ga naar cursus →</a>
+            <a href={`/academy/${course.slug}`} className="enroll-success-btn">Ga naar cursus →</a>
             <button className="enroll-success-close" onClick={() => setShowEnrollSuccess(false)}>✕</button>
           </div>
         </div>
@@ -550,7 +550,7 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
               </div>
               
               {enrolled ? (
-                <a href={`/courses/${courseSlug}/learn`} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
+                <a href={`/academy/${courseSlug}`} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
                   <span className="flow" />
                   <span>Ga naar de cursus →</span>
                 </a>
@@ -659,7 +659,7 @@ function FinalCTASection({ course, onJoin, user, enrolled, courseSlug }: { cours
           <p>{course.final_cta_lead}</p>
         )}
         {enrolled ? (
-          <a href={`/courses/${courseSlug}/learn`} className="btn-primary" style={{ fontSize: 16, padding: '20px 44px', textDecoration: 'none' }}>
+          <a href={`/academy/${courseSlug}`} className="btn-primary" style={{ fontSize: 16, padding: '20px 44px', textDecoration: 'none' }}>
             <span className="flow" />
             <span>Ga naar de cursus →</span>
           </a>
