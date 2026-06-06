@@ -15,6 +15,7 @@ interface Course {
   status: string
   is_first_lesson_free: boolean | null
   intro_video_mux_id: string | null
+  hero_mux_playback_id: string | null
   thumbnail_time: number | null
   thumbnail_url: string | null
   duration_text: string | null
@@ -31,7 +32,7 @@ export default function CoursesPage() {
   useEffect(() => {
     supabase
       .from('courses')
-      .select('id, title, short_description, description, slug, level, price, price_cents, status, is_first_lesson_free, intro_video_mux_id, thumbnail_time, thumbnail_url, duration_text, what_you_learn, access_duration_text')
+      .select('id, title, short_description, description, slug, level, price, price_cents, status, is_first_lesson_free, intro_video_mux_id, hero_mux_playback_id, thumbnail_time, thumbnail_url, duration_text, what_you_learn, access_duration_text')
       .eq('status', 'published')
       .order('created_at', { ascending: true })
       .then(({ data, error }) => {

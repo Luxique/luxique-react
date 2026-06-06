@@ -18,6 +18,7 @@ interface Course {
   status: string
   is_first_lesson_free: boolean | null
   intro_video_mux_id: string | null
+  hero_mux_playback_id: string | null
   thumbnail_time: number | null
   thumbnail_url: string | null
   duration_text: string | null
@@ -90,10 +91,12 @@ export default function AcademySection({ courses, loading }: Props) {
 
               {/* Dynamic course cards */}
               {courses.map((course) => {
-                const thumbUrl = course.thumbnail_url ||
-                  (course.intro_video_mux_id
-                    ? `https://image.mux.com/${course.intro_video_mux_id}/thumbnail.png?time=${course.thumbnail_time ?? 0}&width=600`
-                    : null)
+                const thumbUrl = course.thumbnail_url
+                  || (course.hero_mux_playback_id
+                    ? `https://image.mux.com/${course.hero_mux_playback_id}/thumbnail.png?width=1200&time=1`
+                    : course.intro_video_mux_id
+                      ? `https://image.mux.com/${course.intro_video_mux_id}/thumbnail.png?time=${course.thumbnail_time ?? 0}&width=600`
+                      : null)
                 const usps = course.what_you_learn && course.what_you_learn.length > 0
                   ? course.what_you_learn
                   : ['Online lessen · video, theorie & quizzen', 'Persoonlijke feedback van Chiva', `${course.access_duration_text || '12 maanden'} toegang & updates`, 'Certificaat bij afronding']

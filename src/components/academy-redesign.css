@@ -338,6 +338,9 @@
   width: 100%;
   padding: 13px 20px;
   font-size: 14px;
+  display: flex;
+  border-radius: 999px;
+  text-decoration: none;
 }
 .lxq-micro {
   display: block;
@@ -419,12 +422,18 @@
     grid-template-columns: 1fr;
     gap: 72px;
     padding: 48px 0 48px;
+    text-align: center;
   }
+  .lxq-hero-cta { justify-content: center; }
+  .lxq-hero-p { margin-left: auto; margin-right: auto; }
   .lxq-teacher {
-    justify-self: start;
+    justify-self: center;
   }
 }
 @media (max-width: 760px) {
+  .lxq-hero {
+    padding-top: 80px;
+  }
   .lxq-free-banner {
     padding: 26px 22px;
   }
