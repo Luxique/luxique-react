@@ -179,9 +179,9 @@ function FAQSection() {
 
 function Marquee() {
   return (
-    <section className="overflow-hidden py-[20px]">
+    <section className="overflow-hidden rounded-[28px] bg-[#1A1815] py-[20px]">
       <div className="text-center mb-[20px]">
-        <span className="text-[11px] tracking-[0.26em] uppercase text-[#8A8378] font-medium">— Het werk · @lashedbychiva —</span>
+        <span className="text-[11px] tracking-[0.26em] uppercase text-[rgba(250,248,244,0.5)] font-medium">— Het werk · @lashedbychiva —</span>
       </div>
       <div
         className="flex hover:[animation-play-state:paused]"
@@ -210,25 +210,23 @@ function Marquee() {
 
 function Boeken() {
   return (
-    <section id="boek" className="relative" style={{ scrollMarginTop: '90px' }}>
-      <div className="bg-white rounded-t-[28px] md:rounded-t-[36px] relative z-10 md:-mt-[120px] -mt-[70px] px-[20px] py-[60px] md:py-[80px]">
-        <div className="max-w-[880px] mx-auto text-center">
-          <span className="block text-[11px] tracking-[0.26em] uppercase text-[#8A8378] font-medium mb-[14px]">— Boeken —</span>
-          <h2 className="font-['Outfit'] font-medium text-[clamp(32px,4.5vw,56px)] tracking-[-0.02em] text-[#1A1815] mb-[16px]">
-            Boek jouw <span className="font-['Cormorant_Garamond'] italic">moment</span>
-          </h2>
-          <p className="text-[#5C564C] text-[16px] max-w-[480px] mx-auto mb-[36px] leading-[1.6]">
-            Kies een datum en tijd die jou uitkomt. Ik kijk ernaar uit je te ontmoeten.
-          </p>
-          <div className="w-full">
-            <iframe
-              src={`${CAL_URL}?embed=&theme=light&layout=month_view`}
-              title="Boek een afspraak"
-              className="w-full border-0 rounded-[18px]"
-              style={{ minHeight: '600px', height: 'auto' }}
-              loading="lazy"
-            />
-          </div>
+    <section id="boek" className="bg-white rounded-[28px] px-[28px] py-[60px] md:px-[60px] md:py-[80px]" style={{ scrollMarginTop: '90px' }}>
+      <div className="max-w-[880px] mx-auto text-center">
+        <span className="block text-[11px] tracking-[0.26em] uppercase text-[#8A8378] font-medium mb-[14px] reveal">— Plan je afspraak —</span>
+        <h2 className="font-['Outfit'] font-medium text-[clamp(32px,4.5vw,56px)] tracking-[-0.02em] text-[#1A1815] mb-[16px] reveal">
+          Boek jouw <span className="font-['Cormorant_Garamond'] italic">moment</span>
+        </h2>
+        <p className="text-[#5C564C] text-[16px] max-w-[480px] mx-auto mb-[36px] leading-[1.6] reveal">
+          Kies een datum en tijd die jou uitkomt. Ik kijk ernaar uit je te ontmoeten.
+        </p>
+        <div className="w-full reveal">
+          <iframe
+            src={`${CAL_URL}?embed=&theme=light&layout=month_view`}
+            title="Boek een afspraak"
+            className="w-full border-0 rounded-[18px]"
+            style={{ minHeight: '600px', height: 'auto' }}
+            loading="lazy"
+          />
         </div>
       </div>
     </section>
