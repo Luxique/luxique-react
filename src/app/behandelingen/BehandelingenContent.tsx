@@ -19,6 +19,8 @@ const FAQ = [
   { q: 'Doet het pijn?', a: 'Nee. De behandeling is volledig pijnloos. Je ligt comfortabel met gesloten ogen — veel klanten vinden het zo ontspannend dat ze in slaap vallen.' },
   { q: 'Hoe verzorg ik mijn lashes thuis?', a: 'Je krijgt na de behandeling persoonlijk nazorgadvies. Kort gezegd: de eerste 24 uur niet nat maken, voorzichtig reinigen, en niet wrijven. Ik leg je alles uit tijdens je afspraak.' },
   { q: 'Welke stijl past bij mij?', a: 'Dat bepalen we samen tijdens de consultatie. Op basis van je oogvorm, natuurlijke wimpers en wensen kies ik de styling die jouw blik het mooist versterkt.' },
+  { q: 'Wanneer moet ik mijn wimpers laten opvullen?', a: 'Ik vul wimpers op tot 3 weken na je afspraak. De prijs voor een opvulbehandeling is altijd €90, ongeacht of je binnen 1 week, 2 weken of 3 weken terugkomt. Na 3 weken wordt er een nieuwe set geplaatst.' },
+  { q: 'Zijn alle sets €130?', a: 'Ja. Alle sets worden volledig aangepast aan jouw ogen. Je kunt iedere gewenste stijl en vorm kiezen, maar deze wordt altijd afgestemd op jouw oogvorm, uitstraling en natuurlijke wimpers. Elke set is een customized set en heeft daarom één vaste prijs van €130. Voor iedere nieuwe set reserveer ik 3 uur in mijn agenda, zodat er voldoende tijd is om jouw set perfect te creëren.' },
 ]
 
 const MARQUEE_PHOTOS = [
@@ -131,8 +133,8 @@ function Tarieven() {
       </div>
       <div className="grid grid-cols-1 min-[560px]:grid-cols-2 gap-[14px] max-w-[880px] mx-auto">
         {[
-          { label: 'Nieuwe Set', title: 'Volledige set naar keuze', price: '129', dur: '± 2 uur', desc: 'Een volledig nieuwe set, afgestemd op jouw oogvorm en wensen. Kies uit verschillende stijlen.', dark: true },
-          { label: 'Refill', title: 'Opvullen bestaande set', price: '89', dur: '± 1 uur', desc: 'Houd je set vol en mooi. Aanbevolen elke 2 tot 3 weken voor het beste resultaat.', dark: false },
+          { label: 'Nieuwe Set', title: 'Volledige set naar keuze', price: '130', dur: '± 2 uur', desc: 'Een volledig nieuwe set, afgestemd op jouw oogvorm en wensen. Kies uit verschillende stijlen.', dark: true },
+          { label: 'Refill', title: 'Opvullen bestaande set', price: '90', dur: '± 1 uur', desc: 'Houd je set vol en mooi. Aanbevolen elke 2 tot 3 weken voor het beste resultaat.', dark: false },
         ].map((c) => (
           <div key={c.label} className={`${c.dark ? 'bg-[#1A1815] text-[#FAF8F4]' : 'bg-[#F7F2EA] hover:bg-[#FDFCFA] text-[#1A1815]'} rounded-[22px] px-[32px] py-[40px] text-center transition-all hover:-translate-y-[4px] hover:shadow-[0_20px_50px_rgba(26,24,21,0.06)]`}>
             <span className={`block text-[11px] tracking-[0.26em] uppercase font-medium mb-[16px] ${c.dark ? 'text-[#C4A265]' : 'text-[#8A8378]'}`}>{c.label}</span>
