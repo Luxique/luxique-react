@@ -133,8 +133,8 @@ function Tarieven() {
       </div>
       <div className="grid grid-cols-1 min-[560px]:grid-cols-2 gap-[14px] max-w-[880px] mx-auto">
         {[
-          { label: 'Nieuwe Set', title: 'Volledige set naar keuze', price: '130', dur: '± 2 uur', desc: 'Een volledig nieuwe set, afgestemd op jouw oogvorm en wensen. Kies uit verschillende stijlen.', dark: true },
-          { label: 'Refill', title: 'Opvullen bestaande set', price: '90', dur: '± 1 uur', desc: 'Houd je set vol en mooi. Aanbevolen elke 2 tot 3 weken voor het beste resultaat.', dark: false },
+          { label: 'Nieuwe Set', title: 'Volledige set naar keuze', price: '129', dur: '± 2 uur', desc: 'Een volledig nieuwe set, afgestemd op jouw oogvorm en wensen. Kies uit verschillende stijlen.', dark: true },
+          { label: 'Refill', title: 'Opvullen bestaande set', price: '89', dur: '± 1 uur', desc: 'Houd je set vol en mooi. Aanbevolen elke 2 tot 3 weken voor het beste resultaat.', dark: false },
         ].map((c) => (
           <div key={c.label} className={`${c.dark ? 'bg-[#1A1815] text-[#FAF8F4]' : 'bg-[#F7F2EA] hover:bg-[#FDFCFA] text-[#1A1815]'} rounded-[22px] px-[32px] py-[40px] text-center transition-all hover:-translate-y-[4px] hover:shadow-[0_20px_50px_rgba(26,24,21,0.06)]`}>
             <span className={`block text-[11px] tracking-[0.26em] uppercase font-medium mb-[16px] ${c.dark ? 'text-[#C4A265]' : 'text-[#8A8378]'}`}>{c.label}</span>
