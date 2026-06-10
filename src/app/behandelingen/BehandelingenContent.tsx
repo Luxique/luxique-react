@@ -209,6 +209,18 @@ function Marquee() {
 }
 
 function Boeken() {
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'cal:height' && e.data.value && iframeRef.current) {
+        iframeRef.current.style.height = e.data.value + 'px'
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
+
   return (
     <section id="boek" className="bg-white rounded-[28px] px-[28px] py-[60px] md:px-[60px] md:py-[80px]" style={{ scrollMarginTop: '90px' }}>
       <div className="max-w-[880px] mx-auto text-center">
@@ -221,11 +233,13 @@ function Boeken() {
         </p>
         <div className="w-full reveal">
           <iframe
+            ref={iframeRef}
             src={`${CAL_URL}?embed=&theme=light&layout=month_view`}
             title="Boek een afspraak"
-            className="w-full border-0 rounded-[18px]"
-            style={{ minHeight: '600px', height: 'auto' }}
+            className="w-full border-0 rounded-[18px] bg-transparent"
+            style={{ minHeight: '600px' }}
             loading="lazy"
+            allow="clipboard-write"
           />
         </div>
       </div>
