@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 /* ── Types ── */
 interface Course {
@@ -162,25 +162,20 @@ export default function CoursesOverviewPage() {
     }
 
     try {
-      // Use the imported supabase client
-      const slug = newCourse.title.toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-
-      const { data, error } = await supabaseAdmin
-        .from('courses')
-        .insert({
+      // Create course via API (server-side admin check)
+      const res = await fetch('/api/courses/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           title: newCourse.title,
           description: newCourse.description,
-          slug,
           level: newCourse.level || 'Beginner',
-          price: 0,
-          status: 'draft'
+          user_id: user?.id
         })
-        .select()
-        .single()
-
-      if (error) throw error
+      })
+      const result = await res.json()
+      if (result.error) throw new Error(result.error)
+      const data = result.data
 
       // Redirect to course builder
       router.push(`/admin/courses/${data.id}/builder`)
