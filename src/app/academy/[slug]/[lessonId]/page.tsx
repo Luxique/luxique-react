@@ -32,7 +32,7 @@ function extractBlockContent(block: Block) {
     muxPlaybackId: (c?.mux_playback_id as string) || undefined,
     question: (c?.question as string) || block.question,
     options: (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
-    optionType: (c?.option_type as string) || block.option_type,
+    optionType: (c?.option_type as string) || block.option_type || ((c?.options as Array<{ image_url?: string }>)?.some((o: { image_url?: string }) => o.image_url) ? 'image' : 'text'),
     media: (c?.media as { type: string; url: string; caption?: string } | null) || block.media,
     imageUrl: (c?.url as string) || block.media?.url,
     caption: (c?.caption as string) || block.media?.caption,
