@@ -14,30 +14,13 @@ const QUICK_REPLIES = [
   'Hoe kan ik boeken?',
 ]
 
-const FAQ_RESPONSES: Record<string, string> = {
-  'wat kost': 'Een Nieuwe Set kost €129 en een Opvulbeurt €89. Bij een nieuwe set krijg je lash mapping, 3 uur behandeltijd, foto\'s en aftercare kit. De mapping wordt opgeslagen voor toekomstige bezoeken.',
-  'hoe lang duurt': 'Reken op 3 uur. Chiva neemt de tijd voor een perfect resultaat — geen haast, geen compromissen.',
-  'waar': 'LUXIQUE is gevestigd in [locatie]. Na je boeking ontvang je het exacte adres via WhatsApp.',
-  'boeken': 'Je kunt direct online boeken via onze website! Ga naar de Behandeling pagina en klik op "Boek nu". Je ontvangt binnen 24 uur een bevestiging via WhatsApp.',
-  'refill': 'Opvullen kost €89 en duurt ongeveer 2 uur. Chiva gebruikt je opgeslagen lash mapping om je set weer perfect aan te vullen.',
-  'pijn': 'Nee, de meeste klanten vinden het ontspannen. Je ligt comfortabel en veel klanten vallen in slaap tijdens de behandeling.',
-  'hoe lang blijft': 'Gemiddeld 4-6 weken met goede aftercare. Na 2-3 weken adviseren we een refill.',
-  'annuleren': 'Gratis annuleren tot 24 uur van tevoren. Daarna rekenen we 50% van de behandelprijs.',
-  'cursus': 'Onze online cursussen vind je op de Academy pagina. Je leert alles over lash technieken, oogvormen en het opbouwen van je eigen lash business.',
-}
-
-function findResponse(input: string): string {
-  const lower = input.toLowerCase()
-  for (const [key, response] of Object.entries(FAQ_RESPONSES)) {
-    if (lower.includes(key)) return response
-  }
-  return 'Bedankt voor je bericht! Chiva neemt zo snel mogelijk contact met je op via WhatsApp. Voor directe vragen kun je ook een WhatsApp sturen naar +316...'
-}
+const WELCOME_MESSAGE = 'Hoi! 👋 Ik ben Lux, de assistent van LUXIQUE. Waarmee kan ik je helpen?'
+const ERROR_MESSAGE = 'Sorry, ik ben er even niet. Mail ons op info@luxique.nl'
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hey! 👋 Heb je een vraag over onze lash behandelingen of cursussen? Stel je vraag en ik help je verder.' }
+    { role: 'assistant', content: WELCOME_MESSAGE }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -48,23 +31,52 @@ export default function ChatWidget() {
   }, [messages])
 
   const send = async (text: string) => {
-    if (!text.trim()) return
+    if (!text.trim() || loading) return
     const userMsg: Message = { role: 'user', content: text }
-    setMessages(prev => [...prev, userMsg])
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
     setInput('')
     setLoading(true)
 
-    // Simulate typing delay
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 600))
-    const response = findResponse(text)
-    setMessages(prev => [...prev, { role: 'assistant', content: response }])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      })
+      const data = await res.json()
+      setMessages(prev => [...prev, { role: 'assistant', content: data.content || data.error || ERROR_MESSAGE }])
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: ERROR_MESSAGE }])
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <>
+      <style>{`
+        @media (max-width: 480px) {
+          .luxique-chat-window {
+            bottom: 0 !important;
+            right: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            max-height: 80vh !important;
+            border-radius: 22px 22px 0 0 !important;
+          }
+          .luxique-chat-window .luxique-messages {
+            max-height: calc(80vh - 160px) !important;
+          }
+          .luxique-chat-btn {
+            bottom: 80px !important;
+          }
+        }
+      `}</style>
+
       {/* Chat button */}
       <button
+        className="luxique-chat-btn"
         onClick={() => setOpen(!open)}
         style={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
@@ -83,16 +95,19 @@ export default function ChatWidget() {
 
       {/* Chat window */}
       {open && (
-        <div style={{
-          position: 'fixed', bottom: 96, right: 24, zIndex: 9999,
-          width: 380, maxHeight: 520,
-          background: '#14110C',
-          border: '1px solid rgba(196,162,101,0.18)',
-          borderRadius: 22,
-          overflow: 'hidden',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-          display: 'flex', flexDirection: 'column',
-        }}>
+        <div
+          className="luxique-chat-window"
+          style={{
+            position: 'fixed', bottom: 96, right: 24, zIndex: 9999,
+            width: 380, maxHeight: 520,
+            background: '#14110C',
+            border: '1px solid rgba(196,162,101,0.18)',
+            borderRadius: 22,
+            overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+            display: 'flex', flexDirection: 'column',
+          }}
+        >
           {/* Header */}
           <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(196,162,101,0.18)', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #C4A265, #1C1812)', flexShrink: 0 }} />
@@ -103,7 +118,10 @@ export default function ChatWidget() {
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 340 }}>
+          <div
+            className="luxique-messages"
+            style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 340 }}
+          >
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{
@@ -112,6 +130,7 @@ export default function ChatWidget() {
                   color: msg.role === 'user' ? '#0C0A07' : '#FAF8F4',
                   fontSize: 14, lineHeight: 1.5,
                   border: msg.role === 'assistant' ? '1px solid rgba(196,162,101,0.18)' : 'none',
+                  whiteSpace: 'pre-wrap',
                 }}>
                   {msg.content}
                 </div>
@@ -128,7 +147,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Quick replies */}
-          {messages.length <= 2 && (
+          {messages.length <= 2 && !loading && (
             <div style={{ padding: '0 22px 12px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {QUICK_REPLIES.map((q, i) => (
                 <button key={i} onClick={() => send(q)} style={{
@@ -155,9 +174,9 @@ export default function ChatWidget() {
                 outline: 'none', fontFamily: "'Outfit', sans-serif",
               }}
             />
-            <button onClick={() => send(input)} style={{
-              background: '#C4A265', color: '#0C0A07', border: 'none', borderRadius: 12,
-              padding: '10px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500,
+            <button onClick={() => send(input)} disabled={loading} style={{
+              background: loading ? '#8B7445' : '#C4A265', color: '#0C0A07', border: 'none', borderRadius: 12,
+              padding: '10px 16px', cursor: loading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 500,
               fontFamily: "'Outfit', sans-serif",
             }}>
               →
