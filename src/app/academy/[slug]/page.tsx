@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
+import { getLessonDisplays } from '@/lib/lesson-display'
 import './course-interior.css'
 
 interface Lesson {
@@ -80,7 +81,8 @@ export default function CourseInteriorPage() {
   }
 
   const fmtDur = (s?: number) => { if (!s) return ''; const m = Math.round(s / 60); return m > 0 ? `${m} min` : '' }
-  const getLabel = (l: Lesson, i: number) => l.lesson_type === 'quiz' ? 'Tussentijdse toets' : l.lesson_type === 'exam' ? 'Eindtoets' : `Les ${i + 1}`
+  const lessonDisplays = getLessonDisplays(lessons)
+  const getLabel = (l: Lesson) => lessonDisplays.get(l.id)?.shortLabel || l.title
 
   if (loading || checkingEnrollment) return <div className="ci-loader"><div>Cursus wordt geladen...</div></div>
   if (!course) return <div className="ci-loader"><div>Cursus niet gevonden</div><a href="/academy" className="ci-link">← Terug naar academie</a></div>
@@ -120,7 +122,7 @@ export default function CourseInteriorPage() {
           <div className="thumb"><span className="play-btn" /></div>
           <div className="body">
             <div className="k">Ga verder waar je was</div>
-            <div className="t">{getLabel(nextLesson, lessons.indexOf(nextLesson))} — {nextLesson.title || 'Naamloos'}</div>
+            <div className="t">{getLabel(nextLesson)} — {nextLesson.title || 'Naamloos'}</div>
             <div className="meta">Video · {fmtDur(nextLesson.duration_seconds) || 'Binnenkort'}</div>
           </div>
           {hasAccess ? (
@@ -149,11 +151,11 @@ export default function CourseInteriorPage() {
             >
               <span className={`status ${status === 'done' ? 'done' : isCurrent ? 'current' : 'todo'}`}>
                 {status === 'done' && checkSVG}
-                {status === 'todo' && !isCurrent && <span className="n">{isExam ? '✦' : index + 1}</span>}
+                {status === 'todo' && !isCurrent && <span className="n">{isExam || isQuiz ? '✦' : (lessonDisplays.get(lesson.id)?.number || index + 1)}</span>}
               </span>
               <div className="info">
                 <div className="num">
-                  {getLabel(lesson, index)}
+                  {getLabel(lesson)}
                   {isQuiz && <span className="ci-badge quiz">Quiz</span>}
                   {isExam && <span className="ci-badge exam">Examen</span>}
                 </div>

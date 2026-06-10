@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import type { Review } from '@/lib/reviews'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
+import { getLessonDisplays } from '@/lib/lesson-display'
 import AmbientGlow from '@/components/AmbientGlow'
 import AuthModal from '@/components/AuthModal'
 import ComparisonTable from '@/components/ComparisonTable'
@@ -428,6 +429,8 @@ function CurriculumSection({
     return null
   }
 
+  const lessonDisplays = getLessonDisplays(lessons.map(l => ({ ...l, lesson_type: l.lesson_type || 'content' })))
+
   return (
     <section className="section" id="curriculum">
       <div className="container">
@@ -455,10 +458,10 @@ function CurriculumSection({
             >
               <div className="lesson-acc-head">
                 <div className="lesson-num">
-                  {String(lesson.sort_order + 1).padStart(2, '0')}
+                  {lesson.lesson_type === 'content' ? String(lessonDisplays.get(lesson.id)?.number || '').padStart(2, '0') : '✦'}
                 </div>
                 <div className="lesson-info">
-                  <h4>{lesson.lesson_type === 'quiz' ? `Quiz: ${lesson.title}` : lesson.lesson_type === 'exam' ? `Eindtoets: ${lesson.title}` : lesson.title}</h4>
+                  <h4>{lessonDisplays.get(lesson.id)?.label || lesson.title}</h4>
                   <div className="meta">
                     {lesson.lesson_type === 'quiz' ? 'Quiz' : lesson.lesson_type === 'exam' ? 'Eindtoets' : lesson.duration_seconds > 0 ? `${Math.round(lesson.duration_seconds / 60)} min · Video` : 'Video'}
                   </div>

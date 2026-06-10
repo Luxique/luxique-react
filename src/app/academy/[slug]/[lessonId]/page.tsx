@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
+import ExamPlayer from '@/components/ExamPlayer'
 import { useAuth } from '@/lib/auth-context'
+import { getLessonDisplays } from '@/lib/lesson-display'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -140,7 +142,8 @@ export default function LessonPage() {
   const totalCount = allLessons.length
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
   const quizBlocks = blocks.filter(b => b.type === 'quiz')
-  const isQuizLesson = lesson?.lesson_type === 'quiz' || lesson?.lesson_type === 'exam'
+  const isQuizLesson = lesson?.lesson_type === 'quiz'
+  const isExamLesson = lesson?.lesson_type === 'exam'
 
   // Video detection
   const videoBlock = blocks.find(b => b.type === 'video')
@@ -157,11 +160,13 @@ export default function LessonPage() {
   const isLessonComplete = !!progress.get(lessonId)?.completed || videoCompleted
 
   // Can proceed to next lesson?
-  const canProceed = isQuizLesson
-    ? quizComplete                           // Quiz lesson: all questions answered
-    : hasPlayableVideo
-      ? isLessonComplete                     // Content with video: video watched
-      : isLessonComplete                     // Content without video: scrolled to end (or marked)
+  const canProceed = isExamLesson
+    ? true // Exam has its own completion flow
+    : isQuizLesson
+      ? quizComplete
+      : hasPlayableVideo
+        ? isLessonComplete
+        : isLessonComplete
 
   /* ── Handlers ─────────────────────────────────── */
   const markComplete = useCallback(async (lid?: string) => {
@@ -259,6 +264,8 @@ export default function LessonPage() {
   if (loading) return <div className="lp-loader"><div>Cursus wordt geladen...</div></div>
   if (!lesson) return <div className="lp-loader"><div>Les niet gevonden</div><a href={`/academy/${slug}`} className="lp-link">← Terug naar cursus</a></div>
 
+  const lessonDisplays = getLessonDisplays(allLessons.map(l => ({ id: l.id, title: l.title, lesson_type: l.lesson_type })))
+
   /* ── Rail ─────────────────────────────────────── */
   const railItems = allLessons.map((l, i) => {
     const status = getLessonStatus(l)
@@ -280,9 +287,9 @@ export default function LessonPage() {
         onClick={() => { if (!isClickLocked) router.push(`/academy/${slug}/${l.id}`); setRailMobileOpen(false) }}>
         <span className={`sq ${sqCls}`}>
           {status === 'done' ? <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
-            : isLockedPay ? '🔒' : isQuizItem ? '✦' : i + 1}
+            : isLockedPay ? '🔒' : isQuizItem ? '✦' : (lessonDisplays.get(l.id)?.number || i + 1)}
         </span>
-        <span className="nm">{l.title}</span>
+        <span className="nm">{lessonDisplays.get(l.id)?.label || l.title}</span>
         {l.is_free && <span className="freebadge">Gratis</span>}
       </a>
     )
@@ -321,7 +328,7 @@ export default function LessonPage() {
         </div>
 
         <div className="lp-stage">
-          <div className="crumb">Les {currentIdx + 1} van {totalCount}</div>
+          <div className="crumb">{lessonDisplays.get(lessonId)?.label || `Les ${currentIdx + 1} van ${totalCount}`}</div>
           <h1 className="lesson-title">{lesson.title}</h1>
           {lesson.duration_seconds ? <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8 }}>Video · {fmtDur(lesson.duration_seconds)}</div> : null}
 
@@ -331,6 +338,14 @@ export default function LessonPage() {
               <div className="s">Schrijf je in om alle lessen, toetsen en je voortgang te ontgrendelen.</div>
               <a href={`/cursus/${slug}`}>Schrijf je in →</a>
             </div>
+          ) : isExamLesson ? (
+            <ExamPlayer
+              lessonId={lessonId}
+              courseId={lesson.course_id}
+              courseTitle={courseTitle}
+              passingScore={85}
+              slug={slug}
+            />
           ) : (
             <>
               {blocks.map((block, blockIdx) => {

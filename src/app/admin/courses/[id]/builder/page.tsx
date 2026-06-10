@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import { getLessonDisplays } from '@/lib/lesson-display'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -770,6 +771,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   }
 
   const isQuizLesson = currentLesson?.lesson_type === 'quiz' || currentLesson?.lesson_type === 'exam'
+  const builderLessonDisplays = getLessonDisplays((course?.lessons || []).map(l => ({ id: l.id, title: l.name, lesson_type: l.lesson_type || 'content' })))
 
   const contentBlockTypes: BlockType[] = ['video', 'text', 'image', 'callout', 'download', 'divider']
   const quizBlockTypes: BlockType[] = ['quiz']
@@ -1858,7 +1860,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <span className={`text-[12px] font-medium block leading-tight ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'text-[#7A6340]' : 'text-[#1E1A14]'}`}>
-                      {lesson.lesson_type === 'quiz' ? 'Quiz' : lesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${lesson.num}`}
+                      {builderLessonDisplays.get(lesson.id)?.shortLabel || lesson.name}
                     </span>
                     <span className="text-[10px] text-[#7A7268] font-light">{lesson.name}</span>
                   </div>
