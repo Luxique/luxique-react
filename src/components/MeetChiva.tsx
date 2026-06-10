@@ -78,19 +78,26 @@ export default function MeetChiva() {
     <section className="px-[14px] max-[860px]:px-[10px] flex flex-col gap-[14px]">
 
       {/* ══ ROW 1: Hero portrait panel ══ */}
-      <div className="rounded-[22px] bg-[#161310] relative overflow-hidden min-h-[420px] max-[860px]:min-h-[380px] max-[540px]:min-h-[340px] flex min-[860px]:items-end items-center">
+      <div className="rounded-[22px] bg-[#161310] relative overflow-visible min-h-[420px] max-[860px]:min-h-[380px] max-[540px]:min-h-[340px] flex min-[860px]:items-end items-center">
         {/* Inner bg with orbs — cream, always fills */}
         <div className="rounded-[22px] overflow-hidden absolute inset-0 bg-[#F5F1EA]">
           <OrbCanvas />
           <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'1\'/%3E%3C/svg%3E")' }} />
         </div>
 
-        {/* Portrait — desktop: left side with scale, mobile: right-bottom aligned */}
+        {/* Portrait — desktop: left side with scale, mobile: right-bottom aligned; head sticks out above card */}
         <div
           className="absolute bottom-0 top-auto z-[3] left-[120px] w-[370px] max-[860px]:left-auto max-[860px]:right-0 max-[860px]:w-[55%] max-[860px]:max-w-[280px]"
           style={{ transformOrigin: 'bottom left' }}
         >
-          <img src={CHIVA_IMG} alt="Chiva" className="w-full object-contain object-bottom block" style={{ verticalAlign: 'bottom' }} />
+          {/* Dark-gold gradient bg behind transparent portrait */}
+          <div className="absolute inset-0 rounded-[14px]" style={{ background: 'linear-gradient(160deg, #1A1815 0%, #2E261A 30%, #C4A265 100%)' }} />
+          <img
+            src={CHIVA_IMG}
+            alt="Chiva"
+            className="relative w-full object-contain object-bottom block -mt-[18%] max-[860px]:-mt-[10%]"
+            style={{ verticalAlign: 'bottom', zIndex: 5 }}
+          />
         </div>
 
         {/* Text overlay — desktop: right of portrait, mobile: top-left */}
@@ -165,29 +172,6 @@ export default function MeetChiva() {
         <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
           <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ba-wispy-after.webp" alt="Lash close-up" className="w-full h-full min-h-[320px] object-cover" />
           <span className="absolute top-[14px] left-[14px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[12px] py-[5px] rounded-full bg-[rgba(12,10,7,0.55)] backdrop-blur-[10px] border border-[rgba(196,162,101,0.2)] text-[#C4A265]">Lashed by Chiva</span>
-        </div>
-      </div>
-
-      {/* ══ ROW 3: Dark bottom panel ══ */}
-      <div className="rounded-[22px] overflow-hidden relative min-h-[340px] flex items-end">
-        <div className="absolute inset-0 bg-[linear-gradient(160deg,#1e180e_0%,#120e08_40%,#0C0A07_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(12,10,7,0.92)_0%,rgba(12,10,7,0.55)_45%,rgba(12,10,7,0.1)_100%)] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 font-['Avenir_Next'] font-[200] text-[clamp(60px,14vw,180px)] tracking-[0.18em] text-center text-[rgba(196,162,101,0.06)] leading-none pointer-events-none whitespace-nowrap uppercase overflow-hidden select-none pb-0">
-          Luxique
-        </div>
-        <div className="relative z-[3] p-10 max-[860px]:p-8 grid grid-cols-1 min-[860px]:grid-cols-[1fr_auto] items-end gap-8 w-full">
-          <div>
-            <p className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#C4A265] mb-[10px]">Over ons</p>
-            <h3 className="font-['Cormorant_Garamond'] text-[clamp(28px,3.5vw,52px)] font-normal leading-[1.08] text-[#FAF8F4] tracking-[-0.01em] mb-3">
-              Van beginners tot gevorderden —<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">iedereen is welkom.</span>
-            </h3>
-            <p className="text-[13.5px] font-light text-[rgba(250,248,244,0.45)] leading-[1.7] max-w-[500px]">
-              LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Chiva heeft velen studenten opgeleid en haar filosofie is simpel: elke oogvorm verdient een unieke aanpak.
-            </p>
-          </div>
-          <Link href="/about" className="font-['Outfit'] text-[13px] font-medium px-[28px] py-[13px] rounded-full bg-transparent text-[#FAF8F4] border-[1.5px] border-[rgba(250,248,244,0.22)] cursor-pointer transition-all duration-[220ms] whitespace-nowrap shrink-0 hover:border-[#C4A265] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.06)] w-fit">
-            Lees meer →
-          </Link>
         </div>
       </div>
 

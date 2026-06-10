@@ -106,7 +106,9 @@ export default function TechVsArtist() {
             </div>
             <div className="flex flex-col items-center gap-[6px] shrink-0">
               <div className="w-[2px] h-[32px] bg-[linear-gradient(180deg,#C4A265_0%,transparent_100%)] rounded-[2px]" />
-              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/techvsartist-chiva.webp" alt="Chiva" className="w-[80px] h-[80px] rounded-full object-cover border-[2px] border-[rgba(196,162,101,0.4)]" />
+              <div className="w-[80px] h-[80px] rounded-full overflow-hidden shrink-0 border-[2px] border-[rgba(196,162,101,0.4)]" style={{ background: 'linear-gradient(160deg, #1A1815 0%, #C4A265 100%)' }}>
+                <img src="https://osldoolmbpqayxhgmbhqmbum.supabase.co/storage/v1/object/public/images/chiva-portrait-v2.webp" alt="Chiva" className="w-full h-full object-cover object-top" />
+              </div>
             </div>
           </div>
         </div>
