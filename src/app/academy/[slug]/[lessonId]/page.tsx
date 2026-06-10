@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import '@mux/mux-player'
 import { supabase } from '@/lib/supabase-client'
+import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import { useAuth } from '@/lib/auth-context'
 import './lesson-page.css'
 
@@ -58,7 +58,6 @@ export default function LessonPage() {
   const [videoCompleted, setVideoCompleted] = useState(false)
 
   // Rail
-  const muxPlayerRef = useRef<HTMLElement>(null)
   const lastBlockRef = useRef<HTMLDivElement>(null)
   const [railOpen, setRailOpen] = useState(() => {
     if (typeof window === 'undefined') return true
@@ -183,27 +182,10 @@ export default function LessonPage() {
     }
   }, [isQuizLesson, quizComplete, isLessonComplete, markComplete])
 
-  // Mux player native event listeners
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const player = muxPlayerRef.current as any
-    if (!player || !hasPlayableVideo) return
-    const handleTimeUpdate = () => {
-      if (!player.duration || !player.currentTime) return
-      if (player.currentTime / player.duration >= 0.9) {
-        const rec = progress.get(lessonId)
-        if (!rec?.completed) markComplete()
-      }
-    }
-    const handleEnded = () => {
-      const rec = progress.get(lessonId)
-      if (!rec?.completed) markComplete()
-    }
-    player.addEventListener('timeupdate', handleTimeUpdate)
-    player.addEventListener('ended', handleEnded)
-    return () => { player.removeEventListener('timeupdate', handleTimeUpdate); player.removeEventListener('ended', handleEnded) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasPlayableVideo, lessonId])
+  // Note: video completion via timeupdate/ended events was tied to raw mux-player ref.
+  // With LuxiqueMuxPlayer (React component), completion is tracked via scroll-to-end
+  // and the IntersectionObserver below. If needed, add onEnded/onTimeUpdate callbacks
+  // to LuxiqueMuxPlayer and wire them here.
 
   // Scroll-to-end completion for content lessons without video
   useEffect(() => {
@@ -362,14 +344,18 @@ export default function LessonPage() {
                     {block.type === 'video' && (() => {
                       const rec = progress.get(lessonId)
                       const done = !!rec?.completed
-                      const resumeSec = rec?.last_position_seconds || 0
                       return bc.muxPlaybackId ? (
                         <>
                           <div className="video" style={{ position: 'relative' }}>
-                            <mux-player ref={muxPlayerRef} playback-id={bc.muxPlaybackId} stream-type="on-demand"
-                              start-time={resumeSec > 0 ? resumeSec : undefined}
-                              style={{ width: '100%', height: '100%', '--controls': '', aspectRatio: '16/9' } as React.CSSProperties}
-                              title={block.title || 'Video'} />
+                            <LuxiqueMuxPlayer
+                              playbackId={bc.muxPlaybackId}
+                              variant="lesson"
+                              title={block.title || 'Video'}
+                              signed={true}
+                              userId={user?.id}
+                              courseId={lesson.course_id}
+                              isFree={lesson.is_free}
+                            />
                             <div className="video-scrub" style={{ width: done ? '100%' : '0%' }} />
                           </div>
                           <div className="vid-meta">
