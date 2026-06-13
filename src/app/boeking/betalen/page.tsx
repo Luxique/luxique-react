@@ -13,14 +13,17 @@ interface Booking {
   expires_at: string
 }
 
-function CountdownTimer({ expiresAt }: { expiresAt: string }) {
-  const [remaining, setRemaining] = useState('10:00')
+function CountdownTimer({ expiresAt, onExpire }: { expiresAt: string; onExpire: () => void }) {
+  const [remaining, setRemaining] = useState('')
+  const [expired, setExpired] = useState(false)
 
   useEffect(() => {
     const update = () => {
       const diff = new Date(expiresAt).getTime() - Date.now()
       if (diff <= 0) {
         setRemaining('0:00')
+        setExpired(true)
+        onExpire()
         return
       }
       const min = Math.floor(diff / 60000)
@@ -31,7 +34,9 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
     update()
     const interval = setInterval(update, 1000)
     return () => clearInterval(interval)
-  }, [expiresAt])
+  }, [expiresAt, onExpire])
+
+  if (expired) return null
 
   return (
     <div className="timer">
@@ -61,6 +66,17 @@ function BetalenContent() {
   const [error, setError] = useState<string | null>(null)
   const [paying, setPaying] = useState(false)
   const [agreed, setAgreed] = useState(false)
+  const [isExpired, setIsExpired] = useState(false)
+
+  // Check if booking is already expired on load
+  useEffect(() => {
+    if (booking) {
+      const diff = new Date(booking.expires_at).getTime() - Date.now()
+      if (diff <= 0 || booking.status !== 'pending') {
+        setIsExpired(true)
+      }
+    }
+  }, [booking])
 
   const fetchBooking = useCallback(async (bookingUid: string): Promise<boolean> => {
     try {
@@ -193,6 +209,38 @@ function BetalenContent() {
   const depositStr = (deposit / 100).toFixed(0)
   const totalStr = (total / 100).toFixed(0)
 
+  // Expired state
+  if (isExpired) {
+    return (
+      <>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <style>{`body{background:radial-gradient(700px 460px at 50% -8%,rgba(176,141,79,.10),transparent 62%),#f6f1e7;color:#1a1712;font-family:'Jost',sans-serif;font-weight:300;line-height:1.6;min-height:100vh;margin:0;padding:0}*{margin:0;padding:0;box-sizing:border-box}.wrap{max-width:560px;margin:0 auto;padding:34px 20px 70px}.wordmark{font-weight:400;letter-spacing:.42em;font-size:16px;color:#1a1712}.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}.secure{font-size:11.5px;color:#9a9183;display:flex;align-items:center;gap:6px}.card{background:#fffdf8;border:1px solid rgba(26,23,18,.1);border-radius:22px;box-shadow:0 20px 50px rgba(26,23,18,.07);overflow:hidden}.expired-card{text-align:center;padding:40px 30px}.expired-card .clock-icon{width:56px;height:56px;margin:0 auto 20px;border-radius:50%;background:rgba(176,141,79,.12);display:flex;align-items:center;justify-content:center}.expired-card h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:28px;color:#1a1712;margin-bottom:10px}.expired-card p{color:#6a6256;font-size:15px;line-height:1.6;max-width:360px;margin:0 auto 24px}.expired-card .cta-new{display:inline-block;padding:14px 32px;background:linear-gradient(180deg,#b08d4f,#9a7838);color:#fff;font-weight:600;border-radius:14px;text-decoration:none;font-size:15px;font-family:'Jost',sans-serif;box-shadow:0 8px 24px rgba(176,141,79,.3)}.expired-card .mail-note{margin-top:16px;font-size:12.5px;color:#9a9183}.expired-card .mail-note a{color:#9a7838;text-decoration:none}.foothelp{text-align:center;margin-top:22px;font-size:12.5px;color:#9a9183}.foothelp a{color:#9a7838;text-decoration:none}`}</style>
+        <div className="wrap">
+          <div className="nav">
+            <span className="wordmark">LUXIQUE</span>
+            <span className="secure">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#b08d4f" strokeWidth="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+              Veilig betalen
+            </span>
+          </div>
+          <div className="card">
+            <div className="expired-card">
+              <div className="clock-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b08d4f" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <h2>Je betaaltijd is verlopen</h2>
+              <p>Helaas is je reservering vervallen omdat de aanbetaling niet binnen 10 minuten is ontvangen. Je tijdslot is vrijgegeven voor anderen.</p>
+              <a href="https://www.luxique.nl/behandelingen#boek" className="cta-new">Kies een nieuw tijdslot</a>
+              <div className="mail-note">Vragen? Mail <a href="mailto:info@luxique.nl">info@luxique.nl</a></div>
+            </div>
+          </div>
+          <p className="foothelp">Vragen over je boeking? Mail <a href="mailto:info@luxique.nl">info@luxique.nl</a></p>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -237,7 +285,7 @@ function BetalenContent() {
         .bd-half .when { font-size:12px; color:var(--ink-dim); margin-top:7px; }
         .timer { text-align:center; margin:0 26px 18px; display:flex; flex-direction:column; align-items:center; gap:7px; }
         .timer .t-lbl { font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); }
-        .timer .t-clock { font-family:'Cormorant Garamond',serif; font-size:46px; line-height:1; color:var(--gold-deep); font-variant-numeric:tabular-nums; font-weight:500; }
+        .timer .t-clock { font-family:'Jost',sans-serif; font-size:42px; line-height:1; color:var(--gold-deep); font-variant-numeric:tabular-nums; font-weight:500; }
         .timer .t-sub { font-size:12px; color:var(--ink-faint); }
         .agree { display:flex; gap:11px; align-items:flex-start; margin:0 26px 18px; cursor:pointer; background:var(--bg-2); border:1px solid var(--line); border-radius:14px; padding:14px 16px; transition:border-color .2s,background .2s; }
         .agree.checked { border-color:var(--gold-edge); background:var(--gold-soft); }
@@ -258,6 +306,14 @@ function BetalenContent() {
         .foothelp { text-align:center; margin-top:22px; font-size:12.5px; color:var(--ink-faint); }
         .foothelp a { color:var(--gold-deep); text-decoration:none; }
         @media(max-width:420px){ .bd-split{flex-direction:column} .bd-half+.bd-half{border-left:none;border-top:1px dashed var(--gold-edge)} }
+        .expired-card { text-align:center; padding:40px 30px; }
+        .expired-card .clock-icon { width:56px; height:56px; margin:0 auto 20px; border-radius:50%; background:rgba(176,141,79,.12); display:flex; align-items:center; justify-content:center; }
+        .expired-card h2 { font-family:'Cormorant Garamond',serif; font-weight:500; font-size:28px; color:var(--ink); margin-bottom:10px; }
+        .expired-card p { color:var(--ink-dim); font-size:15px; line-height:1.6; max-width:360px; margin:0 auto 24px; }
+        .expired-card .cta-new { display:inline-block; padding:14px 32px; background:linear-gradient(180deg,var(--gold),var(--gold-deep)); color:#fff; font-weight:600; border-radius:14px; text-decoration:none; font-size:15px; font-family:'Jost',sans-serif; box-shadow:0 8px 24px rgba(176,141,79,.3); transition:transform .15s; }
+        .expired-card .cta-new:hover { transform:translateY(-1px); }
+        .expired-card .mail-note { margin-top:16px; font-size:12.5px; color:var(--ink-faint); }
+        .expired-card .mail-note a { color:var(--gold-deep); text-decoration:none; }
       `}</style>
 
       <div className="wrap">
@@ -302,7 +358,7 @@ function BetalenContent() {
             </div>
           </div>
 
-          <CountdownTimer expiresAt={booking.expires_at} />
+          <CountdownTimer expiresAt={booking.expires_at} onExpire={() => setIsExpired(true)} />
 
           <label className={`agree ${agreed ? 'checked' : ''}`}>
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
