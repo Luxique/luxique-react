@@ -1,18 +1,16 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-interface BookingData {
-  booking: {
-    id: string
-    cal_booking_uid: string
-    event_type: string
-    slot_start: string
-    amount_cents: number
-    status: string
-    expires_at: string
-  }
+interface Booking {
+  id: string
+  cal_booking_uid: string
+  event_type: string
+  slot_start: string
+  amount_cents: number
+  status: string
+  expires_at: string
 }
 
 function CountdownTimer({ expiresAt }: { expiresAt: string }) {
@@ -46,10 +44,42 @@ function BetalenContent() {
   const searchParams = useSearchParams()
   const uid = searchParams.get('uid') || searchParams.get('cal.bookingUid') || searchParams.get('bookingUid')
 
-  const [booking, setBooking] = useState<BookingData['booking'] | null>(null)
+  const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [paying, setPaying] = useState(false)
+
+  const fetchBooking = useCallback(async (bookingUid: string): Promise<boolean> => {
+    try {
+      // Try fetching from our DB first
+      const res = await fetch(`/api/boeking/checkout?uid=${bookingUid}`)
+      const data = await res.json()
+
+      if (data.booking) {
+        setBooking(data.booking)
+        return true
+      }
+
+      // If not found, try Cal API fallback (server creates the pending row)
+      if (data.error === 'Booking not found') {
+        const fallbackRes = await fetch('/api/boeking/fetch-from-cal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: bookingUid }),
+        })
+        const fallbackData = await fallbackRes.json()
+
+        if (fallbackData.booking) {
+          setBooking(fallbackData.booking)
+          return true
+        }
+      }
+
+      return false
+    } catch {
+      return false
+    }
+  }, [])
 
   useEffect(() => {
     if (!uid) {
@@ -58,22 +88,41 @@ function BetalenContent() {
       return
     }
 
-    fetch(`/api/boeking/checkout?uid=${uid}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          setError(data.error === 'Booking has expired'
-            ? 'Je boeking is verlopen (30 minuten). Boek opnieuw een afspraak.'
-            : data.error === 'Booking not found'
-            ? 'Boeking niet gevonden. Controleer je link.'
-            : data.error)
-        } else {
-          setBooking(data.booking)
+    let attempts = 0
+    const MAX_ATTEMPTS = 12 // 12 x 1.5s = 18s total polling
+    let cancelled = false
+
+    const poll = async () => {
+      if (cancelled) return
+
+      attempts++
+      const success = await fetchBooking(uid)
+
+      if (success) {
+        if (!cancelled) setLoading(false)
+        return
+      }
+
+      if (attempts < MAX_ATTEMPTS) {
+        // Show "loading" message after first attempt fails
+        if (attempts === 1) {
+          // Still loading — don't set error
         }
-      })
-      .catch(() => setError('Er ging iets mis. Probeer opnieuw.'))
-      .finally(() => setLoading(false))
-  }, [uid])
+        setTimeout(poll, 1500)
+      } else {
+        if (!cancelled) {
+          setError('Je boeking kon niet worden gevonden. Controleer je link of neem contact op.')
+          setLoading(false)
+        }
+      }
+    }
+
+    poll()
+
+    return () => {
+      cancelled = true
+    }
+  }, [uid, fetchBooking])
 
   const handlePay = async () => {
     if (!uid) return
@@ -112,14 +161,20 @@ function BetalenContent() {
     return new Date(iso).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
   }
 
+  // Loading state (polling for booking)
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="text-white/60 animate-pulse">Boeking laden...</div>
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-2 border-[#C4A265]/30 border-t-[#C4A265] rounded-full animate-spin mb-4" />
+          <div className="text-white/60">Je boeking wordt geladen...</div>
+          <div className="text-white/30 text-xs mt-2">Een moment geduld aub</div>
+        </div>
       </div>
     )
   }
 
+  // Error state
   if (error || !booking) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
@@ -191,7 +246,7 @@ function BetalenContent() {
         </button>
 
         <p className="text-center text-white/30 text-xs mt-4">
-          iDEAL · Bancontact · Creditcard · Veilig via Stripe
+          iDEAL · Klarna · Creditcard · Veilig via Stripe
         </p>
       </div>
     </div>
