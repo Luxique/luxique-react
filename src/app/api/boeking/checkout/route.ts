@@ -45,10 +45,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   // Create Stripe checkout session for the booking
   const body = await request.json()
-  const { uid } = body
+  const { uid, agreed } = body
 
   if (!uid) {
     return NextResponse.json({ error: 'Missing uid' }, { status: 400 })
+  }
+
+  if (!agreed) {
+    return NextResponse.json({ error: 'Customer must agree to terms' }, { status: 400 })
   }
 
   const supabase = createClient(
@@ -107,10 +111,10 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  // Store stripe session id
+  // Store stripe session id + agreed_at timestamp
   await supabase
     .from('pending_bookings')
-    .update({ stripe_session_id: session.id })
+    .update({ stripe_session_id: session.id, agreed_at: new Date().toISOString() })
     .eq('id', booking.id)
 
   return NextResponse.json({ checkoutUrl: session.url })
