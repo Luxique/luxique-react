@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // not JSON, store raw
   }
 
-  const debugTrigger = parsedForDebug?.trigger || parsedForDebug?.type || parsedForDebug?.name || null
+  const debugTrigger = parsedForDebug?.triggerEvent || parsedForDebug?.trigger || parsedForDebug?.type || parsedForDebug?.name || null
   const debugUid = parsedForDebug?.payload?.uid || parsedForDebug?.data?.uid || parsedForDebug?.uid || parsedForDebug?.payload?.id || null
 
   try {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const trigger = payload.trigger || payload.type || payload.eventType || payload.name
+  const trigger = payload.triggerEvent || payload.trigger || payload.type || payload.eventType || payload.name
 
   if (trigger === 'BOOKING_CREATED' || trigger === 'booking_created' || trigger === 'CREATE') {
     return await handleBookingCreated(payload, supabase)
