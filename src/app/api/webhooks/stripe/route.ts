@@ -33,20 +33,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  // Extract session data — handles both sync (completed) and async (payment_succeeded) events
-  const isEnrollmentEvent =
+  const isPaymentEvent =
     event.type === 'checkout.session.completed' ||
     event.type === 'checkout.session.async_payment_succeeded'
 
-  if (isEnrollmentEvent) {
+  if (isPaymentEvent) {
     const session = event.data.object as {
-      metadata?: { course_id?: string; user_id?: string }
+      metadata?: { course_id?: string; user_id?: string; cal_booking_uid?: string; booking_id?: string; type?: string }
       client_reference_id?: string
       payment_intent?: string | { id: string }
       amount_total?: number
       currency?: string
-      customer_details?: { name?: string | null }
+      customer_details?: { name?: string | null; email?: string | null }
     }
+
+    // === DEPOSIT PAYMENT (booking) ===
+    if (session.metadata?.type === 'deposit' && session.metadata?.cal_booking_uid) {
+      await handleDepositPayment(session)
+      return NextResponse.json({ received: true })
+    }
+
+    // === COURSE ENROLLMENT PAYMENT ===
 
     // Extract user_id from metadata or client_reference_id
     const user_id = session.metadata?.user_id || session.client_reference_id
@@ -136,13 +143,69 @@ export async function POST(request: NextRequest) {
   // Klarna / async payment failed — log it
   if (event.type === 'checkout.session.async_payment_failed') {
     const session = event.data.object as {
-      metadata?: { course_id?: string; user_id?: string }
+      metadata?: { course_id?: string; user_id?: string; cal_booking_uid?: string; type?: string }
       client_reference_id?: string
     }
-    const user_id = session.metadata?.user_id || session.client_reference_id
-    const course_id = session.metadata?.course_id
-    console.warn('Webhook: async payment FAILED', { user_id, course_id, event_type: event.type })
+
+    // If this was a deposit payment, mark booking as failed
+    if (session.metadata?.type === 'deposit' && session.metadata?.cal_booking_uid) {
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+      await supabase
+        .from('pending_bookings')
+        .update({ status: 'cancelled' })
+        .eq('cal_booking_uid', session.metadata.cal_booking_uid)
+        .eq('status', 'pending')
+      console.warn('Deposit payment FAILED, booking cancelled:', session.metadata.cal_booking_uid)
+    } else {
+      const user_id = session.metadata?.user_id || session.client_reference_id
+      const course_id = session.metadata?.course_id
+      console.warn('Webhook: async payment FAILED', { user_id, course_id, event_type: event.type })
+    }
   }
 
   return NextResponse.json({ received: true })
+}
+
+async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: string }; [key: string]: unknown }) {
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+  const calBookingUid = session.metadata?.cal_booking_uid
+
+  // Check booking still exists and is pending
+  const { data: booking } = await supabase
+    .from('pending_bookings')
+    .select('*')
+    .eq('cal_booking_uid', calBookingUid)
+    .single()
+
+  if (!booking) {
+    console.error('Deposit paid but booking not found:', calBookingUid)
+    // TODO: refund via Stripe
+    return
+  }
+
+  if (booking.status === 'cancelled' || booking.status === 'expired') {
+    console.error('Deposit paid but booking already', booking.status, ':', calBookingUid)
+    // Edge case: payment arrived after timeout cancellation
+    // TODO: refund and notify customer to rebook
+    return
+  }
+
+  // Mark as paid
+  const { error } = await supabase
+    .from('pending_bookings')
+    .update({ status: 'paid' })
+    .eq('id', booking.id)
+
+  if (error) {
+    console.error('Failed to mark booking as paid:', error)
+    return
+  }
+
+  console.log('✅ Deposit paid, booking confirmed:', calBookingUid)
+
+  // TODO (Phase 3): Send confirmation email via Resend
+  // For now, Cal's own confirmation email already went out
 }
