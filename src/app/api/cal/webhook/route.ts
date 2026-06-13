@@ -108,6 +108,9 @@ async function handleBookingCreated(payload: any, supabase: any) {
     return NextResponse.json({ received: true, duplicate: true })
   }
 
+  // Set expires_at to 10 minutes from now
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+
   const { error } = await supabase
     .from('pending_bookings')
     .insert({
@@ -116,6 +119,7 @@ async function handleBookingCreated(payload: any, supabase: any) {
       slot_start: slotStart,
       amount_cents: depositAmount,
       status: 'pending',
+      expires_at: expiresAt,
     })
 
   if (error) {

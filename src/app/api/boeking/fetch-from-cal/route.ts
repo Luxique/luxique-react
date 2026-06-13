@@ -54,6 +54,9 @@ export async function POST(request: NextRequest) {
   const slotStart = booking.startTime || booking.start_time
   const depositAmount = Math.round(eventConfig.priceCents / 2)
 
+  // Set expires_at to 10 minutes from now
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+
   // Create pending booking (idempotent — if webhook races us, the unique constraint catches it)
   const { data, error } = await supabase
     .from('pending_bookings')
@@ -63,6 +66,7 @@ export async function POST(request: NextRequest) {
       slot_start: slotStart,
       amount_cents: depositAmount,
       status: 'pending',
+      expires_at: expiresAt,
     })
     .select()
     .single()
