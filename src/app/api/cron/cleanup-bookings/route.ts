@@ -17,10 +17,13 @@ import { createClient } from '@supabase/supabase-js'
  */
 
 export async function GET(request: NextRequest) {
-  // Auth check
+  // Auth check — accept Vercel Cron (user-agent check) OR external CRON_SECRET bearer
+  const userAgent = request.headers.get('user-agent') || ''
   const authHeader = request.headers.get('authorization')
   const expectedSecret = process.env.CRON_SECRET
-  if (expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+  const isVercelCron = userAgent.includes('vercel-cron')
+  
+  if (!isVercelCron && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
