@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
-    payment_method_types: ['ideal', 'card', 'bancontact'],
+    payment_method_types: ['ideal', 'card', 'bancontact', 'klarna'],
     line_items: [
       {
         price_data: {
