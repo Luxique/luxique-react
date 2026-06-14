@@ -53,8 +53,10 @@ export async function POST(request: NextRequest) {
 
   const slotStart = booking.startTime || booking.start_time
   // TEMP TEST: override with TEST_DEPOSIT_CENTS env var if set
-  const TEST_DEPOSIT = process.env.TEST_DEPOSIT_CENTS ? parseInt(process.env.TEST_DEPOSIT_CENTS) : null
+  const TEST_DEPOSIT_RAW = process.env.TEST_DEPOSIT_CENTS
+  const TEST_DEPOSIT = TEST_DEPOSIT_RAW ? parseInt(TEST_DEPOSIT_RAW) : null
   const depositAmount = TEST_DEPOSIT ?? Math.round(eventConfig.priceCents / 2)
+  console.log(`Fetch-from-cal deposit calc: TEST_DEPOSIT_CENTS=${TEST_DEPOSIT_RAW}, parsed=${TEST_DEPOSIT}, final=${depositAmount}`)
 
   // Set expires_at to 10 minutes from now
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
