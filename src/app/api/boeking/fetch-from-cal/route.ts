@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
   }
 
   const slotStart = booking.startTime || booking.start_time
-  const depositAmount = Math.round(eventConfig.priceCents / 2)
+  // TEMP TEST: override with TEST_DEPOSIT_CENTS env var if set
+  const TEST_DEPOSIT = process.env.TEST_DEPOSIT_CENTS ? parseInt(process.env.TEST_DEPOSIT_CENTS) : null
+  const depositAmount = TEST_DEPOSIT ?? Math.round(eventConfig.priceCents / 2)
 
   // Set expires_at to 10 minutes from now
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()

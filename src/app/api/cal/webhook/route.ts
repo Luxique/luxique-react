@@ -96,7 +96,9 @@ async function handleBookingCreated(payload: any, supabase: any) {
     return NextResponse.json({ error: 'Missing uid or startTime' }, { status: 400 })
   }
 
-  const depositAmount = Math.round(eventConfig.priceCents / 2)
+  // TEMP TEST: override with TEST_DEPOSIT_CENTS env var if set
+  const TEST_DEPOSIT = process.env.TEST_DEPOSIT_CENTS ? parseInt(process.env.TEST_DEPOSIT_CENTS) : null
+  const depositAmount = TEST_DEPOSIT ?? Math.round(eventConfig.priceCents / 2)
 
   const { data: existing } = await supabase
     .from('pending_bookings')
