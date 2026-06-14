@@ -120,7 +120,23 @@ export async function GET(request: NextRequest) {
             .eq('id', booking.id)
 
           console.log(`Cron: corrected ${booking.cal_booking_uid} to 'paid' (Stripe confirmed)`)
-          // TODO (mail fase): send confirmation email
+          
+          // Send confirmation + Chiva notification (non-blocking, error-safe)
+          try {
+            const { sendConfirmationEmail, sendNewBookingNotification, getBookingWithCustomerFromCal } = await import('@/lib/email')
+            const calBooking = await getBookingWithCustomerFromCal(booking.cal_booking_uid)
+            const enriched = {
+              ...booking,
+              customer_name: calBooking?.customer_name || null,
+              customer_email: calBooking?.customer_email || null,
+            }
+            if (enriched.customer_email) {
+              await sendConfirmationEmail(booking.id, enriched)
+            }
+            await sendNewBookingNotification(enriched)
+          } catch (mailErr) {
+            console.error('Cron: mail failed (non-fatal):', mailErr)
+          }
         } else {
           console.log(`Cron [DRY-RUN]: would correct ${booking.cal_booking_uid} to 'paid'`)
         }
@@ -172,6 +188,20 @@ export async function GET(request: NextRequest) {
           .eq('id', booking.id)
 
         console.log(`Cron: marked ${booking.cal_booking_uid} as expired`)
+        
+        // Send Chiva expired notification (non-blocking, error-safe)
+        try {
+          const { sendExpiredNotification, getBookingWithCustomerFromCal } = await import('@/lib/email')
+          const calBooking = await getBookingWithCustomerFromCal(booking.cal_booking_uid)
+          const enriched = {
+            ...booking,
+            customer_name: calBooking?.customer_name || null,
+            customer_email: calBooking?.customer_email || null,
+          }
+          await sendExpiredNotification(enriched)
+        } catch (mailErr) {
+          console.error('Cron: expired mail failed (non-fatal):', mailErr)
+        }
       } else {
         console.log(`Cron [DRY-RUN]: would cancel ${booking.cal_booking_uid} (${booking.event_type}, expired ${booking.expires_at})`)
       }

@@ -206,6 +206,24 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
 
   console.log('✅ Deposit paid, booking confirmed:', calBookingUid)
 
-  // TODO (Phase 3): Send confirmation email via Resend
-  // For now, Cal's own confirmation email already went out
+  // Send confirmation + Chiva notification (non-blocking, error-safe)
+  try {
+    const { sendConfirmationEmail, sendNewBookingNotification, getBookingWithCustomerFromCal } = await import('@/lib/email')
+    
+    // Enrich booking with customer info from Cal
+    const calBooking = calBookingUid ? await getBookingWithCustomerFromCal(calBookingUid) : null
+    const enriched = {
+      ...booking,
+      customer_name: calBooking?.customer_name || null,
+      customer_email: calBooking?.customer_email || null,
+    }
+    
+    // Only send if we have an email
+    if (enriched.customer_email) {
+      await sendConfirmationEmail(booking.id, enriched)
+    }
+    await sendNewBookingNotification(enriched)
+  } catch (err) {
+    console.error('Mail: failed to send confirmation notifications (non-fatal):', err)
+  }
 }
