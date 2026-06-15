@@ -118,6 +118,8 @@ export default function Onderscheid() {
           max-width: 1200px;
           margin-inline: auto;
           padding: clamp(20px, 4vw, 40px) clamp(24px, 5vw, 56px);
+          background: linear-gradient(165deg, #1f3328 0%, #162820 50%, #0f1c16 100%);
+          border-radius: 26px;
         }
         .ond-grid {
           display: grid;
@@ -194,8 +196,8 @@ export default function Onderscheid() {
           font-size: .78rem;
           letter-spacing: .22em;
           text-transform: uppercase;
-          color: #1C1814;
-          border: 1px solid rgba(28,24,20,.13);
+          color: #D8B97A;
+          border: 1px solid rgba(176,141,79,.5);
           border-radius: 999px;
           padding: .5em 1.25em;
           margin-bottom: 1.4rem;
@@ -207,14 +209,14 @@ export default function Onderscheid() {
           letter-spacing: -.01em;
           font-size: clamp(2.4rem, 4.6vw, 3.7rem);
           line-height: 1.04;
-          color: #1C1814;
+          color: #D8B97A;
           margin: 0;
         }
         .ond-sub {
           font-family: 'Cormorant Garamond', Georgia, serif;
           font-style: italic;
           font-weight: 500;
-          color: #46403A;
+          color: rgba(246,241,231,.65);
           font-size: clamp(1.3rem, 2.2vw, 1.7rem);
           margin-top: .6rem;
           margin-bottom: clamp(32px, 4vw, 52px);
@@ -224,7 +226,7 @@ export default function Onderscheid() {
           grid-template-columns: auto 1fr;
           gap: clamp(20px, 2.4vw, 34px);
           padding: clamp(30px, 3.6vw, 48px) 0 clamp(38px, 4.4vw, 60px);
-          border-top: 1px solid rgba(28,24,20,.13);
+          border-top: 1px solid rgba(176,141,79,.15);
           opacity: .26;
           transform: translateY(10px);
           transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);
@@ -250,10 +252,10 @@ export default function Onderscheid() {
           font-size: clamp(1.5rem, 2.1vw, 1.85rem);
           line-height: 1.18;
           margin-bottom: .6rem;
-          color: #1C1814;
+          color: #F6F1E7;
         }
         .ond-entry p {
-          color: #46403A;
+          color: rgba(246,241,231,.78);
           font-size: 1.1rem;
           line-height: 1.62;
           margin-bottom: 1rem;
