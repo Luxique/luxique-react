@@ -43,6 +43,9 @@ export default function Missie() {
   return (
     <div className="missie-wrap bg-[#FAF8F4] rounded-[22px] overflow-hidden relative">
 
+      {/* Top fade — blends from previous section's bg (#F3EFE7) into this section */}
+      <div className="absolute top-0 left-0 right-0 h-[80px] z-[10] pointer-events-none" style={{ background: 'linear-gradient(180deg, #F3EFE7 0%, rgba(250,248,244,0) 100%)' }} />
+
       {/* ══ HERO: marquee bg + floating image ══ */}
       <div ref={heroRef} className="hero relative pt-12 pb-0 min-[860px]:min-h-[480px] max-[860px]:min-h-[600px] max-[430px]:min-h-[540px] max-[860px]:pt-16 max-[860px]:pb-14 max-[430px]:pt-[52px] max-[430px]:pb-12 flex flex-col items-center overflow-hidden">
 
@@ -65,7 +68,7 @@ export default function Missie() {
 
         {/* Floating image card */}
         <div className="relative z-[2] w-[min(420px,88%)] max-[860px]:w-[min(290px,74%)] max-[430px]:w-[70%] rounded-[20px] overflow-hidden shadow-[0_32px_80px_rgba(12,10,7,0.22),0_0_0_1px_rgba(196,162,101,0.1)] mt-6 max-[860px]:my-0 max-[860px]:mx-auto aspect-[4/3] max-[860px]:aspect-[3/4] bg-[linear-gradient(145deg,#1e1a12,#141009)]">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-image.webp" alt="Missie — Lash werk" className="w-full h-full object-cover" />
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-statement.jpg" alt="Wij willen de standaard veranderen" className="w-full h-full object-cover" />
 
           {/* Dark gradient overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-[55%] bg-[linear-gradient(0deg,rgba(12,10,7,0.82),transparent)] flex flex-col justify-end p-6 pb-7">
