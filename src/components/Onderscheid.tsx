@@ -1,0 +1,353 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+
+const POINTS = [
+  {
+    num: '01',
+    title: 'Van techniek naar signatuur',
+    paras: [
+      'Wij leren je niet alleen hoe je een set plaatst — wij leren je een eigen stijl ontwikkelen. Je verlaat de opleiding niet als kopie van iemand anders, maar met een aanpak die herkenbaar van jou is. Dat is wat klanten laat terugkomen.',
+      'We helpen je ontdekken wat jóuw handtekening is: welke sets je het beste liggen, welke looks je wilt neerzetten en hoe je die consistent maakt. In een markt vol technici die allemaal hetzelfde leveren, is een herkenbare stijl wat je onvergetelijk maakt — en wat je prijs rechtvaardigt.',
+    ],
+    take: 'Jouw stijl, jouw merk',
+  },
+  {
+    num: '02',
+    title: 'Kennis die verder gaat dan techniek',
+    paras: [
+      'Wij beginnen bij het waarom. Kleurtheorie, gezichtsproporties, oogvormanalyse — vóórdat je een tweezer aanraakt. Zodat je begrijpt wat je doet, niet alleen hoe. En dat begrip neem je mee naar elke klant die daarna in jouw stoel zit.',
+      'Techniek kun je nadoen, maar inzicht maakt het verschil. Snap je waaróm een bepaalde curl bij een bepaald oog past, dan kun je élke klant aan — ook degene die niet in een standaard map past. Je wordt geen uitvoerder, maar iemand die bewust keuzes maakt.',
+    ],
+    take: 'Kennis die blijft',
+  },
+  {
+    num: '03',
+    title: 'Coaching door een ervaren lash artist',
+    paras: [
+      'Chiva volgde een opleiding — en ging daarna verder waar anderen stopten. Ze experimenteerde, stuurde bij en ontwikkelde een eigen stijl waar nu veel vraag naar is. Wat ze je leert, heeft ze zelf bewezen: in een echte salon, met echte klanten, dag na dag.',
+      'Dat betekent geen theorie uit een boekje, maar lessen uit de praktijk: wat werkt, wat niet, en waar je in het begin op vastloopt. Je leert van iemand die precies weet hoe het is om te starten — en hoe je doorgroeit naar werk waar mensen voor terugkomen.',
+    ],
+    take: 'Bewezen in de praktijk',
+  },
+]
+
+export default function Onderscheid() {
+  const secRef = useRef<HTMLElement>(null)
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([])
+  const dotRefs = useRef<(HTMLSpanElement | null)[]>([])
+  const entryRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  useEffect(() => {
+    const sec = secRef.current
+    if (!sec) return
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // Reveal
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            sec.classList.add('revealed')
+            io.unobserve(e.target)
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    io.observe(sec)
+
+    if (reduce) {
+      entryRefs.current.forEach((e) => e?.classList.add('active'))
+      return
+    }
+
+    // Scrollytelling
+    let current = -1
+    let raf = false
+
+    const setActive = (i: number) => {
+      if (i === current) return
+      current = i
+      slideRefs.current.forEach((s, k) => s?.classList.toggle('on', k === i))
+      dotRefs.current.forEach((d, k) => d?.classList.toggle('on', k === i))
+      entryRefs.current.forEach((e, k) => e?.classList.toggle('active', k === i))
+    }
+
+    const update = () => {
+      const ty = window.innerHeight * 0.42
+      let idx = 0
+      entryRefs.current.forEach((e, i) => {
+        if (e && e.getBoundingClientRect().top <= ty) idx = i
+      })
+      setActive(idx)
+      raf = false
+    }
+
+    const onScroll = () => {
+      if (!raf) {
+        raf = true
+        requestAnimationFrame(update)
+      }
+    }
+
+    // Mobile: all visible, no spotlight
+    const mobileQuery = window.matchMedia('(max-width: 880px)')
+    if (mobileQuery.matches) {
+      entryRefs.current.forEach((e) => e?.classList.add('active'))
+      slideRefs.current.forEach((s) => s?.classList.remove('on'))
+      slideRefs.current[0]?.classList.add('on')
+    } else {
+      window.addEventListener('scroll', onScroll, { passive: true })
+      window.addEventListener('resize', onScroll, { passive: true })
+      update()
+    }
+
+    return () => {
+      io.disconnect()
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
+  return (
+    <section ref={secRef} className="ond-section">
+      <style>{`
+        .ond-section {
+          max-width: 1200px;
+          margin-inline: auto;
+          padding: clamp(20px, 4vw, 40px) clamp(24px, 5vw, 56px);
+        }
+        .ond-grid {
+          display: grid;
+          grid-template-columns: 0.82fr 1.18fr;
+          gap: clamp(40px, 5vw, 80px);
+          align-items: start;
+        }
+        .ond-media {
+          position: sticky;
+          top: 14vh;
+        }
+        .ond-photo {
+          position: relative;
+          border-radius: 26px;
+          overflow: hidden;
+          aspect-ratio: 4/5;
+          box-shadow: 0 40px 80px -38px rgba(28,24,20,.5), 0 0 0 1px rgba(176,141,79,.20);
+        }
+        .ond-slide {
+          position: absolute; inset: 0;
+          opacity: 0;
+          transition: opacity .6s ease;
+        }
+        .ond-slide.on { opacity: 1; }
+        .ond-slide img {
+          width: 100%; height: 100%;
+          object-fit: cover; display: block;
+        }
+        .ond-slide .ond-ph {
+          position: absolute; inset: 0;
+          display: flex; align-items: center; justify-content: center;
+          text-align: center;
+          font-family: 'Jost', system-ui, sans-serif;
+          font-size: .72rem;
+          letter-spacing: .14em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,.75);
+          padding: 20px;
+        }
+        .ond-cap {
+          position: absolute;
+          left: 16px; bottom: 16px; z-index: 3;
+          font-family: 'Jost', system-ui, sans-serif;
+          font-weight: 600;
+          font-size: .68rem;
+          letter-spacing: .16em;
+          text-transform: uppercase;
+          color: #1A1611;
+          background: #C9A86A;
+          padding: .5em 1.05em;
+          border-radius: 999px;
+          box-shadow: 0 8px 20px -8px rgba(176,141,79,.4);
+        }
+        .ond-dots {
+          position: absolute;
+          right: 14px; bottom: 16px; z-index: 3;
+          display: flex; gap: 6px;
+        }
+        .ond-dots i {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: rgba(255,255,255,.45);
+          transition: all .3s;
+          display: block;
+        }
+        .ond-dots i.on {
+          background: #D8B97A;
+          width: 18px;
+          border-radius: 999px;
+        }
+        .ond-eyebrow {
+          display: inline-block;
+          font-weight: 600;
+          font-size: .78rem;
+          letter-spacing: .22em;
+          text-transform: uppercase;
+          color: #1C1814;
+          border: 1px solid rgba(28,24,20,.13);
+          border-radius: 999px;
+          padding: .5em 1.25em;
+          margin-bottom: 1.4rem;
+          background: transparent;
+        }
+        .ond-h2 {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-weight: 600;
+          letter-spacing: -.01em;
+          font-size: clamp(2.4rem, 4.6vw, 3.7rem);
+          line-height: 1.04;
+          color: #1C1814;
+          margin: 0;
+        }
+        .ond-sub {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-style: italic;
+          font-weight: 500;
+          color: #46403A;
+          font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+          margin-top: .6rem;
+          margin-bottom: clamp(32px, 4vw, 52px);
+        }
+        .ond-entry {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: clamp(20px, 2.4vw, 34px);
+          padding: clamp(30px, 3.6vw, 48px) 0 clamp(38px, 4.4vw, 60px);
+          border-top: 1px solid rgba(28,24,20,.13);
+          opacity: .26;
+          transform: translateY(10px);
+          transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1);
+        }
+        .ond-entry:first-of-type { border-top: none; }
+        .ond-entry.active {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .ond-num {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-style: italic;
+          font-weight: 500;
+          font-size: clamp(2.6rem, 3.4vw, 3.4rem);
+          line-height: .9;
+          color: #B08D4F;
+          transition: color .4s ease;
+        }
+        .ond-entry.active .ond-num { color: #D8B97A; }
+        .ond-entry h3 {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-weight: 600;
+          font-size: clamp(1.5rem, 2.1vw, 1.85rem);
+          line-height: 1.18;
+          margin-bottom: .6rem;
+          color: #1C1814;
+        }
+        .ond-entry p {
+          color: #46403A;
+          font-size: 1.1rem;
+          line-height: 1.62;
+          margin-bottom: 1rem;
+        }
+        .ond-take {
+          display: inline-flex;
+          align-items: center;
+          gap: .55rem;
+          margin-top: .2rem;
+        }
+        .ond-take .dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #B08D4F;
+          box-shadow: 0 0 0 3px rgba(176,141,79,.16);
+        }
+        .ond-take span {
+          font-weight: 600;
+          font-size: .76rem;
+          letter-spacing: .13em;
+          text-transform: uppercase;
+          color: #B08D4F;
+        }
+        .ond-r {
+          opacity: 0;
+          transform: translateY(22px);
+          transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+        }
+        .ond-section.revealed .ond-r { opacity: 1; transform: translateY(0); }
+        .ond-section.revealed .ond-rm { transition-delay: .02s; }
+        .ond-section.revealed .ond-rh { transition-delay: .06s; }
+
+        @media (max-width: 880px) {
+          .ond-grid { grid-template-columns: 1fr; gap: clamp(24px, 5vw, 36px); }
+          .ond-media { position: static; }
+          .ond-photo { aspect-ratio: 16/11; max-height: 340px; }
+          .ond-entry { opacity: 1; transform: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ond-r { transition: none; }
+          .ond-slide { transition: none; }
+          .ond-entry { opacity: 1; transform: none; transition: none; }
+        }
+      `}</style>
+
+      <div className="ond-grid">
+
+        <div className="ond-media ond-r ond-rm">
+          <div className="ond-photo">
+            <div ref={(el) => { slideRefs.current[0] = el }} className="ond-slide on">
+              <div className="ond-ph" style={{ background: 'linear-gradient(150deg,#4a4236,#6b5f4d 55%,#857655)' }}>FOTO 01 — Eigen stijl / signature set</div>
+            </div>
+            <div ref={(el) => { slideRefs.current[1] = el }} className="ond-slide">
+              <div className="ond-ph" style={{ background: 'linear-gradient(150deg,#3c3a33,#574f44 55%,#766a52)' }}>FOTO 02 — Kennis / oogvormanalyse</div>
+            </div>
+            <div ref={(el) => { slideRefs.current[2] = el }} className="ond-slide">
+              <div className="ond-ph" style={{ background: 'linear-gradient(150deg,#43392f,#5d4d3c 55%,#8a7558)' }}>FOTO 03 — Chiva in de salon</div>
+            </div>
+            <span className="ond-cap">✦ LXQ Academy</span>
+            <div className="ond-dots">
+              <i ref={(el) => { dotRefs.current[0] = el }} className="on" />
+              <i ref={(el) => { dotRefs.current[1] = el }} />
+              <i ref={(el) => { dotRefs.current[2] = el }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="ond-content">
+          <span className="ond-eyebrow ond-r ond-rh">Het verschil</span>
+          <h2 className="ond-h2 ond-r ond-rh">Wat ons onderscheidt</h2>
+          <p className="ond-sub ond-r ond-rh">Wat LXQ anders doet dan andere opleidingen.</p>
+
+          {POINTS.map((p, i) => (
+            <div
+              key={p.num}
+              ref={(el) => { entryRefs.current[i] = el }}
+              className={`ond-entry${i === 0 ? ' active' : ''}`}
+            >
+              <div className="ond-num">{p.num}</div>
+              <div>
+                <h3>{p.title}</h3>
+                {p.paras.map((para, j) => (
+                  <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
+                ))}
+                <div className="ond-take">
+                  <span className="dot" />
+                  <span>{p.take}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+
+        </div>
+      </div>
+    </section>
+  )
+}
