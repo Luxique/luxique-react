@@ -11,6 +11,7 @@ import AcademyHomeSection from '@/components/AcademyHomeSection'
 import ReviewsSection from '@/components/ReviewsSection'
 import FAQ from '@/components/FAQ'
 import EmailConfirmHandler from '@/components/EmailConfirmHandler'
+import Reveal from '@/components/Reveal'
 import Link from 'next/link'
 
 export default function Home() {
@@ -22,13 +23,14 @@ export default function Home() {
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>
-      <div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><MeetChiva /></div>
-      <div id="creëren" data-theme-color="#F3EFE7" data-theme-dark="false"><NietKopieren /></div>
-      <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><Missie /></div>
-      <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
-      <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] pt-[14px] max-[860px]:px-[10px] max-[860px]:pt-[10px]"><BeforeAfter /></div>
-      <div id="reels" data-theme-color="#FAF8F4" data-theme-dark="false"><ReelsSection /></div>
-      <div id="academy" data-theme-color="#FAFAFA" data-theme-dark="false"><ComparisonTable /><AcademyHomeSection /></div>
+      <Reveal><div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><MeetChiva /></div></Reveal>
+      <Reveal><div id="creëren" data-theme-color="#F3EFE7" data-theme-dark="false"><NietKopieren /></div></Reveal>
+      <Reveal><div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><Missie /></div></Reveal>
+      <Reveal><div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div></Reveal>
+      <Reveal><div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] pt-[14px] max-[860px]:px-[10px] max-[860px]:pt-[10px]"><BeforeAfter /></div></Reveal>
+      <Reveal><div id="reels" data-theme-color="#FAF8F4" data-theme-dark="false"><ReelsSection /></div></Reveal>
+      <Reveal><div id="academy" data-theme-color="#FAFAFA" data-theme-dark="false"><ComparisonTable /><AcademyHomeSection /></div></Reveal>
+      <Reveal>
       <div className="px-[14px] max-[860px]:px-[10px]">
       {/* ══ ROW 3: Dark bottom panel ══ */}
       <div className="rounded-[22px] overflow-hidden relative min-h-[340px] flex items-end">
@@ -53,8 +55,9 @@ export default function Home() {
         </div>
       </div>
       </div>
-      <div id="reviews" data-theme-color="#FAFAFA" data-theme-dark="false"><ReviewsSection /></div>
-      <div id="faq" data-theme-color="#FAFAFA" data-theme-dark="false"><FAQ /></div>
+      </Reveal>
+      <Reveal><div id="reviews" data-theme-color="#FAFAFA" data-theme-dark="false"><ReviewsSection /></div></Reveal>
+      <Reveal><div id="faq" data-theme-color="#FAFAFA" data-theme-dark="false"><FAQ /></div></Reveal>
     </>
     </div>
   )
