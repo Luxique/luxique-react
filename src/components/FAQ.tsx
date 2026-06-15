@@ -26,7 +26,7 @@ export default function FAQ() {
                 {f.q}
                 <span className="text-[var(--text3)] group-open:rotate-45 transition-transform text-xl">+</span>
               </summary>
-              <div className="px-5 pb-5 text-[13px] text-[var(--text2)] leading-relaxed">
+              <div className="px-5 pb-5 text-[14px] text-[var(--text2)] leading-relaxed">
                 {f.a}
               </div>
             </details>

@@ -38,7 +38,7 @@ html { scroll-behavior: smooth; height: 100%; background: #0C0A07; overflow-x: h
 body {
   font-family: 'Outfit', -apple-system, sans-serif;
   font-size: 17px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--text);
   background: #0C0A07;
   min-height: 100%;
@@ -46,20 +46,46 @@ body {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5 { font-family: 'Cormorant Garamond', serif; font-weight: 300; }
+h1, h2, h3, h4, h5 { font-family: 'Cormorant Garamond', serif; font-weight: 500; }
 em { font-style: italic; font-weight: 400; }
 
-/* Global pill contrast fix — dark pills with light text everywhere */
-[class*="rounded-full"][class*="border-[rgba(196,162,101"] {
-  background: rgba(12, 10, 7, 0.88) !important;
-  color: #E0C078 !important;
-  border-color: rgba(196,162,101,0.5) !important;
+/* LUXIQUE design tokens */
+:root {
+  --lux-bg:#F3EFE7; --lux-bg-soft:#EDE7DB;
+  --lux-ink:#1C1814; --lux-ink-soft:#4A433B;
+  --lux-gold:#B08D4F; --lux-gold-soft:#C9A86A; --lux-gold-bright:#E0C078;
+  --lux-line:rgba(28,24,20,.14);
+  --lux-fs-body:1.075rem; --lux-fs-body-lg:1.15rem;
 }
-/* Hero reviews pill specific fix */
-.bg-\[rgba\(196\,162\,101\,0\.1\)\] {
-  background: rgba(12, 10, 7, 0.88) !important;
-  color: #E0C078 !important;
+
+/* LABEL-pill: transparant, dunne rand, donkere tekst */
+.label-pill {
+  display: inline-block;
+  font-weight: 500;
+  font-size: .78rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--lux-ink);
+  border: 1px solid var(--lux-line);
+  border-radius: 999px;
+  padding: .5em 1.25em;
+  background: transparent;
 }
+
+/* BADGE-pill: volle gouden vulling, donkere tekst */
+.badge-pill {
+  display: inline-flex;
+  font-weight: 600;
+  font-size: .74rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: .62em 1.15em;
+  border-radius: 999px;
+  background: var(--lux-gold);
+  color: #1A1611;
+  box-shadow: 0 6px 20px -6px rgba(176,141,79,.55);
+}
+
 
 /* Pull Quote */
 .pull-quote {

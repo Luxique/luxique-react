@@ -40,7 +40,7 @@ export default function Navbar() {
           <span className="font-['Avenir_Next'] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
             LUXIQUE
           </span>
-          <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase px-2 py-1 rounded-full bg-[rgba(196,162,101,0.12)] text-[#7A6340] border border-[rgba(196,162,101,0.25)] whitespace-nowrap">
+          <span className="text-[8.5px] font-bold tracking-[0.18em] uppercase px-2 py-1 rounded-full bg-[rgba(12,10,7,0.88)] text-[#E0C078] border border-[rgba(176,141,79,0.5)] whitespace-nowrap">
             ADMIN
           </span>
         </div>

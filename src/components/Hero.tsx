@@ -120,7 +120,7 @@ export default function Hero() {
             <div className="absolute -top-[50px] -right-[50px] w-[180px] h-[180px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.14)_0%,transparent_70%)] pointer-events-none" />
 
             <div>
-              <div className="inline-flex items-center gap-[7px] bg-[rgba(196,162,101,0.1)] border border-[rgba(196,162,101,0.22)] rounded-full px-[13px] py-[5px] text-[11px] text-[#7A6340] font-medium mb-6">
+              <div className="inline-flex items-center gap-[7px] bg-[rgba(12,10,7,0.88)] border border-[rgba(176,141,79,0.5)] rounded-full px-[13px] py-[5px] text-[11px] text-[#E0C078] font-medium mb-6">
                 <span className="text-[#C4A265] tracking-[1px]">★★★★★</span>
                 5.0 · 47 reviews
               </div>
@@ -135,10 +135,10 @@ export default function Hero() {
               </p>
 
               <div className="flex gap-[9px] flex-wrap">
-                <a href="/courses" className="text-[13px] font-medium px-[22px] py-[11px] rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
+                <a href="/courses" className="text-[14px] font-medium px-[22px] py-[11px] rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
                   Bekijk de academy
                 </a>
-                <a href="/behandelingen" className="text-[13px] font-medium px-[22px] py-[11px] rounded-full bg-transparent text-[#1A1815] border-[1.5px] border-[rgba(26,24,21,0.2)] hover:border-[rgba(26,24,21,0.45)] hover:bg-[rgba(196,162,101,0.06)] transition-all tracking-[0.02em]">
+                <a href="/behandelingen" className="text-[14px] font-medium px-[22px] py-[11px] rounded-full bg-transparent text-[#1A1815] border-[1.5px] border-[rgba(26,24,21,0.2)] hover:border-[rgba(26,24,21,0.45)] hover:bg-[rgba(196,162,101,0.06)] transition-all tracking-[0.02em]">
                   Boek een treatment
                 </a>
               </div>

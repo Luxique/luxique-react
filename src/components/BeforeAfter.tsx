@@ -194,7 +194,7 @@ export default function BeforeAfter() {
 
               {/* Labels */}
               <span className="absolute top-[14px] left-[14px] text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268] bg-[rgba(250,248,244,0.82)] backdrop-blur-[8px] border border-[rgba(30,26,20,0.08)] px-[11px] py-[4px] rounded-full z-[3]">Before</span>
-              <span className="absolute top-[14px] right-[14px] text-[9px] font-semibold tracking-[0.22em] uppercase text-[#C4A265] bg-[rgba(12,10,7,0.72)] backdrop-blur-[8px] border border-[rgba(196,162,101,0.2)] px-[11px] py-[4px] rounded-full z-[3]">After</span>
+              <span className="absolute top-[14px] right-[14px] text-[9px] font-semibold tracking-[0.22em] uppercase text-[#1A1611] bg-[#B08D4F] px-[11px] py-[4px] rounded-full z-[3]">After</span>
 
               {/* Type pill */}
               <div className="ba-type-pill absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-medium tracking-[0.1em] text-[#1E1A14] bg-[rgba(250,248,244,0.88)] backdrop-blur-[12px] border border-[rgba(30,26,20,0.1)] px-[14px] py-[6px] rounded-full inline-flex items-center justify-center gap-[6px] whitespace-nowrap z-[6] shadow-[0_4px_16px_rgba(12,10,7,0.08)] transition-all duration-300">
