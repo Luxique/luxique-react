@@ -82,7 +82,7 @@ Boek vooraf een workshop van 1 uur. Daarin maak je kennis met de materialen, lee
 ### Annulering & herroeping (uit de Algemene Voorwaarden)
 - **Behandelingen:** Kosteloos annuleren of verplaatsen tot uiterlijk 24 uur vóór aanvang. Binnen 24 uur vervalt de aanbetaling. Meer dan 20 minuten te laat → afspraak en aanbetaling vervallen. Zie /voorwaarden#art-6-annuleren.
 - **Online cursussen:** Geen restitutie. Je doet bij aankoop afstand van het herroepingsrecht (art. 6:230p sub g BW). Zie /voorwaarden#art-5-herroeping.
-- **Persoonlijke trajecten:** Tot 7 dagen vóór start: terugbetaling minus €130 materiaalkosten. Tot 3 dagen vóór: eenmalig verplaatsen. Binnen 3 dagen: geen restitutie. Zie /voorwaarden#annulering-trajecten.
+- **Persoonlijke trajecten:** Tot 7 dagen vóór start: volledige terugbetaling minus €130 materiaalkosten. Tussen 7 en 3 dagen: eenmalig verplaatsen (geen terugbetaling). Binnen 3 dagen: geen restitutie en geen verplaatsing. Zie /voorwaarden#annulering-trajecten.
 - Bij ziekte binnen 24u vervalt de aanbetaling (zelfde als annulering). Bij ziekte tijdens meerdaags traject: geen restitutie of verplaatsing.
 
 ### Garantie & uitval
@@ -107,7 +107,7 @@ Boek vooraf een workshop van 1 uur. Daarin maak je kennis met de materialen, lee
 - Bewaartermijn: klantgegevens tot 2 jaar na laatste contact; facturen 7 jaar (fiscale plicht).
 
 ### KvK & juridisch
-- Lashed by Chiva / LUXIQUE — KvK 94764158 — Btw-id NL004358432B15
+- LUXIQUE — KvK 94764158 — Btw-id NL004358432B15
 - Op alle voorwaarden is Nederlands recht van toepassing.
 - Volledige voorwaarden: /voorwaarden`
 

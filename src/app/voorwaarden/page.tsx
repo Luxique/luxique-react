@@ -206,7 +206,7 @@ export default function VoorwaardenPage() {
       <!-- ===================== 1. ALGEMENE VOORWAARDEN ===================== -->
       <section class="doc" id="voorwaarden">
         <div class="doc-head"><span class="dnum">01</span><h2>Algemene voorwaarden</h2></div>
-        <div class="doc-meta">Lashed by Chiva — LUXIQUE · KvK 94764158</div>
+        <div class="doc-meta">LUXIQUE · KvK 94764158</div>
 
         <div class="tldr">
           <h3>In het kort</h3>
@@ -223,7 +223,7 @@ export default function VoorwaardenPage() {
 
         <div class="art" id="art-1-definities"><div class="art-h">Artikel 1 — Definities</div>
           <ul class="list">
-            <li><strong>Lashed by Chiva / LUXIQUE / wij:</strong> de eenmanszaak Lashed by Chiva, ingeschreven bij de KvK onder nummer 94764158.</li>
+            <li><strong>LUXIQUE / wij:</strong> de eenmanszaak (KvK 94764158), geëxploiteerd onder de naam LUXIQUE.</li>
             <li><strong>Klant:</strong> iedere natuurlijke persoon die een behandeling, cursus, traject of ander aanbod afneemt.</li>
             <li><strong>Behandeling:</strong> een lashbehandeling (nieuwe set, refill/opvulling) op afspraak in de studio.</li>
             <li><strong>Online cursus:</strong> een digitaal cursusproduct dat na betaling direct online toegankelijk is.</li>
@@ -232,18 +232,18 @@ export default function VoorwaardenPage() {
         </div>
 
         <div class="art" id="art-2-toepasselijkheid"><div class="art-h">Artikel 2 — Toepasselijkheid</div>
-          <p>2.1 Deze voorwaarden zijn van toepassing op alle aanbiedingen, boekingen, behandelingen, cursussen en overeenkomsten van Lashed by Chiva.</p>
+          <p>2.1 Deze voorwaarden zijn van toepassing op alle aanbiedingen, boekingen, behandelingen, cursussen en overeenkomsten van LUXIQUE.</p>
           <p>2.2 Afwijkingen gelden alleen indien schriftelijk overeengekomen.</p>
           <p>2.3 Door te boeken, te betalen of een online cursus aan te schaffen, verklaart de klant deze voorwaarden te hebben gelezen en aanvaard.</p>
         </div>
 
         <div class="art" id="art-3-leeftijd"><div class="art-h">Artikel 3 — Minimumleeftijd</div>
           <p>3.1 De minimumleeftijd voor behandelingen en deelname aan cursussen is 15 jaar.</p>
-          <p>3.2 Door te boeken verklaart een klant onder de 18 jaar dat een ouder of wettelijk vertegenwoordiger kennis heeft genomen van deze voorwaarden en toestemming heeft gegeven voor de boeking en de behandeling. Lashed by Chiva mag om een bevestiging van deze toestemming vragen en de behandeling opschorten totdat die is verkregen.</p>
+          <p>3.2 Door te boeken verklaart een klant onder de 18 jaar dat een ouder of wettelijk vertegenwoordiger kennis heeft genomen van deze voorwaarden en toestemming heeft gegeven voor de boeking en de behandeling. LUXIQUE mag om een bevestiging van deze toestemming vragen en de behandeling opschorten totdat die is verkregen.</p>
         </div>
 
         <div class="art" id="art-4-betaling"><div class="art-h">Artikel 4 — Prijzen en betaling</div>
-          <p>4.1 De geldende prijzen staan vermeld op de website. Lashed by Chiva berekent btw; vermelde prijzen zijn inclusief btw.</p>
+          <p>4.1 De geldende prijzen staan vermeld op de website. LUXIQUE berekent btw; vermelde prijzen zijn inclusief btw.</p>
           <p>4.2 <strong>Behandelingen:</strong> een aanbetaling van 50% van de behandelprijs is verplicht op het moment van boeken. De reservering is pas definitief nadat de aanbetaling is ontvangen. Het resterende bedrag (de overige 50%) voldoe je op de dag van de geplande afspraak, in de studio, direct na afloop van de behandeling, per pin.</p>
           <p>4.3 <strong>Persoonlijke trajecten / workshops:</strong> een aanbetaling van 50% van de totaalprijs is verplicht op het moment van boeken. Het resterende bedrag voldoe je uiterlijk vóór aanvang van de eerste lesdag.</p>
           <p>4.4 <strong>Online cursussen:</strong> je betaalt het volledige bedrag in één keer bij aankoop. Direct na betaling krijg je toegang tot de cursus.</p>
@@ -260,12 +260,12 @@ export default function VoorwaardenPage() {
           <div class="sub">Behandelingen</div>
           <p>6.1 Tot uiterlijk 24 uur vóór de aanvang (starttijd) van de afspraak kun je kosteloos annuleren of verplaatsen. De aanbetaling wordt in dat geval binnen 14 dagen terugbetaald, of — bij verplaatsen — verrekend met de nieuwe afspraak. Bepalend is het moment waarop je annulering of verzoek tot verplaatsen ons aantoonbaar bereikt via het klantportaal, per e-mail (info@luxique.nl) of via Instagram (@lashedbychiva).</p>
           <p>6.2 Bij annuleren, verplaatsen of niet verschijnen binnen 24 uur vóór de aanvang van de afspraak vervalt de aanbetaling en bestaat geen recht op terugbetaling of verrekening. De aanbetaling strekt in dat geval ter vergoeding van de exclusief voor jou gereserveerde tijd en de reeds verrichte voorbereiding. Dit geldt ook wanneer de verhindering buiten jouw schuld ontstaat, zoals — maar niet beperkt tot — autopech, vertraging of uitval van openbaar vervoer, het ontbreken van vervoer, of een ziek familielid.</p>
-          <p>6.3 Kom je meer dan 20 minuten na de afgesproken starttijd, dan kan de behandeling niet meer volledig worden uitgevoerd, vervalt de afspraak en vervalt de aanbetaling. Lashed by Chiva mag de behandeling in dat geval naar eigen inzicht alsnog verkort uitvoeren binnen de resterende tijd; dit is geen recht van de klant en geeft geen recht op (gedeeltelijke) terugbetaling.</p>
+          <p>6.3 Kom je meer dan 20 minuten na de afgesproken starttijd, dan kan de behandeling niet meer volledig worden uitgevoerd, vervalt de afspraak en vervalt de aanbetaling. LUXIQUE mag de behandeling in dat geval naar eigen inzicht alsnog verkort uitvoeren binnen de resterende tijd; dit is geen recht van de klant en geeft geen recht op (gedeeltelijke) terugbetaling.</p>
           <div class="sub">Persoonlijke trajecten / workshops / cursussen op locatie</div>
-          <p>6.4 Tot uiterlijk 7 dagen (168 uur) vóór de startdatum: terugbetaling van het betaalde bedrag onder inhouding van € 130 aan reeds ingekochte materialen.</p>
-          <p>6.5 Tot uiterlijk 3 dagen (72 uur) vóór start: eenmalig kosteloos verplaatsen mogelijk. Daarna vervalt het recht op verplaatsen.</p>
-          <p>6.6 Binnen 3 dagen (72 uur) vóór start: geen restitutie en geen verplaatsing.</p>
-          <p>6.7 Na aanvang van het traject/de cursus: geen restitutie. Cursusdagen worden exclusief gereserveerd en materialen worden vooraf ingekocht.</p>
+          <p>6.4 <strong>Annuleren tot 7 dagen vóór start:</strong> je krijgt het betaalde bedrag terug, min € 130 voor reeds ingekochte materialen. Je annulering moet ons uiterlijk 7 dagen vóór de startdatum bereiken via info@luxique.nl.</p>
+          <p>6.5 <strong>Tussen 7 en 3 dagen vóór start:</strong> je kunt de cursus eenmalig kosteloos verplaatsen naar andere data. Terugbetaling is niet meer mogelijk.</p>
+          <p>6.6 <strong>Binnen 3 dagen vóór start of na aanvang:</strong> geen restitutie en geen verplaatsing meer mogelijk. De cursusdagen zijn exclusief voor jou gereserveerd.</p>
+          
           <div class="sub">Online cursussen</div>
           <p>6.8 Online cursussen worden niet gerestitueerd. Je krijgt direct na betaling volledige toegang tot de digitale lesstof (zie artikel 5.2).</p>
         </div>
@@ -282,10 +282,10 @@ export default function VoorwaardenPage() {
         </div>
 
         <div class="art" id="art-9-aansprakelijkheid"><div class="art-h">Artikel 9 — Allergische reacties en aansprakelijkheid</div>
-          <p>9.1 De klant is verplicht bekende allergieën, overgevoeligheden en oog- of huidaandoeningen vóór de behandeling te melden. Lashed by Chiva is niet aansprakelijk voor allergische reacties, huidirritaties of oogklachten die na een behandeling ontstaan, behoudens opzet of bewuste roekeloosheid aan de zijde van Lashed by Chiva.</p>
+          <p>9.1 De klant is verplicht bekende allergieën, overgevoeligheden en oog- of huidaandoeningen vóór de behandeling te melden. LUXIQUE is niet aansprakelijk voor allergische reacties, huidirritaties of oogklachten die na een behandeling ontstaan, behoudens opzet of bewuste roekeloosheid aan de zijde van LUXIQUE.</p>
           <p>9.2 Bij een allergische reactie bestaat geen recht op terugbetaling. Indien er ruimte is in de planning, kan kosteloos een verwijdering van de wimpers worden aangevraagd.</p>
-          <p>9.3 Lashed by Chiva is voorts niet aansprakelijk voor indirecte schade, gevolgschade of gederfde inkomsten, noch voor schade door onjuiste of onvolledige informatie verstrekt door de klant.</p>
-          <p>9.4 De aansprakelijkheid van Lashed by Chiva is, behoudens opzet of bewuste roekeloosheid en behoudens dwingendrechtelijke bepalingen, te allen tijde beperkt tot het factuurbedrag van de betreffende dienst.</p>
+          <p>9.3 LUXIQUE is voorts niet aansprakelijk voor indirecte schade, gevolgschade of gederfde inkomsten, noch voor schade door onjuiste of onvolledige informatie verstrekt door de klant.</p>
+          <p>9.4 De aansprakelijkheid van LUXIQUE is, behoudens opzet of bewuste roekeloosheid en behoudens dwingendrechtelijke bepalingen, te allen tijde beperkt tot het factuurbedrag van de betreffende dienst.</p>
         </div>
 
         <div class="art" id="art-10-cursist"><div class="art-h">Artikel 10 — Eigen verantwoordelijkheid cursist</div>
@@ -320,18 +320,18 @@ export default function VoorwaardenPage() {
             <li>de stelling dat een cursus "het geld niet waard" was;</li>
             <li>het niet kunnen afronden van een meerdaags traject door ziekte (zie artikel 7.2).</li>
           </ul>
-          <p>14.4 Lashed by Chiva streeft ernaar gegronde klachten binnen 5 werkdagen te behandelen en in overleg een passende oplossing te bieden. Het indienen van een klacht laat de wettelijke rechten van de klant onverlet.</p>
+          <p>14.4 LUXIQUE streeft ernaar gegronde klachten binnen 5 werkdagen te behandelen en in overleg een passende oplossing te bieden. Het indienen van een klacht laat de wettelijke rechten van de klant onverlet.</p>
         </div>
 
         <div class="art" id="art-15-privacy"><div class="art-h">Artikel 15 — Privacy</div>
-          <p>15.1 Lashed by Chiva verwerkt persoonsgegevens conform de AVG en uitsluitend voor de uitvoering van de overeenkomst, de administratie en — met toestemming — marketing. Zie de <a class="inline" href="#privacy">privacyverklaring</a>.</p>
+          <p>15.1 LUXIQUE verwerkt persoonsgegevens conform de AVG en uitsluitend voor de uitvoering van de overeenkomst, de administratie en — met toestemming — marketing. Zie de <a class="inline" href="#privacy">privacyverklaring</a>.</p>
         </div>
 
         <div class="art" id="art-16-recht"><div class="art-h">Artikel 16 — Toepasselijk recht</div>
           <p>16.1 Op deze voorwaarden is uitsluitend Nederlands recht van toepassing.</p>
-          <p>16.2 Geschillen worden voorgelegd aan de bevoegde rechter in het arrondissement van de vestigingsplaats van Lashed by Chiva, tenzij de wet dwingend een andere rechter aanwijst.</p>
+          <p>16.2 Geschillen worden voorgelegd aan de bevoegde rechter in het arrondissement van de vestigingsplaats van LUXIQUE, tenzij de wet dwingend een andere rechter aanwijst.</p>
           <p>16.3 Is een bepaling van deze voorwaarden nietig of vernietigbaar, dan blijven de overige bepalingen volledig van kracht. De betreffende bepaling wordt vervangen door een geldige bepaling die het doel en de strekking ervan zoveel mogelijk benadert.</p>
-          <p>16.4 Lashed by Chiva mag deze voorwaarden wijzigen. Op een boeking of aankoop zijn steeds de voorwaarden van toepassing zoals die golden op het moment van boeken of kopen.</p>
+          <p>16.4 LUXIQUE mag deze voorwaarden wijzigen. Op een boeking of aankoop zijn steeds de voorwaarden van toepassing zoals die golden op het moment van boeken of kopen.</p>
         </div>
       </section>
 
@@ -352,10 +352,10 @@ export default function VoorwaardenPage() {
           </ul>
         </div>
 
-        <p>Lashed by Chiva (hierna: "wij") respecteert je privacy en verwerkt persoonsgegevens in overeenstemming met de AVG. In deze verklaring lees je welke gegevens we verwerken, waarom en hoe lang.</p>
+        <p>LUXIQUE (hierna: "wij") respecteert je privacy en verwerkt persoonsgegevens in overeenstemming met de AVG. In deze verklaring lees je welke gegevens we verwerken, waarom en hoe lang.</p>
 
         <h4 id="privacy-verantwoordelijke">1. Verwerkingsverantwoordelijke</h4>
-        <p>Lashed by Chiva, Venlosingel 166, 6845 JD Arnhem. Contactpersoon voor privacy: Chiva Daams, bereikbaar via <a class="inline" href="mailto:info@luxique.nl">info@luxique.nl</a>.</p>
+        <p>LUXIQUE, Venlosingel 166, 6845 JD Arnhem. Contactpersoon voor privacy: Chiva Daams, bereikbaar via <a class="inline" href="mailto:info@luxique.nl">info@luxique.nl</a>.</p>
 
         <h4 id="privacy-gegevens">2. Welke gegevens we verwerken</h4>
         <p>Afhankelijk van de dienst verwerken wij:</p>
@@ -461,7 +461,7 @@ export default function VoorwaardenPage() {
             <li>Behandelingen: kosteloos annuleren tot 24 uur vóór aanvang, daarna vervalt de aanbetaling.</li>
             <li>Meer dan 20 minuten na de starttijd te laat → de afspraak en de aanbetaling vervallen.</li>
             <li>Online cursussen worden niet gerestitueerd.</li>
-            <li>Trajecten: tot uiterlijk 7 dagen vóór start terugbetaling minus € 130 materiaalkosten.</li>
+            <li>Trajecten: tot 7 dagen vóór start → terugbetaling minus € 130 materiaalkosten. Tot 3 dagen → eenmalig verplaatsen. Binnen 3 dagen → geen restitutie.</li>
           </ul>
         </div>
 
@@ -483,9 +483,9 @@ export default function VoorwaardenPage() {
         <h4 id="annulering-trajecten">Persoonlijke trajecten / workshops</h4>
         <ul class="list">
           <li>Aanbetaling van 50% bij het boeken; het resterende bedrag uiterlijk vóór de eerste lesdag.</li>
-          <li>Tot uiterlijk 7 dagen vóór start: terugbetaling van het betaalde bedrag minus € 130 materiaalkosten.</li>
-          <li>Tot uiterlijk 3 dagen vóór start: eenmalig kosteloos verplaatsen.</li>
-          <li>Binnen 3 dagen vóór start of na aanvang: geen restitutie en geen verplaatsing.</li>
+          <li><strong>Tot 7 dagen vóór start:</strong> volledige terugbetaling minus € 130 materiaalkosten.</li>
+          <li><strong>7 tot 3 dagen vóór start:</strong> eenmalig kosteloos verplaatsen naar andere data (geen terugbetaling).</li>
+          <li><strong>Binnen 3 dagen vóór start of na aanvang:</strong> geen restitutie, geen verplaatsing.</li>
         </ul>
 
         <h4 id="annulering-klachten">Klachten</h4>
@@ -495,7 +495,7 @@ export default function VoorwaardenPage() {
         </ul>
 
         <div class="bizcard">
-          <div class="bc-title">Lashed by Chiva — LUXIQUE</div>
+          <div class="bc-title">LUXIQUE</div>
           Eenmanszaak · KvK 94764158 · Btw-id NL004358432B15<br>
           Venlosingel 166, 6845 JD Arnhem<br>
           <a href="mailto:info@luxique.nl">info@luxique.nl</a> · +31 6 57729588<br>
