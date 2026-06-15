@@ -305,10 +305,10 @@ export default function Missie() {
       <div className="nkc-watermark" aria-hidden="true">Creëren</div>
 
       <div className="nkc-pphoto left" ref={photoLeftRef}>
-        <div className="nkc-photo-placeholder">FOTO LINKS — Chiva aan het werk</div>
+        <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/creeeren-left.jpg" alt="Chiva aan het werk" />
       </div>
       <div className="nkc-pphoto right" ref={photoRightRef}>
-        <div className="nkc-photo-placeholder">FOTO RECHTS — close-up wispy set</div>
+        <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/creeeren-right.jpg" alt="Close-up wispy set" />
       </div>
 
       <div className="nkc-plaque">
