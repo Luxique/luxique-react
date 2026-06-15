@@ -304,13 +304,13 @@ export default function Onderscheid() {
         <div className="ond-media ond-r ond-rm">
           <div className="ond-photo">
             <div ref={(el) => { slideRefs.current[0] = el }} className="ond-slide on">
-              <div className="ond-ph" style={{ background: 'linear-gradient(150deg,#4a4236,#6b5f4d 55%,#857655)' }}>FOTO 01 — Eigen stijl / signature set</div>
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-01-signatuur.webp" alt="Eigen stijl / signature set" />
             </div>
             <div ref={(el) => { slideRefs.current[1] = el }} className="ond-slide">
-              <div className="ond-ph" style={{ background: 'linear-gradient(150deg,#3c3a33,#574f44 55%,#766a52)' }}>FOTO 02 — Kennis / oogvormanalyse</div>
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-02-kennis.webp" alt="Kennis / oogvormanalyse" />
             </div>
             <div ref={(el) => { slideRefs.current[2] = el }} className="ond-slide">
-              <div className="ond-ph" style={{ background: 'linear-gradient(150deg,#43392f,#5d4d3c 55%,#8a7558)' }}>FOTO 03 — Chiva in de salon</div>
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-03-coaching.webp" alt="Chiva in de salon" />
             </div>
             <span className="ond-cap">✦ LXQ Academy</span>
             <div className="ond-dots">
