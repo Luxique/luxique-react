@@ -175,7 +175,7 @@ export default function TechVsArtist() {
               <div className="card-body">
                 <h3>Lash Artist</h3>
                 <p className="lede">Je ziet het oog. Niet de wimper.</p>
-                <p>Een lash artist leest de oogvorm vóórdat er één wimmer wordt geplaatst — welke curl past, en waaróm. Een set die écht bij de persoon hoort. Geen kopie, geen standaard map. Uniek ontwerp, per persoon.</p>
+                <p>Een lash artist leest de oogvorm vóórdat er één wimper wordt geplaatst — welke curl past, en waaróm. Een set die écht bij de persoon hoort. Geen kopie, geen standaard map. Uniek ontwerp, per persoon.</p>
                 <div className="card-foot">
                   <a className="tva-btn" href="/courses">Bekijk de academy
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
