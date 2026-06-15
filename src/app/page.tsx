@@ -22,7 +22,8 @@ export default function Home() {
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false"><TechVsArtist /></div>
-      <div id="meet-chiva" data-theme-color="#F3EFE7" data-theme-dark="false"><NietKopieren /></div>
+      <div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><MeetChiva /></div>
+      <div id="creëren" data-theme-color="#F3EFE7" data-theme-dark="false"><NietKopieren /></div>
       <div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false" className="mt-[14px]"><Missie /></div>
       <div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false"><EyeShapes /></div>
       <div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] pt-[14px] max-[860px]:px-[10px] max-[860px]:pt-[10px]"><BeforeAfter /></div>
