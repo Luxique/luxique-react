@@ -10,6 +10,8 @@ type ContentItem = {
   videoUrl?: string
   posterUrl?: string
   imageUrl?: string
+  isViral?: boolean
+  viralStats?: string
 }
 
 const CDN_VID = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/videos/reels'
@@ -25,7 +27,7 @@ const contentItems: ContentItem[] = [
   { type: 'image', title: 'Close Up — Spikes', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp` },
   { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-5.mp4`, posterUrl: `${CDN_IMG}/reel-poster-5.webp` },
   { type: 'image', title: 'Wet Set Look', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp` },
-  { type: 'reel', title: 'Bottom Lash Technique', views: '4.3K', duration: '0:22' },
+  { type: 'reel', title: 'Russian Volume', views: '1M', duration: '0:22', videoUrl: `${CDN_VID}/viral-russian-volume.mp4`, isViral: true, viralStats: '59.4K likes · 1M weergaven' },
 ]
 
 function ContentCard({ item }: { item: ContentItem }) {
@@ -80,7 +82,11 @@ function ContentCard({ item }: { item: ContentItem }) {
         {/* Bottom info */}
         <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
           <p className="text-[13px] text-white font-semibold leading-tight mb-1">{item.title}</p>
-          <span className="text-[10px] text-white/50 font-medium">{item.views} views</span>
+          {item.isViral && item.viralStats ? (
+            <span className="text-[10px] font-medium" style={{ color: '#E0C078' }}>🔥 {item.viralStats}</span>
+          ) : (
+            <span className="text-[10px] text-white/50 font-medium">{item.views} views</span>
+          )}
         </div>
       </div>
     </div>
