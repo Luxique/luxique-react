@@ -33,7 +33,7 @@ export default function NietKopieren() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce) return
 
-    const RANGE = 55
+    const RANGE = 90
     let ticking = false
 
     const parallax = () => {
@@ -106,7 +106,7 @@ export default function NietKopieren() {
           position: absolute;
           left: 50%;
           z-index: 1;
-          width: clamp(250px, 27vw, 380px);
+          width: clamp(300px, 32vw, 456px);
           aspect-ratio: 5/7;
           border-radius: 28px;
           overflow: hidden;
@@ -125,8 +125,8 @@ export default function NietKopieren() {
           background: linear-gradient(180deg, rgba(243,239,231,.10), rgba(243,239,231,.04));
           pointer-events: none;
         }
-        .nkc-pphoto.left { margin-left: -610px; top: 3%; }
-        .nkc-pphoto.right { margin-left: 235px; bottom: 3%; }
+        .nkc-pphoto.left { margin-left: -720px; top: 3%; }
+        .nkc-pphoto.right { margin-left: 340px; bottom: 3%; }
         .nkc-photo-placeholder {
           position: absolute; inset: 0;
           display: flex; align-items: center; justify-content: center;
