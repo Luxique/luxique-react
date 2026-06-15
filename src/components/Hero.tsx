@@ -151,7 +151,7 @@ export default function Hero() {
               <div key={i} className="absolute inset-0 transition-opacity duration-[850ms] ease-in-out" style={{ opacity: current === i ? 1 : 0 }}>
                 <img src={slide.img || IMG_ORIG} alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
                 <div className="absolute top-5 right-5 bg-[rgba(12,10,7,0.55)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[10px] px-[15px] py-[11px] z-[5] text-right">
-                  <span className="block font-['Cormorant_Garamond'] text-[15px] italic text-[#DFC08A] mb-[2px]">{slide.title}</span>
+                  <span className="block font-['Cormorant_Garamond'] text-[17px] italic text-[#DFC08A] mb-[2px]">{slide.title}</span>
                   <span className="text-[10px] text-[rgba(255,255,255,0.42)] tracking-[0.1em] uppercase">{slide.sub}</span>
                 </div>
               </div>

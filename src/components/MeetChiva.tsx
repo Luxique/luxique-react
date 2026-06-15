@@ -106,10 +106,10 @@ export default function MeetChiva() {
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>
           </span>
-          <h2 className="font-['Outfit'] font-medium text-[clamp(32px,4vw,52px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em]">
+          <h2 className="font-['Outfit'] font-medium text-[clamp(42px,5.2vw,66px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em]">
             Lash artist.<br />Educator.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Oprichter.</span>
           </h2>
-          <p className="text-[15px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
+          <p className="text-[17px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
             Ik begon met lashes en voelde meteen: dit is precies wat ik wil doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en vele studenten die ik heb mogen begeleiden tot lash artist.
           </p>
         </div>
@@ -141,22 +141,22 @@ export default function MeetChiva() {
         <div className="bg-[#FAF8F4] rounded-[22px] p-[44px_40px] max-[860px]:p-[36px_24px] flex flex-col items-start text-left relative overflow-hidden">
           <div className="absolute -top-[40px] -right-[40px] w-[160px] h-[160px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.18)_0%,transparent_70%)] pointer-events-none" />
           <div className="text-[#C4A265] text-[16px] mb-5 opacity-70 self-center">✦</div>
-          <h3 className="font-['Outfit'] font-medium text-[clamp(26px,2.6vw,40px)] leading-[1.15] text-[#1A1815] tracking-[-0.02em] mb-6 text-center self-center">
+          <h3 className="font-['Outfit'] font-medium text-[clamp(27px,2.6vw,34px)] leading-[1.15] text-[#1A1815] tracking-[-0.02em] mb-6 text-center self-center">
             Niet kopiëren.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Creëren.</span>
           </h3>
 
           <div className="relative w-full max-h-[220px] overflow-hidden mb-1">
             <div className="flex flex-col gap-[14px]">
-              <p className="text-[15px] font-light text-[#7A7268] leading-[1.8]">
+              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
                 In een markt waar Russian volume de standaard was, koos ik voor wispy — lichter, natuurlijker, meer &ldquo;me&rdquo;. Mensen snapten het niet altijd in het begin. Maar ik bleef consistent, en nu is wispy één van de meest gevraagde styles.
               </p>
-              <p className="text-[15px] font-light text-[#7A7268] leading-[1.8]">
+              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
                 LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Mijn aanpak is eenvoudig: begin met het waarom, niet met het hoe.
               </p>
-              <p className="text-[15px] font-light text-[#7A7268] leading-[1.8]">
+              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
                 Onze filosofie is dat elke oogvorm anders is en een unieke aanpak verdient. Geen standaard maps, geen kopieën. Wij leren je kijken naar het oog, begrijpen wat nodig is, en een set ontwerpen die écht bij de persoon past.
               </p>
-              <p className="text-[15px] font-light text-[#7A7268] leading-[1.8]">
+              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
                 Van beginners tot gevorderden — iedereen is welkom. Wij geloven dat de juiste kennis, gecombineerd met de juiste mindset, het verschil maakt tussen een technician en een artist.
               </p>
             </div>

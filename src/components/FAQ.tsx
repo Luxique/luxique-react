@@ -22,11 +22,11 @@ export default function FAQ() {
         <div className="space-y-4">
           {faqs.map((f, i) => (
             <details key={i} className="group bg-[var(--bg2)] rounded-2xl border border-[var(--border)] overflow-hidden">
-              <summary className="flex items-center justify-between p-5 cursor-pointer text-[14px] font-medium text-[var(--text)] hover:text-[var(--rose)] transition list-none">
+              <summary className="flex items-center justify-between p-5 cursor-pointer text-[16px] font-medium text-[var(--text)] hover:text-[var(--rose)] transition list-none">
                 {f.q}
                 <span className="text-[var(--text3)] group-open:rotate-45 transition-transform text-xl">+</span>
               </summary>
-              <div className="px-5 pb-5 text-[14px] text-[var(--text2)] leading-relaxed">
+              <div className="px-5 pb-5 text-[16px] text-[var(--text2)] leading-relaxed">
                 {f.a}
               </div>
             </details>

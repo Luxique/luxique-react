@@ -79,16 +79,16 @@ export default function Missie() {
 
       {/* ══ LOOSE TEXT ══ */}
       <div className="p-[52px_56px] max-[860px]:p-[40px_20px] grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.1fr] gap-[60px] max-[860px]:gap-7 items-start">
-        <div className="font-['Cormorant_Garamond'] text-[clamp(24px,2.8vw,38px)] font-normal leading-[1.15] text-[#1E1A14] tracking-[-0.01em] min-[860px]:sticky min-[860px]:top-[40px]">
+        <div className="font-['Cormorant_Garamond'] text-[clamp(27px,2.8vw,38px)] font-normal leading-[1.15] text-[#1E1A14] tracking-[-0.01em] min-[860px]:sticky min-[860px]:top-[40px]">
           De lash industrie<br />verdient een hogere<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">standaard.</span>
         </div>
 
         <div className="flex flex-col gap-[18px]">
-          <p className="text-[14px] font-light text-[#7A7268] leading-[1.85]">
+          <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
             Lash extensions zijn al jaren één van de snelst groeiende beauty behandelingen in Nederland. Maar het opleidingsniveau staat stil. Terwijl de markt groeit, blijft de kwaliteit hangen op hetzelfde niveau als tien jaar geleden. Geen innovatie, geen vooruitgang. De meeste cursussen leren je repetitief werk uitvoeren — hetzelfde patroon, dezelfde map, keer op keer. Je leert techniek, maar je leert niet begrijpen. Doorgaans leer je wel fans plaatsen, maar niet of die ene fan bij dat specifieke oog past.
           </p>
 
-          <p className="text-[14px] font-light text-[#7A7268] leading-[1.85]">
+          <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
             Het resultaat? Een markt vol technici die prima resultaten leveren. Maar zelden iemand die écht het verschil maakt zowel voor de klant in de stoel als voor het vak zelf.
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function Missie() {
 
         <div className="mb-10 relative z-[1]">
           <span className="block text-[9.5px] font-semibold tracking-[0.26em] uppercase text-[rgba(196,162,101,0.5)] mb-[14px]">Wat ons onderscheidt</span>
-          <h3 className="font-['Cormorant_Garamond'] text-[clamp(24px,2.8vw,38px)] font-normal text-[rgba(250,248,244,0.88)] leading-[1.15] tracking-[-0.01em] max-w-[520px]">
+          <h3 className="font-['Cormorant_Garamond'] text-[clamp(27px,2.8vw,38px)] font-normal text-[rgba(250,248,244,0.88)] leading-[1.15] tracking-[-0.01em] max-w-[520px]">
             Wat <span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">LXQ</span> anders doet dan<br />andere opleidingen.
           </h3>
         </div>
