@@ -18,7 +18,13 @@ const MARQUEE_ROWS = [
 export default function Missie() {
   const heroRef = useRef<HTMLDivElement>(null)
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
+  const missionRef = useRef<HTMLElement>(null)
+  const statementRef = useRef<HTMLHeadingElement>(null)
+  const eyebrowRef = useRef<HTMLSpanElement>(null)
+  const ruleRef = useRef<HTMLDivElement>(null)
+  const bodyWrapRef = useRef<HTMLDivElement>(null)
 
+  // Marquee scroll
   useEffect(() => {
     const hero = heroRef.current
     if (!hero) return
@@ -38,6 +44,64 @@ export default function Missie() {
     window.addEventListener('scroll', onScroll, { passive: true })
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Scroll-fill + reveal for mission statement
+  useEffect(() => {
+    const statement = statementRef.current
+    const mission = missionRef.current
+    const eyebrow = eyebrowRef.current
+    const rule = ruleRef.current
+    const bodyWrap = bodyWrapRef.current
+    if (!statement || !mission) return
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const words = Array.from(statement.querySelectorAll('.miss-w'))
+
+    // Reveal on intersect
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          eyebrow?.classList.add('in')
+          rule?.classList.add('in')
+          bodyWrap?.classList.add('in')
+        }
+      })
+    }, { threshold: 0.2 })
+    io.observe(mission)
+
+    // Scroll-fill
+    if (reduce) {
+      words.forEach((w) => w.classList.add('on'))
+      return
+    }
+
+    let ticking = false
+    const fill = () => {
+      const r = statement.getBoundingClientRect()
+      const vh = window.innerHeight
+      const start = vh * 0.85, end = vh * 0.40
+      let p = (start - r.top) / (start - end)
+      p = Math.max(0, Math.min(1, p))
+      const n = Math.round(p * words.length)
+      words.forEach((w, i) => w.classList.toggle('on', i < n))
+      ticking = false
+    }
+    const onScrollFill = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(fill)
+      }
+    }
+    window.addEventListener('scroll', onScrollFill, { passive: true })
+    window.addEventListener('resize', onScrollFill, { passive: true })
+    fill()
+
+    return () => {
+      io.disconnect()
+      window.removeEventListener('scroll', onScrollFill)
+      window.removeEventListener('resize', onScrollFill)
+    }
   }, [])
 
   return (
@@ -80,26 +144,88 @@ export default function Missie() {
         </div>
       </div>
 
-      {/* ══ LOOSE TEXT ══ */}
-      <div className="p-[52px_56px] max-[860px]:p-[40px_20px] grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.1fr] gap-[60px] max-[860px]:gap-7 items-start">
-        <div className="font-['Cormorant_Garamond'] text-[clamp(27px,2.8vw,38px)] font-normal leading-[1.15] text-[#1E1A14] tracking-[-0.01em] min-[860px]:sticky min-[860px]:top-[40px]">
-          De lash industrie<br />verdient een hogere<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">standaard.</span>
+      {/* ══ MISSION STATEMENT — scroll-fill kop + body ══ */}
+      <section ref={missionRef} className="missie-statement-section" style={{
+        padding: 'clamp(72px,11vw,140px) clamp(24px,5vw,56px)',
+      }}>
+        <style>{`
+          .missie-statement-section { position: relative; }
+          .miss-grid {
+            max-width: 1160px; margin-inline: auto;
+            display: grid; grid-template-columns: 1.05fr 1fr;
+            gap: clamp(40px, 5.5vw, 88px); align-items: start;
+          }
+          .miss-eyebrow {
+            display: inline-block; font-weight: 600;
+            font-size: .78rem; letter-spacing: .22em; text-transform: uppercase;
+            color: #1C1814; border: 1px solid rgba(28,24,20,.14);
+            border-radius: 999px; padding: .5em 1.25em; margin-bottom: 1.6rem;
+            background: transparent;
+            opacity: 0; transform: translateY(16px);
+            transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+          }
+          .miss-eyebrow.in { opacity: 1; transform: none; }
+          .miss-statement {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-weight: 600; letter-spacing: -.01em;
+            font-size: clamp(2.4rem, 4.7vw, 4.3rem); line-height: 1.07;
+            color: #1C1814; margin: 0;
+          }
+          .miss-w { color: #CBC3B4; transition: color .4s ease; }
+          .miss-w.on { color: #1C1814; }
+          .miss-w.it { font-style: italic; font-weight: 500; }
+          .miss-rule {
+            width: 54px; height: 2px; background: #B08D4F;
+            margin-top: clamp(24px, 3vw, 36px);
+            opacity: 0; transition: opacity .8s ease .2s;
+          }
+          .miss-rule.in { opacity: .8; }
+          .miss-col-body { margin-top: 3.3rem; }
+          .miss-body-wrap {
+            max-width: 520px;
+            opacity: 0; transform: translateY(22px);
+            transition: opacity .8s cubic-bezier(.16,1,.3,1) .15s, transform .8s cubic-bezier(.16,1,.3,1) .15s;
+          }
+          .miss-body-wrap.in { opacity: 1; transform: none; }
+          @media (max-width: 860px) {
+            .miss-grid { grid-template-columns: 1fr; gap: clamp(24px,5vw,40px); }
+            .miss-col-body { margin-top: 0; }
+            .miss-statement { font-size: clamp(2.2rem, 9vw, 3.4rem); }
+            .miss-body-wrap { max-width: none; }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .miss-w { color: #1C1814 !important; transition: none; }
+            .miss-eyebrow, .miss-rule, .miss-body-wrap { opacity: 1 !important; transform: none !important; transition: none; }
+          }
+        `}</style>
+        <div className="miss-grid">
+          <div className="miss-col-head">
+            <span ref={eyebrowRef} className="miss-eyebrow">De missie</span>
+            <h2 ref={statementRef} className="miss-statement">
+              <span className="miss-w">De</span>{' '}
+              <span className="miss-w">lash-industrie</span>{' '}
+              <span className="miss-w">verdient</span>{' '}
+              <span className="miss-w">een</span>{' '}
+              <span className="miss-w it">hogere</span>{' '}
+              <span className="miss-w it">standaard.</span>
+            </h2>
+            <div ref={ruleRef} className="miss-rule" />
+          </div>
+          <div className="miss-col-body">
+            <div ref={bodyWrapRef} className="miss-body-wrap">
+              <p className="text-[18px] font-normal text-[#1E1A14] leading-[1.8] mb-[18px]">
+                Lash extensions groeien al jaren hard — maar het opleidingsniveau staat stil.
+              </p>
+              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8] mb-[18px]">
+                De meeste cursussen leren je repetitief werk: hetzelfde patroon, dezelfde map, keer op keer. <em className="italic text-[#1E1A14]">Je leert techniek, maar je leert niet begrijpen.</em>
+              </p>
+              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
+                Het resultaat? Een markt vol technici, maar zelden iemand die <em className="italic text-[#1E1A14]">écht het verschil maakt</em> — voor de klant én voor het vak.
+              </p>
+            </div>
+          </div>
         </div>
-
-        <div className="flex flex-col gap-[18px]">
-          <p className="text-[18px] font-normal text-[#1E1A14] leading-[1.8]">
-            Lash extensions groeien al jaren hard — maar het opleidingsniveau staat stil.
-          </p>
-
-          <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-            De meeste cursussen leren je repetitief werk: hetzelfde patroon, dezelfde map, keer op keer. <em className="italic text-[#1E1A14]">Je leert techniek, maar je leert niet begrijpen.</em>
-          </p>
-
-          <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-            Het resultaat? Een markt vol technici, maar zelden iemand die <em className="italic text-[#1E1A14]">écht het verschil maakt</em> — voor de klant én voor het vak.
-          </p>
-        </div>
-      </div>
+      </section>
 
       {/* ══ PILLAR PANEL ══ */}
       <div className="missie-pillars bg-[#1C2318] rounded-[22px] p-[48px] mx-[14px] mb-[14px] max-[860px]:p-[36px_20px_32px] max-[860px]:mx-[10px] max-[860px]:mb-[10px] relative overflow-hidden">
