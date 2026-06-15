@@ -89,6 +89,45 @@
   border-radius: 24px;
   padding: 34px 30px 30px;
   transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+/* Photo background variant */
+.eyeshapes-card[style*="background-image"] {
+  border-color: rgba(176,141,79, 0.5);
+}
+.eyeshapes-card[style*="background-image"]::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(20,16,10,0.35) 0%, rgba(20,16,10,0.68) 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+.eyeshapes-card[style*="background-image"] > * {
+  position: relative;
+  z-index: 1;
+}
+.eyeshapes-card[style*="background-image"] svg .line {
+  stroke: rgba(255,255,255,0.95);
+}
+.eyeshapes-card[style*="background-image"] svg .iris {
+  fill: rgba(196,162,101,0.25);
+  stroke: #C9A86A;
+}
+.eyeshapes-card[style*="background-image"] svg .pupil {
+  fill: rgba(255,255,255,0.9);
+}
+.eyeshapes-card[style*="background-image"] h3 {
+  color: #F8F3E9;
+}
+.eyeshapes-card[style*="background-image"] p {
+  color: rgba(248,243,233,0.72);
+}
+.eyeshapes-card[style*="background-image"] p strong {
+  color: #E0C078;
+}
+.eyeshapes-card-tint {
+  display: none;
 }
 .eyeshapes-card:hover {
   transform: translateY(-4px);
@@ -124,6 +163,13 @@
 }
 .eyeshapes-card:hover svg .blink {
   animation: esBlink 1.6s ease 1;
+}
+/* Mobile: blink on scroll into view */
+@media (max-width: 820px), (pointer: coarse) {
+  .eyeshapes-card:hover svg .blink { animation: none; }
+  .eyeshapes-card.mobile-blink svg .blink {
+    animation: esBlink 1.6s ease 1;
+  }
 }
 @keyframes esBlink {
   0%, 100% { transform: scaleY(1); }
