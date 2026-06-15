@@ -76,7 +76,7 @@ const SHAPES = [
 ]
 
 export default function EyeShapes() {
-  const cardRefs = useRef<(HTMLArticleElement | null)[]>([])
+  const cardRefs = useRef<(HTMLElement | null)[]>([])
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
