@@ -125,7 +125,7 @@ export default function NietKopieren() {
           background: linear-gradient(180deg, rgba(243,239,231,.10), rgba(243,239,231,.04));
           pointer-events: none;
         }
-        .nkc-pphoto.left { margin-left: -720px; top: 3%; }
+        .nkc-pphoto.left { margin-left: -820px; top: 3%; }
         .nkc-pphoto.right { margin-left: 340px; bottom: 3%; }
         .nkc-photo-placeholder {
           position: absolute; inset: 0;
@@ -326,7 +326,7 @@ export default function NietKopieren() {
         </p>
         <div className="nkc-pullquote nkc-r nkc-r5">
           Geen standaard maps.<br />
-          <span className="g">Geen kopiëren.</span>
+          <span className="g">Customized only.</span>
         </div>
         <p className="nkc-body nkc-r nkc-r6">
           Elke oogvorm is anders en verdient een unieke aanpak. Wij leren je kijken naar het oog, begrijpen wat nodig is, en een set ontwerpen die écht bij de persoon past.
