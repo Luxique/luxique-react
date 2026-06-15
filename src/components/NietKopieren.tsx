@@ -240,7 +240,7 @@ export default function NietKopieren() {
           position: relative;
         }
         .nkc-pullquote .g { color: #B08D4F; }
-        .nkc-pullquote::before, .nkc-pullquote::after {
+        .nkc-pullquote::after {
           content: "";
           display: block;
           width: 34px; height: 2px;
