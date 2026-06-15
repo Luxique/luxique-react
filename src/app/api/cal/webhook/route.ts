@@ -91,6 +91,13 @@ async function handleBookingCreated(payload: any, supabase: any) {
   const calBookingUid = booking.uid || booking.id?.toString() || booking.bookingUid || payload.uid
   const slotStart = booking.startTime || booking.start_time || booking.start || payload.startTime
 
+  // Extract customer info from Cal payload
+  const attendees = booking.attendees || []
+  const attendee = attendees[0] || {}
+  const responses = booking.responses || {}
+  const customerEmail = attendee.email || responses.email?.value || null
+  const customerName = attendee.name || responses.name?.value || null
+
   if (!calBookingUid || !slotStart) {
     console.error('❌ Missing fields:', { calBookingUid, slotStart })
     return NextResponse.json({ error: 'Missing uid or startTime' }, { status: 400 })
@@ -125,6 +132,8 @@ async function handleBookingCreated(payload: any, supabase: any) {
       amount_cents: depositAmount,
       status: 'pending',
       expires_at: expiresAt,
+      customer_name: customerName,
+      customer_email: customerEmail,
     })
 
   if (error) {

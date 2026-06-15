@@ -208,19 +208,24 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
 
   // Send confirmation + Chiva notification (non-blocking, error-safe)
   try {
-    const { sendConfirmationEmail, sendNewBookingNotification, getBookingWithCustomerFromCal } = await import('@/lib/email')
+    const { sendConfirmationEmail, sendNewBookingNotification } = await import('@/lib/email')
     
-    // Enrich booking with customer info from Cal
-    const calBooking = calBookingUid ? await getBookingWithCustomerFromCal(calBookingUid) : null
+    // Use customer info stored in pending_bookings (set at insert time)
+    const customerEmail = booking.customer_email || null
+    const customerName = booking.customer_name || null
     const enriched = {
       ...booking,
-      customer_name: calBooking?.customer_name || null,
-      customer_email: calBooking?.customer_email || null,
+      customer_name: customerName,
+      customer_email: customerEmail,
     }
+    
+    console.log(`Mail: customer_email=${customerEmail}, customer_name=${customerName}`)
     
     // Only send if we have an email
     if (enriched.customer_email) {
       await sendConfirmationEmail(booking.id, enriched)
+    } else {
+      console.warn('Mail: no customer_email in pending_bookings — cannot send confirmation')
     }
     await sendNewBookingNotification(enriched)
   } catch (err) {

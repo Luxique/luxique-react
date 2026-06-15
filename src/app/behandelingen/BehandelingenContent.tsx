@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 /* ─── Config ─── */
-const CAL_URL = 'https://cal.com/glennisha-daams-zan8ht'
+const CAL_URL = 'https://cal.com/luxique'
 const STUDIO_BG = '/images/hero-bg.jpg'
 
 const STEPS = [

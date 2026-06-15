@@ -90,8 +90,8 @@ export default function MeetChiva() {
           className="absolute bottom-0 top-auto z-[3] left-[120px] w-[370px] max-[860px]:left-auto max-[860px]:right-0 max-[860px]:w-[55%] max-[860px]:max-w-[280px]"
           style={{ transformOrigin: 'bottom left' }}
         >
-          {/* Solid dark-gold panel behind transparent portrait */}
-          <div className="absolute inset-0 rounded-[14px] bg-[#1C1A14]" style={{ background: 'linear-gradient(160deg, #1A1815 0%, #2A2318 40%, #3D3222 70%, #C4A265 100%)' }} />
+          {/* Transparent panel behind portrait (was gold gradient) */}
+          <div className="absolute inset-0 rounded-[14px]" />
           <img
             src={CHIVA_IMG}
             alt="Chiva"

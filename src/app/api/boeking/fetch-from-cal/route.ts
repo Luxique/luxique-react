@@ -52,6 +52,14 @@ export async function POST(request: NextRequest) {
   }
 
   const slotStart = booking.startTime || booking.start_time
+  
+  // Extract customer info from Cal booking
+  const attendees = booking.attendees || []
+  const attendee = attendees[0] || {}
+  const responses = booking.responses || {}
+  const customerEmail = attendee.email || responses.email?.value || null
+  const customerName = attendee.name || responses.name?.value || null
+  
   // TEMP TEST: override with TEST_DEPOSIT_CENTS env var if set
   const TEST_DEPOSIT_RAW = process.env.TEST_DEPOSIT_CENTS
   const TEST_DEPOSIT = TEST_DEPOSIT_RAW ? parseInt(TEST_DEPOSIT_RAW) : null
@@ -72,6 +80,8 @@ export async function POST(request: NextRequest) {
       amount_cents: depositAmount,
       status: 'pending',
       expires_at: expiresAt,
+      customer_name: customerName,
+      customer_email: customerEmail,
     })
     .select()
     .single()

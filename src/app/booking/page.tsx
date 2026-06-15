@@ -35,7 +35,7 @@ export default function BookingPage() {
       {/* Full-height iframe — no inner padding/margins */}
       <div className="px-6 max-md:px-3" style={{ height: 'calc(100vh - 120px)' }}>
         <iframe
-          src="https://cal.com/glennisha-daams-zan8ht?embed=&theme=light&layout=month_view"
+          src="https://cal.com/luxique?embed=&theme=light&layout=month_view"
           title="Boek een afspraak"
           className="w-full h-full border-0 rounded-xl"
         />

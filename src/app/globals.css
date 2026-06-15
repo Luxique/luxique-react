@@ -37,6 +37,8 @@
 html { scroll-behavior: smooth; height: 100%; background: #0C0A07; overflow-x: hidden; }
 body {
   font-family: 'Outfit', -apple-system, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--text);
   background: #0C0A07;
   min-height: 100%;
@@ -46,6 +48,18 @@ body {
 /* Typography */
 h1, h2, h3, h4, h5 { font-family: 'Cormorant Garamond', serif; font-weight: 300; }
 em { font-style: italic; font-weight: 400; }
+
+/* Global pill contrast fix — dark pills with light text everywhere */
+[class*="rounded-full"][class*="border-[rgba(196,162,101"] {
+  background: rgba(12, 10, 7, 0.88) !important;
+  color: #E0C078 !important;
+  border-color: rgba(196,162,101,0.5) !important;
+}
+/* Hero reviews pill specific fix */
+.bg-\[rgba\(196\,162\,101\,0\.1\)\] {
+  background: rgba(12, 10, 7, 0.88) !important;
+  color: #E0C078 !important;
+}
 
 /* Pull Quote */
 .pull-quote {

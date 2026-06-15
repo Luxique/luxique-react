@@ -491,6 +491,7 @@ function CurriculumSection({
 
 // Reviews Section Component
 function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }: { course: Course; onJoin: () => void; user: { id: string; email: string } | null; lessons: Lesson[]; enrolled: boolean; courseSlug: string }) {
+  const [herroepingAgreed, setHerroepingAgreed] = useState(false)
   if (!course.price_cents) {
     return null
   }
@@ -563,10 +564,16 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
                   <span>Maak gratis account</span>
                 </button>
               ) : (
-                <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
+                <>
+                <label className="flex items-start gap-3 mb-4 cursor-pointer select-none" style={{ fontSize: '13px', lineHeight: '1.6', color: '#4A433B' }}>
+                  <input type="checkbox" checked={herroepingAgreed} onChange={(e) => setHerroepingAgreed(e.target.checked)} className="mt-1 shrink-0" style={{ width: '18px', height: '18px', accentColor: '#B08D4F' }} />
+                  <span>Ik begrijp dat ik met deze aankoop direct toegang krijg tot de online cursus (digitale inhoud) en doe daarmee uitdrukkelijk afstand van mijn herroepingsrecht. Na betaling kan ik de aankoop niet meer herroepen of restitueren. <a href="/voorwaarden#art-5-herroeping" target="_blank" style={{ color: '#B08D4F', textDecoration: 'none', borderBottom: '1px solid rgba(176,141,79,.4)' }}>Algemene Voorwaarden</a></span>
+                </label>
+                <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center', opacity: herroepingAgreed ? 1 : 0.4, cursor: herroepingAgreed ? 'pointer' : 'not-allowed', pointerEvents: herroepingAgreed ? 'auto' : 'none' }} onClick={onJoin}>
                   <span className="flow" />
                   <span>Koop cursus — € {course.price_cents ? (course.price_cents / 100).toLocaleString('nl-NL') : '0'}</span>
                 </button>
+                </>
               )}
               
               <div className="payment-logos">

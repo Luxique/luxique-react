@@ -3,13 +3,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import './hero-v2.css'
 
-const IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-bg.webp'
+const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-bg.webp'
+const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header1.webp'
+const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header2.webp'
+const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header4.webp'
 
 const SLIDES = [
-  { title: 'Wispy Set', sub: 'Behandeling · Arnhem', review: { name: 'Sarah M.', text: 'Na de cursus had ik direct mijn eerste klanten.' } },
-  { title: 'Classic Set', sub: 'Behandeling · Arnhem', review: { name: 'Jessica K.', text: 'Chiva weet precies wat bij jouw ogen past.' } },
-  { title: 'Volume Set', sub: 'Behandeling · Arnhem', review: { name: 'Ayesha B.', text: 'De coaching was op een ander niveau.' } },
-  { title: 'LXQ Academy', sub: 'Opleiding · Online & Arnhem', review: { name: 'Nina R.', text: 'Eindelijk een opleiding die écht de diepte ingaat.' } },
+  { img: IMG_ORIG, title: 'Wispy Set', sub: 'Behandeling · Arnhem', review: { name: 'Sarah M.', text: 'Na de cursus had ik direct mijn eerste klanten.' } },
+  { img: IMG_2, title: 'Classic Set', sub: 'Behandeling · Arnhem', review: { name: 'Jessica K.', text: 'Chiva weet precies wat bij jouw ogen past.' } },
+  { img: IMG_3, title: 'Volume Set', sub: 'Behandeling · Arnhem', review: { name: 'Ayesha B.', text: 'De coaching was op een ander niveau.' } },
+  { img: IMG_1, title: 'LXQ Academy', sub: 'Opleiding · Online & Arnhem', review: { name: 'Nina R.', text: 'Eindelijk een opleiding die écht de diepte ingaat.' } },
 ]
 
 const DURATION = 4500
@@ -47,7 +50,7 @@ export default function Hero() {
           {SLIDES.map((slide, i) => (
             <img
               key={i}
-              src={IMG}
+              src={SLIDES[i].img || IMG_ORIG}
               alt={slide.title}
               className="hero-v2-bg"
               style={{ opacity: current === i ? 1 : 0 }}
@@ -146,7 +149,7 @@ export default function Hero() {
           <div className="rounded-[22px] overflow-visible relative bg-[#161310] min-h-[240px]">
             {SLIDES.map((slide, i) => (
               <div key={i} className="absolute inset-0 transition-opacity duration-[850ms] ease-in-out" style={{ opacity: current === i ? 1 : 0 }}>
-                <img src={IMG} alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
+                <img src={slide.img || IMG_ORIG} alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
                 <div className="absolute top-5 right-5 bg-[rgba(12,10,7,0.55)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[10px] px-[15px] py-[11px] z-[5] text-right">
                   <span className="block font-['Cormorant_Garamond'] text-[15px] italic text-[#DFC08A] mb-[2px]">{slide.title}</span>
                   <span className="text-[10px] text-[rgba(255,255,255,0.42)] tracking-[0.1em] uppercase">{slide.sub}</span>

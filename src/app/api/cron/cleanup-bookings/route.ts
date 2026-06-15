@@ -123,12 +123,11 @@ export async function GET(request: NextRequest) {
           
           // Send confirmation + Chiva notification (non-blocking, error-safe)
           try {
-            const { sendConfirmationEmail, sendNewBookingNotification, getBookingWithCustomerFromCal } = await import('@/lib/email')
-            const calBooking = await getBookingWithCustomerFromCal(booking.cal_booking_uid)
+            const { sendConfirmationEmail, sendNewBookingNotification } = await import('@/lib/email')
             const enriched = {
               ...booking,
-              customer_name: calBooking?.customer_name || null,
-              customer_email: calBooking?.customer_email || null,
+              customer_name: booking.customer_name || null,
+              customer_email: booking.customer_email || null,
             }
             if (enriched.customer_email) {
               await sendConfirmationEmail(booking.id, enriched)
@@ -191,14 +190,8 @@ export async function GET(request: NextRequest) {
         
         // Send Chiva expired notification (non-blocking, error-safe)
         try {
-          const { sendExpiredNotification, getBookingWithCustomerFromCal } = await import('@/lib/email')
-          const calBooking = await getBookingWithCustomerFromCal(booking.cal_booking_uid)
-          const enriched = {
-            ...booking,
-            customer_name: calBooking?.customer_name || null,
-            customer_email: calBooking?.customer_email || null,
-          }
-          await sendExpiredNotification(enriched)
+          const { sendExpiredNotification } = await import('@/lib/email')
+          await sendExpiredNotification(booking)
         } catch (mailErr) {
           console.error('Cron: expired mail failed (non-fatal):', mailErr)
         }

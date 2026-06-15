@@ -5,6 +5,7 @@ import Footer from '@/components/Footer'
 
 import { AuthProvider } from '@/lib/auth-context'
 import ChatWidget from '@/components/ChatWidget'
+import CookieBanner from '@/components/CookieBanner'
 import ThemeColorManager from '@/components/ThemeColorManager'
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default function RootLayout({
           <main>{children}</main>
           <Footer />
           <ChatWidget />
+          <CookieBanner />
           <ThemeColorManager />
         </AuthProvider>
       </body>

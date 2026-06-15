@@ -18,10 +18,12 @@ function formatTimeNL(iso: string): string {
 }
 
 interface BookingData {
+  id?: string
   cal_booking_uid: string
   event_type: string
   slot_start: string
   amount_cents: number
+  status?: string
   customer_name?: string | null
   customer_email?: string | null
 }
@@ -95,6 +97,10 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
           </div>
         </div>
       `,
+      attachments: [{
+        filename: 'luxique-afspraak.ics',
+        content: generateICS(booking),
+      }],
     })
 
     if (error) {
@@ -244,23 +250,161 @@ export async function sendExpiredNotification(booking: BookingData) {
   }
 }
 
+// ============================================================
+// MAIL 5: CHIVA — booking cancelled by customer
+// ============================================================
+export async function sendCancellationNotification(booking: BookingData & { cancelled_within_24h?: boolean }) {
+  try {
+    const date = formatDateNL(booking.slot_start)
+    const time = formatTimeNL(booking.slot_start)
+    const deposit = (booking.amount_cents / 100).toFixed(0)
+    const within24h = booking.cancelled_within_24h
+    const subject = within24h
+      ? `CANCELLED • NO REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
+      : `CANCELLED • REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: CHIVA_EMAIL,
+      subject,
+      html: `
+        <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
+          <div style="background:#f6f1e7;padding:24px 32px;border-bottom:1px solid rgba(176,141,79,0.15)">
+            <span style="font-weight:300;letter-spacing:0.4em;font-size:15px;color:#1a1712">LUXIQUE — ANNULERING</span>
+          </div>
+          <div style="padding:32px">
+            <p style="font-size:15px;line-height:1.7;color:#3a3530;margin:0 0 16px"><strong>${booking.customer_name || 'Klant'}</strong> heeft geannuleerd${within24h ? ' <strong>binnen 24u</strong>' : ''}.</p>
+            <table style="width:100%;font-size:14px;line-height:1.7;color:#3a3530;margin-bottom:16px">
+              <tr><td style="color:#9a9183;width:100px;vertical-align:top">Behandeling</td><td>${booking.event_type}</td></tr>
+              <tr><td style="color:#9a9183;vertical-align:top">Wanneer</td><td>${date} ${time}</td></tr>
+              <tr><td style="color:#9a9183;vertical-align:top">Aanbetaling</td><td>€${deposit}</td></tr>
+            </table>
+            <div style="background:${within24h ? 'rgba(197,60,60,0.08)' : 'rgba(91,140,102,0.08)'};border:1px solid ${within24h ? 'rgba(197,60,60,0.2)' : 'rgba(91,140,102,0.2)'};border-radius:10px;padding:12px 14px">
+              <p style="margin:0;font-size:14px;font-weight:600;color:${within24h ? '#c53c3c' : '#5b8c66'}">${within24h ? 'GEEN REFUND — binnen 24u (AV)' : 'REFUND nodig'}</p>
+            </div>
+          </div>
+        </div>
+      `,
+    })
+
+    if (error) {
+      console.error(`Mail: cancellation notification FAILED:`, error)
+      return
+    }
+
+    console.log(`Mail: Chiva notified of cancellation ${booking.cal_booking_uid} (within24h: ${within24h})`)
+  } catch (err) {
+    console.error(`Mail: cancellation notification error:`, err)
+  }
+}
+
+// ============================================================
+// MAIL 6: KLANT — annuleringsbevestiging
+// ============================================================
+export async function sendCustomerCancellationEmail(booking: BookingData & { cancelled_within_24h?: boolean }) {
+  try {
+    const date = formatDateNL(booking.slot_start)
+    const time = formatTimeNL(booking.slot_start)
+    const deposit = (booking.amount_cents / 100).toFixed(0)
+    const within24h = booking.cancelled_within_24h
+
+    const refundHtml = within24h
+      ? `<div style="background:rgba(197,60,60,0.06);border:1px solid rgba(197,60,60,0.2);border-radius:12px;padding:16px 18px;margin-bottom:20px"><p style="margin:0;font-size:15px;color:#c53c3c">Omdat je binnen 24 uur voor je afspraak hebt geannuleerd, wordt je aanbetaling van <strong>€${deposit}</strong> conform onze <a href="https://www.luxique.nl/voorwaarden" style="color:#c53c3c">algemene voorwaarden</a> niet gerestitueerd.</p></div>`
+      : `<div style="background:rgba(91,140,102,0.06);border:1px solid rgba(91,140,102,0.2);border-radius:12px;padding:16px 18px;margin-bottom:20px"><p style="margin:0;font-size:15px;color:#5b8c66">Je aanbetaling van <strong>€${deposit}</strong> wordt gerestitueerd. We verwerken dit zo spoedig mogelijk.</p></div>`
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: booking.customer_email || '',
+      subject: 'Je afspraak bij LUXIQUE is geannuleerd',
+      html: `
+        <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
+          <div style="background:#f6f1e7;padding:28px 32px;text-align:center;border-bottom:1px solid rgba(176,141,79,0.15)">
+            <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:300;letter-spacing:0.4em;font-size:15px;color:#1a1712">LUXIQUE</span>
+          </div>
+          <div style="padding:36px 32px">
+            <h1 style="font-size:26px;font-weight:400;color:#1a1712;margin:0 0 20px">Je afspraak is geannuleerd</h1>
+            <p style="font-size:16px;line-height:1.7;color:#3a3530;margin:0 0 24px">Je afspraak voor <strong>${booking.event_type}</strong> op ${date} om ${time} uur is succesvol geannuleerd.</p>
+            ${refundHtml}
+            <p style="font-size:14px;line-height:1.7;color:#9a9183;margin:0;padding-top:20px;border-top:1px solid rgba(26,23,18,0.08)">Vragen? Mail ons via <a href="mailto:info@luxique.nl" style="color:#b08d4f">info@luxique.nl</a>.</p>
+          </div>
+        </div>
+      `,
+    })
+
+    if (error) {
+      console.error(`Mail: customer cancellation FAILED:`, error)
+      return
+    }
+
+    console.log(`Mail: customer cancellation sent for ${booking.cal_booking_uid}`)
+  } catch (err) {
+    console.error(`Mail: customer cancellation error:`, err)
+  }
+}
+
+// ============================================================
+// .ICS agenda file generator
+// ============================================================
+function generateICS(booking: BookingData): Buffer {
+  const start = new Date(booking.slot_start)
+  const durationMinutes = booking.event_type.toLowerCase().includes('opvullen') || booking.event_type.toLowerCase().includes('refill') ? 120 : 180
+  const end = new Date(start.getTime() + durationMinutes * 60_000)
+  const remainder = (booking.amount_cents / 100).toFixed(0)
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  // Format as YYYYMMDDTHHMMSSZ (UTC)
+  const fmtUTC = (d: Date) =>
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
+
+  // Europe/Amsterdam offset for DTSTART local (CET/CEST awareness via UTC offset)
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//LUXIQUE//NL',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${booking.cal_booking_uid}@luxique.nl`,
+    `DTSTAMP:${fmtUTC(new Date())}`,
+    `DTSTART:${fmtUTC(start)}`,
+    `DTEND:${fmtUTC(end)}`,
+    `SUMMARY:LUXIQUE — ${booking.event_type}`,
+    `DESCRIPTION:Je afspraak bij LUXIQUE. \nRestbedrag van €${remainder} in de studio voldoen. \nKom met schone wimpers (geen mascara/olie).`,
+    `LOCATION:${STUDIO_ADDRESS}`,
+    'BEGIN:VALARM',
+    'TRIGGER:-PT24H',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Herinnering: LUXIQUE afspraak morgen',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+
+  return Buffer.from(ics, 'utf-8')
+}
+
 // Helper to fetch booking + customer info from Cal API
 export async function getBookingWithCustomerFromCal(uid: string): Promise<BookingData | null> {
   try {
     const res = await fetch(`https://api.cal.com/v2/bookings?uid=${uid}`, {
       headers: { Authorization: `Bearer ${process.env.CAL_API_KEY}` },
     })
-    const data: { bookings?: Array<{ eventType?: { title?: string }; title?: string; startTime?: string; responses?: { name?: string; email?: string } }> } = await res.json()
-    const b = data?.bookings?.[0]
+    const data: { data?: { bookings?: Array<Record<string, unknown>> } } = await res.json()
+    const b = (data?.data?.bookings?.[0] || {}) as Record<string, unknown>
     if (!b) return null
+
+    const attendees = (b.attendees as Array<{ email?: string; name?: string }>) || []
+    const attendee = attendees[0] || {}
+    const responses = (b.responses as Record<string, string>) || {}
+    const eventType = b.eventType as { title?: string } | undefined
 
     return {
       cal_booking_uid: uid,
-      event_type: b.eventType?.title || b.title || 'Behandeling',
-      slot_start: b.startTime || new Date().toISOString(),
-      amount_cents: 0, // Will be set from DB
-      customer_name: b.responses?.name || null,
-      customer_email: b.responses?.email || null,
+      event_type: eventType?.title || (b.title as string) || 'Behandeling',
+      slot_start: (b.startTime as string) || new Date().toISOString(),
+      amount_cents: 0,
+      customer_name: responses.name || attendee.name || null,
+      customer_email: responses.email || attendee.email || null,
     }
   } catch {
     return null

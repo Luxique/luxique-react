@@ -24,21 +24,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  // Check if booking is still pending
-  if (booking.status !== 'pending') {
-    return NextResponse.json({ error: 'Booking is no longer pending', status: booking.status })
-  }
-
-  // Check if expired
-  if (new Date(booking.expires_at) < new Date()) {
-    await supabase
-      .from('pending_bookings')
-      .update({ status: 'expired' })
-      .eq('id', booking.id)
-
-    return NextResponse.json({ error: 'Booking has expired', status: 'expired' })
-  }
-
+  // Return booking data regardless of status (needed for bevestigd page)
+  // Only block checkout for non-pending in the POST handler
   return NextResponse.json({ booking })
 }
 
