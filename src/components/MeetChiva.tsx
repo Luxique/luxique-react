@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import Link from 'next/link'
-
 function OrbCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -126,52 +124,6 @@ export default function MeetChiva() {
             <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A6340]">The Woman Behind Luxique</span>
             <span className="font-['Cormorant_Garamond'] text-[16px] italic text-[#1E1A14] leading-none">Chiva — Lash Artist &amp; Educator</span>
           </div>
-        </div>
-      </div>
-
-      {/* ══ ROW 2: [image] [text] [image] ══ */}
-      <div className="grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.15fr_1fr] gap-[14px] items-stretch">
-        {/* Left flanking image — desktop only */}
-        <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-action.webp" alt="Chiva aan het werk" className="w-full h-full min-h-[320px] object-cover" />
-          <span className="absolute top-[14px] left-[14px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[12px] py-[5px] rounded-full bg-[rgba(12,10,7,0.88)] border border-[rgba(176,141,79,0.5)] text-[#E0C078]">Arnhem · Studio</span>
-        </div>
-
-        {/* Center text panel */}
-        <div className="bg-[#FAF8F4] rounded-[22px] p-[44px_40px] max-[860px]:p-[36px_24px] flex flex-col items-start text-left relative overflow-hidden">
-          <div className="absolute -top-[40px] -right-[40px] w-[160px] h-[160px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.18)_0%,transparent_70%)] pointer-events-none" />
-          <div className="text-[#C4A265] text-[16px] mb-5 opacity-70 self-center">✦</div>
-          <h3 className="font-['Outfit'] font-medium text-[clamp(27px,2.6vw,34px)] leading-[1.15] text-[#1A1815] tracking-[-0.02em] mb-6 text-center self-center">
-            Niet kopiëren.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Creëren.</span>
-          </h3>
-
-          <div className="relative w-full max-h-[220px] overflow-hidden mb-1">
-            <div className="flex flex-col gap-[14px]">
-              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-                In een markt waar Russian volume de standaard was, koos ik voor wispy — lichter, natuurlijker, meer &ldquo;me&rdquo;. Mensen snapten het niet altijd in het begin. Maar ik bleef consistent, en nu is wispy één van de meest gevraagde styles.
-              </p>
-              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-                LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Mijn aanpak is eenvoudig: begin met het waarom, niet met het hoe.
-              </p>
-              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-                Onze filosofie is dat elke oogvorm anders is en een unieke aanpak verdient. Geen standaard maps, geen kopieën. Wij leren je kijken naar het oog, begrijpen wat nodig is, en een set ontwerpen die écht bij de persoon past.
-              </p>
-              <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-                Van beginners tot gevorderden — iedereen is welkom. Wij geloven dat de juiste kennis, gecombineerd met de juiste mindset, het verschil maakt tussen een technician en een artist.
-              </p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-[100px] bg-[linear-gradient(0deg,#FAF8F4_0%,rgba(250,248,244,0)_100%)] pointer-events-none" />
-          </div>
-
-          <Link href="/about" className="font-['Outfit'] text-[14px] font-medium px-[26px] py-[12px] rounded-full bg-[#C4A265] text-white border-none cursor-pointer transition-all duration-[220ms] tracking-[0.02em] mt-4 self-center hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px]">
-            Lees mijn verhaal →
-          </Link>
-        </div>
-
-        {/* Right flanking image — desktop only */}
-        <div className="rounded-[22px] overflow-hidden relative min-h-[320px] max-[860px]:hidden">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ba-wispy-after.webp" alt="Lash close-up" className="w-full h-full min-h-[320px] object-cover" />
-          <span className="absolute top-[14px] left-[14px] text-[9.5px] font-medium tracking-[0.12em] uppercase px-[12px] py-[5px] rounded-full bg-[rgba(12,10,7,0.88)] border border-[rgba(176,141,79,0.5)] text-[#E0C078]">Lashed by Chiva</span>
         </div>
       </div>
 
