@@ -136,7 +136,6 @@ export default function Missie() {
 
           {/* Dark gold gradient overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-[linear-gradient(0deg,rgba(48,36,14,0.88),rgba(48,36,14,0.4)_40%,transparent)] flex flex-col justify-end p-6 pb-7">
-            <span className="block text-[9px] font-semibold tracking-[0.24em] uppercase text-[#C4A265] mb-2">Missie</span>
             <h2 className="font-['Cormorant_Garamond'] text-[clamp(22px,3.5vw,36px)] font-normal text-[#FAF8F4] leading-[1.1] tracking-[-0.01em]">
               Educating future<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Lash Artists.</span>
             </h2>
