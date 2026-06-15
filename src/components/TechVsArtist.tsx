@@ -99,6 +99,7 @@ export default function TechVsArtist() {
           display:flex; align-items:center; gap:clamp(20px,3vw,36px);
           opacity:0; transform:translateY(22px);
           transition:opacity .8s cubic-bezier(.16,1,.3,1) .45s,transform .8s cubic-bezier(.16,1,.3,1) .45s;
+          flex-direction:row-reverse;
         }
         .revealed .quote-block { opacity:1; transform:translateY(0); }
         .quote-portrait {
@@ -110,13 +111,16 @@ export default function TechVsArtist() {
         .quote-body {
           padding-left:clamp(18px,2.4vw,28px);
           border-left:2px solid var(--gold);
+          padding-right:clamp(18px,2.4vw,28px);
+          border-right:2px solid var(--gold);
+          padding-left:0;
         }
         .quote-body blockquote {
           font-family:var(--display); font-style:italic; font-weight:500;
           font-size:clamp(1.25rem,2.2vw,1.6rem); line-height:1.4; color:var(--ink);
-          margin:0;
+          margin:0; text-align:right;
         }
-        .quote-cite { margin-top:.9rem; display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; }
+        .quote-cite { margin-top:.9rem; display:flex; align-items:baseline; gap:.6rem; flex-wrap:wrap; justify-content:flex-end; }
         .quote-name { font-family:var(--body); font-weight:600; font-size:.92rem; letter-spacing:.02em; color:var(--ink); }
         .quote-role { font-family:var(--body); font-weight:400; font-size:.76rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
 
@@ -129,8 +133,8 @@ export default function TechVsArtist() {
         @media (max-width:600px) {
           .quote-block { gap:16px; align-items:center; flex-direction:row!important; text-align:left!important; }
           .quote-portrait { width:60px; }
-          .quote-body { border-left:2px solid var(--gold)!important; border-top:none!important; padding-left:16px!important; padding-top:0!important; }
-          .quote-body blockquote { font-size:1.05rem; line-height:1.36; }
+          .quote-body { border-left:2px solid var(--gold)!important; border-right:none!important; border-top:none!important; padding-left:16px!important; padding-right:0!important; }
+          .quote-body blockquote { font-size:1.05rem; line-height:1.36; text-align:left!important; }
           .quote-cite { margin-top:.6rem; gap:.35rem; justify-content:flex-start!important; }
           .quote-name { font-size:.86rem; }
           .quote-role { font-size:.68rem; letter-spacing:.1em; }
