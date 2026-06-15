@@ -174,6 +174,7 @@ export default function Missie() {
           .miss-w { color: #CBC3B4; transition: color .4s ease; }
           .miss-w.on { color: #1C1814; }
           .miss-w.it { font-style: italic; font-weight: 500; }
+          .miss-w.it.on { color: #B08D4F; }
           .miss-rule {
             width: 54px; height: 2px; background: #B08D4F;
             margin-top: clamp(24px, 3vw, 36px);
@@ -214,13 +215,13 @@ export default function Missie() {
           <div className="miss-col-body">
             <div ref={bodyWrapRef} className="miss-body-wrap">
               <p className="text-[18px] font-normal text-[#1E1A14] leading-[1.8] mb-[18px]">
-                Lash extensions groeien al jaren hard — maar het opleidingsniveau staat stil.
+                Lash extensions groeien al jaren hard — maar het <span className="text-[#B08D4F] font-medium">opleidingsniveau staat stil</span>.
               </p>
               <p className="text-[17px] font-light text-[#7A7268] leading-[1.8] mb-[18px]">
-                De meeste cursussen leren je repetitief werk: hetzelfde patroon, dezelfde map, keer op keer. <em className="italic text-[#1E1A14]">Je leert techniek, maar je leert niet begrijpen.</em>
+                De meeste cursussen leren je repetitief werk: hetzelfde patroon, dezelfde map, keer op keer. <em className="italic text-[#B08D4F] not-italic font-medium">Je leert techniek, maar je leert niet begrijpen.</em>
               </p>
               <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-                Het resultaat? Een markt vol technici, maar zelden iemand die <em className="italic text-[#1E1A14]">écht het verschil maakt</em> — voor de klant én voor het vak.
+                Het resultaat? Een markt vol technici, maar zelden iemand die <em className="italic text-[#B08D4F] not-italic font-medium">écht het verschil maakt</em> — voor de klant én voor het vak.
               </p>
             </div>
           </div>
