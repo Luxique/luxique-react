@@ -9,10 +9,30 @@ const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public
 const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header4.webp'
 
 const SLIDES = [
-  { img: IMG_ORIG, title: 'Wispy Set', sub: 'Behandeling · Arnhem', review: { name: 'Sarah M.', text: 'Na de cursus had ik direct mijn eerste klanten.' } },
-  { img: IMG_2, title: 'Classic Set', sub: 'Behandeling · Arnhem', review: { name: 'Jessica K.', text: 'Chiva weet precies wat bij jouw ogen past.' } },
-  { img: IMG_3, title: 'Volume Set', sub: 'Behandeling · Arnhem', review: { name: 'Ayesha B.', text: 'De coaching was op een ander niveau.' } },
-  { img: IMG_1, title: 'LXQ Academy', sub: 'Opleiding · Online & Arnhem', review: { name: 'Nina R.', text: 'Eindelijk een opleiding die écht de diepte ingaat.' } },
+  {
+    img: IMG_ORIG,
+    title: 'Medusa Set',
+    sub: 'Behandeling · Arnhem',
+    review: { name: 'Michela Eriu', text: 'Ik was al super lang op zoek naar iemand die medusa lashes kon doen. Chiva heeft me echt precies gegeven wat ik wilde.', source: 'Google', stars: 5 },
+  },
+  {
+    img: IMG_2,
+    title: 'Groepscoaching',
+    sub: 'Opleiding · Arnhem',
+    review: { name: 'Aisha Castro Kaiser', text: 'Door deze cursus voel ik me veel zelfverzekerder in mijn werk en zie ik echt verschil in mijn resultaten.', source: 'Google', stars: 5 },
+  },
+  {
+    img: IMG_3,
+    title: 'Gecertificeerd',
+    sub: 'Opleiding · Geslaagd',
+    review: { name: 'Melina Yoldas', text: 'Een enorme verrijking voor mijn ontwikkeling als wimperstylist. Niet alleen techniek, maar ook inzicht en professionele groei.', source: 'Google', stars: 5 },
+  },
+  {
+    img: IMG_1,
+    title: 'Before & After',
+    sub: 'Behandeling · Arnhem',
+    review: { name: 'Maud Lommers', text: 'Beste lash artist ever. Ze denkt super goed met je mee en mn wimpers zijn nog nooit zo mooi geweest.', source: 'Google', stars: 5 },
+  },
 ]
 
 const DURATION = 4500
@@ -94,6 +114,7 @@ export default function Hero() {
             <div>
               <div className="hero-v2-review-name">{review.name}</div>
               <div className="hero-v2-review-text">&ldquo;{review.text}&rdquo;</div>
+              <div className="hero-v2-review-meta">{'★'.repeat(review.stars)} · {review.source}</div>
             </div>
           </div>
 
@@ -171,6 +192,7 @@ export default function Hero() {
               <div className="min-w-0">
                 <div className="text-[11px] font-semibold text-[#DFC08A] mb-[2px]">{review.name}</div>
                 <div className="text-[11px] text-[rgba(255,255,255,0.7)] leading-[1.4] italic truncate">&ldquo;{review.text}&rdquo;</div>
+                <div className="text-[9px] text-[rgba(255,255,255,0.45)] tracking-[0.08em] mt-[1px]">{'★'.repeat(review.stars)} · {review.source}</div>
               </div>
             </div>
 

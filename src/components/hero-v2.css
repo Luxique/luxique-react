@@ -269,3 +269,10 @@
   background: #FAF8F4;
   width: 34px;
 }
+
+.hero-v2-review-meta {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.08em;
+  margin-top: 3px;
+}
