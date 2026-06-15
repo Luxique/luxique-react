@@ -83,7 +83,7 @@ export default function Missie() {
       {/* ══ LOOSE TEXT ══ */}
       <div className="p-[52px_56px] max-[860px]:p-[40px_20px] grid grid-cols-1 min-[860px]:grid-cols-[1fr_1.1fr] gap-[60px] max-[860px]:gap-7 items-start">
         <div className="font-['Cormorant_Garamond'] text-[clamp(27px,2.8vw,38px)] font-normal leading-[1.15] text-[#1E1A14] tracking-[-0.01em] min-[860px]:sticky min-[860px]:top-[40px]">
-          Educating future<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Artists.</span>
+          De lash industrie<br />verdient een hogere<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">standaard.</span>
         </div>
 
         <div className="flex flex-col gap-[18px]">
