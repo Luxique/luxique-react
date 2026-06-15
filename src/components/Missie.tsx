@@ -87,12 +87,16 @@ export default function Missie() {
         </div>
 
         <div className="flex flex-col gap-[18px]">
-          <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-            Lash extensions zijn al jaren één van de snelst groeiende beauty behandelingen in Nederland. Maar het opleidingsniveau staat stil. Terwijl de markt groeit, blijft de kwaliteit hangen op hetzelfde niveau als tien jaar geleden. Geen innovatie, geen vooruitgang. De meeste cursussen leren je repetitief werk uitvoeren — hetzelfde patroon, dezelfde map, keer op keer. Je leert techniek, maar je leert niet begrijpen. Doorgaans leer je wel fans plaatsen, maar niet of die ene fan bij dat specifieke oog past.
+          <p className="text-[18px] font-normal text-[#1E1A14] leading-[1.8]">
+            Lash extensions groeien al jaren hard — maar het opleidingsniveau staat stil.
           </p>
 
           <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-            Het resultaat? Een markt vol technici die prima resultaten leveren. Maar zelden iemand die écht het verschil maakt zowel voor de klant in de stoel als voor het vak zelf.
+            De meeste cursussen leren je repetitief werk: hetzelfde patroon, dezelfde map, keer op keer. <em className="italic text-[#1E1A14]">Je leert techniek, maar je leert niet begrijpen.</em>
+          </p>
+
+          <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
+            Het resultaat? Een markt vol technici, maar zelden iemand die <em className="italic text-[#1E1A14]">écht het verschil maakt</em> — voor de klant én voor het vak.
           </p>
         </div>
       </div>
