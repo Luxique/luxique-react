@@ -82,7 +82,7 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
         </div>
 
         <p className={isDark ? 'comp-closing comp-closing-dark' : 'comp-closing'}>
-          Bij Luxique Academy studeer je niet af als iemand die weet <em>hoe</em> het moet, maar als iemand die begrijpt <em>waarom</em> — en dat is precies wat je klanten laten terugkomen.
+          Bij Luxique Academy studeer je niet af als iemand die weet <em>hoe</em> het moet, maar als iemand die begrijpt <em>waarom</em> — en dat is precies wat klanten laat terugkomen.
         </p>
       </div>
 
