@@ -24,14 +24,11 @@ const FAQ = [
 ]
 
 const MARQUEE_PHOTOS = [
-  '/images/chiva-portrait.jpg',
-  '/images/hero-bg.jpg',
-  '/images/chiva-portrait.jpg',
-  '/images/hero-bg.jpg',
-  '/images/chiva-portrait.jpg',
-  '/images/hero-bg.jpg',
-  '/images/chiva-portrait.jpg',
-  '/images/hero-bg.jpg',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-1.webp',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-2.webp',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-3.webp',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-4.webp',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-5.webp',
 ]
 
 /* ─── Reveal observer ─── */
