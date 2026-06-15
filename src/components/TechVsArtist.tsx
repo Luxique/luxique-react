@@ -127,9 +127,13 @@ export default function TechVsArtist() {
           .tva-vs { display:none; }
         }
         @media (max-width:600px) {
-          .quote-block { flex-direction:column; text-align:center; }
-          .quote-body { border-left:none; border-top:2px solid var(--gold); padding-left:0; padding-top:1.1rem; }
-          .quote-cite { justify-content:center; }
+          .quote-block { gap:16px; align-items:center; flex-direction:row!important; text-align:left!important; }
+          .quote-portrait { width:60px; }
+          .quote-body { border-left:2px solid var(--gold)!important; border-top:none!important; padding-left:16px!important; padding-top:0!important; }
+          .quote-body blockquote { font-size:1.05rem; line-height:1.36; }
+          .quote-cite { margin-top:.6rem; gap:.35rem; justify-content:flex-start!important; }
+          .quote-name { font-size:.86rem; }
+          .quote-role { font-size:.68rem; letter-spacing:.1em; }
         }
         @media (prefers-reduced-motion:reduce) {
           .tva-card,.curl path,.tva-vs,.quote-block { transition:none!important; animation:none!important; opacity:1!important; transform:none!important; }
