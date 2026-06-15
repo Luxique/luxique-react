@@ -109,11 +109,9 @@ export default function TechVsArtist() {
         }
         .quote-portrait img { width:100%; height:100%; object-fit:cover; display:block; }
         .quote-body {
-          padding-left:clamp(18px,2.4vw,28px);
-          border-left:2px solid var(--gold);
+          padding-left:0;
           padding-right:clamp(18px,2.4vw,28px);
           border-right:2px solid var(--gold);
-          padding-left:0;
         }
         .quote-body blockquote {
           font-family:var(--display); font-style:italic; font-weight:500;
