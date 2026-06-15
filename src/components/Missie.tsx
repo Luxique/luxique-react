@@ -132,13 +132,13 @@ export default function Missie() {
 
         {/* Floating image card */}
         <div className="relative z-[2] w-[min(420px,88%)] max-[860px]:w-[min(290px,74%)] max-[430px]:w-[70%] rounded-[20px] overflow-hidden shadow-[0_32px_80px_rgba(12,10,7,0.22),0_0_0_1px_rgba(196,162,101,0.1)] mt-6 max-[860px]:my-0 max-[860px]:mx-auto aspect-[831/1155] bg-[linear-gradient(145deg,#1e1a12,#141009)]">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-statement.jpg" alt="Educating future Artists" className="w-full h-full object-cover" />
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-statement.jpg" alt="Educating future Lash Artists" className="w-full h-full object-cover" />
 
-          {/* Dark gradient overlay */}
-          <div className="absolute bottom-0 left-0 right-0 h-[55%] bg-[linear-gradient(0deg,rgba(12,10,7,0.82),transparent)] flex flex-col justify-end p-6 pb-7">
+          {/* Dark gold gradient overlay */}
+          <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-[linear-gradient(0deg,rgba(48,36,14,0.88),rgba(48,36,14,0.4)_40%,transparent)] flex flex-col justify-end p-6 pb-7">
             <span className="block text-[9px] font-semibold tracking-[0.24em] uppercase text-[#C4A265] mb-2">Missie</span>
             <h2 className="font-['Cormorant_Garamond'] text-[clamp(22px,3.5vw,36px)] font-normal text-[#FAF8F4] leading-[1.1] tracking-[-0.01em]">
-              Educating future<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Artists.</span>
+              Educating future<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Lash Artists.</span>
             </h2>
           </div>
         </div>
