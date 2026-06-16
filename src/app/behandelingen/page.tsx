@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function BehandelingenPage() {
   return (
-    <div className="bg-[#F3EFE7]" style={{ paddingTop: 'var(--content-pad-top)' }}>
+    <div className="bg-[#F3EFE7]">
       <BehandelingenContent />
     </div>
   )
