@@ -200,7 +200,7 @@ function FAQSection() {
 /* ─── FASE 4: CLOSING CTA ─── */
 function ClosingCTA() {
   return (
-    <section className="relative py-[clamp(90px,14vw,170px)] text-center overflow-hidden">
+    <section className="relative py-[clamp(50px,7vw,80px)] text-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `linear-gradient(rgba(20,16,12,0.6), rgba(20,16,12,0.72)), url(${CLOSING_IMG})` }}
@@ -217,7 +217,7 @@ function ClosingCTA() {
         </h2>
         <a
           href="#boeken"
-          className="inline-flex items-center gap-[9px] mt-[30px] px-[30px] py-[15px] rounded-full font-medium text-[0.98rem] no-underline transition-transform hover:-translate-y-[2px]"
+          className="inline-flex items-center gap-[9px] mt-[20px] px-[30px] py-[15px] rounded-full font-medium text-[0.98rem] no-underline transition-transform hover:-translate-y-[2px]"
           style={{
             background: 'linear-gradient(180deg, #B08D4F, #9a7838)',
             color: '#0e0b09',
