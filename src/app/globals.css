@@ -32,6 +32,10 @@
   --bg2: #FAFAFA;
   --border: rgba(0,0,0,0.06);
   --page-bg: #F3EFE7;
+  --nav-total-h: 66px;
+  --nav-total-h-mobile: 58px;
+  --content-pad-top: calc(env(safe-area-inset-top) + 66px + 28px);
+  --content-pad-top-mobile: calc(env(safe-area-inset-top) + 58px + 28px);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

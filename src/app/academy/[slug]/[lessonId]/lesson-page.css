@@ -267,7 +267,7 @@
 
   /* Mobile close button in drawer */
 
-  .lp-stage { padding: 24px 18px calc(76px + env(safe-area-inset-bottom)); }
+  .lp-stage { padding: 24px 18px calc(76px + env(safe-area-inset-bottom)); padding-top: var(--content-pad-top-mobile); }
   .lesson-title { font-size: 28px; }
 
   /* FIX: hide topbar on mobile, use bottom bar instead */

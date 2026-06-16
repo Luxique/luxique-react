@@ -117,7 +117,7 @@ export default function DashboardPage() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center" style={{ paddingTop: 'var(--content-pad-top)' }}>
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <div className="text-[#888] text-[14px]">Laden...</div>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F3EFE7] pt-[calc(env(safe-area-inset-top)+6rem)]">
+    <div className="min-h-screen bg-[#F3EFE7]" style={{ paddingTop: 'var(--content-pad-top)' }}>
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Welcome */}
         <h1 className="font-['Cormorant_Garamond'] text-[clamp(28px,5vw,40px)] text-[#1a1a1a] mb-2">
