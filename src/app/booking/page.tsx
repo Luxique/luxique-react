@@ -1,15 +1,34 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase-client'
 import { LoginGate } from '@/components/LoginGate'
+import CalEmbed from '@/components/CalEmbed'
 
 export default function BookingPage() {
   const { user } = useAuth()
+  const [profileName, setProfileName] = useState<string | null>(null)
 
-  // Prefill Cal.com iframe with logged-in user's name + email (comfort only — koppeling loopt via user_id)
+  // Fetch the user's real name from profiles table
+  useEffect(() => {
+    if (!user?.id) return
+    supabase
+      .from('profiles')
+      .select('first_name, last_name, full_name')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          const name = data.first_name || data.full_name || null
+          setProfileName(name)
+        }
+      })
+  }, [user?.id])
+
   const userEmail = user?.email || ''
-  const firstName = user?.user_metadata?.first_name || (userEmail ? userEmail.split('@')[0] : '')
-  const calSrc = `https://cal.com/luxique?embed=&theme=light&layout=month_view&name=${encodeURIComponent(firstName)}&email=${encodeURIComponent(userEmail)}`
+  // Use real name from profile, or leave empty (NO email prefix fallback)
+  const attendeeName = profileName || ''
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] pt-[72px] max-md:pt-[62px]">
@@ -19,13 +38,14 @@ export default function BookingPage() {
         </h1>
         <div className="w-16 h-0.5 bg-[#D4AF37] mb-3" />
       </div>
-      {/* Full-height — LoginGate ensures Cal widget NEVER renders for unauthenticated users */}
       <div className="px-6 max-md:px-3" style={{ height: 'calc(100vh - 120px)' }}>
         <LoginGate returnUrl="/booking">
-          <iframe
-            src={calSrc}
-            title="Boek een afspraak"
-            className="w-full h-full border-0 rounded-xl"
+          <CalEmbed
+            calLink="luxique"
+            name={attendeeName}
+            email={userEmail}
+            theme="light"
+            layout="month_view"
           />
         </LoginGate>
       </div>
