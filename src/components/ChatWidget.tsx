@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -19,6 +20,8 @@ const ERROR_MESSAGE = 'Sorry, ik ben er even niet. Mail ons op info@luxique.nl'
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+  const hideOnAcademy = pathname?.startsWith('/academy') ?? false
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: WELCOME_MESSAGE }
   ])
@@ -76,7 +79,7 @@ export default function ChatWidget() {
       `}</style>
 
       {/* Chat button */}
-      <button
+      {!hideOnAcademy && (<button
         className="luxique-chat-btn"
         onClick={() => setOpen(!open)}
         style={{
@@ -92,10 +95,10 @@ export default function ChatWidget() {
         }}
       >
         {open ? '✕' : '💬'}
-      </button>
+      </button>)}
 
       {/* Chat window */}
-      {open && (
+      {open && !hideOnAcademy && (
         <div
           className="luxique-chat-window"
           style={{
