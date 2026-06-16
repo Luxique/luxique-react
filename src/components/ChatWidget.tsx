@@ -58,18 +58,19 @@ export default function ChatWidget() {
       <style>{`
         @media (max-width: 480px) {
           .luxique-chat-window {
-            bottom: 0 !important;
-            right: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            max-height: 80vh !important;
-            border-radius: 22px 22px 0 0 !important;
+            bottom: 12px !important;
+            right: 12px !important;
+            left: 12px !important;
+            width: calc(100vw - 24px) !important;
+            max-height: 70vh !important;
+            border-radius: 18px !important;
           }
           .luxique-chat-window .luxique-messages {
-            max-height: calc(80vh - 160px) !important;
+            max-height: calc(70vh - 180px) !important;
           }
           .luxique-chat-btn {
-            bottom: 80px !important;
+            bottom: 12px !important;
+            right: 12px !important;
           }
         }
       `}</style>
@@ -111,10 +112,23 @@ export default function ChatWidget() {
           {/* Header */}
           <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(196,162,101,0.18)', display: 'flex', alignItems: 'center', gap: 12 }}>
             <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chatbot-avatar.webp" alt="Lux" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ color: '#FAF8F4', fontSize: 14, fontWeight: 500 }}>LUXIQUE</div>
               <div style={{ color: '#C4A265', fontSize: 11, letterSpacing: '0.1em' }}>ONLINE</div>
             </div>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Chat sluiten"
+              style={{
+                minWidth: 44, minHeight: 44, width: 44, height: 44,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(196,162,101,0.08)', border: '1px solid rgba(196,162,101,0.18)',
+                borderRadius: 12, color: '#FAF8F4', fontSize: 20, cursor: 'pointer',
+                flexShrink: 0, lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
           </div>
 
           {/* Messages */}
