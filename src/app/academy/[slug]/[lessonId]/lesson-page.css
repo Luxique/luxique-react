@@ -259,23 +259,45 @@
   .lp-rail-overlay { display: block; }
   .rail-mobile-btn { display: inline-flex; }
 
-  .lp-stage { padding: 24px 18px calc(72px + env(safe-area-inset-bottom)); }
+  .lp-stage { padding: 24px 18px calc(76px + env(safe-area-inset-bottom)); }
   .lesson-title { font-size: 28px; }
-  .lp-topbar { padding: 12px 16px; }
 
-  /* FIX A: prev/next bar → sticky bottom on mobile */
-  .next-wrap {
+  /* FIX: hide topbar on mobile, use bottom bar instead */
+  .lp-topbar { display: none; }
+
+  /* Desktop next/prev hidden on mobile */
+  .next-wrap-desktop { display: none; }
+
+  /* Mobile 3-button bottom bar */
+  .mobile-nav-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 25;
     background: var(--paper);
     border-top: 1px solid var(--line);
-    border-radius: 18px 18px 0 0;
-    box-shadow: 0 -8px 30px -10px rgba(12,10,7,.12);
-    padding: 14px 16px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom));
-    margin: 0; border-bottom: none;
-    align-items: center;
+    box-shadow: 0 -8px 30px -10px rgba(12,10,7,.10);
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    display: flex; gap: 8px; align-items: center;
   }
-  .next-wrap .next-prev { font-size: 12px; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .next-btn { padding: 11px 20px; font-size: 13px; }
-  .next-hint { font-size: 11px; margin-top: 5px; }
+  .mn-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    border: 1px solid var(--line); background: var(--paper);
+    border-radius: 12px; padding: 8px 6px;
+    font-family: 'Outfit',sans-serif; font-size: 11px; color: var(--ink-soft);
+    cursor: pointer; transition: .2s; min-height: 44px; justify-content: center;
+  }
+  .mn-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .mn-arrow { font-size: 16px; line-height: 1; }
+  .mn-icon { font-size: 16px; line-height: 1; }
+  .mn-label { font-size: 10px; letter-spacing: .04em; }
+  .mn-next.ready {
+    background: linear-gradient(180deg,var(--gold-bright),var(--gold));
+    color: var(--dark); border-color: transparent; font-weight: 600;
+  }
+  .mn-next.ready .mn-arrow { font-size: 18px; }
+}
+
+/* Desktop: hide mobile bar, show desktop next-wrap */
+@media (min-width: 769px) {
+  .mobile-nav-bar { display: none; }
+  .next-wrap-desktop { display: flex; }
 }

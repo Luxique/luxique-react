@@ -522,8 +522,8 @@ export default function LessonPage() {
                 )
               })}
 
-              {/* Next/Prev navigation */}
-              <div className="next-wrap">
+              {/* Next/Prev navigation — desktop */}
+              <div className="next-wrap next-wrap-desktop">
                 {prevLessonNav ? (
                   <button className="next-prev" onClick={() => router.push(`/academy/${slug}/${prevLessonNav.id}`)}>← {prevLessonNav.title}</button>
                 ) : <div />}
@@ -538,6 +538,33 @@ export default function LessonPage() {
                   {!canProceed && hasPlayableVideo && <div className="next-hint">Kijk de video af om verder te gaan</div>}
                   {!canProceed && isQuizLesson && <div className="next-hint">Rond de quiz af om verder te gaan</div>}
                 </div>
+              </div>
+
+              {/* 3-button bottom bar — mobile only */}
+              <div className="mobile-nav-bar">
+                <button
+                  className="mn-btn mn-prev"
+                  onClick={() => prevLessonNav ? router.push(`/academy/${slug}/${prevLessonNav.id}`) : null}
+                  disabled={!prevLessonNav}
+                >
+                  <span className="mn-arrow">←</span>
+                  <span className="mn-label">Vorige</span>
+                </button>
+                <button
+                  className="mn-btn mn-lessons"
+                  onClick={() => setRailMobileOpen(true)}
+                >
+                  <span className="mn-icon">☰</span>
+                  <span className="mn-label">Lessen</span>
+                </button>
+                <button
+                  className={`mn-btn mn-next ${canProceed ? 'ready' : ''}`}
+                  onClick={() => canProceed ? (nextLessonNav ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : router.push(`/academy/${slug}`)) : null}
+                  disabled={!canProceed}
+                >
+                  <span className="mn-label">Volgende</span>
+                  <span className="mn-arrow">→</span>
+                </button>
               </div>
             </>
           )}
