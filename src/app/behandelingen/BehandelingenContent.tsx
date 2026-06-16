@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { LoginGate } from '@/components/LoginGate'
 
 /* ─── Config ─── */
 const CAL_URL = 'https://cal.com/luxique'
@@ -229,15 +230,21 @@ function Boeken() {
           Kies een datum en tijd die jou uitkomt. Ik kijk ernaar uit je te ontmoeten.
         </p>
         <div className="w-full reveal">
-          <iframe
-            ref={iframeRef}
-            src={`${CAL_URL}?embed=&theme=light&layout=month_view`}
-            title="Boek een afspraak"
-            className="w-full border-0 rounded-[18px] bg-transparent"
-            style={{ minHeight: '600px' }}
-            loading="lazy"
-            allow="clipboard-write"
-          />
+          <LoginGate
+            returnUrl="/behandelingen"
+            title="Log in om te boeken"
+            subtitle="Zodat we je afspraak aan je account koppelen en je boekingen altijd terugvindt in je dashboard."
+          >
+            <iframe
+              ref={iframeRef}
+              src={`${CAL_URL}?embed=&theme=light&layout=month_view`}
+              title="Boek een afspraak"
+              className="w-full border-0 rounded-[18px] bg-transparent"
+              style={{ minHeight: '600px' }}
+              loading="lazy"
+              allow="clipboard-write"
+            />
+          </LoginGate>
         </div>
       </div>
     </section>

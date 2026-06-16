@@ -1,33 +1,14 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { LoginGate } from '@/components/LoginGate'
 
 export default function BookingPage() {
-  const { user, loading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login?redirect=/booking')
-    }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-        <div className="text-[#888] text-[14px]">Laden...</div>
-      </div>
-    )
-  }
-
-  if (!user) return null
+  const { user } = useAuth()
 
   // Prefill Cal.com iframe with logged-in user's name + email (comfort only — koppeling loopt via user_id)
-  const userEmail = user.email || ''
-  // Try user.user_metadata.first_name, fallback to email prefix
-  const firstName = user.user_metadata?.first_name || (userEmail ? userEmail.split('@')[0] : '')
+  const userEmail = user?.email || ''
+  const firstName = user?.user_metadata?.first_name || (userEmail ? userEmail.split('@')[0] : '')
   const calSrc = `https://cal.com/luxique?embed=&theme=light&layout=month_view&name=${encodeURIComponent(firstName)}&email=${encodeURIComponent(userEmail)}`
 
   return (
@@ -38,13 +19,15 @@ export default function BookingPage() {
         </h1>
         <div className="w-16 h-0.5 bg-[#D4AF37] mb-3" />
       </div>
-      {/* Full-height iframe — no inner padding/margins */}
+      {/* Full-height — LoginGate ensures Cal widget NEVER renders for unauthenticated users */}
       <div className="px-6 max-md:px-3" style={{ height: 'calc(100vh - 120px)' }}>
-        <iframe
-          src={calSrc}
-          title="Boek een afspraak"
-          className="w-full h-full border-0 rounded-xl"
-        />
+        <LoginGate returnUrl="/booking">
+          <iframe
+            src={calSrc}
+            title="Boek een afspraak"
+            className="w-full h-full border-0 rounded-xl"
+          />
+        </LoginGate>
       </div>
     </div>
   )
