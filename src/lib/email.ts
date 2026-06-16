@@ -95,7 +95,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
       html: `
         <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
           <div style="background:#f6f1e7;padding:28px 32px;text-align:center;border-bottom:1px solid rgba(176,141,79,0.15)">
-            <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:300;letter-spacing:0.4em;font-size:15px;color:#1a1712">LUXIQUE</span>
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-logo-black.webp" alt="LUXIQUE" style="height:24px;width:auto" />
           </div>
           <div style="padding:36px 32px">
             <h1 style="font-size:26px;font-weight:400;color:#1a1712;margin:0 0 20px">Je afspraak is bevestigd ✨</h1>
@@ -160,7 +160,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       html: `
         <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
           <div style="background:#f6f1e7;padding:28px 32px;text-align:center;border-bottom:1px solid rgba(176,141,79,0.15)">
-            <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:300;letter-spacing:0.4em;font-size:15px;color:#1a1712">LUXIQUE</span>
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-logo-black.webp" alt="LUXIQUE" style="height:24px;width:auto" />
           </div>
           <div style="padding:36px 32px">
             <h1 style="font-size:26px;font-weight:400;color:#1a1712;margin:0 0 20px">Tot morgen bij LUXIQUE 💫</h1>
@@ -351,7 +351,7 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
       html: `
         <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
           <div style="background:#f6f1e7;padding:28px 32px;text-align:center;border-bottom:1px solid rgba(176,141,79,0.15)">
-            <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:300;letter-spacing:0.4em;font-size:15px;color:#1a1712">LUXIQUE</span>
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-logo-black.webp" alt="LUXIQUE" style="height:24px;width:auto" />
           </div>
           <div style="padding:36px 32px">
             <h1 style="font-size:26px;font-weight:400;color:#1a1712;margin:0 0 20px">Je afspraak is geannuleerd</h1>
