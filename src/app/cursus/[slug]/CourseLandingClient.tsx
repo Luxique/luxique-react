@@ -353,19 +353,19 @@ function HeroSection({ course, enrolled, freeLesson }: { course: Course; enrolle
               <span>{course.hero_cta_text || 'Join the Academy'} →</span>
             </a>
           )}
-          <a href="#curriculum" className="btn-outline">
-            Bekijk programma
-          </a>
         </div>
 
-        {/* Free lesson CTA — only if free lesson exists and user doesn't have access */}
-        {!enrolled && freeLesson && (
-          <div className="cta-row" style={{ marginTop: 12 }}>
-            <a href={`/academy/${course.slug}/${freeLesson.id}`} className="btn-outline" style={{ borderColor: 'rgba(196,162,101,0.4)' }}>
+        {/* Secondary CTA row — programma + free lesson side by side */}
+        <div className="cta-row" style={{ marginTop: 12, gap: 10 }}>
+          <a href="#curriculum" className="btn-outline" style={{ flex: 1, textAlign: 'center' }}>
+            Bekijk programma
+          </a>
+          {!enrolled && freeLesson && (
+            <a href={`/academy/${course.slug}/${freeLesson.id}`} className="btn-free-lesson" style={{ flex: 1, textAlign: 'center' }}>
               Bekijk gratis les
             </a>
-          </div>
-        )}
+          )}
+        </div>
         
         {/* Social Proof */}
         {course.hero_social_proof && (
