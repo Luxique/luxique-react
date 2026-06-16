@@ -109,9 +109,6 @@ export default function Navbar() {
               {label}
             </a>
           ))}
-          <a href="/booking" className="text-[12px] font-medium px-5 py-2 rounded-full bg-[#C4A265] text-[#0C0A07] hover:bg-[#DFC08A] transition-colors whitespace-nowrap ml-2">
-            Boek
-          </a>
         </div>
 
         {/* Login / Profile circle */}
@@ -132,7 +129,6 @@ export default function Navbar() {
                 {[
                   { icon: '📊', label: 'Dashboard', href: '/dashboard' },
                   { icon: '🎬', label: 'Cursussen', href: '/courses' },
-                  { icon: '📅', label: 'Boeken', href: '/booking' },
                   { icon: '👤', label: 'Profiel', href: '/profile' },
                 ].map(item => (
                   <a key={item.href} href={item.href} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">
