@@ -12,7 +12,7 @@ const PRICING = {
   refill: { name: 'Refill', price: 90, duration: '± 2 uur', desc: 'Houd je set vol en mooi. Aanbevolen elke 2 tot 3 weken.' },
 }
 
-const HERO_IMG = 'https://images.unsplash.com/photo-1583001931096-959e9a1a6223?q=80&w=1600&auto=format&fit=crop'
+const HERO_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-behandelingen.webp'
 
 const FAQ = [
   { q: 'Hoe lang duurt een behandeling?', a: 'Een nieuwe set duurt ongeveer 3 uur. Een refill (opvullen) duurt ongeveer 2 uur, afhankelijk van hoeveel lashes er bijgevuld moeten worden.' },
@@ -30,7 +30,7 @@ const SHOWCASE_PHOTOS = [
   'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-5.webp',
 ]
 
-const CLOSING_IMG = 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?q=80&w=1600&auto=format&fit=crop'
+const CLOSING_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/cta-behandelingen.webp'
 
 /* ─── Reveal observer ─── */
 function useReveal() {
