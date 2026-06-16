@@ -121,12 +121,8 @@ export default function CourseLandingClient({
       })
   }, [user, course.id])
 
-  // Redirect enrolled/admin users to the academy player
-  useEffect(() => {
-    if (shouldRedirect) {
-      router.replace(`/academy/${course.slug}`)
-    }
-  }, [shouldRedirect, course.slug, router])
+  // NOTE: redirect disabled — show lander with dynamic buttons instead
+  // Dashboard "Verder" still links directly to /academy/[slug]
 
   // Enrollment success from Stripe redirect
   useEffect(() => {
@@ -201,15 +197,8 @@ export default function CourseLandingClient({
   // Sort lessons by sort_order
   const sortedLessons = [...lessons].sort((a, b) => a.sort_order - b.sort_order)
 
-  // Redirect/loading state for enrolled users — show loader instead of lander
-  if (shouldRedirect) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#FAF8F4', gap: 12 }}>
-        <div style={{ fontSize: 28 }}>✦</div>
-        <div style={{ fontSize: 14, color: '#A39C8E' }}>Cursus openen…</div>
-      </div>
-    )
-  }
+  // Find free lesson if any
+  const freeLesson = sortedLessons.find(l => l.is_free)
 
   return (
     <div className="course-landing-v3">
@@ -234,7 +223,7 @@ export default function CourseLandingClient({
           </div>
         </div>
       )}
-      <HeroSection course={course} />
+      <HeroSection course={course} enrolled={enrolled} freeLesson={freeLesson} />
       
       {/* Social Proof Logos */}
       
@@ -301,7 +290,7 @@ function SiteNav({ _course }: { _course: Course }) {
 }
 
 // Hero Section Component
-function HeroSection({ course }: { course: Course }) {
+function HeroSection({ course, enrolled, freeLesson }: { course: Course; enrolled: boolean; freeLesson?: Lesson }) {
   const heroTitle = course.hero_title || course.title || ''
   const heroAccent = course.hero_title_accent || ''
   const heroSuffix = course.hero_title_suffix || ''
@@ -353,14 +342,30 @@ function HeroSection({ course }: { course: Course }) {
         
         {/* CTA Row */}
         <div className="cta-row">
-          <a href="#pricing" className="btn-primary">
-            <span className="flow" />
-            <span>{course.hero_cta_text || 'Join the Academy'} →</span>
-          </a>
+          {enrolled ? (
+            <a href={`/academy/${course.slug}`} className="btn-primary">
+              <span className="flow" />
+              <span>Ga naar de cursus →</span>
+            </a>
+          ) : (
+            <a href="#pricing" className="btn-primary">
+              <span className="flow" />
+              <span>{course.hero_cta_text || 'Join the Academy'} →</span>
+            </a>
+          )}
           <a href="#curriculum" className="btn-outline">
             Bekijk programma
           </a>
         </div>
+
+        {/* Free lesson CTA — only if free lesson exists and user doesn't have access */}
+        {!enrolled && freeLesson && (
+          <div className="cta-row" style={{ marginTop: 12 }}>
+            <a href={`/academy/${course.slug}/${freeLesson.id}`} className="btn-outline" style={{ borderColor: 'rgba(196,162,101,0.4)' }}>
+              Bekijk gratis les
+            </a>
+          </div>
+        )}
         
         {/* Social Proof */}
         {course.hero_social_proof && (
