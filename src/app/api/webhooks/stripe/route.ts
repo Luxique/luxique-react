@@ -222,23 +222,21 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
   try {
     const { sendConfirmationEmail, sendNewBookingNotification } = await import('@/lib/email')
     
-    // Use customer info stored in pending_bookings (set at insert time)
+    // Use customer info stored in pending_bookings (display only)
+    // user_id is the source of truth for email routing
     const customerEmail = booking.customer_email || null
     const customerName = booking.customer_name || null
     const enriched = {
       ...booking,
       customer_name: customerName,
       customer_email: customerEmail,
+      user_id: booking.user_id,
     }
     
-    console.log(`Mail: customer_email=${customerEmail}, customer_name=${customerName}`)
+    console.log(`Mail: user_id=${booking.user_id}, customer_email=${customerEmail}, customer_name=${customerName}`)
     
-    // Only send if we have an email
-    if (enriched.customer_email) {
-      await sendConfirmationEmail(booking.id, enriched)
-    } else {
-      console.warn('Mail: no customer_email in pending_bookings — cannot send confirmation')
-    }
+    // Send confirmation — getAccountEmail will look up via user_id
+    await sendConfirmationEmail(booking.id, enriched)
     await sendNewBookingNotification(enriched)
   } catch (err) {
     console.error('Mail: failed to send confirmation notifications (non-fatal):', err)

@@ -64,14 +64,10 @@ export async function GET(request: NextRequest) {
         ...booking,
         customer_name: calBooking?.customer_name || null,
         customer_email: calBooking?.customer_email || null,
+        user_id: booking.user_id,
       }
 
-      if (!enriched.customer_email) {
-        console.log(`Reminder cron: no email for ${booking.cal_booking_uid}, skipping`)
-        results.push({ uid: booking.cal_booking_uid, action: 'skipped', reason: 'no email' })
-        continue
-      }
-
+      // Reminder goes to account email via user_id — no need to check customer_email
       await sendReminderEmail(booking.id, enriched)
       results.push({ uid: booking.cal_booking_uid, action: 'reminder_sent' })
     } catch (err) {

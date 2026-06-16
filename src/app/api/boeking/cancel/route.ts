@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  // Verify ownership
-  if (booking.customer_email !== user.email) {
+  // Verify ownership — via user_id (never email)
+  if (booking.user_id !== user.id) {
     return NextResponse.json({ error: 'Not your booking' }, { status: 403 })
   }
 
@@ -86,12 +86,11 @@ export async function POST(request: NextRequest) {
       ...booking,
       cancelled_within_24h: within24h,
     })
-    if (booking.customer_email) {
-      await sendCustomerCancellationEmail({
-        ...booking,
-        cancelled_within_24h: within24h,
-      })
-    }
+    // Customer cancellation email goes to account email via user_id
+    await sendCustomerCancellationEmail({
+      ...booking,
+      cancelled_within_24h: within24h,
+    })
   } catch (mailErr) {
     console.error('Cancel: mail failed (non-fatal):', mailErr)
   }

@@ -26,6 +26,17 @@ interface BookingData {
   status?: string
   customer_name?: string | null
   customer_email?: string | null
+  user_id?: string | null
+}
+
+async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
+  if (!userId) return fallback || null
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: authUser } = await supabase.auth.admin.getUserById(userId)
+  return authUser?.user?.email || fallback || null
 }
 
 async function markMailSent(bookingId: string, column: string) {
@@ -65,6 +76,13 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
       return
     }
 
+    // Send to ACCOUNT email (via user_id), never the Cal-typed email
+    const accountEmail = await getAccountEmail(booking.user_id, booking.customer_email)
+    if (!accountEmail) {
+      console.error('Mail: no account email found for booking', booking.cal_booking_uid, 'user_id:', booking.user_id)
+      return
+    }
+
     const date = formatDateNL(booking.slot_start)
     const time = formatTimeNL(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
@@ -72,7 +90,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
 
     const { error } = await resend.emails.send({
       from: FROM,
-      to: booking.customer_email || '',
+      to: accountEmail,
       subject: 'Je afspraak bij LUXIQUE is bevestigd ✨',
       html: `
         <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
@@ -125,12 +143,19 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       return
     }
 
+    // Send to ACCOUNT email (via user_id), never the Cal-typed email
+    const accountEmail = await getAccountEmail(booking.user_id, booking.customer_email)
+    if (!accountEmail) {
+      console.error('Mail: no account email for reminder', booking.cal_booking_uid)
+      return
+    }
+
     const date = formatDateNL(booking.slot_start)
     const time = formatTimeNL(booking.slot_start)
 
     const { error } = await resend.emails.send({
       from: FROM,
-      to: booking.customer_email || '',
+      to: accountEmail,
       subject: 'Tot morgen bij LUXIQUE 💫',
       html: `
         <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
@@ -303,6 +328,13 @@ export async function sendCancellationNotification(booking: BookingData & { canc
 // ============================================================
 export async function sendCustomerCancellationEmail(booking: BookingData & { cancelled_within_24h?: boolean }) {
   try {
+    // Send to ACCOUNT email (via user_id), never the Cal-typed email
+    const accountEmail = await getAccountEmail(booking.user_id, booking.customer_email)
+    if (!accountEmail) {
+      console.error('Mail: no account email for cancellation', booking.cal_booking_uid)
+      return
+    }
+
     const date = formatDateNL(booking.slot_start)
     const time = formatTimeNL(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
@@ -314,7 +346,7 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
 
     const { error } = await resend.emails.send({
       from: FROM,
-      to: booking.customer_email || '',
+      to: accountEmail,
       subject: 'Je afspraak bij LUXIQUE is geannuleerd',
       html: `
         <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
