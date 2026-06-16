@@ -202,8 +202,8 @@ function ClosingCTA() {
   return (
     <section className="relative py-[clamp(50px,7vw,80px)] text-center overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `linear-gradient(rgba(20,16,12,0.6), rgba(20,16,12,0.72)), url(${CLOSING_IMG})` }}
+        className="absolute inset-0 bg-cover"
+        style={{ backgroundImage: `linear-gradient(rgba(20,16,12,0.6), rgba(20,16,12,0.72)), url(${CLOSING_IMG})`, backgroundPosition: 'center 20%' }}
       />
       <div className="relative z-[2] max-w-[1180px] mx-auto px-[28px]">
         <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#D8B97A] font-medium mb-[18px]">
