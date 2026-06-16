@@ -13,7 +13,7 @@
 
 /* ── Hero ── */
 .lxq-hero {
-  padding: 64px 0 56px;
+  padding: 120px 0 56px;
   display: grid;
   grid-template-columns: 1.4fr 0.9fr;
   gap: 48px;
