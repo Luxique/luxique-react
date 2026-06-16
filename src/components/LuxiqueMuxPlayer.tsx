@@ -17,11 +17,15 @@ interface LuxiqueMuxPlayerProps {
   courseId?: string
   /** If true, this is free content — skip signed token request */
   isFree?: boolean
+  /** Called when video playback progresses (0-100 percentage) */
+  onProgress?: (pct: number) => void
+  /** Called when video ends */
+  onEnded?: () => void
 }
 
-export default function LuxiqueMuxPlayer({ 
-  playbackId, 
-  variant = 'lesson', 
+export default function LuxiqueMuxPlayer({
+  playbackId,
+  variant = 'lesson',
   title,
   style,
   className,
@@ -29,6 +33,8 @@ export default function LuxiqueMuxPlayer({
   userId,
   courseId,
   isFree = false,
+  onProgress,
+  onEnded,
 }: LuxiqueMuxPlayerProps) {
   const variantClass = variant === 'hero' ? 'hero-mux-player' : 'lesson-mux-player'
   const [token, setToken] = useState<string | undefined>()
@@ -97,6 +103,13 @@ export default function LuxiqueMuxPlayer({
       volume={1}
       tokens={token ? { playback: token } : undefined}
       metadata={{ video_title: title || 'Luxique' }}
+      onTimeUpdate={(e: Event) => {
+        const el = e.target as HTMLVideoElement
+        if (!el.duration || el.duration === 0) return
+        const pct = (el.currentTime / el.duration) * 100
+        onProgress?.(pct)
+      }}
+      onEnded={() => onEnded?.()}
       style={{
         width: '100%',
         aspectRatio: '16/9',

@@ -58,6 +58,7 @@ export default function LessonPage() {
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
+  const hasMarkedRef = useRef(false)  // idempotency guard — markComplete fires once per lesson
 
   // Rail
   const lastBlockRef = useRef<HTMLDivElement>(null)
@@ -138,9 +139,15 @@ export default function LessonPage() {
   const currentIdx = allLessons.findIndex(l => l.id === lessonId)
   const prevLessonNav = currentIdx > 0 ? allLessons[currentIdx - 1] : null
   const nextLessonNav = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null
-  const completedCount = allLessons.filter(l => progress.get(l.id)?.completed).length
-  const totalCount = allLessons.length
+  // Exclude exam from progress calculation — exam is a separate milestone
+  const contentLessons = allLessons.filter(l => l.lesson_type !== 'exam')
+  const examLesson = allLessons.find(l => l.lesson_type === 'exam')
+  const completedCount = contentLessons.filter(l => progress.get(l.id)?.completed).length
+  const totalCount = contentLessons.length
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  const examStatus: 'passed' | 'not_started' | null = examLesson
+    ? (progress.get(examLesson.id)?.completed ? 'passed' : 'not_started')
+    : null
   const quizBlocks = blocks.filter(b => b.type === 'quiz')
   const isQuizLesson = lesson?.lesson_type === 'quiz'
   const isExamLesson = lesson?.lesson_type === 'exam'
@@ -168,15 +175,32 @@ export default function LessonPage() {
         ? isLessonComplete
         : isLessonComplete
 
+  // Reset idempotency guard when lesson changes
+  useEffect(() => {
+    hasMarkedRef.current = false
+    setVideoCompleted(false)
+  }, [lessonId])
+
   /* ── Handlers ─────────────────────────────────── */
   const markComplete = useCallback(async (lid?: string) => {
     const targetId = lid || lessonId
     if (!user || !lesson) return
+    // IDEMPOTENCY: ref guard prevents multiple fires from timeupdate (~4x/sec)
+    if (hasMarkedRef.current) return
+    hasMarkedRef.current = true
     setVideoCompleted(true)
-    await supabase.from('lesson_progress').upsert({
+    console.log('[completion] markComplete fired for lesson:', targetId)
+    const { error } = await supabase.from('lesson_progress').upsert({
       user_id: user.id, lesson_id: targetId, course_id: lesson.course_id,
       completed: true, completed_at: new Date().toISOString(),
     }, { onConflict: 'user_id,lesson_id' })
+    if (error) {
+      console.error('[completion] upsert error:', error.message)
+      hasMarkedRef.current = false
+      setVideoCompleted(false)
+    } else {
+      console.log('[completion] upsert OK — completed=true for', targetId)
+    }
     setProgress(prev => { const n = new Map(prev); n.set(targetId, { ...prev.get(targetId)!, completed: true }); return n })
   }, [user, lesson, lessonId])
 
@@ -187,10 +211,20 @@ export default function LessonPage() {
     }
   }, [isQuizLesson, quizComplete, isLessonComplete, markComplete])
 
-  // Note: video completion via timeupdate/ended events was tied to raw mux-player ref.
-  // With LuxiqueMuxPlayer (React component), completion is tracked via scroll-to-end
-  // and the IntersectionObserver below. If needed, add onEnded/onTimeUpdate callbacks
-  // to LuxiqueMuxPlayer and wire them here.
+  // Video completion: fire markComplete at >=90% or on ended
+  const handleVideoProgress = useCallback((pct: number) => {
+    if (pct >= 90 && !hasMarkedRef.current) {
+      console.log('[completion] video progress >=90%:', pct.toFixed(1) + '%')
+      markComplete()
+    }
+  }, [markComplete])
+
+  const handleVideoEnded = useCallback(() => {
+    if (!hasMarkedRef.current) {
+      console.log('[completion] video ended event')
+      markComplete()
+    }
+  }, [markComplete])
 
   // Scroll-to-end completion for content lessons without video
   useEffect(() => {
@@ -310,8 +344,13 @@ export default function LessonPage() {
         <div className="rail-prog">
           <div className="ring" style={{ background: `conic-gradient(var(--gold) ${progressPct}%, var(--cream-2) 0)` }}><span>{progressPct}%</span></div>
           <div className="prog-full">
-            <span className="lbl">{completedCount} van {totalCount} voltooid · {progressPct}%</span>
+            <span className="lbl">{completedCount} van {totalCount} lessen voltooid · {progressPct}%</span>
             <div className="bar"><i style={{ width: `${progressPct}%` }} /></div>
+            {examStatus && (
+              <span className="lbl" style={{ marginTop: 6, display: 'block', fontSize: 11, color: examStatus === 'passed' ? 'var(--green)' : 'var(--muted)' }}>
+                Eindtoets: {examStatus === 'passed' ? '✓ Geslaagd' : 'nog niet gestart'}
+              </span>
+            )}
           </div>
         </div>
         <div className="rail-list">{railItems}</div>
@@ -323,7 +362,7 @@ export default function LessonPage() {
           <div className="nav-mini">
             <button className="rail-mobile-btn" onClick={() => setRailMobileOpen(true)}>☰ Lessen</button>
             {prevLessonNav && <button onClick={() => router.push(`/academy/${slug}/${prevLessonNav.id}`)}>← Vorige</button>}
-            {nextLessonNav && <button onClick={() => router.push(`/academy/${slug}/${nextLessonNav.id}`)}>Volgende →</button>}
+            {nextLessonNav && <button onClick={() => canProceed ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : null} disabled={!canProceed} style={{ opacity: canProceed ? 1 : 0.4, cursor: canProceed ? 'pointer' : 'not-allowed' }}>Volgende →</button>}
           </div>
         </div>
 
@@ -370,6 +409,8 @@ export default function LessonPage() {
                               userId={user?.id}
                               courseId={lesson.course_id}
                               isFree={lesson.is_free}
+                              onProgress={handleVideoProgress}
+                              onEnded={handleVideoEnded}
                             />
                             <div className="video-scrub" style={{ width: done ? '100%' : '0%' }} />
                           </div>
