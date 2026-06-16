@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Review } from '@/lib/reviews'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import { getLessonDisplays } from '@/lib/lesson-display'
@@ -82,6 +83,9 @@ export default function CourseLandingClient({
   const [enrolled, setEnrolled] = useState(false)
   const [showEnrollSuccess, setShowEnrollSuccess] = useState(false)
   const [profileFirstName, setProfileFirstName] = useState('')
+  const [checkingAccess, setCheckingAccess] = useState(true)
+  const [shouldRedirect, setShouldRedirect] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -93,17 +97,36 @@ export default function CourseLandingClient({
 
   // Check enrollment when user is loaded
   useEffect(() => {
-    if (!user) return
+    if (!user) { setCheckingAccess(false); return }
     fetch(`/api/enrollments/check?user_id=${user.id}&course_id=${course.id}`)
       .then(r => r.json())
       .then(data => {
-        setEnrolled(data.enrolled === true)
+        const isEnrolled = data.enrolled === true
+        setEnrolled(isEnrolled)
+        if (isEnrolled || data.role === 'admin') {
+          setShouldRedirect(true)
+        }
+        setCheckingAccess(false)
       })
-      .catch(() => {})
-    // Fetch profile name
-    supabase.from('profiles').select('first_name').eq('id', user.id).single()
-      .then(({ data }) => { if (data?.first_name) setProfileFirstName(data.first_name) })
+      .catch(() => setCheckingAccess(false))
+    // Fetch profile name + admin check
+    supabase.from('profiles').select('first_name, role, role_level').eq('id', user.id).single()
+      .then(({ data }: { data: { first_name?: string; role?: string; role_level?: number } | null }) => {
+        if (data?.first_name) setProfileFirstName(data.first_name)
+        if ((data?.role_level ?? 0) >= 100 || data?.role === 'admin') {
+          setEnrolled(true)
+          setShouldRedirect(true)
+          setCheckingAccess(false)
+        }
+      })
   }, [user, course.id])
+
+  // Redirect enrolled/admin users to the academy player
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.replace(`/academy/${course.slug}`)
+    }
+  }, [shouldRedirect, course.slug, router])
 
   // Enrollment success from Stripe redirect
   useEffect(() => {
@@ -177,6 +200,16 @@ export default function CourseLandingClient({
 
   // Sort lessons by sort_order
   const sortedLessons = [...lessons].sort((a, b) => a.sort_order - b.sort_order)
+
+  // Redirect/loading state for enrolled users — show loader instead of lander
+  if (shouldRedirect) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#FAF8F4', gap: 12 }}>
+        <div style={{ fontSize: 28 }}>✦</div>
+        <div style={{ fontSize: 14, color: '#A39C8E' }}>Cursus openen…</div>
+      </div>
+    )
+  }
 
   return (
     <div className="course-landing-v3">

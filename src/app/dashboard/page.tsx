@@ -216,7 +216,7 @@ export default function DashboardPage() {
                 <h2 className="font-['Cormorant_Garamond'] text-[20px] text-[#1a1a1a] mb-4">Verder kijken</h2>
                 <div className="grid md:grid-cols-2 gap-3">
                   {courses.slice(0, 2).map(c => (
-                    <a key={c.id} href={`/courses/${c.slug}`} className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-[#eee] hover:border-[#D4AF37]/30 transition">
+                                      <a key={c.id} href={`/academy/${c.slug}`} className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-[#eee] hover:border-[#D4AF37]/30 transition">
                       <div className="w-16 h-16 rounded-xl bg-[#f5f5f5] flex items-center justify-center text-2xl shrink-0">🎬</div>
                       <div className="min-w-0">
                         <h3 className="font-medium text-[14px] truncate">{c.title}</h3>
@@ -255,7 +255,7 @@ export default function DashboardPage() {
             {courses.length > 0 ? (
               <div className="space-y-3">
                 {courses.map(c => (
-                  <a key={c.id} href={`/courses/${c.slug}`} className="flex items-center gap-5 bg-white rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37] transition group">
+                                    <a key={c.id} href={`/academy/${c.slug}`} className="flex items-center gap-5 bg-white rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37] transition group">
                     <div className="w-20 h-20 rounded-xl bg-[#f5f5f5] flex items-center justify-center text-3xl shrink-0">🎬</div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-[16px] mb-1">{c.title}</h3>

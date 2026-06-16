@@ -27,5 +27,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ enrolled: data && data.length > 0 })
+  // Also check admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, role_level')
+    .eq('id', user_id)
+    .single()
+
+  const isAdmin = (profile?.role_level >= 100) || (profile?.role === 'admin')
+
+  return NextResponse.json({ enrolled: (data && data.length > 0) || isAdmin, role: isAdmin ? 'admin' : 'student' })
 }
