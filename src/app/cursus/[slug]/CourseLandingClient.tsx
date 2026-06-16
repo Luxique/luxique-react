@@ -537,7 +537,7 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
 
   const priceEuros = course.price_cents / 100
 
-  const lessonCount = lessons.length
+  const lessonCount = lessons.filter(l => (l.lesson_type || 'content') !== 'exam').length
   const totalSeconds = lessons.reduce((sum, l) => sum + (l.duration_seconds || 0), 0)
   const totalMinutes = Math.round(totalSeconds / 60)
   const hoursLabel = totalMinutes >= 60 ? `${Math.floor(totalMinutes / 60)} uur` : ''
