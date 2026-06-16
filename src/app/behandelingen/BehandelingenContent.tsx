@@ -160,7 +160,7 @@ function Tarieven() {
           </a>
         </div>
         <p className="reveal text-center mt-[28px] text-[0.9rem] text-[#46403A]">
-          Een consultatie van 10 minuten is altijd gratis.
+          Elke set begint met een persoonlijk gesprek — we kijken samen naar wat bij jou past.
         </p>
       </div>
     </section>
