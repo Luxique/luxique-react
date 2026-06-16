@@ -90,8 +90,8 @@ export default function Navbar() {
 
         <div className="relative h-[52px] max-md:h-[48px] max-md:flex-1">
           <div className="h-[52px] max-md:h-[48px] max-md:w-full rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center shrink-0 md:shrink md:flex-none md:px-[26px] max-md:px-4">
-            <a href="/" className="font-['Avenir_Next'] max-md:font-['Josefin_Sans'] text-[18px] max-md:text-[15px] font-[400] tracking-[0.45em] max-md:tracking-[0.35em] text-[#0C0A07] uppercase whitespace-nowrap select-none">
-              Luxique
+            <a href="/" className="flex items-center justify-center select-none">
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-logo-black.webp" alt="LUXIQUE" className="h-[20px] max-md:h-[16px] w-auto" />
             </a>
           </div>
           {isAcademyPage && (
