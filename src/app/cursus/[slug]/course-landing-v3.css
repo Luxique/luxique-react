@@ -167,29 +167,32 @@
   }
 
   /* === BUTTONS === */
-  .btn-primary {
+  .btn-lander {
     background: var(--gold); color: var(--dark);
     padding: 14px 30px; border-radius: 999px; border: none;
     font-family: var(--font-body); font-size: 14px; font-weight: 500;
     letter-spacing: 0.02em; cursor: pointer; transition: all 0.3s;
     display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
     position: relative; overflow: hidden;
+    clip-path: inset(0 round 999px); /* mobile Safari: clips blur before it escapes */
     box-shadow: 0 0 30px calc(8px * var(--glow-strength)) rgba(196,162,101, 0.4);
   }
-  .btn-primary:hover {
+  .btn-lander:hover {
     background: var(--gold-bright);
     transform: translateY(-2px);
     box-shadow: 0 14px 40px rgba(196, 162, 101, 0.35);
   }
-  a.btn-primary {
+  a.btn-lander {
     display: inline-flex;
     border-radius: 999px;
     overflow: hidden;
+    clip-path: inset(0 round 999px);
   }
   
   /* CTA met FLOWY ORGANISCHE inner gradient */
-  .btn-primary .flow {
+  .btn-lander .flow {
     position: absolute; inset: -60%; z-index: 0; pointer-events: none;
+    border-radius: 999px; /* glow layer must be round too, not just clipped */
     background:
       radial-gradient(circle at 28% 38%, var(--gold-white), transparent 38%),
       radial-gradient(circle at 72% 62%, var(--gold-bright), transparent 34%),
@@ -197,7 +200,7 @@
     filter: blur(14px); opacity: 0.85;
     animation: flow 7s ease-in-out infinite;
   }
-  .btn-primary > span:last-child { 
+  .btn-lander > span:last-child { 
     position: relative; 
     z-index: 1; 
   }
@@ -1161,7 +1164,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ambient-glow::before { animation: none !important; }
   .gradient-bg, .gradient-bg-2, .gradient-bg-3 { animation: none !important; }
-  .pricing-stage::after, .pricing-card::before, .btn-primary .flow { animation: none !important; }
+  .pricing-stage::after, .pricing-card::before, .btn-lander .flow { animation: none !important; }
 }
 
 /* ── Section containers: allow glow positioning ── */

@@ -344,12 +344,12 @@ function HeroSection({ course, enrolled, freeLesson }: { course: Course; enrolle
         {/* CTA Row */}
         <div className="cta-row">
           {enrolled ? (
-            <a href={`/academy/${course.slug}`} className="btn-primary">
+            <a href={`/academy/${course.slug}`} className="btn-lander">
               <span className="flow" />
               <span>Ga naar de cursus →</span>
             </a>
           ) : (
-            <a href="#pricing" className="btn-primary">
+            <a href="#pricing" className="btn-lander">
               <span className="flow" />
               <span>{course.hero_cta_text || 'Join the Academy'} →</span>
             </a>
@@ -593,12 +593,12 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
               </div>
               
               {enrolled ? (
-                <a href={`/academy/${courseSlug}`} className="btn-primary" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
+                <a href={`/academy/${courseSlug}`} className="btn-lander" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
                   <span className="flow" />
                   <span>Ga naar de cursus →</span>
                 </a>
               ) : !user ? (
-                <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
+                <button type="button" className="btn-lander" style={{ width: '100%', justifyContent: 'center' }} onClick={onJoin}>
                   <span className="flow" />
                   <span>Maak gratis account</span>
                 </button>
@@ -608,14 +608,16 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
                   <input type="checkbox" checked={herroepingAgreed} onChange={(e) => setHerroepingAgreed(e.target.checked)} className="mt-1 shrink-0" style={{ width: '18px', height: '18px', accentColor: '#B08D4F' }} />
                   <span>Ik begrijp dat ik met deze aankoop direct toegang krijg tot de online cursus (digitale inhoud) en doe daarmee uitdrukkelijk afstand van mijn herroepingsrecht. Na betaling kan ik de aankoop niet meer herroepen of restitueren. <a href="/voorwaarden#art-5-herroeping" target="_blank" style={{ color: '#B08D4F', textDecoration: 'none', borderBottom: '1px solid rgba(176,141,79,.4)' }}>Algemene Voorwaarden</a></span>
                 </label>
-                <button type="button" className="btn-primary" style={{ width: '100%', justifyContent: 'center', opacity: herroepingAgreed ? 1 : 0.4, cursor: herroepingAgreed ? 'pointer' : 'not-allowed', pointerEvents: herroepingAgreed ? 'auto' : 'none' }} onClick={onJoin}>
+                <button type="button" className="btn-lander" style={{ width: '100%', justifyContent: 'center', opacity: herroepingAgreed ? 1 : 0.4, cursor: herroepingAgreed ? 'pointer' : 'not-allowed', pointerEvents: herroepingAgreed ? 'auto' : 'none' }} onClick={onJoin}>
                   <span className="flow" />
                   <span>Koop cursus — € {course.price_cents ? (course.price_cents / 100).toLocaleString('nl-NL') : '0'}</span>
                 </button>
                 </>
               )}
               
-              <PaymentLogos />
+              <div style={{ marginTop: 28 }}>
+                <PaymentLogos />
+              </div>
               
               <div className="fine">Veilig betalen via Stripe</div>
             </div>
@@ -726,17 +728,17 @@ function FinalCTASection({ course, onJoin, user, enrolled, courseSlug }: { cours
           <p>{course.final_cta_lead}</p>
         )}
         {enrolled ? (
-          <a href={`/academy/${courseSlug}`} className="btn-primary" style={{ fontSize: 16, padding: '20px 44px', textDecoration: 'none' }}>
+          <a href={`/academy/${courseSlug}`} className="btn-lander" style={{ fontSize: 16, padding: '20px 44px', textDecoration: 'none' }}>
             <span className="flow" />
             <span>Ga naar de cursus →</span>
           </a>
         ) : !user ? (
-          <button type="button" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
+          <button type="button" className="btn-lander" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
             <span className="flow" />
             <span>Maak gratis account</span>
           </button>
         ) : (
-          <button type="button" className="btn-primary" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
+          <button type="button" className="btn-lander" style={{ fontSize: 16, padding: '20px 44px' }} onClick={onJoin}>
             <span className="flow" />
             <span>Koop cursus — € {course.price_cents ? (course.price_cents / 100).toLocaleString('nl-NL') : '0'}</span>
           </button>
