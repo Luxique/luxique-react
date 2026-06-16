@@ -312,7 +312,7 @@ function BookSection() {
         </div>
 
         {/* Widget with glow container */}
-        <div className="relative z-[3] max-w-[560px] mx-auto px-[8px] reveal" style={{ paddingBottom: '120px' }}>
+        <div className="relative z-[3] w-full max-w-[680px] mx-auto px-[8px] reveal" style={{ paddingBottom: '120px' }}>
           <LoginGate
             returnUrl="/behandelingen#boeken"
             title="Log in om te boeken"
