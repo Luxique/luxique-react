@@ -182,14 +182,14 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
 
   if (!booking) {
     console.error('Deposit paid but booking not found:', calBookingUid)
-    // TODO: refund via Stripe
+    await autoRefund(session, 'Booking not found')
     return
   }
 
   if (booking.status === 'cancelled' || booking.status === 'expired') {
-    console.error('Deposit paid but booking already', booking.status, ':', calBookingUid)
-    // Edge case: payment arrived after timeout cancellation
-    // TODO: refund and notify customer to rebook
+    console.error('CRITICAL: Deposit paid but booking already', booking.status, ':', calBookingUid)
+    // Payment arrived after timeout cancellation — auto-refund as last resort
+    await autoRefund(session, `Booking was ${booking.status}`)
     return
   }
 
@@ -242,5 +242,34 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
     await sendNewBookingNotification(enriched)
   } catch (err) {
     console.error('Mail: failed to send confirmation notifications (non-fatal):', err)
+  }
+}
+
+/**
+ * LAST-RESORT AUTO-REFUND — should NEVER fire if commits 1-3 work correctly.
+ * If it does, it's a CRITICAL alarm that something bypassed the idempotency guards.
+ */
+async function autoRefund(session: { metadata?: { cal_booking_uid?: string }; payment_intent?: string | { id: string }; [key: string]: unknown }, reason: string) {
+  const paymentIntentId = typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : session.payment_intent?.id
+
+  if (!paymentIntentId) {
+    console.error('CRITICAL [autoRefund]: No payment_intent ID — cannot refund. Reason:', reason)
+    return
+  }
+
+  try {
+    const Stripe = (await import('stripe')).default
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      reason: 'duplicate',
+    })
+
+    console.error(`CRITICAL [autoRefund]: Refunded ${paymentIntentId} (€${(refund.amount / 100).toFixed(2)}) — reason: ${reason} — booking: ${session.metadata?.cal_booking_uid}. THIS SHOULD NEVER HAPPEN. Investigate commits 1-3 guards.`)
+  } catch (err) {
+    console.error('CRITICAL [autoRefund]: Refund FAILED for', paymentIntentId, ':', err)
   }
 }
