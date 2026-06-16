@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, Suspense, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { PaymentLogos } from '@/components/PaymentLogos'
+import { useAuth } from '@/lib/auth-context'
 
 interface Booking {
   id: string
@@ -51,6 +52,8 @@ function CountdownTimer({ expiresAt, onExpire }: { expiresAt: string; onExpire: 
 function BetalenContent() {
   const searchParams = useSearchParams()
   const uid = searchParams.get('uid') || searchParams.get('cal.bookingUid') || searchParams.get('bookingUid')
+  const { user, session, loading: authLoading } = useAuth()
+  const router = useRouter()
 
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
@@ -58,6 +61,13 @@ function BetalenContent() {
   const [paying, setPaying] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [isExpired, setIsExpired] = useState(false)
+
+  // Auth guard — must be logged in to pay
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push(`/login?redirect=/boeking/betalen${uid ? '?uid=' + encodeURIComponent(uid) : ''}`)
+    }
+  }, [authLoading, user, router, uid])
 
   // Check if booking is already expired on load
   useEffect(() => {
@@ -75,6 +85,17 @@ function BetalenContent() {
       const data = await res.json()
       if (data.booking) {
         setBooking(data.booking)
+        // Stamp user_id onto this booking now that we know it exists
+        if (session?.access_token) {
+          fetch('/api/boeking/link-user', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ uid: bookingUid }),
+          }).catch(() => {}) // non-blocking, best-effort
+        }
         return true
       }
       if (data.error === 'Booking not found') {
@@ -86,6 +107,17 @@ function BetalenContent() {
         const fallbackData = await fallbackRes.json()
         if (fallbackData.booking) {
           setBooking(fallbackData.booking)
+          // Stamp user_id onto this booking
+          if (session?.access_token) {
+            fetch('/api/boeking/link-user', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({ uid: bookingUid }),
+            }).catch(() => {}) // non-blocking, best-effort
+          }
           return true
         }
       }
@@ -93,7 +125,7 @@ function BetalenContent() {
     } catch {
       return false
     }
-  }, [])
+  }, [session])
 
   useEffect(() => {
     if (!uid) {

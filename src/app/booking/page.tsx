@@ -24,6 +24,12 @@ export default function BookingPage() {
 
   if (!user) return null
 
+  // Prefill Cal.com iframe with logged-in user's name + email (comfort only — koppeling loopt via user_id)
+  const userEmail = user.email || ''
+  // Try user.user_metadata.first_name, fallback to email prefix
+  const firstName = user.user_metadata?.first_name || (userEmail ? userEmail.split('@')[0] : '')
+  const calSrc = `https://cal.com/luxique?embed=&theme=light&layout=month_view&name=${encodeURIComponent(firstName)}&email=${encodeURIComponent(userEmail)}`
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] pt-[72px] max-md:pt-[62px]">
       <div className="mx-auto px-6 pt-4 pb-2 max-md:px-3 max-md:pt-2">
@@ -35,7 +41,7 @@ export default function BookingPage() {
       {/* Full-height iframe — no inner padding/margins */}
       <div className="px-6 max-md:px-3" style={{ height: 'calc(100vh - 120px)' }}>
         <iframe
-          src="https://cal.com/luxique?embed=&theme=light&layout=month_view"
+          src={calSrc}
           title="Boek een afspraak"
           className="w-full h-full border-0 rounded-xl"
         />
