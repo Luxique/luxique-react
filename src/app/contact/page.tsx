@@ -16,7 +16,7 @@ export default function ContactPage() {
 
         <div className="grid md:grid-cols-2 gap-12">
           {/* Form */}
-          <div className="bg-white rounded-2xl p-8 border border-[#eee]">
+          <div className="bg-[#FBF8F2] rounded-2xl p-8 border border-[#eee]">
             {sent ? (
               <div className="text-center py-8">
                 <div className="text-4xl mb-4">✨</div>

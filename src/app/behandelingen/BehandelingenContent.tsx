@@ -69,7 +69,7 @@ function useReveal() {
 /* ─── Components ─── */
 function Hero() {
   return (
-    <section className="bg-white rounded-[28px] text-center px-[28px] py-[80px] md:py-[100px]">
+    <section className="bg-[#FBF8F2] rounded-[28px] text-center px-[28px] py-[80px] md:py-[100px]">
       <span className="block text-[11px] tracking-[0.26em] uppercase text-[#8A8378] font-medium mb-[14px]">— Behandelingen —</span>
       <h1 className="font-['Outfit'] font-medium tracking-[-0.02em] leading-[1.02] text-[clamp(40px,6.5vw,80px)] text-[#1A1815] mb-[20px] max-w-[800px] mx-auto">
         Lashes afgestemd<br />op <span className="font-['Cormorant_Garamond'] italic font-normal">jouw blik</span>
@@ -219,7 +219,7 @@ function Boeken() {
   }, [])
 
   return (
-    <section id="boek" className="bg-white rounded-[28px] px-[28px] py-[60px] md:px-[60px] md:py-[80px]" style={{ scrollMarginTop: '90px' }}>
+    <section id="boek" className="bg-[#FBF8F2] rounded-[28px] px-[28px] py-[60px] md:px-[60px] md:py-[80px]" style={{ scrollMarginTop: '90px' }}>
       <div className="max-w-[880px] mx-auto text-center">
         <span className="block text-[11px] tracking-[0.26em] uppercase text-[#8A8378] font-medium mb-[14px] reveal">— Plan je afspraak —</span>
         <h2 className="font-['Outfit'] font-medium text-[clamp(32px,4.5vw,56px)] tracking-[-0.02em] text-[#1A1815] mb-[16px] reveal">

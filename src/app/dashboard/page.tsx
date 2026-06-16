@@ -144,7 +144,7 @@ export default function DashboardPage() {
         <p className="text-[14px] text-[#888] mb-8">Jouw LXQ dashboard</p>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 bg-white rounded-full p-1 border border-[#eee] w-fit">
+        <div className="flex gap-1 mb-8 bg-[#FBF8F2] rounded-full p-1 border border-[#eee] w-fit">
           {tabs.map(t => (
             <button
               key={t.key}
@@ -197,12 +197,12 @@ export default function DashboardPage() {
                 { label: 'Afspraak boeken', value: '', icon: '+', href: '/behandelingen' },
               ].map((s, i) => (
                 s.href ? (
-                  <a key={i} href={s.href} className="bg-white rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37]/30 text-center transition">
+                  <a key={i} href={s.href} className="bg-[#FBF8F2] rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37]/30 text-center transition">
                     <div className="text-xl mb-1">{s.icon}</div>
                     <div className="text-[11px] font-medium text-[#D4AF37]">{s.label}</div>
                   </a>
                 ) : (
-                  <div key={i} className="bg-white rounded-2xl p-5 border border-[#eee] text-center">
+                  <div key={i} className="bg-[#FBF8F2] rounded-2xl p-5 border border-[#eee] text-center">
                     <div className="text-2xl font-['Cormorant_Garamond'] text-[#1a1a1a] mb-1">{s.value}</div>
                     <div className="text-[11px] text-[#888]">{s.label}</div>
                   </div>
@@ -216,7 +216,7 @@ export default function DashboardPage() {
                 <h2 className="font-['Cormorant_Garamond'] text-[20px] text-[#1a1a1a] mb-4">Verder kijken</h2>
                 <div className="grid md:grid-cols-2 gap-3">
                   {courses.slice(0, 2).map(c => (
-                                      <a key={c.id} href={`/academy/${c.slug}`} className="flex items-center gap-4 bg-white rounded-2xl p-4 border border-[#eee] hover:border-[#D4AF37]/30 transition">
+                                      <a key={c.id} href={`/academy/${c.slug}`} className="flex items-center gap-4 bg-[#FBF8F2] rounded-2xl p-4 border border-[#eee] hover:border-[#D4AF37]/30 transition">
                       <div className="w-16 h-16 rounded-xl bg-[#f5f5f5] flex items-center justify-center text-2xl shrink-0">🎬</div>
                       <div className="min-w-0">
                         <h3 className="font-medium text-[14px] truncate">{c.title}</h3>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                 <h2 className="font-['Cormorant_Garamond'] text-[20px] text-[#1a1a1a] mb-4">Komende afspraken</h2>
                 <div className="space-y-2">
                   {bookings.filter(b => new Date(b.appointment_date) > new Date()).map(b => (
-                    <div key={b.id} className="bg-white rounded-2xl p-4 border border-[#eee] flex items-center justify-between">
+                    <div key={b.id} className="bg-[#FBF8F2] rounded-2xl p-4 border border-[#eee] flex items-center justify-between">
                       <div>
                         <span className="font-medium text-[14px]">{b.treatment_name}</span>
                         <p className="text-[12px] text-[#888] mt-0.5">{new Date(b.appointment_date).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p>
@@ -255,7 +255,7 @@ export default function DashboardPage() {
             {courses.length > 0 ? (
               <div className="space-y-3">
                 {courses.map(c => (
-                                    <a key={c.id} href={`/academy/${c.slug}`} className="flex items-center gap-5 bg-white rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37] transition group">
+                                    <a key={c.id} href={`/academy/${c.slug}`} className="flex items-center gap-5 bg-[#FBF8F2] rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37] transition group">
                     <div className="w-20 h-20 rounded-xl bg-[#f5f5f5] flex items-center justify-center text-3xl shrink-0">🎬</div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-[16px] mb-1">{c.title}</h3>
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl p-12 border border-[#eee] text-center">
+              <div className="bg-[#FBF8F2] rounded-2xl p-12 border border-[#eee] text-center">
                 <div className="text-4xl mb-4">✦</div>
                 <p className="text-[14px] text-[#888] mb-4">Je bent nog niet ingeschreven voor een cursus</p>
                 <a href="/courses" className="inline-block px-8 py-3 rounded-full bg-[#D4AF37] text-white font-semibold text-[14px] hover:bg-[#C5A028] transition">Bekijk cursussen</a>
@@ -282,7 +282,7 @@ export default function DashboardPage() {
             
             {/* Booking detail modal */}
             {selectedBooking ? (
-              <div className="bg-white rounded-2xl p-6 border border-[#eee] mb-4">
+              <div className="bg-[#FBF8F2] rounded-2xl p-6 border border-[#eee] mb-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-['Cormorant_Garamond'] text-[22px]">{selectedBooking.event_type}</h3>
                   <button onClick={() => { setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false) }} className="text-[#888] hover:text-[#1a1a1a] text-[20px]">✕</button>
@@ -356,7 +356,7 @@ export default function DashboardPage() {
                         <button 
                           key={b.id} 
                           onClick={() => setSelectedBooking(b)}
-                          className={`w-full text-left bg-white rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37] transition flex items-center justify-between ${isCancelled ? 'opacity-60' : ''}`}>
+                          className={`w-full text-left bg-[#FBF8F2] rounded-2xl p-5 border border-[#eee] hover:border-[#D4AF37] transition flex items-center justify-between ${isCancelled ? 'opacity-60' : ''}`}>
                           <div className={isCancelled ? 'line-through' : ''}>
                             <span className={`font-medium text-[15px] ${isCancelled ? 'text-red-500' : ''}`}>{b.event_type}</span>
                             <p className="text-[12px] text-[#888] mt-1">{formatDateNL(b.slot_start)} om {formatTimeNL(b.slot_start)} uur</p>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="bg-white rounded-2xl p-12 border border-[#eee] text-center">
+                  <div className="bg-[#FBF8F2] rounded-2xl p-12 border border-[#eee] text-center">
                     <div className="text-4xl mb-4">📅</div>
                     <p className="text-[14px] text-[#888] mb-4">Nog geen boekingen gevonden</p>
                     <a href="/behandelingen" className="inline-block px-8 py-3 rounded-full bg-[#D4AF37] text-white font-semibold text-[14px] hover:bg-[#C5A028] transition">Boek een afspraak</a>

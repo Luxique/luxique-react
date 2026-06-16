@@ -43,7 +43,7 @@ export default function FAQPage() {
 
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+            <div key={i} className="bg-[#FBF8F2] rounded-2xl border border-[#eee] overflow-hidden">
               <button
                 onClick={() => setOpen(open === i ? null : i)}
                 className="w-full text-left px-6 py-5 flex items-center justify-between"
