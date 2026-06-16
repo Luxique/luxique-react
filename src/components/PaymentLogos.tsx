@@ -11,14 +11,15 @@ const PAYMENT_SVGS: Record<string, React.ReactElement> = {
 }
 
 export function PaymentLogos() {
+  const tileStyle: React.CSSProperties = { display: 'inline-flex', height: 28, width: 42, borderRadius: 6, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }
   return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-      <span className="paylogo" title="iDEAL / Wero" style={{ display: 'inline-flex', height: 32, width: 48, borderRadius: 7, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }}>{PAYMENT_SVGS.ideal}</span>
-      <span className="paylogo" title="Klarna" style={{ display: 'inline-flex', height: 32, width: 48, borderRadius: 7, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }}>{PAYMENT_SVGS.klarna}</span>
-      <span className="paylogo" title="PayPal" style={{ display: 'inline-flex', height: 32, width: 48, borderRadius: 7, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }}>{PAYMENT_SVGS.paypal}</span>
-      <span className="paylogo" title="Mastercard" style={{ display: 'inline-flex', height: 32, width: 48, borderRadius: 7, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }}>{PAYMENT_SVGS.mastercard}</span>
-      <span className="paylogo" title="Maestro" style={{ display: 'inline-flex', height: 32, width: 48, borderRadius: 7, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }}>{PAYMENT_SVGS.maestro}</span>
-      <span className="paylogo" title="Bancontact" style={{ display: 'inline-flex', height: 32, width: 48, borderRadius: 7, overflow: 'hidden', boxShadow: '0 1px 3px rgba(26,23,18,.10)' }}>{PAYMENT_SVGS.bancontact}</span>
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
+      <span className="paylogo" title="iDEAL / Wero" style={tileStyle}>{PAYMENT_SVGS.ideal}</span>
+      <span className="paylogo" title="Klarna" style={tileStyle}>{PAYMENT_SVGS.klarna}</span>
+      <span className="paylogo" title="PayPal" style={tileStyle}>{PAYMENT_SVGS.paypal}</span>
+      <span className="paylogo" title="Mastercard" style={tileStyle}>{PAYMENT_SVGS.mastercard}</span>
+      <span className="paylogo" title="Maestro" style={tileStyle}>{PAYMENT_SVGS.maestro}</span>
+      <span className="paylogo" title="Bancontact" style={tileStyle}>{PAYMENT_SVGS.bancontact}</span>
       <style>{`.paylogo svg { display:block; height:100%; width:100%; }`}</style>
     </div>
   )
