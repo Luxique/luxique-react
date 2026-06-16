@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface Consent {
   stats: boolean
@@ -32,6 +33,8 @@ export default function CookieBanner() {
   const [stats, setStats] = useState(false)
   const [mkt, setMkt] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
+  const hideOnAcademy = pathname?.startsWith('/academy') ?? false
 
   useEffect(() => {
     setMounted(true)
@@ -185,7 +188,7 @@ export default function CookieBanner() {
       )}
 
       {/* REOPEN PILL */}
-      {showPill && !showBanner && !showModal && (
+      {showPill && !showBanner && !showModal && !hideOnAcademy && (
         <button className="ck-reopen show" onClick={() => setShowModal(true)}>
           <span className="dot"></span>Cookievoorkeuren
         </button>
