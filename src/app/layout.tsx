@@ -33,11 +33,11 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <head>
-        <meta name="theme-color" content="#0C0A07" />
-        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#F3EFE7" />
+        <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body style={{ background: '#0C0A07' }}>
+      <body>
         <AuthProvider>
           <Navbar />
           <main>{children}</main>
