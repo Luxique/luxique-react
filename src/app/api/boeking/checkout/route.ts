@@ -73,6 +73,19 @@ export async function POST(request: NextRequest) {
   const Stripe = (await import('stripe')).default
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
+  // Idempotency: reuse existing Stripe session if still valid (not expired, not paid)
+  if (booking.stripe_session_id) {
+    try {
+      const existing = await stripe.checkout.sessions.retrieve(booking.stripe_session_id)
+      // If session is still open (not paid, not expired), redirect to it
+      if (existing.url && existing.status === 'open' && existing.expires_at && new Date(existing.expires_at * 1000) > new Date()) {
+        return NextResponse.json({ checkoutUrl: existing.url, reused: true })
+      }
+    } catch {
+      // Session not found or error — create new one
+    }
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['ideal', 'card', 'bancontact', 'klarna'],
@@ -96,6 +109,9 @@ export async function POST(request: NextRequest) {
       booking_id: booking.id,
       type: 'deposit',
     },
+  }, {
+    // Stripe idempotency key: same booking = same session, prevents duplicate charges
+    idempotencyKey: `deposit-${uid}-${booking.id}`,
   })
 
   // Store stripe session id + agreed_at timestamp
