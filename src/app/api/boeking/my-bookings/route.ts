@@ -20,16 +20,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   }
 
-  const userEmail = user.email
-  if (!userEmail) {
-    return NextResponse.json({ error: 'No email on account' }, { status: 400 })
-  }
-
-  // Fetch all bookings for this customer — only those that were actually paid
+  // Fetch all bookings for this user — ONLY via user_id (never email)
+  // user_id is stamped when the user lands on the betalen page while logged in
   const { data: bookings, error } = await supabase
     .from('pending_bookings')
     .select('*')
-    .eq('customer_email', userEmail)
+    .eq('user_id', user.id)
     .not('stripe_session_id', 'is', null)
     .order('slot_start', { ascending: false })
 
