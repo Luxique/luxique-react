@@ -193,13 +193,25 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
     return
   }
 
-  // Mark as paid
+  // IDEMPOTENCY: if booking is already paid, this is a duplicate webhook delivery — do NOTHING
+  if (booking.status === 'paid') {
+    console.log('Deposit webhook: booking already paid, skipping (idempotent):', calBookingUid)
+    return
+  }
+
+  // Mark as paid — DB unique constraint (pending_bookings_one_paid_per_booking) is the final guard
   const { error } = await supabase
     .from('pending_bookings')
     .update({ status: 'paid' })
     .eq('id', booking.id)
+    .eq('status', 'pending') // only update if still pending (optimistic concurrency)
 
   if (error) {
+    // If this is a unique constraint violation, the booking was already marked paid by a concurrent request
+    if (error.code === '23505') {
+      console.log('Deposit webhook: unique constraint hit — already paid by concurrent request (idempotent):', calBookingUid)
+      return
+    }
     console.error('Failed to mark booking as paid:', error)
     return
   }
