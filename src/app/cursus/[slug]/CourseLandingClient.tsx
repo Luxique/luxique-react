@@ -6,6 +6,7 @@ import type { Review } from '@/lib/reviews'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import AmbientGlow from '@/components/AmbientGlow'
+import { PaymentLogos } from '@/components/PaymentLogos'
 import AuthModal from '@/components/AuthModal'
 import ComparisonTable from '@/components/ComparisonTable'
 import IsDitIetsVoorJou from '@/components/IsDitIetsVoorJou'
@@ -614,19 +615,7 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
                 </>
               )}
               
-              <div className="payment-logos">
-                {/* Visa */}
-                <svg className="pay-svg" viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="16" rx="3" fill="#fff"/><text x="24" y="12" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="9" fill="#1A1F71">VISA</text></svg>
-                {/* Mastercard */}
-                <svg className="pay-svg" viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="16" rx="3" fill="#fff"/><circle cx="20" cy="8" r="5" fill="#EB001B" opacity="0.9"/><circle cx="28" cy="8" r="5" fill="#F79E1B" opacity="0.9"/><circle cx="24" cy="8" r="5" fill="#EB001B" opacity="0.6" style={{ mixBlendMode: 'multiply' }}/></svg>
-                {/* iDEAL */}
-                <svg className="pay-svg" viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="16" rx="3" fill="#fff"/><rect x="4" y="3" width="40" height="10" rx="2" fill="#CC0066"/><text x="24" y="11" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="6" fill="#fff">iDEAL</text></svg>
-                {/* Apple Pay */}
-                <svg className="pay-svg" viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="16" rx="3" fill="#fff"/><text x="24" y="12" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="600" fontSize="8" fill="#000">Pay
-                </text></svg>
-                {/* Klarna */}
-                <svg className="pay-svg" viewBox="0 0 48 16" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="16" rx="3" fill="#fff"/><rect x="4" y="4" width="40" height="8" rx="4" fill="#FFA8CD"/><text x="24" y="10" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="6" fill="#000">Klarna</text></svg>
-              </div>
+              <PaymentLogos />
               
               <div className="fine">Veilig betalen via Stripe</div>
             </div>

@@ -874,21 +874,7 @@
     flex-wrap: wrap;
     margin-top: 22px;
   }
-  .pricing-card .pay-logo {
-    background: rgba(250, 248, 244, 0.06);
-    border: 1px solid var(--border-soft);
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-size: 10px;
-    color: var(--cream-dim);
-    font-weight: 600;
-    letter-spacing: 0.03em;
-  }
-  .pricing-card .pay-svg {
-    width: 44px; height: 16px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
+  /* payment logos styled via PaymentLogos component */
 
   /* === FAQ === */
   .faq-wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
