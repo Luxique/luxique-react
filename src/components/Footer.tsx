@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div>
-            <div className="font-['Avenir_Next'] text-[16px] tracking-[0.2em] font-[100] uppercase mb-3">LUXIQUE</div>
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-academy-white.jpg" alt="LUXIQUE Academy" className="h-[28px] w-auto mb-3" />
             <p className="text-[12px] text-white/40 leading-relaxed">
               The art of lashes. Perfected.
             </p>
