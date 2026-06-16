@@ -58,6 +58,8 @@ export default function LessonPage() {
   const [loading, setLoading] = useState(true)
   const [enrolled, setEnrolled] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
+  const [showConvertModal, setShowConvertModal] = useState(false)
+  const convertDismissedRef = useRef(false) // one dismissal per session
   const hasMarkedRef = useRef(false)  // idempotency guard — markComplete fires once per lesson
 
   // Rail
@@ -207,6 +209,10 @@ export default function LessonPage() {
       setVideoCompleted(false)
     } else {
       console.log('[completion] upsert OK — completed=true for', targetId)
+      // Show conversion modal if: free lesson, user logged in, not enrolled, not admin, not already dismissed
+      if (isFreeLesson && !hasAccess && !convertDismissedRef.current) {
+        setTimeout(() => setShowConvertModal(true), 800)
+      }
     }
     setProgress(prev => { const n = new Map(prev); n.set(targetId, { ...prev.get(targetId)!, completed: true }); return n })
   }, [user, lesson, lessonId])
@@ -585,6 +591,58 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+
+      {/* Conversion modal — after free lesson completion */}
+      {showConvertModal && (
+        <div
+          onClick={() => { setShowConvertModal(false); convertDismissedRef.current = true }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(12,10,7,0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#FBF8F2', borderRadius: 22, maxWidth: 440, width: '100%',
+              padding: '36px 32px 28px', textAlign: 'center',
+              boxShadow: '0 40px 100px -30px rgba(0,0,0,0.5)',
+              border: '1px solid rgba(196,162,101,0.18)',
+            }}
+          >
+            <div style={{ fontSize: 32, marginBottom: 12 }}>✦</div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 28, fontWeight: 500, color: '#1C1814', marginBottom: 10 }}>
+              Klaar voor de volledige cursus?
+            </h2>
+            <p style={{ fontSize: 15, color: '#4A433B', lineHeight: 1.6, marginBottom: 24 }}>
+              Je hebt de gratis les afgerond. Krijg toegang tot alle lessen, de eindtoets en je certificaat.
+            </p>
+            <a
+              href={`/cursus/${slug}`}
+              style={{
+                display: 'inline-block', background: 'linear-gradient(180deg,#E4C98A,#C4A265)',
+                color: '#0C0A07', borderRadius: 12, padding: '14px 36px',
+                fontFamily: "'Outfit',sans-serif", fontWeight: 600, fontSize: 15,
+                textDecoration: 'none', marginBottom: 12,
+              }}
+            >
+              Schrijf je in →
+            </a>
+            <br />
+            <button
+              onClick={() => { setShowConvertModal(false); convertDismissedRef.current = true }}
+              style={{
+                background: 'transparent', border: 'none', color: '#A39C8E',
+                fontSize: 13, cursor: 'pointer', fontFamily: "'Outfit',sans-serif",
+                padding: '8px 16px',
+              }}
+            >
+              Misschien later
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
