@@ -38,12 +38,15 @@
 }
 .lp-rail.expanded .rail-brand { opacity: 1; width: auto; }
 
-.rail-toggle {
-  width: 30px; height: 30px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--paper);
+.rail-toggle { display: none; }
+.rail-close-btn {
+  width: 44px; height: 44px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--cream);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  color: var(--ink-soft); font-size: 18px; flex: 0 0 auto;
+  color: var(--ink); font-size: 18px; flex: 0 0 auto;
 }
+.lp-rail.expanded .rail-close-btn { display: flex; }
+.lp-rail:not(.expanded) .rail-close-btn { display: flex; }
 
 .rail-prog {
   padding: 16px 0; display: flex; justify-content: center;
@@ -263,12 +266,6 @@
   .rail-mobile-btn { display: inline-flex; }
 
   /* Mobile close button in drawer */
-  .rail-close-mobile {
-    display: inline-flex; min-width: 44px; min-height: 44px; width: 44px; height: 44px;
-    align-items: center; justify-content: center; border-radius: 10px;
-    background: var(--cream); border: 1px solid var(--line); color: var(--ink);
-    font-size: 18px; cursor: pointer; flex-shrink: 0;
-  }
 
   .lp-stage { padding: 24px 18px calc(76px + env(safe-area-inset-bottom)); }
   .lesson-title { font-size: 28px; }
@@ -311,5 +308,4 @@
 @media (min-width: 769px) {
   .mobile-nav-bar { display: none; }
   .next-wrap-desktop { display: flex; }
-  .rail-close-mobile { display: none !important; }
 }

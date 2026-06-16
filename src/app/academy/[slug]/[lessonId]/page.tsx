@@ -339,13 +339,11 @@ export default function LessonPage() {
       <nav className={`lp-rail ${railOpen ? 'expanded' : ''} ${railMobileOpen ? 'mobile-open' : ''}`}>
         <div className="rail-head">
           <span className="rail-brand">{courseTitle}</span>
-          {/* Mobile close button */}
-          <button className="rail-close-mobile" onClick={() => setRailMobileOpen(false)} aria-label="Sluiten">✕</button>
-          <button className="rail-toggle" onClick={() => {
-            // On mobile: just close the drawer. On desktop: toggle expanded state.
+          {/* Single close button — 44x44 touch target */}
+          <button className="rail-close-btn" onClick={() => {
             if (window.innerWidth <= 768) { setRailMobileOpen(false) }
             else { setRailOpen(!railOpen) }
-          }}>{railOpen ? '‹' : '›'}</button>
+          }} aria-label={railOpen ? "Sluiten" : "Lessen"}>{railOpen ? '✕' : '☰'}</button>
         </div>
         <div className="rail-prog">
           <div className="ring" style={{ background: `conic-gradient(var(--gold) ${progressPct}%, var(--cream-2) 0)` }}><span>{progressPct}%</span></div>
