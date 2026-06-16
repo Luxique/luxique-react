@@ -208,20 +208,16 @@ export default function CourseLandingClient({
       {!previewMode && <div className="gradient-bg-2" />}
       {!previewMode && <div className="gradient-bg-3" />}
 
-      {/* Enrollment Success Banner */}
+      {/* Order Confirmation Banner */}
       {showEnrollSuccess && (
         <div className="enroll-success-banner">
-          <div className="enroll-success-content">
+          <button className="enroll-success-close" onClick={() => setShowEnrollSuccess(false)} aria-label="Sluiten">✕</button>
+          <div className="enroll-success-body">
             <span className="enroll-success-icon">✓</span>
-            <div>
-              <p className="enroll-success-title">
-                {profileFirstName ? `Hey ${profileFirstName},` : 'Geweldig,'} welkom bij de Academy!
-              </p>
-              <p className="enroll-success-sub">Je bent ingeschreven. Start nu met je eerste les.</p>
-            </div>
-            <a href={`/academy/${course.slug}`} className="enroll-success-btn">Ga naar cursus →</a>
-            <button className="enroll-success-close" onClick={() => setShowEnrollSuccess(false)}>✕</button>
+            <p className="enroll-success-title">Bedankt voor je bestelling!</p>
+            <p className="enroll-success-sub">Je hebt toegang tot {course.title}. Start nu met je eerste les.</p>
           </div>
+          <a href={`/academy/${course.slug}`} className="enroll-success-btn">Ga naar de cursus →</a>
         </div>
       )}
       <HeroSection course={course} enrolled={enrolled} freeLesson={freeLesson} />
