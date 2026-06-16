@@ -25,7 +25,7 @@ export default function BookingSection() {
               <p className="text-[12px] text-[var(--text2)] leading-relaxed mb-3">
                 Volledig op maat. Inclusief uitgebreid consult en lash mapping.
               </p>
-              <div className="text-[11px] text-[var(--text3)]">90 minuten</div>
+              <div className="text-[11px] text-[var(--text3)]">180 minuten</div>
             </div>
 
             {/* Opvullen */}
@@ -35,14 +35,14 @@ export default function BookingSection() {
               <p className="text-[12px] text-[var(--text2)] leading-relaxed mb-3">
                 Jouw persoonlijke lash map staat opgeslagen. We recreëren je set.
               </p>
-              <div className="text-[11px] text-[var(--text3)]">60 minuten</div>
+              <div className="text-[11px] text-[var(--text3)]">120 minuten</div>
             </div>
           </div>
         ) : (
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="font-['Cormorant_Garamond'] text-[18px]">
-                {selected === 'nieuwe-set' ? 'Nieuwe Set — 90 min' : 'Opvullen — 60 min'}
+                {selected === 'nieuwe-set' ? 'Nieuwe Set — 180 min' : 'Opvullen — 120 min'}
               </span>
               <button onClick={() => setSelected(null)} className="text-[12px] text-[var(--text2)] border border-[var(--border)] rounded-xl px-4 py-2 hover:border-[var(--rose)] transition">
                 ← Andere behandeling

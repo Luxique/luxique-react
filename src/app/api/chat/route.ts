@@ -38,7 +38,7 @@ LUXIQUE is een lash studio en online academy van Chiva, lash artist & educator, 
 
 ### Behandelingen
 - **Nieuwe set:** €130. Volledig op maat, elke gewenste stijl/vorm mogelijk, afgestemd op jouw ogen. Reservering ± 3 uur.
-- **Opvullen (refill):** €90, ongeacht of je na 1, 2 of 3 weken komt. Na 3 weken wordt een nieuwe set geplaatst (€130). Duur ± 1 uur.
+- **Opvullen (refill):** €90, ongeacht of je na 1, 2 of 3 weken komt. Na 3 weken wordt een nieuwe set geplaatst (€130). Duur ± 2 uur.
 - Aanbevolen opvulritme: elke 2-3 weken.
 - De behandeling is pijnloos.
 - **Aanbetaling:** Bij het boeken van een behandeling betaal je 50% van de prijs als aanbetaling online (via iDEAL, creditcard, Apple Pay of Klarna). De resterende 50% voldoe je in de studio, direct na je behandeling.

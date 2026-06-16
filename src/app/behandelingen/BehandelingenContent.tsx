@@ -9,12 +9,12 @@ const STUDIO_BG = '/images/hero-bg.jpg'
 const STEPS = [
   { num: '01', title: 'De Consultatie', body: 'We bespreken jouw wensen en wat je van je lashes verwacht.', chip: '10 min · Gratis' },
   { num: '02', title: 'De Styling', body: 'Op basis van je oogvorm en wensen bepalen we de perfecte styling.', chip: 'Uniek ontwerp' },
-  { num: '03', title: 'Het Werk', body: 'Elke lash met precisie geplaatst — comfortabel en pijnloos.', chip: '± 2 uur · Nieuwe set' },
+  { num: '03', title: 'Het Werk', body: 'Elke lash met precisie geplaatst — comfortabel en pijnloos.', chip: '± 3 uur · Nieuwe set' },
   { num: '04', title: 'Nazorg', body: 'Persoonlijk advies zodat je set lang mooi en je wimpers gezond blijven.', chip: '2–3 wk · Refill' },
 ]
 
 const FAQ = [
-  { q: 'Hoe lang duurt een behandeling?', a: 'Een nieuwe set duurt ongeveer 2 uur. Een refill is sneller — reken op ongeveer een uur, afhankelijk van hoeveel lashes er bijgevuld moeten worden.' },
+  { q: 'Hoe lang duurt een behandeling?', a: 'Een nieuwe set duurt ongeveer 3 uur. Een refill (opvullen) duurt ongeveer 2 uur, afhankelijk van hoeveel lashes er bijgevuld moeten worden.' },
   { q: 'Hoe vaak moet ik komen voor een refill?', a: 'Voor een vol resultaat raad ik aan om elke 2 tot 3 weken langs te komen. Je natuurlijke wimpers vallen uit en groeien aan, dus een regelmatige refill houdt je set er op zijn best uit.' },
   { q: 'Doet het pijn?', a: 'Nee. De behandeling is volledig pijnloos. Je ligt comfortabel met gesloten ogen — veel klanten vinden het zo ontspannend dat ze in slaap vallen.' },
   { q: 'Hoe verzorg ik mijn lashes thuis?', a: 'Je krijgt na de behandeling persoonlijk nazorgadvies. Kort gezegd: de eerste 24 uur niet nat maken, voorzichtig reinigen, en niet wrijven. Ik leg je alles uit tijdens je afspraak.' },
