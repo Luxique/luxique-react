@@ -212,31 +212,34 @@
   .btn-outline {
     background: rgba(250, 248, 244, 0.04);
     color: var(--cream);
-    padding: 14px 30px; border-radius: 999px;
+    padding: 13px 20px; border-radius: 999px;
     border: 1px solid var(--border-soft);
     font-family: var(--font-body); font-size: 14px; font-weight: 400;
     cursor: pointer; transition: all 0.3s; text-decoration: none;
-    display: inline-flex; align-items: center; gap: 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     backdrop-filter: blur(10px);
+    white-space: nowrap;
+    flex: 1; min-height: 48px;
   }
   .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
-  /* Free lesson CTA — cream pill with soft gold glow */
+  /* Free lesson CTA — cream pill, secondary weight */
   .btn-free-lesson {
-    background: #FBF8F2;
-    color: #1C1814;
-    padding: 14px 30px;
+    background: rgba(251, 248, 242, 0.08);
+    color: var(--cream);
+    padding: 13px 20px;
     border-radius: 999px;
-    border: 1px solid rgba(196,162,101,0.3);
-    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    border: 1px solid rgba(196,162,101,0.2);
+    font-family: var(--font-body); font-size: 14px; font-weight: 400;
     cursor: pointer; transition: all 0.3s; text-decoration: none;
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    box-shadow: 0 0 24px rgba(196,162,101,0.15), 0 2px 8px rgba(0,0,0,0.06);
+    white-space: nowrap;
+    flex: 1; min-height: 48px;
   }
   .btn-free-lesson:hover {
-    background: #FFF;
-    border-color: rgba(196,162,101,0.5);
-    box-shadow: 0 0 32px rgba(196,162,101,0.25), 0 4px 12px rgba(0,0,0,0.08);
+    background: rgba(251, 248, 242, 0.12);
+    border-color: rgba(196,162,101,0.4);
+    color: var(--gold);
   }
 
   /* === MAIN === */
@@ -392,6 +395,24 @@
   .cta-row {
     margin-top: 16px;
     display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  }
+  /* Primary CTA — full width, stands alone */
+  .cta-row-primary {
+    margin-top: 20px;
+    display: flex; justify-content: center;
+  }
+  .cta-row-primary .btn-lander {
+    width: 100%;
+    justify-content: center;
+  }
+  /* Secondary CTA duo — 50/50, equal height */
+  .cta-row-secondary {
+    margin-top: 10px;
+    display: flex; gap: 10px;
+    align-items: stretch;
+  }
+  .cta-row-secondary > * {
+    flex: 1;
   }
   .price-meta {
     margin-top: 6px;

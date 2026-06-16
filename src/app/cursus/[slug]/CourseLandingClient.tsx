@@ -342,7 +342,7 @@ function HeroSection({ course, enrolled, freeLesson }: { course: Course; enrolle
         )}
         
         {/* CTA Row */}
-        <div className="cta-row">
+        <div className="cta-row cta-row-primary">
           {enrolled ? (
             <a href={`/academy/${course.slug}`} className="btn-lander">
               <span className="flow" />
@@ -357,12 +357,12 @@ function HeroSection({ course, enrolled, freeLesson }: { course: Course; enrolle
         </div>
 
         {/* Secondary CTA row — programma + free lesson side by side */}
-        <div className="cta-row" style={{ marginTop: 12, gap: 10 }}>
-          <a href="#curriculum" className="btn-outline" style={{ flex: 1, textAlign: 'center' }}>
+        <div className="cta-row cta-row-secondary">
+          <a href="#curriculum" className="btn-outline">
             Bekijk programma
           </a>
           {!enrolled && freeLesson && (
-            <a href={`/academy/${course.slug}/${freeLesson.id}`} className="btn-free-lesson" style={{ flex: 1, textAlign: 'center' }}>
+            <a href={`/academy/${course.slug}/${freeLesson.id}`} className="btn-free-lesson">
               Bekijk gratis les
             </a>
           )}
