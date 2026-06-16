@@ -94,7 +94,7 @@ export default function CourseInteriorPage() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   if (!user) return (
-    <div className="ci-wrap" style={{ paddingTop: 120 }}>
+    <div className="ci-wrap">
       <div className="ci-login-prompt"><h2>Log in om verder te gaan</h2><p>Je moet ingelogd zijn om deze cursus te bekijken.</p><a href={`/auth/login?redirect=/academy/${slug}`} className="ci-login-btn">Inloggen</a></div>
     </div>
   )
@@ -102,7 +102,7 @@ export default function CourseInteriorPage() {
   const checkSVG = <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
 
   return (
-    <div className="ci-wrap" style={{ paddingTop: 100 }}>
+    <div className="ci-wrap">
       <div className="ci-eyebrow">Academy · jouw cursus</div>
       <h1>{course.title?.split(' ').map((w, i) => i === course.title!.split(' ').length - 1 ? <em key={i}>{w}</em> : w + ' ')}</h1>
       <p className="ci-sub">Welkom terug. Je bent goed op weg.</p>
