@@ -5,7 +5,8 @@
   --ink:#2C2A25; --ink-soft:#6B655B; --muted:#A39C8E;
   --green:#5E8463; --green-bright:#7BA081; --green-soft:#EAF0EA; --red:#B5635C; --red-bright:#C97B72;
   --line:rgba(12,10,7,.09);
-  --rail-collapsed:78px; --rail-expanded:290px; --nav-h:64px;
+  --rail-collapsed:78px; --rail-expanded:290px;
+  --nav-h:66px; --nav-h-mobile:58px;
 }
 
 /* ── Shell ── */
@@ -18,8 +19,9 @@
   flex: 0 0 var(--rail-collapsed); width: var(--rail-collapsed);
   background: var(--paper); border-right: 1px solid var(--line);
   transition: flex-basis .26s cubic-bezier(.4,0,.2,1), width .26s cubic-bezier(.4,0,.2,1);
-  position: sticky; top: var(--nav-h); height: calc(100vh - var(--nav-h));
+  position: sticky; top: calc(env(safe-area-inset-top) + var(--nav-h)); height: calc(100vh - env(safe-area-inset-top) - var(--nav-h));
   display: flex; flex-direction: column; overflow: hidden; z-index: 30;
+  margin-top: calc(env(safe-area-inset-top) + var(--nav-h));
 }
 .lp-rail.expanded { flex-basis: var(--rail-expanded); width: var(--rail-expanded); }
 
@@ -115,7 +117,8 @@
 .lp-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 30px; border-bottom: 1px solid var(--line);
-  background: var(--paper); position: sticky; top: var(--nav-h); z-index: 20;
+  background: var(--paper); position: sticky; top: calc(env(safe-area-inset-top) + var(--nav-h)); z-index: 20;
+  margin-top: calc(env(safe-area-inset-top) + var(--nav-h));
 }
 
 .back {

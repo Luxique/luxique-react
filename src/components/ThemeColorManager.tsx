@@ -24,6 +24,8 @@ export default function ThemeColorManager() {
       currentColor = color
       themeMeta.content = color
       csMeta.content = dark ? 'dark' : 'light'
+      // Also set CSS variable for safe-area filler
+      document.documentElement.style.setProperty('--page-bg', color)
     }
 
     const sections = document.querySelectorAll('[data-theme-color]')

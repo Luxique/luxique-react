@@ -31,16 +31,17 @@
   --bg: #FFFFFF;
   --bg2: #FAFAFA;
   --border: rgba(0,0,0,0.06);
+  --page-bg: #F3EFE7;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; height: 100%; background: #0C0A07; overflow-x: hidden; }
+html { scroll-behavior: smooth; height: 100%; background: #F3EFE7; overflow-x: hidden; scroll-padding-top: 80px; }
 body {
   font-family: 'Outfit', -apple-system, sans-serif;
   font-size: 17px;
   line-height: 1.65;
   color: var(--text);
-  background: #0C0A07;
+  background: #F3EFE7;
   min-height: 100%;
   -webkit-font-smoothing: antialiased;
 }

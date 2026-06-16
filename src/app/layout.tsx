@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -7,6 +7,12 @@ import { AuthProvider } from '@/lib/auth-context'
 import ChatWidget from '@/components/ChatWidget'
 import CookieBanner from '@/components/CookieBanner'
 import ThemeColorManager from '@/components/ThemeColorManager'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   title: 'LXQ Academy — The Art of Lashes, Perfected',
@@ -31,7 +37,7 @@ export default function RootLayout({
         <meta name="color-scheme" content="dark" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body>
+      <body style={{ background: '#0C0A07' }}>
         <AuthProvider>
           <Navbar />
           <main>{children}</main>

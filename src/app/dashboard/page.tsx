@@ -135,7 +135,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pt-24">
+    <div className="min-h-screen bg-[#FAFAFA] pt-[calc(env(safe-area-inset-top)+6rem)]">
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Welcome */}
         <h1 className="font-['Cormorant_Garamond'] text-[clamp(28px,5vw,40px)] text-[#1a1a1a] mb-2">

@@ -37,6 +37,8 @@
     line-height: 1.65;
     overflow-x: hidden;
     position: relative;
+    min-height: 100vh;
+    padding-top: calc(env(safe-area-inset-top) + 80px);
   }
 
   /* Multiple organic blobs - gold and green */
