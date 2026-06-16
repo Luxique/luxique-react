@@ -67,7 +67,7 @@ function useReveal() {
 /* ─── FASE 1: HERO ─── */
 function Hero() {
   return (
-    <section className="relative min-h-[88vh] md:min-h-[92vh] flex items-end overflow-hidden">
+    <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-end overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
@@ -75,7 +75,7 @@ function Hero() {
           backgroundPosition: 'center 28%',
         }}
       />
-      <div className="relative z-[2] w-full pb-[7vh] px-[28px] max-w-[1180px] mx-auto">
+      <div className="relative z-[2] w-full pb-[5vh] px-[28px] max-w-[1180px] mx-auto">
         <p className="text-[0.74rem] uppercase tracking-[0.24em] text-[#D8B97A] font-medium mb-[18px]">
           Behandelingen · Lashed by Chiva
         </p>
