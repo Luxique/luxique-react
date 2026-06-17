@@ -30,7 +30,7 @@ export default function Footer() {
           {/* Info */}
           <div>
             <h5 className="text-[13px] font-semibold mb-4 text-white/60">Info</h5>
-            <a href="/about" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Over mij</a>
+            <a href="/about" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Over ons</a>
             <a href="/faq" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">FAQ</a>
             <a href="/contact" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Contact</a>
             <a href="https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">

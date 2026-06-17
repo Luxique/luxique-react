@@ -14,6 +14,15 @@ export default function Navbar() {
   const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/')
   const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
 
+  // Single source of truth for nav links (desktop + mobile)
+  const navLinks = [
+    { label: 'Behandelingen', href: '/behandelingen' },
+    { label: 'Academy', href: '/courses' },
+    { label: 'Over ons', href: '/about' },
+    { label: 'FAQ', href: '/faq' },
+    { label: 'Contact', href: '/contact' },
+  ]
+
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setProfileOpen(false)
@@ -98,10 +107,10 @@ export default function Navbar() {
 
         {/* Desktop: links pill */}
         <div className="hidden md:flex h-[52px] flex-1 items-center justify-center px-5 gap-8 rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)]">
-          {['Behandelingen', 'Academy', 'Over ons'].map(label => (
-            <a key={label} href={label === 'Behandelingen' ? '/behandelingen' : label === 'Academy' ? '/courses' : '/about'}
+          {navLinks.map(link => (
+            <a key={link.href} href={link.href}
               className="text-[12px] tracking-[0.05em] text-[#6b6357] hover:text-[#C4A265] transition-colors whitespace-nowrap">
-              {label}
+              {link.label}
             </a>
           ))}
         </div>
@@ -171,15 +180,8 @@ export default function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
-                    <div className="absolute left-[14px] w-[260px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] p-6 space-y-1" style={{ top: 'calc(env(safe-area-inset-top) + 76px)' }} onClick={e => e.stopPropagation()}>
-            {[
-              { label: 'Behandelingen', href: '/#behandelingen' },
-              { label: 'Academy', href: '/courses' },
-              { label: 'Over ons', href: '/about' },
-              { label: 'Reviews', href: '/#reviews' },
-              { label: 'FAQ', href: '/faq' },
-              { label: 'Contact', href: '/contact' },
-            ].map(l => (
+          <div className="absolute left-[14px] w-[260px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] p-6 space-y-1" style={{ top: 'calc(env(safe-area-inset-top) + 76px)' }} onClick={e => e.stopPropagation()}>
+            {navLinks.map(l => (
               <a key={l.href} href={l.href} className="block text-[14px] py-2.5 px-3 rounded-xl text-[#3d382f] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>
                 {l.label}
               </a>
