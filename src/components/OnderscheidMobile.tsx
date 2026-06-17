@@ -118,7 +118,7 @@ export default function OnderscheidMobile() {
         /* FRONT: ONLY photo pinned (z5) — opaque green block hides scrolling text behind it */
         .ond-mob-photo-pin {
           position: sticky;
-          top: 0;
+          top: env(safe-area-inset-top);
           z-index: 5;
           /* Opaque green bg covers navbar zone → photo → slightly past photo bottom.
              This ensures scrolling text NEVER shows above/beside the photo. */

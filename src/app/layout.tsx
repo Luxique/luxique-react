@@ -38,19 +38,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
-        {/* Safe-area filler — prevents green section from filling notch zone */}
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 'env(safe-area-inset-top)',
-            background: '#FAF8F4',
-            zIndex: 100,
-            pointerEvents: 'none',
-          }}
-        />
         <AuthProvider>
           <Navbar />
           <main>{children}</main>
