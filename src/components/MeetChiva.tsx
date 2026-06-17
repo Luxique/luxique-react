@@ -104,7 +104,7 @@ export default function MeetChiva() {
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>
           </span>
-          <h2 className="font-['Outfit'] font-medium text-[clamp(42px,5.2vw,66px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em]">
+          <h2 className="font-['Outfit'] font-medium text-[clamp(42px,5.2vw,66px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em] max-[860px]:drop-shadow-sm">
             Lash artist.<br />Educator.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Oprichter.</span>
           </h2>
           <p className="text-[17px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
