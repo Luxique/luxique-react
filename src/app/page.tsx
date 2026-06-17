@@ -4,6 +4,7 @@ import EyeShapes from '@/components/EyeShapes'
 import Missie from '@/components/Missie'
 import NietKopieren from '@/components/NietKopieren'
 import Onderscheid from '@/components/Onderscheid'
+import OnderscheidMobile from '@/components/OnderscheidMobile'
 import BeforeAfter from '@/components/BeforeAfter'
 import MeetChiva from '@/components/MeetChiva'
 import ReelsSection from '@/components/ReelsSection'
@@ -25,7 +26,8 @@ export default function Home() {
       <Reveal><div id="meet-chiva" data-theme-color="#FFFFFF" data-theme-dark="false" className="my-[28px]"><MeetChiva /></div></Reveal>
       <Reveal><div id="creëren" data-theme-color="#F3EFE7" data-theme-dark="false" className="my-[28px]"><NietKopieren /></div></Reveal>
       <Reveal><div id="missie" data-theme-color="#FFFFFF" data-theme-dark="false" className="my-[28px]"><Missie /></div></Reveal>
-      <Reveal><div className="my-[28px]"><Onderscheid /></div></Reveal>
+      <Reveal><div className="my-[28px] ond-desktop-only"><Onderscheid /></div></Reveal>
+      <OnderscheidMobile />
       <Reveal><div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false" className="my-[28px]"><EyeShapes /></div></Reveal>
       <Reveal><div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] py-[28px] max-[860px]:px-[10px]"><BeforeAfter /></div></Reveal>
       <Reveal><div id="reels" data-theme-color="#FAF8F4" data-theme-dark="false" className="my-[28px]"><ReelsSection /></div></Reveal>

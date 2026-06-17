@@ -1237,3 +1237,9 @@ mux-player *:focus-visible {
   opacity: 1 !important;
   transform: translateY(0) !important;
 }
+
+/* Onderscheid: desktop/mobile toggle */
+.ond-desktop-only { display: block; }
+@media (max-width: 860px) {
+  .ond-desktop-only { display: none !important; }
+}
