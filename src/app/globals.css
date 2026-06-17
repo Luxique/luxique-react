@@ -1243,3 +1243,10 @@ mux-player *:focus-visible {
 @media (max-width: 860px) {
   .ond-desktop-only { display: none !important; }
 }
+
+/* Hero: restore desktop padding */
+@media (min-width: 861px) {
+  #hero {
+    padding-top: var(--content-pad-top) !important;
+  }
+}
