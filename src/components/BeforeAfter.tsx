@@ -146,12 +146,12 @@ export default function BeforeAfter() {
       </div>
 
       {/* Cards grid */}
-      <div className="grid min-[860px]:grid-cols-3 max-[860px]:grid-cols-1 gap-[14px] p-[14px] max-[860px]:p-[14px_10px_0]">
+      <div className="grid grid-cols-1 min-[860px]:grid-cols-2 gap-[14px] p-[14px] max-[860px]:p-[14px_10px_0]">
         {BA_CARDS.map((card, i) => (
           <div
             key={card.name}
             ref={el => { cardRefs.current[i] = el }}
-            className="ba-card rounded-[18px] overflow-hidden flex flex-col cursor-default"
+            className={`ba-card rounded-[18px] overflow-hidden flex flex-col cursor-default ${i === 0 ? '' : 'max-[860px]:hidden'} ${i < 2 ? '' : 'min-[860px]:hidden'}`}
             style={{ animationDelay: `${i * 0.1}s` }}
           >
             <div
