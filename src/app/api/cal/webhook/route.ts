@@ -174,84 +174,88 @@ async function handleBookingCancelled(payload: any, supabase: any) {
 }
 
 /**
- * Handle BOOKING_RESCHEDULED — update slot_start (+ UID if changed) in pending_bookings.
- * Cal.com reschedule webhook payload structure:
- *   payload.uid — the booking UID (may stay same or change depending on Cal version)
- *   payload.payload.startTime — new start time
- *   payload.payload.oldUid / rescheduledFromUid — reference to old booking (if UID changed)
+ * Handle BOOKING_RESCHEDULED — update slot_start + cal_booking_uid in pending_bookings.
+ *
+ * Cal.com BOOKING_RESCHEDULED payload structure (verified from real webhook):
+ *   payload.uid           → NEW booking UID (after reschedule)
+ *   payload.rescheduleUid → OLD booking UID (the one being rescheduled FROM)
+ *   payload.startTime     → NEW start time
+ *
+ * Match strategy: PRIMARY on rescheduleUid (old UID) since that's what's in our DB.
+ * Fallback: new UID (in case Cal.com reuses UID), then customer email.
+ *
+ * Also cleans up ghost rows: if a BOOKING_CREATED fired during reschedule
+ * (creating a spook-pending row with the new UID), delete it so we keep
+ * exactly ONE row per appointment.
  */
 async function handleBookingRescheduled(payload: any, supabase: any) {
   const booking = payload.payload || payload.data || payload.event || payload.booking || payload
 
-  // Cal.com may send the new UID under various field names
+  // Cal.com confirmed structure:
   const newUid = booking.uid || booking.id?.toString() || booking.bookingUid || payload.uid
-  // Some Cal.com versions include the old UID for reference
-  const oldUid = booking.rescheduleUid || booking.oldUid || booking.rescheduledFromUid || booking.rescheduledFrom || payload.oldUid || null
-
+  const oldUid = booking.rescheduleUid || booking.rescheduledFromUid || booking.rescheduledFrom || booking.oldUid || null
   const newStartTime = booking.startTime || booking.start_time || booking.start || payload.startTime
 
   if (!newStartTime) {
-    console.error('❌ Reschedule: missing startTime', { newUid, oldUid, newStartTime })
+    console.error('❌ Reschedule: missing startTime', { newUid, oldUid })
     return NextResponse.json({ error: 'Missing startTime for reschedule' }, { status: 400 })
   }
 
-  // Try to find the booking by new UID first, then by old UID
-  let targetUid = newUid
-  let { data: bookingRow, error: fetchError } = await supabase
-    .from('pending_bookings')
-    .select('id, cal_booking_uid, status, slot_start')
-    .eq('cal_booking_uid', newUid)
-    .single()
+  // ── STEP 1: Find the booking row ──
+  // Primary: match on OLD UID (rescheduleUid) — that's what's in our DB
+  let bookingRow: any = null
 
-  if (fetchError || !bookingRow) {
-    // Try old UID
-    if (oldUid) {
-      const res = await supabase
-        .from('pending_bookings')
-        .select('id, cal_booking_uid, status, slot_start')
-        .eq('cal_booking_uid', oldUid)
-        .single()
-      bookingRow = res.data
-      fetchError = res.error
-      targetUid = oldUid
-    }
+  if (oldUid) {
+    const { data } = await supabase
+      .from('pending_bookings')
+      .select('id, cal_booking_uid, status, slot_start, customer_email')
+      .eq('cal_booking_uid', oldUid)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    bookingRow = data
+  }
 
-    // If still not found, try matching on customer email as fallback
-    if ((!bookingRow || fetchError) && booking.attendees?.[0]?.email) {
-      const email = booking.attendees[0].email
-      const res = await supabase
-        .from('pending_bookings')
-        .select('id, cal_booking_uid, status, slot_start')
-        .eq('customer_email', email)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      if (res.data) {
-        bookingRow = res.data
-        targetUid = res.data.cal_booking_uid
-      }
-    }
+  // Fallback 1: try new UID (in case Cal.com reused it)
+  if (!bookingRow && newUid) {
+    const { data } = await supabase
+      .from('pending_bookings')
+      .select('id, cal_booking_uid, status, slot_start, customer_email')
+      .eq('cal_booking_uid', newUid)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    bookingRow = data
+  }
+
+  // Fallback 2: customer email + most recent (last resort)
+  if (!bookingRow && booking.attendees?.[0]?.email) {
+    const email = booking.attendees[0].email
+    const { data } = await supabase
+      .from('pending_bookings')
+      .select('id, cal_booking_uid, status, slot_start, customer_email')
+      .eq('customer_email', email)
+      .in('status', ['paid', 'pending'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+    if (data) bookingRow = data
   }
 
   if (!bookingRow) {
-    console.warn(`⚠️ Reschedule: no matching booking found (newUid=${newUid}, oldUid=${oldUid})`)
+    console.warn(`⚠️ Reschedule: no booking found (newUid=${newUid}, oldUid=${oldUid})`)
     return NextResponse.json({ received: true, rescheduled: false, reason: 'booking not found' })
   }
 
-  // Build update object — update slot_start + cal_booking_uid if it changed
-  const update: Record<string, any> = {
-    slot_start: newStartTime,
-    updated_at: new Date().toISOString(),
-  }
-
-  // If UID changed, update it too
-  if (newUid !== targetUid) {
-    update.cal_booking_uid = newUid
-  }
-
+  // ── STEP 2: Update the matched row with new time + new UID ──
+  const oldTime = bookingRow.slot_start
   const { error: updateError } = await supabase
     .from('pending_bookings')
-    .update(update)
+    .update({
+      slot_start: newStartTime,
+      cal_booking_uid: newUid,  // Always overwrite with new UID
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', bookingRow.id)
 
   if (updateError) {
@@ -259,14 +263,53 @@ async function handleBookingRescheduled(payload: any, supabase: any) {
     return NextResponse.json({ error: 'DB update failed' }, { status: 500 })
   }
 
-  const oldTime = bookingRow.slot_start
-  console.log(`✅ Rescheduled: ${bookingRow.cal_booking_uid} → ${newStartTime} (was ${oldTime})`)
+  console.log(`✅ Rescheduled: row ${bookingRow.id} | ${oldUid || bookingRow.cal_booking_uid} → ${newUid} | ${oldTime} → ${newStartTime}`)
+
+  // ── STEP 3: Clean up ghost rows ──
+  // A BOOKING_CREATED may have fired during reschedule, creating a spook-pending
+  // row with the new UID. Delete any OTHER rows with the same new UID (except the one we just updated).
+  if (newUid) {
+    const { data: ghosts } = await supabase
+      .from('pending_bookings')
+      .select('id, status, cal_booking_uid')
+      .eq('cal_booking_uid', newUid)
+      .neq('id', bookingRow.id)
+
+    if (ghosts && ghosts.length > 0) {
+      const ghostIds = ghosts.map((g: any) => g.id)
+      await supabase
+        .from('pending_bookings')
+        .delete()
+        .in('id', ghostIds)
+      console.log(`🧹 Cleaned ${ghostIds.length} ghost row(s) with uid ${newUid}`)
+    }
+  }
+
+  // Also clean up old UID ghost if oldUid differs from what we updated
+  if (oldUid && oldUid !== bookingRow.cal_booking_uid) {
+    const { data: oldGhosts } = await supabase
+      .from('pending_bookings')
+      .select('id, status')
+      .eq('cal_booking_uid', oldUid)
+      .neq('id', bookingRow.id)
+
+    if (oldGhosts && oldGhosts.length > 0) {
+      const oldGhostIds = oldGhosts.map((g: any) => g.id)
+      await supabase
+        .from('pending_bookings')
+        .delete()
+        .in('id', oldGhostIds)
+      console.log(`🧹 Cleaned ${oldGhostIds.length} ghost row(s) with old uid ${oldUid}`)
+    }
+  }
+
   return NextResponse.json({
     received: true,
     rescheduled: true,
     bookingId: bookingRow.id,
     oldStart: oldTime,
     newStart: newStartTime,
-    uidChanged: newUid !== targetUid,
+    oldUid: oldUid || bookingRow.cal_booking_uid,
+    newUid,
   })
 }
