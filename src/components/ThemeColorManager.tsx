@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 export default function ThemeColorManager() {
   useEffect(() => {
-    // COMPLETELY DISABLE on mobile — use fixed theme-color from layout
+    // DISABLE on mobile — use fixed theme-color from layout
     if (window.innerWidth < 860) {
       return
     }
