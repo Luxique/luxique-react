@@ -238,8 +238,8 @@ export default function AboutPage() {
           {/* DUO PHOTO */}
           <section className="duo">
             <div className="wrap duo-grid">
-              <div className="ph2"><div className="img" data-speed="0.08" style={{ background: 'linear-gradient(135deg,#bfa988,#7d6a4a)' }}></div><span className="cap serif">in de studio</span></div>
-              <div className="ph2"><div className="img" data-speed="0.14" style={{ background: 'linear-gradient(135deg,#6a5a72,#3a3142)' }}></div><span className="cap serif">de academy</span></div>
+              <div className="ph2"><div className="img" data-speed="0.08" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-studio.webp)' }}></div><span className="cap serif">in de studio</span></div>
+              <div className="ph2"><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-academy.webp)' }}></div><span className="cap serif">de academy</span></div>
             </div>
           </section>
 
