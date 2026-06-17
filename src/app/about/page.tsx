@@ -211,7 +211,7 @@ export default function AboutPage() {
                 <div className="step rv">
                   <div className="n serif">01</div>
                   <h3 className="serif">De start</h3>
-                  <p>Begonnen aan de keukentafel, met een mannequinhoofd en het geduld om het écht goed te leren. Elke set een les.</p>
+                  <p>Begonnen met een massagetafel, met een visie voor ogen en het geduld om het écht goed te leren. Elke set een nieuwe les.</p>
                 </div>
                 <div className="step rv d1">
                   <div className="n serif">02</div>
