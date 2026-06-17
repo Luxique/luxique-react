@@ -99,11 +99,12 @@ export default function OnderscheidMobile() {
           /* Make the real next section (oogvormen) overlap the green */
           .ond-mob-overlay-target {
             position: relative !important;
-            z-index: 10 !important;
+            z-index: 20 !important;
             background: #FFFFFF !important;
             border-radius: 30px 30px 0 0;
             box-shadow: 0 -30px 60px -8px rgba(0,0,0,.6);
-            margin-top: -15svh !important;
+            margin-top: -25svh !important;
+            overflow: visible;
           }
         }
 
@@ -276,7 +277,7 @@ export default function OnderscheidMobile() {
         }
 
         /* PINHOLD: keeps green pinned after point 03 */
-        .ond-mob-pinhold { height: 15svh; }
+        .ond-mob-pinhold { height: 10svh; }
 
         /* REDUCED MOTION FALLBACK */
         @media (prefers-reduced-motion: reduce) {
