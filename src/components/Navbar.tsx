@@ -72,10 +72,7 @@ export default function Navbar() {
   // Regular Navigation
   return (
     <>
-      <div
-        className="fixed top-0 left-0 right-0 z-[60] safe-area-filler"
-        style={{ height: 'env(safe-area-inset-top)', background: '#FAF8F4' }}
-      />
+      <nav className="fixed left-0 right-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px]" style={{ top: 'calc(env(safe-area-inset-top) + 14px)' }}>
         {/* Mobile: hamburger circle — FIRST in DOM */}
         <button onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden w-[48px] h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">

@@ -1,11 +1,21 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function ThemeColorManager() {
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Update mobile state on resize
   useEffect(() => {
-    // DISABLE on mobile — use fixed theme-color from layout
-    if (window.innerWidth < 860) {
+    const updateMobile = () => setIsMobile(window.innerWidth < 860)
+    const initialMobile = updateMobile()
+    window.addEventListener('resize', updateMobile)
+    return () => window.removeEventListener('resize', updateMobile)
+  }, [])
+
+  useEffect(() => {
+    // COMPLETELY DISABLE on mobile — use fixed theme-color from layout
+    if (isMobile) {
       return
     }
 
@@ -25,10 +35,6 @@ export default function ThemeColorManager() {
     let currentColor = ''
 
     const setColor = (color: string, dark: boolean) => {
-      // Block all updates on mobile
-      if (window.innerWidth < 860) {
-        return
-      }
       if (color === currentColor) return
       currentColor = color
       themeMeta.content = color
@@ -82,7 +88,7 @@ export default function ThemeColorManager() {
       observer.disconnect()
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [])
+  }, [isMobile])
 
   return null
 }
