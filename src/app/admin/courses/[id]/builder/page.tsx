@@ -1036,6 +1036,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                       playbackId={course.heroMuxPlaybackId}
                       variant="hero"
                       title={course.title || 'Hero video'}
+                      signed={true}
+                      courseId={course?.id}
+                      isFree={true}
                     />
                   </div>
                 ) : heroUploading ? (
@@ -1625,15 +1628,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
               const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
               const { status, asset_id, playback_id } = await statusRes.json()
               if (status === 'ready' && playback_id) {
-                // Try to get a signed token
-                let playbackToken = null;
-                try {
-                  const tokenRes = await fetch(`/api/mux/playback-token?playback_id=${playback_id}`);
-                  const tokenData = await tokenRes.json();
-                  playbackToken = tokenData.token;
-                } catch { /* public asset, no token needed */ }
-                
-                // Update block content with Mux IDs and token
+                // Update block content with Mux IDs — token is fetched on-demand by LuxiqueMuxPlayer
                 const updatedBlocks = blocks.map(b => {
                   const currentContent = typeof b.content === 'object' && b.content !== null ? b.content : {}
                   return b.id === block.id 
@@ -1643,7 +1638,6 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                           ...currentContent,
                           mux_asset_id: asset_id,
                           mux_playback_id: playback_id,
-                          mux_playback_token: playbackToken,
                         }
                       }
                     : b
@@ -1678,6 +1672,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                   playbackId={block.content.mux_playback_id as string}
                   variant="lesson"
                   title={block.content.video_title as string || 'Les video'}
+                  signed={true}
+                  courseId={course?.id}
+                  isFree={true}
                 />
               </div>
             ) : videoUploading ? (
@@ -2226,6 +2223,9 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
                                   <LuxiqueMuxPlayer
                                     playbackId={block.content.mux_playback_id as string}
                                     variant="lesson"
+                                    signed={true}
+                                    courseId={course?.id}
+                                    isFree={true}
                                   />
                                 </div>
                               )}

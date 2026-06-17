@@ -427,7 +427,6 @@ export default function LessonPage() {
                               variant="lesson"
                               title={block.title || 'Video'}
                               signed={true}
-                              userId={user?.id}
                               courseId={lesson.course_id}
                               isFree={lesson.is_free}
                               onProgress={handleVideoProgress}

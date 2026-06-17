@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase-client'
 import MuxPlayer from '@mux/mux-player-react'
 
 interface LuxiqueMuxPlayerProps {
@@ -11,11 +12,9 @@ interface LuxiqueMuxPlayerProps {
   className?: string
   /** If true, fetch a signed playback token before playing */
   signed?: boolean
-  /** Required for signed playback: user_id for enrollment check */
-  userId?: string
   /** Required for signed playback: course_id for enrollment check */
   courseId?: string
-  /** If true, this is free content — skip signed token request */
+  /** If true, this is free content — skip enrollment check (still requires login) */
   isFree?: boolean
   /** Called when video playback progresses (0-100 percentage) */
   onProgress?: (pct: number) => void
@@ -30,7 +29,6 @@ export default function LuxiqueMuxPlayer({
   style,
   className,
   signed = false,
-  userId,
   courseId,
   isFree = false,
   onProgress,
@@ -41,24 +39,47 @@ export default function LuxiqueMuxPlayer({
   const [tokenError, setTokenError] = useState(false)
 
   useEffect(() => {
-    if (!signed || isFree || !playbackId) return
+    if (!signed || !playbackId) return
 
-    const params = new URLSearchParams({ playback_id: playbackId })
-    if (userId) params.set('user_id', userId)
-    if (courseId) params.set('course_id', courseId)
-    if (isFree) params.set('is_free', 'true')
+    let cancelled = false
 
-    fetch(`/api/mux/playback-token?${params}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.token) setToken(data.token)
-        else if (data.error) setTokenError(true)
-      })
-      .catch(() => setTokenError(true))
-  }, [playbackId, signed, isFree, userId, courseId])
+    async function fetchToken() {
+      try {
+        // Get the current session token from Supabase
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) {
+          if (!cancelled) setTokenError(true)
+          return
+        }
+
+        const params = new URLSearchParams({ playback_id: playbackId })
+        if (courseId) params.set('course_id', courseId)
+        if (isFree) params.set('is_free', 'true')
+
+        const res = await fetch(`/api/mux/playback-token?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+        const data = await res.json()
+        if (cancelled) return
+
+        if (data.token) {
+          setToken(data.token)
+        } else {
+          setTokenError(true)
+        }
+      } catch {
+        if (!cancelled) setTokenError(true)
+      }
+    }
+
+    fetchToken()
+    return () => { cancelled = true }
+  }, [playbackId, signed, isFree, courseId])
 
   // If signed token required but failed, show locked state
-  if (signed && !isFree && tokenError) {
+  if (signed && tokenError) {
     return (
       <div style={{
         width: '100%',
@@ -77,7 +98,7 @@ export default function LuxiqueMuxPlayer({
   }
 
   // If waiting for signed token, show loading
-  if (signed && !isFree && !token && !tokenError) {
+  if (signed && !token && !tokenError) {
     return (
       <div style={{
         width: '100%',
