@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <head>
-        <meta name="theme-color" content="#F3EFE7" />
+        <meta name="theme-color" content="#FAF8F4" />
         <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>

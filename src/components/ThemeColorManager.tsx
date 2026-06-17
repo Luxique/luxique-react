@@ -4,6 +4,11 @@ import { useEffect } from 'react'
 
 export default function ThemeColorManager() {
   useEffect(() => {
+    // DISABLE on mobile — use fixed cream theme-color
+    if (window.innerWidth < 860) {
+      return
+    }
+
     const getOrCreate = (name: string): HTMLMetaElement => {
       let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null
       if (!el) {

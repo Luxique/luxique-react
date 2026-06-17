@@ -99,12 +99,12 @@ export default function MeetChiva() {
         </div>
 
         {/* Text overlay — desktop: right of portrait, mobile: top-left */}
-        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-6 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-start min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
+        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-6 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-start min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left max-[860px]:box-shadow-[0_10px_40px_-10px_rgba(0,0,0,0.18)]">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>
           </span>
-          <h2 className="font-['Outfit'] font-medium text-[clamp(42px,5.2vw,66px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em] max-[860px]:drop-shadow-sm">
+          <h2 className="font-['Outfit'] font-medium text-[clamp(42px,5.2vw,66px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em]">
             Lash artist.<br />Educator.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Oprichter.</span>
           </h2>
           <p className="text-[17px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
