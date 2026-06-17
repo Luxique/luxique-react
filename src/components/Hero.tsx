@@ -103,10 +103,28 @@ export default function Hero() {
 
           {/* Centered light frosted glass box */}
           <div className="hero-v2-glass" key={`glass-${animKey}`}>
-            <div className="hero-v2-reviews">
-              <span className="hero-v2-stars">★★★★★</span>
-              <span className="hero-v2-reviews-text">5.0 · 47 reviews</span>
-            </div>
+            {/* Google reviews pill with avatars */}
+            <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-[5px] bg-white border border-[rgba(30,26,20,0.08)] rounded-full px-[14px] py-[5px] mb-6 hover:bg-[#F3EEE7] transition-colors">
+              {/* Overlapping avatar circles with photos and border */}
+              <div className="flex -space-x-[4px]">
+                {AVATARS.map((avatar, i) => (
+                  <img
+                    key={i}
+                    src={avatar.photo}
+                    alt="Customer"
+                    className="w-[28px] h-[28px] rounded-full object-cover border-[2px] border-white"
+                  />
+                ))}
+              </div>
+              {/* Google logo + stars + rating */}
+              <div className="flex items-center gap-[4px]">
+                <GoogleIcon />
+                <span className="text-[9px] tracking-[0.5px]">{'★'.repeat(GOOGLE_RATING.stars)}</span>
+                <span className="text-[12px] font-medium text-[#1A1815]">{GOOGLE_RATING.display} · {GOOGLE_RATING.count} reviews</span>
+              </div>
+            </a>
+
             <h1 className="hero-v2-h1">
               We Teach
               <em>The Art of Lashes.</em>
