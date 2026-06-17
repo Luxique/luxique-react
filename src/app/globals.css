@@ -1232,13 +1232,6 @@ mux-player *:focus-visible {
   --pip-button: none;
 }
 
-/* Mobile: fixed theme-color (overrides ThemeColorManager) */
-@media (max-width: 860px) {
-  :root {
-    --page-bg: #FAF8F4 !important;
-  }
-}
-
 /* Reveal animations */
 .revealed {
   opacity: 1 !important;
