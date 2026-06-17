@@ -72,10 +72,10 @@ export default function Navbar() {
   // Regular Navigation
   return (
     <>
-      {/* Safe-area filler — matches page bg, sits above navbar in the notch zone */}
+      {/* Safe-area filler — fixed cream bg, never changes */}
       <div
         className="fixed top-0 left-0 right-0 z-[60] safe-area-filler"
-        style={{ height: 'env(safe-area-inset-top)', background: 'var(--page-bg, #F3EFE7)' }}
+        style={{ height: 'env(safe-area-inset-top)', background: '#FAF8F4' }}
       />
       <nav className="fixed left-0 right-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px]" style={{ top: 'calc(env(safe-area-inset-top) + 14px)' }}>
         {/* Mobile: hamburger circle — FIRST in DOM */}
