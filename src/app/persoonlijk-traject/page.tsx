@@ -333,7 +333,7 @@ export default function PersoonlijkTrajectPage() {
                 </div>
                 <div className="btn-row">
                   <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="pt-btn">Vraag dit traject aan</a>
-                  <button className="pt-btn ghost" data-lux>Vraag het Lux</button>
+                  <button className="pt-btn ghost" data-lux>Krijg direct antwoord van Lux</button>
                 </div>
                 <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
                 <button className="close-d" data-close>↑ Sluit dagprogramma</button>
@@ -407,7 +407,7 @@ export default function PersoonlijkTrajectPage() {
                 </div>
                 <div className="btn-row">
                   <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="pt-btn">Vraag dit traject aan</a>
-                  <button className="pt-btn ghost" data-lux>Vraag het Lux</button>
+                  <button className="pt-btn ghost" data-lux>Krijg direct antwoord van Lux</button>
                 </div>
                 <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
                 <button className="close-d" data-close>↑ Sluit dagprogramma</button>
@@ -465,7 +465,7 @@ export default function PersoonlijkTrajectPage() {
                 </div>
                 <div className="btn-row">
                   <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="pt-btn">Vraag dit traject aan</a>
-                  <button className="pt-btn ghost" data-lux>Vraag het Lux</button>
+                  <button className="pt-btn ghost" data-lux>Krijg direct antwoord van Lux</button>
                 </div>
                 <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
                 <button className="close-d" data-close>↑ Sluit dagprogramma</button>
@@ -479,7 +479,7 @@ export default function PersoonlijkTrajectPage() {
               <h2 className="serif reveal">Niet zeker welk traject<br /><em>bij je past?</em></h2>
               <p className="reveal">Lux, onze chatbot, denkt met je mee — welk traject past, of hoe je er meerdere combineert tot één route op maat. Liever direct contact? Mail naar info@luxique.nl.</p>
               <div className="pt-cta-btns reveal">
-                <button className="pt-btn" data-lux>Vraag het Lux</button>
+                <button className="pt-btn" data-lux>Krijg direct antwoord van Lux</button>
                 <a href="mailto:info@luxique.nl?subject=Vraag%20over%20trajecten" className="pt-btn ghost-light">Mail info@luxique.nl</a>
               </div>
             </div>
