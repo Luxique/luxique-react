@@ -33,7 +33,7 @@ export default function Footer() {
             <a href="/about" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Over mij</a>
             <a href="/faq" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">FAQ</a>
             <a href="/contact" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Contact</a>
-            <a href="https://share.google/tMpRbq1uq31Sf7H4a" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">
+            <a href="https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">
               <svg width="14" height="14" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
                 <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />

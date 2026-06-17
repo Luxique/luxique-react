@@ -209,7 +209,7 @@ export default function ReviewsSection() {
 
       {/* Google reviews link */}
       <div className="mt-12 text-center">
-        <a href="https://share.google/tMpRbq1uq31Sf7H4a" target="_blank" rel="noopener noreferrer"
+        <a href="https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D" target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-2 text-[#1A1815] font-medium hover:text-[#C4A265] transition-colors text-[15px]">
           Lees al onze reviews op Google
           <span>→</span>

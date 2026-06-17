@@ -449,7 +449,7 @@ export async function sendReviewRequestEmail(booking: BookingData) {
             <p style="font-size:16px;line-height:1.7;color:#3a3530;margin:0 0 24px">Hi ${firstName}, bedankt dat je bij LUXIQUE was! We hopen dat je helemaal blij bent met je set.</p>
             <p style="font-size:16px;line-height:1.7;color:#3a3530;margin:0 0 24px">Zou je 1 minuutje willen nemen om een review achter te laten op Google? Het helpt ons enorm — en een foto van je lashes erbij maakt het compleet.</p>
             <div style="text-align:center;margin:32px 0">
-              <a href="https://share.google/tMpRbq1uq31Sf7H4a" target="_blank" rel="noopener noreferrer"
+              <a href="https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D" target="_blank" rel="noopener noreferrer"
                 style="display:inline-block;background:#c4a265;color:#ffffff;font-size:15px;font-weight:500;padding:14px 28px;border-radius:999px;text-decoration:none;transition:background 0.2s;">
                 Laat een review achter →
               </a>

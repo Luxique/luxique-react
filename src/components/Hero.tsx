@@ -9,7 +9,7 @@ const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public
 const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header2.webp'
 const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header4.webp'
 
-const GOOGLE_REVIEWS_URL = 'https://share.google/tMpRbq1uq31Sf7H4a'
+const GOOGLE_REVIEWS_URL = 'https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D'
 
 const GOOGLE_RATING = { stars: 5, count: 47, display: '5.0' }
 
