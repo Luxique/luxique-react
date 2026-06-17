@@ -415,6 +415,63 @@ function generateICS(booking: BookingData): Buffer {
   return Buffer.from(ics, 'utf-8')
 }
 
+// ============================================================
+// MAIL 7: KLANT — review aanvraag (dag NA afspraak)
+// ============================================================
+export async function sendReviewRequestEmail(booking: BookingData) {
+  try {
+    if (await isMailAlreadySent(booking.id!, 'review_request_sent_at')) {
+      console.log(`Mail: review request already sent for ${booking.cal_booking_uid}, skipping`)
+      return
+    }
+
+    // Send to ACCOUNT email (via user_id), never the Cal-typed email
+    const accountEmail = await getAccountEmail(booking.user_id, booking.customer_email)
+    if (!accountEmail) {
+      console.error('Mail: no account email for review request', booking.cal_booking_uid)
+      return
+    }
+
+    const firstName = booking.customer_name?.split(' ')[0] || 'je'
+    const date = formatDateNL(booking.slot_start)
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: accountEmail,
+      subject: 'Hoe waren je nieuwe lashes? ✨',
+      html: `
+        <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:0 auto;background:#fffdf8;border:1px solid rgba(176,141,79,0.15);border-radius:16px;overflow:hidden">
+          <div style="background:#f6f1e7;padding:28px 32px;text-align:center;border-bottom:1px solid rgba(176,141,79,0.15)">
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-logo-black.webp" alt="LUXIQUE" style="height:24px;width:auto" />
+          </div>
+          <div style="padding:36px 32px">
+            <h1 style="font-size:26px;font-weight:400;color:#1a1712;margin:0 0 20px">Hoe waren je nieuwe lashes? ✨</h1>
+            <p style="font-size:16px;line-height:1.7;color:#3a3530;margin:0 0 24px">Hi ${firstName}, bedankt dat je bij LUXIQUE was! We hopen dat je helemaal blij bent met je set.</p>
+            <p style="font-size:16px;line-height:1.7;color:#3a3530;margin:0 0 24px">Zou je 1 minuutje willen nemen om een review achter te laten op Google? Het helpt ons enorm — en een foto van je lashes erbij maakt het compleet.</p>
+            <div style="text-align:center;margin:32px 0">
+              <a href="https://share.google/tMpRbq1uq31Sf7H4a" target="_blank" rel="noopener noreferrer"
+                style="display:inline-block;background:#c4a265;color:#ffffff;font-size:15px;font-weight:500;padding:14px 28px;border-radius:999px;text-decoration:none;transition:background 0.2s;">
+                Laat een review achter →
+              </a>
+            </div>
+            <p style="font-size:14px;line-height:1.7;color:#9a9183;margin:0;padding-top:20px;border-top:1px solid rgba(26,23,18,0.08)">Heb je vragen? Mail ons via <a href="mailto:info@luxique.nl" style="color:#b08d4f">info@luxique.nl</a>.</p>
+          </div>
+        </div>
+      `,
+    })
+
+    if (error) {
+      console.error(`Mail: review request FAILED for ${booking.cal_booking_uid}:`, error)
+      return
+    }
+
+    await markMailSent(booking.id!, 'review_request_sent_at')
+    console.log(`Mail: review request sent for ${booking.cal_booking_uid}`)
+  } catch (err) {
+    console.error(`Mail: review request error for ${booking.cal_booking_uid}:`, err)
+  }
+}
+
 // Helper to fetch booking + customer info from Cal API
 export async function getBookingWithCustomerFromCal(uid: string): Promise<BookingData | null> {
   try {
