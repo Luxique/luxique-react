@@ -18,7 +18,6 @@ const AVATARS = [
   { initial: 'A', color: '#6B8E7C' },
   { initial: 'S', color: '#D4A574' },
 ]
-]
 
 const SLIDES = [
   {
