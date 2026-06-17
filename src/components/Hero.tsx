@@ -13,11 +13,11 @@ const GOOGLE_REVIEWS_URL = 'https://share.google/tMpRbq1uq31Sf7H4a'
 
 const GOOGLE_RATING = { stars: 5, count: 47, display: '5.0' }
 
-// Placeholder avatars for pill (CJ will replace with real photos)
+// Placeholder avatars for pill (using real photos from behandelingen)
 const AVATARS = [
-  { initial: 'M', color: '#B06A8A' },
-  { initial: 'A', color: '#6B8E7C' },
-  { initial: 'S', color: '#D4A574' },
+  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-1.webp' },
+  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-2.webp' },
+  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-3.webp' },
 ]
 
 const SLIDES = [
@@ -156,14 +156,15 @@ export default function Hero() {
               {/* Google reviews pill with avatars */}
               <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-[5px] bg-white border border-[rgba(30,26,20,0.08)] rounded-full px-[12px] py-[4px] mb-5 hover:bg-[#F3EEE7] transition-colors">
-                {/* Overlapping avatar circles */}
+                {/* Overlapping avatar circles with photos and border */}
                 <div className="flex -space-x-[4px]">
                   {AVATARS.map((avatar, i) => (
-                    <div key={i}
-                      className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-semibold text-white border-[2px] border-white"
-                      style={{ backgroundColor: avatar.color }}>
-                      {avatar.initial}
-                    </div>
+                    <img
+                      key={i}
+                      src={avatar.photo}
+                      alt="Customer"
+                      className="w-[26px] h-[26px] rounded-full object-cover border-[2px] border-white"
+                    />
                   ))}
                 </div>
                 {/* Google logo + stars + rating */}
