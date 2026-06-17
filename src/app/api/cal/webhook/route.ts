@@ -254,7 +254,6 @@ async function handleBookingRescheduled(payload: any, supabase: any) {
     .update({
       slot_start: newStartTime,
       cal_booking_uid: newUid,  // Always overwrite with new UID
-      updated_at: new Date().toISOString(),
     })
     .eq('id', bookingRow.id)
 
