@@ -131,7 +131,7 @@ export default function BeforeAfter() {
   }, [isMobile, reveal, resetImage])
 
   return (
-    <div className="ba-wrap bg-[#FAF8F4] rounded-[22px] overflow-hidden relative">
+    <div className="ba-wrap bg-[#FAF8F4] rounded-[22px] overflow-hidden relative max-w-[1180px] mx-auto">
 
       {/* Header */}
       <div className="ba-header p-[52px_56px_0] max-[860px]:p-[36px_24px_0] grid grid-cols-1 min-[860px]:grid-cols-2 gap-[40px] max-[860px]:gap-4 items-end relative">
