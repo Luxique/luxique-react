@@ -36,21 +36,11 @@ const POINTS = [
 ]
 
 /**
- * OnderscheidMobile — mobile-only (<861px) scroll-pinning rebuild.
- * Desktop is untouched (rendered by Onderscheid.tsx above 880px).
+ * OnderscheidMobile — mobile-only (<861px) scroll-pinning.
+ * FIX v2: Only photo pins. All text scrolls. No fake next section.
  *
- * Technique: Pure CSS sticky positioning.
- * - No GSAP dependency needed — the mockup proves CSS sticky works.
- * - Uses svh units for iOS Safari address-bar reliability.
- * - prefers-reduced-motion: falls back to clean stacked sections.
- *
- * Layer order (front → back):
- *   z5  diff-front   = photo slider + title (sticky, pinned)
- *   z4  veil         = fade gradient at photo bottom boundary
- *   z2  points       = scrolling text (goes UP behind photo + veil)
- *
- * After point 03: pinhold keeps green visible, next section
- * slides over with rounded top + shadow.
+ * Technique: Pure CSS sticky. svh units for iOS Safari.
+ * prefers-reduced-motion: clean stacked fallback.
  */
 export default function OnderscheidMobile() {
   const phRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -102,88 +92,40 @@ export default function OnderscheidMobile() {
   return (
     <>
       <style>{`
-        /* ===== MOBILE ONLY: show below 861px ===== */
         .ond-mobile { display: none; }
         @media (max-width: 860px) {
           .ond-mobile { display: block; }
-          .ond-desktop-hide { display: none !important; }
+
+          /* Make the real next section (oogvormen) overlap the green */
+          .ond-mob-overlay-target {
+            position: relative !important;
+            z-index: 10 !important;
+            background: #FFFFFF !important;
+            border-radius: 30px 30px 0 0;
+            box-shadow: 0 -30px 60px -8px rgba(0,0,0,.6);
+            margin-top: -22svh !important;
+          }
         }
 
-        /* ===== STAGE ===== */
-        .ond-mob-stage { position: relative; }
-
-        /* GREEN section — full-bleed, extends behind navbar */
+        /* GREEN section — full-bleed */
         .ond-mob-diff {
           position: relative;
           background: linear-gradient(180deg, #2a3128, #1c211a 55%, #141811);
           z-index: 1;
         }
 
-        /* BACK layer: scrolling text (z2) */
-        .ond-mob-points {
-          position: relative;
-          z-index: 2;
-          padding: 0 24px;
-          /* push first point below the pinned photo+title block */
-          padding-top: calc(74px + 42svh + 150px);
-        }
-        .ond-mob-point {
-          min-height: 74svh;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: 24px 0;
-        }
-        .ond-mob-point .num {
-          font-family: 'Cormorant Garamond', serif;
-          font-weight: 600;
-          font-size: 1.5rem;
-          color: #D8B97A;
-          margin-bottom: 10px;
-        }
-        .ond-mob-point h3 {
-          font-family: 'Cormorant Garamond', serif;
-          font-weight: 600;
-          font-size: 2rem;
-          line-height: 1.06;
-          color: #F6F1E7;
-          margin-bottom: 16px;
-        }
-        .ond-mob-point p {
-          color: rgba(246,241,231,.72);
-          font-size: 1.08rem;
-          line-height: 1.62;
-          margin-bottom: 1rem;
-        }
-        .ond-mob-take {
-          display: inline-flex;
-          align-items: center;
-          gap: .55rem;
-          margin-top: .2rem;
-        }
-        .ond-mob-take .dot {
-          width: 6px; height: 6px;
-          border-radius: 50%;
-          background: #B08D4F;
-          box-shadow: 0 0 0 3px rgba(176,141,79,.16);
-        }
-        .ond-mob-take span {
-          font-weight: 600;
-          font-size: .76rem;
-          letter-spacing: .13em;
-          text-transform: uppercase;
-          color: #B08D4F;
-        }
-
-        /* FRONT layer: photo + title, pinned (z5) */
-        .ond-mob-front {
+        /* FRONT: ONLY photo pinned (z5) — opaque green block hides scrolling text behind it */
+        .ond-mob-photo-pin {
           position: sticky;
           top: 0;
           z-index: 5;
-          height: 100svh;
-          padding-top: 74px;
+          /* Opaque green bg covers navbar zone → photo → slightly past photo bottom.
+             This ensures scrolling text NEVER shows above/beside the photo. */
+          background: #2a3128;
+          padding-top: 74px; /* navbar space */
+          padding-bottom: 20px;
           pointer-events: none;
-          margin-bottom: -100svh;
+          margin-bottom: calc(-74px - 42svh - 20px); /* collapse so text flows up behind */
         }
         .ond-mob-photo {
           position: relative;
@@ -233,7 +175,30 @@ export default function OnderscheidMobile() {
           width: 20px;
           border-radius: 4px;
         }
-        .ond-mob-head { padding: 22px 24px 0; }
+
+        /* Veil: soft fade at photo bottom boundary (z4) */
+        .ond-mob-veil {
+          position: sticky;
+          top: calc(74px + 42svh - 10px);
+          z-index: 4;
+          height: 120px;
+          margin-bottom: -120px;
+          pointer-events: none;
+          background: linear-gradient(to bottom,
+            rgba(42,49,40,0) 0%, #2a3128 40%, #1c211a 100%);
+        }
+
+        /* BACK: ALL text scrolls (z2) — pill, title, subtitle, then points */
+        .ond-mob-content {
+          position: relative;
+          z-index: 2;
+          padding: 0 24px;
+        }
+        .ond-mob-head {
+          padding-top: calc(74px + 42svh + 60px);
+          padding-bottom: 40px;
+          text-align: center;
+        }
         .ond-mob-eyebrow {
           display: inline-block;
           font-size: .74rem;
@@ -243,6 +208,7 @@ export default function OnderscheidMobile() {
           border: 1px solid rgba(216,185,122,.4);
           padding: 8px 18px;
           border-radius: 100px;
+          margin-bottom: 20px;
         }
         .ond-mob-head h2 {
           font-family: 'Cormorant Garamond', serif;
@@ -250,7 +216,7 @@ export default function OnderscheidMobile() {
           font-size: 2.5rem;
           line-height: 1.02;
           color: #D8B97A;
-          margin: 16px 0 6px;
+          margin: 0 0 6px;
         }
         .ond-mob-head .lead {
           font-family: 'Cormorant Garamond', serif;
@@ -258,137 +224,136 @@ export default function OnderscheidMobile() {
           font-size: 1.25rem;
           color: rgba(246,241,231,.72);
         }
-
-        /* MIDDLE layer: veil — fixed on boundary under photo (z4) */
-        .ond-mob-veil {
-          position: sticky;
-          top: calc(74px + 42svh - 30px);
-          z-index: 4;
-          height: 150px;
-          margin-bottom: -150px;
-          pointer-events: none;
-          background: linear-gradient(to bottom,
-            #2a3128 0%, #2a3128 42%, rgba(42,49,40,0) 100%);
+        .ond-mob-point {
+          min-height: 74svh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 24px 0;
+        }
+        .ond-mob-point .num {
+          font-family: 'Cormorant Garamond', serif;
+          font-weight: 600;
+          font-size: 1.5rem;
+          color: #D8B97A;
+          margin-bottom: 10px;
+        }
+        .ond-mob-point h3 {
+          font-family: 'Cormorant Garamond', serif;
+          font-weight: 600;
+          font-size: 2rem;
+          line-height: 1.06;
+          color: #F6F1E7;
+          margin-bottom: 16px;
+        }
+        .ond-mob-point p {
+          color: rgba(246,241,231,.72);
+          font-size: 1.08rem;
+          line-height: 1.62;
+          margin-bottom: 1rem;
+        }
+        .ond-mob-take {
+          display: inline-flex;
+          align-items: center;
+          gap: .55rem;
+          margin-top: .2rem;
+        }
+        .ond-mob-take .dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #B08D4F;
+          box-shadow: 0 0 0 3px rgba(176,141,79,.16);
+        }
+        .ond-mob-take span {
+          font-weight: 600;
+          font-size: .76rem;
+          letter-spacing: .13em;
+          text-transform: uppercase;
+          color: #B08D4F;
         }
 
         /* PINHOLD: keeps green pinned after point 03 */
         .ond-mob-pinhold { height: 30svh; }
 
-        /* NEXT section: slides over the pinned green */
-        .ond-mob-next {
-          position: relative;
-          z-index: 10;
-          background: #F3EFE7;
-          border-radius: 30px 30px 0 0;
-          box-shadow: 0 -30px 60px -8px rgba(0,0,0,.6);
-          padding: 60px 24px 90px;
-          min-height: 60svh;
-          margin-top: -22svh;
-        }
-        .ond-mob-next-eyebrow {
-          font-size: .74rem;
-          text-transform: uppercase;
-          letter-spacing: .2em;
-          color: #B08D4F;
-        }
-        .ond-mob-next h2 {
-          font-family: 'Cormorant Garamond', serif;
-          font-weight: 600;
-          font-size: 2.3rem;
-          line-height: 1.05;
-          margin: 14px 0 14px;
-          color: #1C1814;
-        }
-        .ond-mob-next p {
-          color: #46403A;
-          max-width: 40ch;
-        }
-
-        /* ===== REDUCED MOTION FALLBACK ===== */
+        /* REDUCED MOTION FALLBACK */
         @media (prefers-reduced-motion: reduce) {
-          .ond-mob-front {
+          .ond-mob-photo-pin {
             position: relative;
-            height: auto;
             padding-top: 90px;
             margin-bottom: 0;
+            background: #2a3128;
           }
           .ond-mob-veil { display: none; }
           .ond-mob-pinhold { display: none; }
-          .ond-mob-next {
-            margin-top: 0;
-            border-radius: 0;
-            box-shadow: none;
+          .ond-mob-overlay-target {
+            margin-top: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
           }
-          .ond-mob-points { padding-top: 20px; }
+          .ond-mob-head { padding-top: 20px; }
           .ond-mob-point { min-height: auto; padding: 32px 0; }
         }
       `}</style>
 
-      {/* This wrapper hides on desktop, shows on mobile */}
       <div className="ond-mobile">
-        <div className="ond-mob-stage">
-          <section className="ond-mob-diff">
-            {/* FRONT: pinned photo + title (z5) */}
-            <div className="ond-mob-front">
-              <div className="ond-mob-photo">
-                {POINTS.map((p, i) => (
-                  <div
-                    key={i}
-                    ref={(el) => { phRefs.current[i] = el }}
-                    className={`ond-mob-ph${i === 0 ? ' active' : ''}`}
-                  >
-                    <img src={p.img} alt={p.title} />
-                  </div>
-                ))}
-                <span className="ond-mob-badge">✦ LXQ Academy</span>
-                <div className="ond-mob-dots">
-                  <i ref={(el) => { dotRefs.current[0] = el }} className="on" />
-                  <i ref={(el) => { dotRefs.current[1] = el }} />
-                  <i ref={(el) => { dotRefs.current[2] = el }} />
-                </div>
-              </div>
-              <div className="ond-mob-head">
-                <span className="ond-mob-eyebrow">Het verschil</span>
-                <h2>Wat ons onderscheidt</h2>
-                <div className="lead">Wat LXQ anders doet dan andere opleidingen.</div>
-              </div>
-            </div>
-
-            {/* MIDDLE: veil on the boundary (z4) */}
-            <div className="ond-mob-veil" />
-
-            {/* BACK: scrolling text behind photo + veil (z2) */}
-            <div className="ond-mob-points">
+        <section className="ond-mob-diff">
+          {/* FRONT: ONLY photo pinned (z5) — opaque green hides text behind it */}
+          <div className="ond-mob-photo-pin">
+            <div className="ond-mob-photo">
               {POINTS.map((p, i) => (
                 <div
                   key={i}
-                  ref={(el) => { pointRefs.current[i] = el }}
-                  className="ond-mob-point"
+                  ref={(el) => { phRefs.current[i] = el }}
+                  className={`ond-mob-ph${i === 0 ? ' active' : ''}`}
                 >
-                  <div className="num">{p.num}</div>
-                  <h3>{p.title}</h3>
-                  {p.paras.map((para, j) => (
-                    <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
-                  ))}
-                  <div className="ond-mob-take">
-                    <span className="dot" />
-                    <span>{p.take}</span>
-                  </div>
+                  <img src={p.img} alt={p.title} />
                 </div>
               ))}
+              <span className="ond-mob-badge">✦ LXQ Academy</span>
+              <div className="ond-mob-dots">
+                <i ref={(el) => { dotRefs.current[0] = el }} className="on" />
+                <i ref={(el) => { dotRefs.current[1] = el }} />
+                <i ref={(el) => { dotRefs.current[2] = el }} />
+              </div>
+            </div>
+          </div>
+
+          {/* VEIL: soft fade at photo bottom (z4) */}
+          <div className="ond-mob-veil" />
+
+          {/* BACK: ALL text scrolls naturally (z2) */}
+          <div className="ond-mob-content">
+            <div className="ond-mob-head">
+              <span className="ond-mob-eyebrow">Het verschil</span>
+              <h2>Wat ons onderscheidt</h2>
+              <div className="lead">Wat LXQ anders doet dan andere opleidingen.</div>
             </div>
 
-            {/* Lock-on-03 hold: green stays pinned */}
-            <div className="ond-mob-pinhold" />
-          </section>
+            {POINTS.map((p, i) => (
+              <div
+                key={i}
+                ref={(el) => { pointRefs.current[i] = el }}
+                className="ond-mob-point"
+              >
+                <div className="num">{p.num}</div>
+                <h3>{p.title}</h3>
+                {p.paras.map((para, j) => (
+                  <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
+                ))}
+                <div className="ond-mob-take">
+                  <span className="dot" />
+                  <span>{p.take}</span>
+                </div>
+              </div>
+            ))}
+          </div>
 
-          {/* NEXT slides OVER the pinned green */}
-          <section className="ond-mob-next">
-            <span className="ond-mob-next-eyebrow">Lash artistry</span>
-            <h2>Klaar om je eigen weg te vinden?</h2>
-            <p>Ontdek de opleiding die past bij jouw ambitie — en word de artist die je wilt zijn.</p>
-          </section>
-        </div>
+          {/* Lock-on-03 hold */}
+          <div className="ond-mob-pinhold" />
+        </section>
+
+        {/* No fake section — the real oogvormen section follows in page.tsx
+            and gets .ond-mob-overlay-target via CSS to slide over the green */}
       </div>
     </>
   )
