@@ -116,7 +116,7 @@ function Hero() {
 /* ─── FASE 2: TARIEVEN ─── */
 function Tarieven() {
   return (
-    <section id="tarieven" className="py-[clamp(60px,8vw,100px)] px-[28px]" style={{ scrollMarginTop: '80px' }}>
+    <section id="tarieven" className="py-[clamp(90px,8vw,100px)] px-[28px]" style={{ scrollMarginTop: '80px' }}>
       <div className="max-w-[760px] mx-auto">
         <div className="text-center mb-[40px] reveal">
           <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[12px]">Tarieven</span>
@@ -170,7 +170,7 @@ function Tarieven() {
 /* ─── FASE 3: FAQ ─── */
 function FAQSection() {
   return (
-    <section className="py-[clamp(70px,9vw,120px)] px-[28px]">
+    <section className="py-[clamp(100px,9vw,120px)] px-[28px]">
       <div className="max-w-[760px] mx-auto">
         <div className="text-center mb-[46px] reveal">
           <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[14px]">Veelgestelde vragen</span>
@@ -200,7 +200,7 @@ function FAQSection() {
 /* ─── FASE 4: CLOSING CTA ─── */
 function ClosingCTA() {
   return (
-    <section className="relative py-[clamp(50px,7vw,80px)] text-center overflow-hidden">
+    <section className="relative py-[clamp(80px,7vw,80px)] text-center overflow-hidden">
       <div
         className="absolute inset-0 bg-cover"
         style={{ backgroundImage: `linear-gradient(rgba(20,16,12,0.6), rgba(20,16,12,0.72)), url(${CLOSING_IMG})`, backgroundPosition: 'center 20%' }}
@@ -252,7 +252,7 @@ function BookSection() {
   const attendeeName = profileName || ''
 
   return (
-    <section id="boeken" className="relative py-[clamp(80px,12vw,140px)] overflow-hidden" style={{ scrollMarginTop: '80px' }}>
+    <section id="boeken" className="relative py-[clamp(100px,12vw,140px)] overflow-hidden" style={{ scrollMarginTop: '80px' }}>
       {/* Showcase strip — behind widget */}
       <div
         className="absolute top-1/2 left-0 w-full flex gap-[26px] z-[1] pointer-events-none md:opacity-90 opacity-85 hidden md:flex"
