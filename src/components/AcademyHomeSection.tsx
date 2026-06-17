@@ -321,7 +321,7 @@ export default function AcademyHomeSection() {
             <li><span className="acad-ck">✓</span>Alle materialen inbegrepen</li>
             <li><span className="acad-ck">✓</span>Volledig op maat</li>
           </ul>
-          <a className="acad-cta" href="/booking">Meer informatie <span className="arr">→</span></a>
+          <a className="acad-cta" href="/persoonlijk-traject">Meer informatie <span className="arr">→</span></a>
         </article>
       </div>
 

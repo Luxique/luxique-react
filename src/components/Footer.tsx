@@ -25,6 +25,7 @@ export default function Footer() {
           <div>
             <h5 className="text-[13px] font-semibold mb-4 text-white/60">Academy</h5>
             <a href="/courses" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Online Cursussen</a>
+            <a href="/persoonlijk-traject" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">Persoonlijk Traject</a>
           </div>
 
           {/* Info */}

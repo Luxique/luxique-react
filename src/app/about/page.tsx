@@ -100,7 +100,7 @@ export default function AboutPage() {
           /* INTRO */
           .about-page .intro{padding:14vh 0}
           .about-page .intro-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
-          .about-page .portrait{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;box-shadow:0 40px 80px -40px rgba(28,24,20,.5)}
+          .about-page .portrait{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;box-shadow:0 40px 80px -40px rgba(28,24,20,.5);background:#E8E1D5}
           .about-page .portrait .img{position:absolute;inset:0;background:linear-gradient(135deg,#cdbfa6,#9a8a6e);display:flex;align-items:center;justify-content:center}
           .about-page .portrait .img span{font-family:'Cormorant Garamond';font-style:italic;color:rgba(255,255,255,.6);font-size:1.1rem;letter-spacing:.1em}
           .about-page .clip{clip-path:inset(0 0 100% 0);transition:clip-path 1.1s cubic-bezier(.2,.7,.2,1)}

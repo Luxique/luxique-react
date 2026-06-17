@@ -162,7 +162,7 @@ export default function AcademySection({ courses, loading }: Props) {
                     <div className="lxq-price-row">
                       <span className="lxq-op-aanvraag">op aanvraag</span>
                     </div>
-                    <a href="/contact" className="lxq-btn-outline">Meer informatie →</a>
+                    <a href="/persoonlijk-traject" className="lxq-btn-outline">Meer informatie →</a>
                   </div>
                 </div>
               </article>
