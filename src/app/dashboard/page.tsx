@@ -12,6 +12,9 @@ type PendingBooking = {
   amount_cents: number; status: string; customer_name: string | null; customer_email: string | null;
   cancelled_within_24h?: boolean
 }
+
+// Available time slots for rescheduling (3-hour appointment windows)
+const RESCHEDULE_SLOTS = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00']
 type LessonRow = { id: string; title: string; slug: string; sort_order: number; lesson_type: string; course_id: string }
 type ProgressRow = { lesson_id: string; completed: boolean }
 type CourseProgress = {
@@ -45,6 +48,11 @@ export default function DashboardPage() {
   const [cancelMode, setCancelMode] = useState(false)
   const [cancelAgreed, setCancelAgreed] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [rescheduleMode, setRescheduleMode] = useState(false)
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleTime, setRescheduleTime] = useState('')
+  const [rescheduling, setRescheduling] = useState(false)
+  const [rescheduleError, setRescheduleError] = useState('')
   const [activeTab, setActiveTab] = useState<'overview' | 'academy' | 'boekingen'>('overview')
   const [profileFirstName, setProfileFirstName] = useState<string>('')
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([])
@@ -165,6 +173,50 @@ export default function DashboardPage() {
     } catch (err) { console.error('Cancel failed:', err) }
     setCancelling(false)
   }
+
+  const handleRescheduleBooking = async () => {
+    if (!selectedBooking || !rescheduleDate || !rescheduleTime || !user) return
+    setRescheduling(true)
+    setRescheduleError('')
+    try {
+      // Build ISO timestamp from date + time, Amsterdam timezone
+      const dateStr = `${rescheduleDate}T${rescheduleTime}:00`
+      const dt = new Date(dateStr)
+      // Adjust for Amsterdam timezone offset (the server expects UTC)
+      const isoStart = dt.toISOString()
+
+      const { data } = await supabase.auth.getSession()
+      const res = await fetch('/api/boeking/reschedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` },
+        body: JSON.stringify({ bookingId: selectedBooking.id, newStart: isoStart }),
+      })
+      const result = await res.json()
+      if (result.success) {
+        // Update local state with new slot_start
+        setPendingBookings(prev => prev.map(b =>
+          b.id === selectedBooking.id
+            ? { ...b, slot_start: isoStart }
+            : b
+        ))
+        setSelectedBooking(null)
+        setRescheduleMode(false)
+        setRescheduleDate('')
+        setRescheduleTime('')
+      } else {
+        setRescheduleError(result.error || 'Er ging iets mis. Probeer het opnieuw.')
+      }
+    } catch (err) {
+      console.error('Reschedule failed:', err)
+      setRescheduleError('Er ging iets mis. Probeer het opnieuw.')
+    }
+    setRescheduling(false)
+  }
+
+  // Min date for reschedule = tomorrow (can't book today or past)
+  const minRescheduleDate = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  // Max date = 60 days from now
+  const maxRescheduleDate = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0]
 
   if (loading || !user) {
     return (
@@ -509,8 +561,89 @@ export default function DashboardPage() {
 
                 {selectedBooking.status === 'paid' && new Date(selectedBooking.slot_start) > new Date() && (
                   <>
-                    {!cancelMode ? (
-                      <button onClick={() => setCancelMode(true)} style={{ width:'100%', padding:'12px', borderRadius:12, border:'1px solid rgba(229,85,85,.3)', color:'#c44', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Annuleren</button>
+                    {!cancelMode && !rescheduleMode ? (
+                      <>
+                        {isWithin24h(selectedBooking.slot_start) && (
+                          <p style={{ fontSize:'.8rem', color:'#888', textAlign:'center', marginBottom:10 }}>
+                            Verplaatsen kan tot 24 uur voor je afspraak.
+                          </p>
+                        )}
+                        <div style={{ display:'flex', gap:12 }}>
+                          {/* Show reschedule only if >24h before appointment */}
+                          {!isWithin24h(selectedBooking.slot_start) && (
+                            <button onClick={() => setRescheduleMode(true)} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(176,141,79,.3)', color:'#B08D4F', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Verplaatsen</button>
+                          )}
+                          <button onClick={() => setCancelMode(true)} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(229,85,85,.3)', color:'#c44', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Annuleren</button>
+                        </div>
+                      </>
+                    ) : rescheduleMode ? (
+                      <div className="space-y-4">
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                          <h4 style={{ fontWeight:500, fontSize:'1rem', color:'#1C1814' }}>Kies een nieuwe datum &amp; tijd</h4>
+                          <button onClick={() => { setRescheduleMode(false); setRescheduleDate(''); setRescheduleTime(''); setRescheduleError('') }} style={{ color:'#888', fontSize:18, background:'none', border:'none', cursor:'pointer' }}>✕</button>
+                        </div>
+
+                        {/* Info: <24u notice */}
+                        <div style={{ background:'rgba(176,141,79,.08)', border:'1px solid rgba(176,141,79,.2)', borderRadius:12, padding:14, fontSize:'.83rem', color:'#B08D4F' }}>
+                          Huidige afspraak: {formatDateNL(selectedBooking.slot_start)} om {formatTimeNL(selectedBooking.slot_start)} uur
+                        </div>
+
+                        {/* Date picker */}
+                        <div>
+                          <label style={{ display:'block', fontSize:'.82rem', color:'#888', marginBottom:6, fontWeight:500 }}>Datum</label>
+                          <input
+                            type="date"
+                            value={rescheduleDate}
+                            min={minRescheduleDate}
+                            max={maxRescheduleDate}
+                            onChange={(e) => setRescheduleDate(e.target.value)}
+                            style={{ width:'100%', padding:'12px 14px', borderRadius:12, border:'1px solid rgba(28,24,20,.13)', fontSize:'.9rem', background:'#F3EFE7', color:'#1C1814', outline:'none' }}
+                          />
+                        </div>
+
+                        {/* Time picker */}
+                        <div>
+                          <label style={{ display:'block', fontSize:'.82rem', color:'#888', marginBottom:6, fontWeight:500 }}>Tijd</label>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                            {RESCHEDULE_SLOTS.map(slot => (
+                              <button
+                                key={slot}
+                                onClick={() => setRescheduleTime(slot)}
+                                style={{
+                                  padding:'10px', borderRadius:10, fontSize:'.88rem', fontWeight:500, cursor:'pointer',
+                                  border: rescheduleTime === slot ? '1px solid #B08D4F' : '1px solid rgba(28,24,20,.13)',
+                                  background: rescheduleTime === slot ? 'rgba(176,141,79,.12)' : 'transparent',
+                                  color: rescheduleTime === slot ? '#B08D4F' : '#1C1814',
+                                  transition: 'all .2s',
+                                }}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {rescheduleError && (
+                          <div style={{ background:'rgba(229,85,85,.08)', border:'1px solid rgba(229,85,85,.2)', borderRadius:12, padding:14, fontSize:'.83rem', color:'#c44' }}>
+                            {rescheduleError}
+                          </div>
+                        )}
+
+                        <div style={{ display:'flex', gap:12 }}>
+                          <button onClick={() => { setRescheduleMode(false); setRescheduleDate(''); setRescheduleTime(''); setRescheduleError('') }} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(28,24,20,.13)', color:'#888', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Terug</button>
+                          <button
+                            onClick={handleRescheduleBooking}
+                            disabled={!rescheduleDate || !rescheduleTime || rescheduling}
+                            style={{
+                              flex:1, padding:'12px', borderRadius:12, background:'#B08D4F', color:'#1C1814',
+                              fontWeight:500, fontSize:'.9rem', border:'none', cursor:'pointer',
+                              opacity: (!rescheduleDate || !rescheduleTime || rescheduling) ? .4 : 1,
+                            }}
+                          >
+                            {rescheduling ? 'Verplaatsen...' : 'Bevestig nieuwe datum'}
+                          </button>
+                        </div>
+                      </div>
                     ) : (
                       <div className="space-y-4">
                         {isWithin24h(selectedBooking.slot_start) ? (
