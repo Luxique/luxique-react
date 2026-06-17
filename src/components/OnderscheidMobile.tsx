@@ -103,7 +103,7 @@ export default function OnderscheidMobile() {
             background: #FFFFFF !important;
             border-radius: 30px 30px 0 0;
             box-shadow: 0 -30px 60px -8px rgba(0,0,0,.6);
-            margin-top: -22svh !important;
+            margin-top: -15svh !important;
           }
         }
 
@@ -181,18 +181,21 @@ export default function OnderscheidMobile() {
           position: sticky;
           top: calc(74px + 42svh - 10px);
           z-index: 4;
-          height: 120px;
-          margin-bottom: -120px;
+          height: 60px;
+          margin-bottom: -60px;
           pointer-events: none;
           background: linear-gradient(to bottom,
-            rgba(42,49,40,0) 0%, #2a3128 40%, #1c211a 100%);
+            rgba(42,49,40,0) 0%, #1c211a 100%);
         }
 
-        /* BACK: ALL text scrolls (z2) — pill, title, subtitle, then points */
+        /* BACK: ALL text scrolls (z2) */
         .ond-mob-content {
           position: relative;
           z-index: 2;
           padding: 0 24px;
+          /* Add bottom padding so last point's trailing text doesn't peek
+             below the overlap transition */
+          padding-bottom: 10svh;
         }
         .ond-mob-head {
           padding-top: calc(74px + 42svh + 60px);
@@ -273,7 +276,7 @@ export default function OnderscheidMobile() {
         }
 
         /* PINHOLD: keeps green pinned after point 03 */
-        .ond-mob-pinhold { height: 30svh; }
+        .ond-mob-pinhold { height: 15svh; }
 
         /* REDUCED MOTION FALLBACK */
         @media (prefers-reduced-motion: reduce) {
