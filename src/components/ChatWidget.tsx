@@ -22,6 +22,12 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const hideOnAcademy = pathname?.startsWith('/academy') ?? false
+
+  useEffect(() => {
+    const openChat = () => setOpen(true)
+    window.addEventListener('open-lux-chat', openChat)
+    return () => window.removeEventListener('open-lux-chat', openChat)
+  }, [])
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: WELCOME_MESSAGE }
   ])
