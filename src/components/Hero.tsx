@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import './hero-v2.css'
+import { GoogleIcon } from './ReviewsSection'
 
 const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-bg.webp'
 const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header1.webp'
@@ -145,7 +146,7 @@ export default function Hero() {
       {/* ═══════════════════════════════════════════
           MOBILE HERO (<768px) — Original layout, pixel-identical
           ═══════════════════════════════════════════ */}
-      <div className="md:hidden w-full h-full pt-[56px] px-[10px] pb-[10px]">
+      <div className="md:hidden w-full h-full pt-[62px] px-[10px] pb-[10px]">
         <div className="w-full h-full grid grid-cols-1 gap-[8px] overflow-hidden grid-rows-[auto_1fr]">
           {/* LEFT/TOP PANEL */}
           <div className="bg-[#FFFFFF] rounded-[22px] pt-[22px] px-[20px] pb-[26px] shrink-0 flex-none flex flex-col overflow-hidden relative">
@@ -154,22 +155,22 @@ export default function Hero() {
             <div>
               {/* Google reviews pill with avatars */}
               <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-[6px] bg-[rgba(12,10,7,0.88)] border border-[rgba(176,141,79,0.5)] rounded-full px-[12px] py-[4px] mb-5 hover:bg-[rgba(12,10,7,0.95)] transition-colors">
+                className="inline-flex items-center gap-[5px] bg-white border border-[rgba(30,26,20,0.08)] rounded-full px-[12px] py-[4px] mb-5 hover:bg-[#F3EEE7] transition-colors">
                 {/* Overlapping avatar circles */}
-                <div className="flex -space-x-[5px]">
+                <div className="flex -space-x-[4px]">
                   {AVATARS.map((avatar, i) => (
                     <div key={i}
-                      className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-semibold text-white border-[1.5px] border-[rgba(12,10,7,0.88)]"
+                      className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-semibold text-white border-[2px] border-white"
                       style={{ backgroundColor: avatar.color }}>
                       {avatar.initial}
                     </div>
                   ))}
                 </div>
                 {/* Google logo + stars + rating */}
-                <div className="flex items-center gap-[4px] text-[#E0C078]">
-                  <span className="text-[13px] font-semibold text-[#4285F4]">G</span>
-                  <span className="text-[10px] tracking-[1px]">{'★'.repeat(GOOGLE_RATING.stars)}</span>
-                  <span className="text-[11px] font-medium">{GOOGLE_RATING.display} · {GOOGLE_RATING.count} reviews</span>
+                <div className="flex items-center gap-[3px]">
+                  <GoogleIcon />
+                  <span className="text-[9px] tracking-[0.5px]">{'★'.repeat(GOOGLE_RATING.stars)}</span>
+                  <span className="text-[11px] font-medium text-[#1A1815]">{GOOGLE_RATING.display} · {GOOGLE_RATING.count} reviews</span>
                 </div>
               </a>
 
