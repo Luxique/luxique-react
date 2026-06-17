@@ -103,8 +103,7 @@ export default function AboutPage() {
           .about-page .portrait{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;box-shadow:0 40px 80px -40px rgba(28,24,20,.5);background:#E8E1D5}
           .about-page .portrait .img{position:absolute;inset:0;background:linear-gradient(135deg,#cdbfa6,#9a8a6e);display:flex;align-items:center;justify-content:center}
           .about-page .portrait .img span{font-family:'Cormorant Garamond';font-style:italic;color:rgba(255,255,255,.6);font-size:1.1rem;letter-spacing:.1em}
-          .about-page .clip{clip-path:inset(0 0 100% 0);transition:clip-path 1.1s cubic-bezier(.2,.7,.2,1)}
-          .about-page .clip.in{clip-path:inset(0 0 0 0)}
+          .about-page .clip{clip-path:none}
           .about-page .portrait .tag{position:absolute;left:18px;bottom:18px;z-index:2;background:rgba(20,24,17,.62);backdrop-filter:blur(8px);color:var(--on-green);border:1px solid rgba(246,241,231,.18);padding:9px 16px;border-radius:100px;font-size:.78rem;letter-spacing:.12em}
           .about-page .intro h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(2.2rem,4.5vw,3.4rem);line-height:1.04;margin-bottom:22px;margin-top:0}
           .about-page .intro h2 em{color:var(--gold)}
