@@ -1,219 +1,271 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
-
 const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
 
-const BA_CARDS = [
-  { name: 'Wispy Set', afterImg: `${CDN}/ba-wispy-after.webp`, beforeImg: `${CDN}/ba-wispy-before.webp` },
-  { name: 'Medusa Set', afterImg: `${CDN}/ba-medusa-after.webp`, beforeImg: `${CDN}/ba-medusa-before.webp` },
-  { name: 'Volume Set', afterImg: `${CDN}/ba-volume-after.webp`, beforeImg: `${CDN}/ba-volume-before.webp` },
+const BA_PAIRS = [
+  { name: 'Wispy Set', before: `${CDN}/ba-wispy-before.webp`, after: `${CDN}/ba-wispy-after.webp` },
+  { name: 'Medusa Set', before: `${CDN}/ba-medusa-before.webp`, after: `${CDN}/ba-medusa-after.webp` },
 ]
 
 export default function BeforeAfter() {
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
-  const imageRefs = useRef<(HTMLDivElement | null)[]>([])
-  const resetTimers = useRef<Map<HTMLDivElement, ReturnType<typeof setTimeout>>>(new Map())
-
-  // Stagger fade-in on scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible')
-          observer.unobserve(e.target)
-        }
-      })
-    }, { threshold: 0.12 })
-
-    cardRefs.current.forEach(ref => {
-      if (ref) observer.observe(ref)
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
-  const isMobile = useCallback(() => {
-    return typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
-  }, [])
-
-  const resetImage = useCallback((img: HTMLDivElement) => {
-    img.classList.remove('show-before', 'show-after')
-  }, [])
-
-  const resetAllExcept = useCallback((except: HTMLDivElement) => {
-    imageRefs.current.forEach(img => {
-      if (img && img !== except) {
-        const t = resetTimers.current.get(img)
-        if (t) clearTimeout(t)
-        resetImage(img)
-      }
-    })
-  }, [resetImage])
-
-  const scheduleReset = useCallback((img: HTMLDivElement) => {
-    const t = resetTimers.current.get(img)
-    if (t) clearTimeout(t)
-    const newT = setTimeout(() => resetImage(img), 6000)
-    resetTimers.current.set(img, newT)
-  }, [resetImage])
-
-  const reveal = useCallback((img: HTMLDivElement, side: 'before' | 'after') => {
-    resetAllExcept(img)
-    img.classList.toggle('show-before', side === 'before')
-    img.classList.toggle('show-after', side === 'after')
-    scheduleReset(img)
-  }, [resetAllExcept, scheduleReset])
-
-  // Cleanup timers on unmount
-  useEffect(() => {
-    const timers = resetTimers.current
-    return () => {
-      timers.forEach(t => clearTimeout(t))
-    }
-  }, [])
-
-  // Click outside resets all (mobile)
-  useEffect(() => {
-    const handleDocClick = (e: MouseEvent) => {
-      if (!isMobile()) return
-      const clickedInside = imageRefs.current.some(img => img && img.contains(e.target as Node))
-      if (!clickedInside) {
-        imageRefs.current.forEach(img => {
-          if (img) {
-            const t = resetTimers.current.get(img)
-            if (t) clearTimeout(t)
-            resetImage(img)
-          }
-        })
-      }
-    }
-    document.addEventListener('click', handleDocClick)
-    return () => document.removeEventListener('click', handleDocClick)
-  }, [isMobile, resetImage])
-
-  const handleMouseMove = useCallback((index: number, e: React.MouseEvent<HTMLDivElement>) => {
-    if (isMobile()) return
-    const img = imageRefs.current[index]
-    if (!img) return
-    const rect = img.getBoundingClientRect()
-    const side = (e.clientX - rect.left) < rect.width / 2 ? 'before' : 'after'
-    reveal(img, side)
-  }, [isMobile, reveal])
-
-  const handleMouseLeave = useCallback((index: number) => {
-    if (isMobile()) return
-    const img = imageRefs.current[index]
-    if (!img) return
-    const t = resetTimers.current.get(img)
-    if (t) clearTimeout(t)
-    resetImage(img)
-  }, [isMobile, resetImage])
-
-  const handleClick = useCallback((index: number, e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isMobile()) return
-    const img = imageRefs.current[index]
-    if (!img) return
-    const rect = img.getBoundingClientRect()
-    const side: 'before' | 'after' = (e.clientX - rect.left) < rect.width / 2 ? 'before' : 'after'
-
-    const alreadyShowing =
-      (side === 'before' && img.classList.contains('show-before')) ||
-      (side === 'after' && img.classList.contains('show-after'))
-
-    if (alreadyShowing) {
-      const t = resetTimers.current.get(img)
-      if (t) clearTimeout(t)
-      resetImage(img)
-    } else {
-      reveal(img, side)
-    }
-  }, [isMobile, reveal, resetImage])
-
   return (
-    <div className="ba-wrap bg-[#FAF8F4] rounded-[22px] overflow-hidden relative max-w-[1180px] mx-auto">
+    <section className="ba-section">
+      <style>{`
+        .ba-section {
+          background: #FBF8F2;
+          padding: clamp(48px, 7vw, 96px) 0;
+        }
+        .ba-wrap {
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 0 28px;
+        }
+        .ba-grid {
+          display: grid;
+          grid-template-columns: 0.85fr 1.15fr;
+          gap: 48px;
+          align-items: center;
+        }
+        .ba-copy {
+          opacity: 0;
+          transform: translateY(22px);
+          transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .ba-copy.revealed {
+          opacity: 1;
+          transform: none;
+        }
+        .ba-eyebrow {
+          display: block;
+          font-family: 'Jost', system-ui, sans-serif;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.24em;
+          text-transform: uppercase;
+          color: #B08D4F;
+          margin-bottom: 16px;
+        }
+        .ba-title {
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-weight: 500;
+          font-size: clamp(2.6rem, 4.5vw, 4rem);
+          line-height: 1.02;
+          margin-bottom: 20px;
+          color: #1C1814;
+          letter-spacing: -0.01em;
+        }
+        .ba-title em {
+          font-style: italic;
+          color: #B08D4F;
+        }
+        .ba-desc {
+          color: #46403A;
+          font-size: 1rem;
+          line-height: 1.6;
+          margin-bottom: 14px;
+          max-width: 42ch;
+        }
+        .ba-hint {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 10px;
+          font-size: 13.5px;
+          color: #B08D4F;
+          font-weight: 500;
+        }
+        .ba-pair {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          opacity: 0;
+          transform: translateY(22px);
+          transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+        }
+        .ba-pair.revealed {
+          opacity: 1;
+          transform: none;
+        }
+        .ba-item {
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          aspect-ratio: 4/5;
+          user-select: none;
+          cursor: ew-resize;
+          background: #E0DCD4;
+        }
+        .ba-item img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          pointer-events: none;
+        }
+        .ba-after-img {
+          z-index: 1;
+          transition: clip-path 0.2s ease-out;
+          clip-path: inset(0 0 0 50%);
+        }
+        .ba-before-img {
+          z-index: 0;
+        }
+        .ba-handle {
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 50%;
+          width: 2px;
+          background: rgba(251, 248, 242, 0.9);
+          transform: translateX(-1px);
+          pointer-events: none;
+          box-shadow: 0 0 14px rgba(0, 0, 0, 0.35);
+        }
+        .ba-grip {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(251, 248, 242, 0.92);
+          display: grid;
+          place-items: center;
+          pointer-events: none;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .ba-grip svg {
+          width: 20px;
+          height: 20px;
+          color: #B08D4F;
+        }
+        .ba-tag {
+          position: absolute;
+          z-index: 3;
+          font-size: 10.5px;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          font-weight: 600;
+          padding: 6px 13px;
+          border-radius: 999px;
+          background: rgba(28, 24, 20, 0.55);
+          color: #fff;
+          backdrop-filter: blur(4px);
+        }
+        .ba-tag.before {
+          top: 14px;
+          left: 14px;
+        }
+        .ba-tag.after {
+          top: 14px;
+          right: 14px;
+          background: #B08D4F;
+          color: #0e0b09;
+        }
+        .ba-name {
+          position: absolute;
+          z-index: 3;
+          left: 50%;
+          bottom: 16px;
+          transform: translateX(-50%);
+          background: rgba(251, 248, 242, 0.92);
+          color: #1C1814;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 7px 16px;
+          border-radius: 999px;
+          letter-spacing: 0.02em;
+          white-space: nowrap;
+        }
+        @media (max-width: 860px) {
+          .ba-grid {
+            grid-template-columns: 1fr;
+            gap: 30px;
+          }
+          .ba-pair {
+            grid-template-columns: 1fr;
+            gap: 18px;
+          }
+          .ba-item {
+            max-width: 440px;
+            margin: 0 auto;
+            width: 100%;
+          }
+          .ba-section {
+            padding: 70px 0;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ba-copy, .ba-pair {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
 
-      {/* Header */}
-      <div className="ba-header p-[52px_56px_0] max-[860px]:p-[36px_24px_0] grid grid-cols-1 min-[860px]:grid-cols-2 gap-[40px] max-[860px]:gap-4 items-end relative">
-        <div className="absolute -top-[40px] -right-[40px] w-[220px] h-[220px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(196,162,101,0.14) 0%, transparent 70%)' }} />
-        <div>
-          <span className="block text-[9.5px] font-semibold tracking-[0.26em] uppercase text-[#C4A265] mb-4">Resultaten</span>
-          <h2 className="font-['Cormorant_Garamond'] text-[clamp(40px,5.5vw,72px)] font-normal leading-[1] text-[#1E1A14] tracking-[-0.02em]">
-            Before &amp; <em className="italic text-[#C4A265]">After</em>
-          </h2>
+      <div className="ba-wrap">
+        <div className="ba-copy">
+          <span className="ba-eyebrow">Resultaten</span>
+          <h2 className="ba-title">Before &amp; <em>After</em></h2>
+          <p className="ba-desc">Geen voor-en-na om indruk te maken, maar om te laten zien hoe een set rond jouw oog wordt gebouwd.</p>
+          <p className="ba-desc">Sleep over elke foto en zie het verschil zelf.</p>
+          <span className="ba-hint">← sleep om te onthullen →</span>
         </div>
-        <div />
-      </div>
-
-      {/* Cards grid */}
-      <div className="grid grid-cols-1 min-[860px]:grid-cols-2 gap-[14px] p-[14px] max-[860px]:p-[14px_10px_0]">
-        {BA_CARDS.map((card, i) => (
-          <div
-            key={card.name}
-            ref={el => { cardRefs.current[i] = el }}
-            className={`ba-card rounded-[18px] overflow-hidden flex flex-col cursor-default ${i === 0 ? '' : 'max-[860px]:hidden'} ${i < 2 ? '' : 'min-[860px]:hidden'}`}
-            style={{ animationDelay: `${i * 0.1}s` }}
-          >
-            <div
-              ref={el => { imageRefs.current[i] = el }}
-              className="ba-image relative overflow-hidden bg-[#F0EDE6] cursor-pointer min-[769px]:aspect-[4/3] max-[768px]:aspect-[3/4]"
-              onMouseMove={(e) => handleMouseMove(i, e)}
-              onMouseLeave={() => handleMouseLeave(i)}
-              onClick={(e) => handleClick(i, e)}
-            >
-              {/* After layer */}
-              <div className="ba-after-layer absolute inset-0 bg-[linear-gradient(145deg,#1e1a12,#141009)]" style={card.afterImg.startsWith('http') ? { backgroundImage: `url(${card.afterImg})`, backgroundSize: 'cover', backgroundPosition: 'center top' } : undefined}>
-                {!card.afterImg.startsWith('http') && (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-[10px] text-[rgba(196,162,101,0.25)] text-[10px] tracking-[0.14em] uppercase">
-                  <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75" className="text-[rgba(196,162,101,0.25)]">
-                    <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                  After foto
-                </div>
-                )}
+        <div className="ba-pair">
+          {BA_PAIRS.map((pair) => (
+            <div key={pair.name} className="ba-item" data-ba>
+              <img className="ba-after-img" src={pair.after} alt={pair.name} />
+              <img className="ba-before-img" src={pair.before} alt={pair.name} />
+              <span className="ba-tag before">Before</span>
+              <span className="ba-tag after">After</span>
+              <div className="ba-handle" />
+              <div className="ba-grip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>
+                </svg>
               </div>
-
-              {/* Before layer */}
-              <div className="ba-before-layer absolute inset-0 bg-[#F0EDE6]" style={card.beforeImg.startsWith('http') ? { backgroundImage: `url(${card.beforeImg})`, backgroundSize: 'cover', backgroundPosition: 'center top' } : undefined}>
-                {!card.beforeImg.startsWith('http') && (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-[10px] text-[rgba(30,26,20,0.2)] text-[10px] tracking-[0.14em] uppercase">
-                  <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="0.75" className="text-[rgba(30,26,20,0.2)]">
-                    <rect x="3" y="3" width="18" height="18" rx="2" strokeDasharray="3 2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                  Before foto
-                </div>
-                )}
-              </div>
-
-              {/* Slider line */}
-              <div className="ba-slider-line absolute top-0 bottom-0 left-1/2 w-[2px] -translate-x-1/2 opacity-45 z-[4] pointer-events-none" style={{ background: 'linear-gradient(180deg, transparent 0%, #C4A265 20%, #C4A265 80%, transparent 100%)' }} />
-
-              {/* Labels */}
-              <span className="absolute top-[14px] left-[14px] text-[9px] font-semibold tracking-[0.22em] uppercase text-[#7A7268] bg-[rgba(250,248,244,0.82)] backdrop-blur-[8px] border border-[rgba(30,26,20,0.08)] px-[11px] py-[4px] rounded-full z-[3]">Before</span>
-              <span className="absolute top-[14px] right-[14px] text-[9px] font-semibold tracking-[0.22em] uppercase text-[#1A1611] bg-[#B08D4F] px-[11px] py-[4px] rounded-full z-[3]">After</span>
-
-              {/* Type pill */}
-              <div className="ba-type-pill absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-medium tracking-[0.1em] text-[#1E1A14] bg-[rgba(250,248,244,0.88)] backdrop-blur-[12px] border border-[rgba(30,26,20,0.1)] px-[14px] py-[6px] rounded-full inline-flex items-center justify-center gap-[6px] whitespace-nowrap z-[6] shadow-[0_4px_16px_rgba(12,10,7,0.08)] transition-all duration-300">
-                <span className="block w-[6px] h-[6px] rounded-full bg-[#C4A265] opacity-70 shrink-0" />
-                {card.name}
-              </div>
-
-              {/* Bottom fade */}
-              <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-[linear-gradient(0deg,rgba(12,10,7,0.72),transparent)] pointer-events-none" />
+              <span className="ba-name">{pair.name}</span>
             </div>
-
-            {/* Bottom padding inside card */}
-            <div className="h-0" />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Bottom padding */}
-      <div className="h-[14px]" />
-    </div>
+      <script>{`
+        document.querySelectorAll('[data-ba]').forEach(ba=>{
+          const after=ba.querySelector('.after-img');
+          const handle=ba.querySelector('.ba-handle');
+          const grip=ba.querySelector('.ba-grip');
+          let dragging=false;
+          function set(clientX){
+            const r=ba.getBoundingClientRect();
+            let pct=((clientX-r.left)/r.width)*100;
+            pct=Math.max(0,Math.min(100,pct));
+            after.style.clipPath='inset(0 0 0 '+pct+'%)';
+            handle.style.left=pct+'%';
+            grip.style.left=pct+'%';
+          }
+          const start=e=>{
+            dragging=true;
+            set((e.touches?e.touches[0].clientX:e.clientX));
+          };
+          const move=e=>{
+            if(dragging)set((e.touches?e.touches[0].clientX:e.clientX));
+          };
+          const end=()=>dragging=false;
+          ba.addEventListener('mousedown',start);
+          ba.addEventListener('touchstart',start,{passive:!0});
+          window.addEventListener('mousemove',move);
+          window.addEventListener('touchmove',move,{passive:!0});
+          window.addEventListener('mouseup',end);
+          window.addEventListener('touchend',end);
+          ba.addEventListener('click',e=>set(e.clientX));
+        });
+        const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('revealed');io.unobserve(e.target)}}),{threshold:.1});
+        document.querySelectorAll('.ba-copy,.ba-pair').forEach(el=>io.observe(el));
+      `}</script>
+    </section>
   )
 }
