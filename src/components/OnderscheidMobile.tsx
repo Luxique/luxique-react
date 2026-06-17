@@ -126,14 +126,14 @@ export default function OnderscheidMobile() {
           padding-top: 74px; /* navbar space */
           padding-bottom: 20px;
           pointer-events: none;
-          margin-bottom: calc(-74px - 42svh - 20px); /* collapse so text flows up behind */
+          margin-bottom: calc(-74px - 37svh - 20px); /* collapse so text flows up behind */
         }
         .ond-mob-photo {
           position: relative;
           margin: 0 18px;
           border-radius: 20px;
           overflow: hidden;
-          height: 42svh;
+          height: 37svh;
           box-shadow: 0 24px 50px -24px rgba(0,0,0,.6);
         }
         .ond-mob-ph {
@@ -180,13 +180,15 @@ export default function OnderscheidMobile() {
         /* Veil: soft fade at photo bottom boundary (z4) */
         .ond-mob-veil {
           position: sticky;
-          top: calc(74px + 42svh - 10px);
+          top: calc(74px + 37svh - 10px);
           z-index: 4;
-          height: 60px;
-          margin-bottom: -60px;
+          height: 100px;
+          margin-bottom: -100px;
           pointer-events: none;
+          /* Solid green1 at top (matches section bg) → fades to transparent.
+             Text scrolling UP behind this dissolves into the background. */
           background: linear-gradient(to bottom,
-            rgba(42,49,40,0) 0%, #1c211a 100%);
+            #2a3128 0%, rgba(42,49,40,0.85) 30%, rgba(42,49,40,0) 100%);
         }
 
         /* BACK: ALL text scrolls (z2) */
@@ -199,7 +201,7 @@ export default function OnderscheidMobile() {
           padding-bottom: 10svh;
         }
         .ond-mob-head {
-          padding-top: calc(74px + 42svh + 60px);
+          padding-top: calc(74px + 37svh + 60px);
           padding-bottom: 40px;
           text-align: center;
         }
