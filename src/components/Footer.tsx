@@ -33,6 +33,7 @@ export default function Footer() {
             <a href="/about" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Over mij</a>
             <a href="/faq" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">FAQ</a>
             <a href="/contact" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Contact</a>
+            <a href="https://share.google/tMpRbq1uq31Sf7H4a" target="_blank" rel="noopener noreferrer" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">Laat een review achter</a>
             <a href="https://instagram.com/lashedbychiva" target="_blank" rel="noopener noreferrer" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">@lashedbychiva</a>
           </div>
         </div>

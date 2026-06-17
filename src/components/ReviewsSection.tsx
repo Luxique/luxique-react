@@ -206,6 +206,15 @@ export default function ReviewsSection() {
           Meer reviews laden <span style={{ fontSize: 10, opacity: 0.7 }}>▼</span>
         </button>
       </div>
+
+      {/* Google reviews link */}
+      <div className="mt-12 text-center">
+        <a href="https://share.google/tMpRbq1uq31Sf7H4a" target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-[#1A1815] font-medium hover:text-[#C4A265] transition-colors text-[15px]">
+          Lees al onze reviews op Google
+          <span>→</span>
+        </a>
+      </div>
     </section>
   )
 }

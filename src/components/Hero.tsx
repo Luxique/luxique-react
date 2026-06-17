@@ -8,6 +8,18 @@ const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public
 const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header2.webp'
 const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header4.webp'
 
+const GOOGLE_REVIEWS_URL = 'https://share.google/tMpRbq1uq31Sf7H4a'
+
+const GOOGLE_RATING = { stars: 5, count: 47, display: '5.0' }
+
+// Placeholder avatars for pill (CJ will replace with real photos)
+const AVATARS = [
+  { initial: 'M', color: '#B06A8A' },
+  { initial: 'A', color: '#6B8E7C' },
+  { initial: 'S', color: '#D4A574' },
+]
+]
+
 const SLIDES = [
   {
     img: IMG_ORIG,
@@ -134,32 +146,48 @@ export default function Hero() {
       {/* ═══════════════════════════════════════════
           MOBILE HERO (<768px) — Original layout, pixel-identical
           ═══════════════════════════════════════════ */}
-      <div className="md:hidden w-full h-full pt-[72px] px-[10px] pb-[10px]">
-        <div className="w-full h-full grid grid-cols-1 gap-[10px] overflow-hidden grid-rows-[auto_1fr]">
+      <div className="md:hidden w-full h-full pt-[56px] px-[10px] pb-[10px]">
+        <div className="w-full h-full grid grid-cols-1 gap-[8px] overflow-hidden grid-rows-[auto_1fr]">
           {/* LEFT/TOP PANEL */}
-          <div className="bg-[#FFFFFF] rounded-[22px] pt-[26px] px-[22px] pb-7 shrink-0 flex-none flex flex-col overflow-hidden relative">
+          <div className="bg-[#FFFFFF] rounded-[22px] pt-[22px] px-[20px] pb-[26px] shrink-0 flex-none flex flex-col overflow-hidden relative">
             <div className="absolute -top-[50px] -right-[50px] w-[180px] h-[180px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.14)_0%,transparent_70%)] pointer-events-none" />
 
             <div>
-              <div className="inline-flex items-center gap-[7px] bg-[rgba(12,10,7,0.88)] border border-[rgba(176,141,79,0.5)] rounded-full px-[13px] py-[5px] text-[11px] text-[#E0C078] font-medium mb-6">
-                <span className="text-[#C4A265] tracking-[1px]">★★★★★</span>
-                5.0 · 47 reviews
-              </div>
+              {/* Google reviews pill with avatars */}
+              <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-[6px] bg-[rgba(12,10,7,0.88)] border border-[rgba(176,141,79,0.5)] rounded-full px-[12px] py-[4px] mb-5 hover:bg-[rgba(12,10,7,0.95)] transition-colors">
+                {/* Overlapping avatar circles */}
+                <div className="flex -space-x-[5px]">
+                  {AVATARS.map((avatar, i) => (
+                    <div key={i}
+                      className="w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-semibold text-white border-[1.5px] border-[rgba(12,10,7,0.88)]"
+                      style={{ backgroundColor: avatar.color }}>
+                      {avatar.initial}
+                    </div>
+                  ))}
+                </div>
+                {/* Google logo + stars + rating */}
+                <div className="flex items-center gap-[4px] text-[#E0C078]">
+                  <span className="text-[13px] font-semibold text-[#4285F4]">G</span>
+                  <span className="text-[10px] tracking-[1px]">{'★'.repeat(GOOGLE_RATING.stars)}</span>
+                  <span className="text-[11px] font-medium">{GOOGLE_RATING.display} · {GOOGLE_RATING.count} reviews</span>
+                </div>
+              </a>
 
-              <h1 className="font-['Outfit'] font-medium leading-[1.02] mb-[24px] max-w-[900px]">
-                <span className="block text-[clamp(44px,6.5vw,88px)] text-[#1A1815] tracking-[-0.02em]">We Teach</span>
-                <span className="block text-[clamp(44px,6.5vw,88px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">The Art of Lashes.</span>
+              <h1 className="font-['Outfit'] font-medium leading-[1.02] mb-[20px] max-w-[900px]">
+                <span className="block text-[clamp(40px,6vw,80px)] text-[#1A1815] tracking-[-0.02em]">We Teach</span>
+                <span className="block text-[clamp(40px,6vw,80px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">The Art of Lashes.</span>
               </h1>
 
-              <p className="text-[18px] text-[#7A7268] leading-[1.6] mb-[36px] max-w-[560px]">
+              <p className="text-[17px] text-[#7A7268] leading-[1.6] mb-[30px] max-w-[560px]">
                 Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland&apos;s #1 lash educator.
               </p>
 
               <div className="flex gap-[9px] flex-wrap">
-                <a href="/courses" className="text-[14px] font-medium px-[22px] py-[11px] rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
+                <a href="/courses" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
                   Bekijk de academy
                 </a>
-                <a href="/behandelingen" className="text-[14px] font-medium px-[22px] py-[11px] rounded-full bg-transparent text-[#1A1815] border-[1.5px] border-[rgba(26,24,21,0.2)] hover:border-[rgba(26,24,21,0.45)] hover:bg-[rgba(196,162,101,0.06)] transition-all tracking-[0.02em]">
+                <a href="/behandelingen" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-transparent text-[#1A1815] border-[1.5px] border-[rgba(26,24,21,0.2)] hover:border-[rgba(26,24,21,0.45)] hover:bg-[rgba(196,162,101,0.06)] transition-all tracking-[0.02em]">
                   Boek een treatment
                 </a>
               </div>
@@ -167,11 +195,12 @@ export default function Hero() {
           </div>
 
           {/* RIGHT/BOTTOM PANEL — Slider */}
-          <div className="rounded-[22px] overflow-visible relative bg-[#161310] min-h-[240px]">
+          <div className="rounded-[22px] overflow-visible relative bg-[#161310] min-h-[280px]">
             {SLIDES.map((slide, i) => (
               <div key={i} className="absolute inset-0 transition-opacity duration-[850ms] ease-in-out" style={{ opacity: current === i ? 1 : 0 }}>
                 <img src={slide.img || IMG_ORIG} alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
-                <div className="absolute top-5 right-5 bg-[rgba(12,10,7,0.55)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[10px] px-[15px] py-[11px] z-[5] text-right">
+                {/* Top-right tag — HIDDEN on mobile */}
+                <div className="hidden md:block absolute top-5 right-5 bg-[rgba(12,10,7,0.55)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[10px] px-[15px] py-[11px] z-[5] text-right">
                   <span className="block font-['Cormorant_Garamond'] text-[17px] italic text-[#DFC08A] mb-[2px]">{slide.title}</span>
                   <span className="text-[10px] text-[rgba(255,255,255,0.42)] tracking-[0.1em] uppercase">{slide.sub}</span>
                 </div>
@@ -184,20 +213,20 @@ export default function Hero() {
             </div>
 
             {/* Review badge */}
-            <div className="absolute bottom-[48px] left-5 max-w-[260px] bg-[rgba(12,10,7,0.58)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[14px] px-[14px] py-[10px] z-[5] flex items-center gap-[10px] transition-opacity duration-[850ms]"
+            <div className="absolute bottom-[42px] left-5 max-w-[270px] bg-[rgba(12,10,7,0.58)] backdrop-blur-[14px] border border-[rgba(196,162,101,0.18)] rounded-[14px] px-[14px] py-[10px] z-[5] flex items-center gap-[10px] transition-opacity duration-[850ms]"
               style={{ opacity: current === current ? 1 : 0 }}>
               <div className="w-8 h-8 rounded-full bg-[rgba(196,162,101,0.3)] flex items-center justify-center text-[12px] text-[#DFC08A] font-semibold shrink-0 border-[1.5px] border-[rgba(196,162,101,0.4)]">
                 {review.name[0]}
               </div>
               <div className="min-w-0">
                 <div className="text-[11px] font-semibold text-[#DFC08A] mb-[2px]">{review.name}</div>
-                <div className="text-[11px] text-[rgba(255,255,255,0.7)] leading-[1.4] italic truncate">&ldquo;{review.text}&rdquo;</div>
+                <div className="text-[10px] text-[rgba(255,255,255,0.7)] leading-[1.4] italic truncate">&ldquo;{review.text}&rdquo;</div>
                 <div className="text-[9px] text-[rgba(255,255,255,0.45)] tracking-[0.08em] mt-[1px]">{'★'.repeat(review.stars)} · {review.source}</div>
               </div>
             </div>
 
             {/* Slider pills */}
-            <div className="absolute bottom-5 left-0 right-0 z-[5] flex gap-[5px] px-4 justify-center">
+            <div className="absolute bottom-3.5 left-0 right-0 z-[5] flex gap-[5px] px-4 justify-center">
               {SLIDES.map((slide, i) => (
                 <button key={i} onClick={() => goTo(i)}
                   className={`relative overflow-hidden cursor-pointer transition-colors
