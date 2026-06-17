@@ -99,7 +99,7 @@ export default function MeetChiva() {
         </div>
 
         {/* Text overlay — desktop: right of portrait, mobile: top-left */}
-        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-6 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-start min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left max-[860px]:box-shadow-[0_10px_40px_-10px_rgba(0,0,0,0.18)]">
+        <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-6 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-start min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left max-[860px]:box-shadow-[0_20px_60px_-15px_rgba(0,0,0,0.28)]">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
             Meet <span className="text-[#C4A265]">Chiva</span>

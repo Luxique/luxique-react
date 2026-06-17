@@ -4,15 +4,8 @@ import { useEffect } from 'react'
 
 export default function ThemeColorManager() {
   useEffect(() => {
-    // DISABLE on mobile — use fixed cream theme-color
-    const isMobile = window.innerWidth < 860
-    
-    if (isMobile) {
-      // Immediately set meta-tag to cream on mobile
-      const themeMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
-      if (themeMeta) {
-        themeMeta.content = '#FAF8F4'
-      }
+    // COMPLETELY DISABLE on mobile — use fixed theme-color from layout
+    if (window.innerWidth < 860) {
       return
     }
 
