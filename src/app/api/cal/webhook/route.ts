@@ -74,6 +74,10 @@ export async function POST(request: NextRequest) {
     return await handleBookingCancelled(payload, supabase)
   }
 
+  if (trigger === 'BOOKING_RESCHEDULED' || trigger === 'booking_rescheduled' || trigger === 'RESCHEDULE' || trigger === 'BOOKING_RESCHEDULE') {
+    return await handleBookingRescheduled(payload, supabase)
+  }
+
   console.log('⚠️ Unhandled trigger:', trigger)
   return NextResponse.json({ received: true, trigger, unhandled: true })
 }
@@ -167,4 +171,102 @@ async function handleBookingCancelled(payload: any, supabase: any) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+/**
+ * Handle BOOKING_RESCHEDULED — update slot_start (+ UID if changed) in pending_bookings.
+ * Cal.com reschedule webhook payload structure:
+ *   payload.uid — the booking UID (may stay same or change depending on Cal version)
+ *   payload.payload.startTime — new start time
+ *   payload.payload.oldUid / rescheduledFromUid — reference to old booking (if UID changed)
+ */
+async function handleBookingRescheduled(payload: any, supabase: any) {
+  const booking = payload.payload || payload.data || payload.event || payload.booking || payload
+
+  // Cal.com may send the new UID under various field names
+  const newUid = booking.uid || booking.id?.toString() || booking.bookingUid || payload.uid
+  // Some Cal.com versions include the old UID for reference
+  const oldUid = booking.rescheduleUid || booking.oldUid || booking.rescheduledFromUid || booking.rescheduledFrom || payload.oldUid || null
+
+  const newStartTime = booking.startTime || booking.start_time || booking.start || payload.startTime
+
+  if (!newStartTime) {
+    console.error('❌ Reschedule: missing startTime', { newUid, oldUid, newStartTime })
+    return NextResponse.json({ error: 'Missing startTime for reschedule' }, { status: 400 })
+  }
+
+  // Try to find the booking by new UID first, then by old UID
+  let targetUid = newUid
+  let { data: bookingRow, error: fetchError } = await supabase
+    .from('pending_bookings')
+    .select('id, cal_booking_uid, status, slot_start')
+    .eq('cal_booking_uid', newUid)
+    .single()
+
+  if (fetchError || !bookingRow) {
+    // Try old UID
+    if (oldUid) {
+      const res = await supabase
+        .from('pending_bookings')
+        .select('id, cal_booking_uid, status, slot_start')
+        .eq('cal_booking_uid', oldUid)
+        .single()
+      bookingRow = res.data
+      fetchError = res.error
+      targetUid = oldUid
+    }
+
+    // If still not found, try matching on customer email as fallback
+    if ((!bookingRow || fetchError) && booking.attendees?.[0]?.email) {
+      const email = booking.attendees[0].email
+      const res = await supabase
+        .from('pending_bookings')
+        .select('id, cal_booking_uid, status, slot_start')
+        .eq('customer_email', email)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      if (res.data) {
+        bookingRow = res.data
+        targetUid = res.data.cal_booking_uid
+      }
+    }
+  }
+
+  if (!bookingRow) {
+    console.warn(`⚠️ Reschedule: no matching booking found (newUid=${newUid}, oldUid=${oldUid})`)
+    return NextResponse.json({ received: true, rescheduled: false, reason: 'booking not found' })
+  }
+
+  // Build update object — update slot_start + cal_booking_uid if it changed
+  const update: Record<string, any> = {
+    slot_start: newStartTime,
+    updated_at: new Date().toISOString(),
+  }
+
+  // If UID changed, update it too
+  if (newUid !== targetUid) {
+    update.cal_booking_uid = newUid
+  }
+
+  const { error: updateError } = await supabase
+    .from('pending_bookings')
+    .update(update)
+    .eq('id', bookingRow.id)
+
+  if (updateError) {
+    console.error('❌ Reschedule: DB update failed:', updateError)
+    return NextResponse.json({ error: 'DB update failed' }, { status: 500 })
+  }
+
+  const oldTime = bookingRow.slot_start
+  console.log(`✅ Rescheduled: ${bookingRow.cal_booking_uid} → ${newStartTime} (was ${oldTime})`)
+  return NextResponse.json({
+    received: true,
+    rescheduled: true,
+    bookingId: bookingRow.id,
+    oldStart: oldTime,
+    newStart: newStartTime,
+    uidChanged: newUid !== targetUid,
+  })
 }
