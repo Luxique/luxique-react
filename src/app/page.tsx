@@ -19,7 +19,7 @@ export default function Home() {
     <div className="bg-[#F3EEE6] min-h-screen">
     <EmailConfirmHandler />
     <>
-      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#F3EEE6] overflow-hidden" style={{ paddingTop: 'var(--content-pad-top)' }}>
+      <div id="hero" data-theme-color="#FAF8F4" data-theme-dark="false" className="relative w-full h-screen max-h-screen bg-[#F3EEE6] overflow-hidden">
         <Hero />
       </div>
       <div id="verschil" data-theme-color="#FAF8F4" data-theme-dark="false" className="my-[28px]"><TechVsArtist /></div>
