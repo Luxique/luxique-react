@@ -187,7 +187,7 @@ export default function AboutPage() {
           <section className="intro">
             <div className="wrap intro-grid">
               <div className="portrait clip">
-                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-portrait.webp" alt="Chiva Daams" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
+                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-us-profile.webp" alt="Chiva Daams" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
                 <span className="tag">Arnhem · sinds 2019</span>
               </div>
               <div>
