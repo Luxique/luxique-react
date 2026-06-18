@@ -246,7 +246,7 @@ export default function DashboardPage() {
       const { data } = await supabase
         .from('pending_bookings')
         .select('slot_start')
-        .in('status', ['paid', 'pending'])
+        .or('status.eq.paid,status.eq.pending')
         .gte('slot_start', dateStart)
         .lt('slot_start', dateEnd)
 
