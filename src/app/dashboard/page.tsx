@@ -190,9 +190,13 @@ export default function DashboardPage() {
     if (isWithin24h(selectedBooking.slot_start) && !cancelAgreed) return
     setCancelling(true)
     try {
-      const { data } = await supabase.auth.getSession()
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session?.access_token) {
+        setCancelling(false)
+        return
+      }
       const res = await fetch('/api/boeking/cancel', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` },
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
         body: JSON.stringify({ bookingId: selectedBooking.id, within24h: isWithin24h(selectedBooking.slot_start) }),
       })
       const result = await res.json()
@@ -215,10 +219,17 @@ export default function DashboardPage() {
       // Adjust for Amsterdam timezone offset (the server expects UTC)
       const isoStart = dt.toISOString()
 
-      // Use session from useAuth (not getSession)
+      // Get session from Supabase directly (same pattern as my-bookings fetch)
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session?.access_token) {
+        setRescheduleError('Sessie verlopen. Log opnieuw in.')
+        setRescheduling(false)
+        return
+      }
+
       const res = await fetch('/api/boeking/reschedule', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
         body: JSON.stringify({ bookingId: selectedBooking.id, newStart: isoStart }),
       })
       const result = await res.json()
