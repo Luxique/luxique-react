@@ -13,8 +13,8 @@ type PendingBooking = {
   cancelled_within_24h?: boolean
 }
 
-// Available time slots for rescheduling (3-hour appointment windows)
-const RESCHEDULE_SLOTS = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00']
+// Available time slots for rescheduling (LUXIQUE schedule — will be updated)
+const RESCHEDULE_SLOTS = ['09:00', '12:00']
 type LessonRow = { id: string; title: string; slug: string; sort_order: number; lesson_type: string; course_id: string }
 type ProgressRow = { lesson_id: string; completed: boolean }
 type CourseProgress = {
