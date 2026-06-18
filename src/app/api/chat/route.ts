@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@supabase/supabase-js'
 
-const SYSTEM_PROMPT = `Je bent "Lux", de persoonlijke assistent van LUXIQUE — een lash studio en online academy van lash artist Chiva in Arnhem. Je praat namens LUXIQUE met bezoekers op de website.
+const SYSTEM_PROMPT_FALLBACK = `Je bent "Lux", de persoonlijke assistent van LUXIQUE — een lash studio en online academy van lash artist Chiva in Arnhem. Je praat namens LUXIQUE met bezoekers op de website.
 
 # Jouw toon
 - Warm, persoonlijk en gastvrij — alsof Chiva zelf even meedenkt. Vriendelijk, rustig, nooit pusherig of als een verkoper.
@@ -111,6 +112,42 @@ Boek vooraf een workshop van 1 uur. Daarin maak je kennis met de materialen, lee
 - Op alle voorwaarden is Nederlands recht van toepassing.
 - Volledige voorwaarden: /voorwaarden`
 
+// Cache knowledge from DB (60s TTL)
+let cachedKnowledge: { content: string; fetchedAt: number } | null = null
+const CACHE_TTL = 60_000 // 60 seconds
+
+async function getSystemPrompt(): Promise<string> {
+  // Check cache first
+  if (cachedKnowledge && Date.now() - cachedKnowledge.fetchedAt < CACHE_TTL) {
+    return cachedKnowledge.content
+  }
+
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data, error } = await supabase
+      .from('lux_knowledge')
+      .select('content')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data?.content) {
+      console.error('[chat] DB knowledge load failed, using fallback:', error?.message || 'no content')
+      return SYSTEM_PROMPT_FALLBACK
+    }
+
+    cachedKnowledge = { content: data.content, fetchedAt: Date.now() }
+    return data.content
+  } catch (err) {
+    console.error('[chat] Knowledge fetch error, using fallback:', err)
+    return SYSTEM_PROMPT_FALLBACK
+  }
+}
+
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT = 10
@@ -154,7 +191,7 @@ export async function POST(req: NextRequest) {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 400,
-      system: SYSTEM_PROMPT,
+      system: await getSystemPrompt(),
       messages: messages.filter((m: { role: string; content: string }) =>
         m.role === 'user' || m.role === 'assistant'
       ).map((m: { role: string; content: string }) => ({
