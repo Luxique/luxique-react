@@ -259,6 +259,25 @@ export default function DashboardPage() {
   // Max date = 60 days from now
   const maxRescheduleDate = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0]
 
+  // Check if date is weekend (Saturday=6, Sunday=0)
+  const isWeekend = (dateStr: string): boolean => {
+    const d = new Date(dateStr)
+    const day = d.getDay()
+    return day === 0 || day === 6
+  }
+
+  // Handle date change with weekend validation
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value
+    if (newDate && isWeekend(newDate)) {
+      setRescheduleError('Chiva werkt niet in het weekend. Kies een werkdag.')
+      setRescheduleDate('')
+      return
+    }
+    setRescheduleError('')
+    setRescheduleDate(newDate)
+  }
+
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center" style={{ paddingTop: 'var(--content-pad-top)' }}>
@@ -637,7 +656,7 @@ export default function DashboardPage() {
                             value={rescheduleDate}
                             min={minRescheduleDate}
                             max={maxRescheduleDate}
-                            onChange={(e) => setRescheduleDate(e.target.value)}
+                            onChange={handleDateChange}
                             style={{ width:'100%', padding:'12px 14px', borderRadius:12, border:'1px solid rgba(28,24,20,.13)', fontSize:'.9rem', background:'#F3EFE7', color:'#1C1814', outline:'none' }}
                           />
                         </div>

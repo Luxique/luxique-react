@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Get user from JWT
-    const { data: userData } = await supabase.auth.getUser(token)
-    if (!userData.user) {
-      return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+    // Get user from JWT (same pattern as my-bookings)
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     // Get the booking — must belong to this user
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Authorization: session user must own this booking
-    if (booking.user_id !== userData.user.id) {
+    if (booking.user_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
