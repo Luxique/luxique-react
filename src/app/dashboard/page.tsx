@@ -39,7 +39,7 @@ function isWithin24h(slotStart: string) {
 }
 
 export default function DashboardPage() {
-  const { user, enrollments, loading, session } = useAuth()
+  const { user, enrollments, loading } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
