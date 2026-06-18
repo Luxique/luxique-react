@@ -139,9 +139,20 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session?.access_token) return
+      if (!data.session?.access_token) {
+        console.warn('[dashboard] No session token for my-bookings fetch')
+        return
+      }
       fetch('/api/boeking/my-bookings', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
-        .then(res => res.json()).then(data => setPendingBookings(data.bookings || [])).catch(() => {})
+        .then(res => {
+          if (!res.ok) {
+            console.error('[dashboard] my-bookings API error:', res.status)
+            return []
+          }
+          return res.json()
+        })
+        .then(data => setPendingBookings(data?.bookings || []))
+        .catch(err => console.error('[dashboard] my-bookings fetch failed:', err))
     })
   }, [user])
 
