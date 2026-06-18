@@ -39,7 +39,7 @@ function isWithin24h(slotStart: string) {
 }
 
 export default function DashboardPage() {
-  const { user, enrollments, loading } = useAuth()
+  const { user, enrollments, loading, session } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [rescheduleTime, setRescheduleTime] = useState('')
   const [rescheduling, setRescheduling] = useState(false)
   const [rescheduleError, setRescheduleError] = useState('')
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'academy' | 'boekingen'>('overview')
   const [profileFirstName, setProfileFirstName] = useState<string>('')
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([])
@@ -185,10 +186,10 @@ export default function DashboardPage() {
       // Adjust for Amsterdam timezone offset (the server expects UTC)
       const isoStart = dt.toISOString()
 
-      const { data } = await supabase.auth.getSession()
+      // Use session from useAuth (not getSession)
       const res = await fetch('/api/boeking/reschedule', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session?.access_token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ bookingId: selectedBooking.id, newStart: isoStart }),
       })
       const result = await res.json()
@@ -230,6 +231,35 @@ export default function DashboardPage() {
   }
 
   const firstName = profileFirstName || user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || ''
+
+  // Fetch booked slots for reschedule availability check
+  useEffect(() => {
+    if (!rescheduleDate) {
+      setBookedSlots([])
+      return
+    }
+
+    const fetchBookedSlots = async () => {
+      const dateStart = `${rescheduleDate}T00:00:00.000Z`
+      const dateEnd = `${rescheduleDate}T23:59:59.999Z`
+
+      const { data } = await supabase
+        .from('pending_bookings')
+        .select('slot_start')
+        .in('status', ['paid', 'pending'])
+        .gte('slot_start', dateStart)
+        .lt('slot_start', dateEnd)
+
+      const slots = data?.map(b => {
+        const h = new Date(b.slot_start).getHours()
+        return `${h.toString().padStart(2, '0')}:00`
+      }) || []
+
+      setBookedSlots(slots)
+    }
+
+    fetchBookedSlots()
+  }, [rescheduleDate])
 
   // Best course to resume (highest pct but not 100%, or first with next lesson)
   const resumeCourse = courseProgress.length > 0
@@ -605,21 +635,27 @@ export default function DashboardPage() {
                         <div>
                           <label style={{ display:'block', fontSize:'.82rem', color:'#888', marginBottom:6, fontWeight:500 }}>Tijd</label>
                           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-                            {RESCHEDULE_SLOTS.map(slot => (
-                              <button
-                                key={slot}
-                                onClick={() => setRescheduleTime(slot)}
-                                style={{
-                                  padding:'10px', borderRadius:10, fontSize:'.88rem', fontWeight:500, cursor:'pointer',
-                                  border: rescheduleTime === slot ? '1px solid #B08D4F' : '1px solid rgba(28,24,20,.13)',
-                                  background: rescheduleTime === slot ? 'rgba(176,141,79,.12)' : 'transparent',
-                                  color: rescheduleTime === slot ? '#B08D4F' : '#1C1814',
-                                  transition: 'all .2s',
-                                }}
-                              >
-                                {slot}
-                              </button>
-                            ))}
+                            {RESCHEDULE_SLOTS.map(slot => {
+                              const isBooked = bookedSlots.includes(slot)
+                              return (
+                                <button
+                                  key={slot}
+                                  onClick={() => !isBooked && setRescheduleTime(slot)}
+                                  disabled={isBooked}
+                                  style={{
+                                    padding:'10px', borderRadius:10, fontSize:'.88rem', fontWeight:500,
+                                    cursor: isBooked ? 'not-allowed' : 'pointer',
+                                    border: rescheduleTime === slot ? '1px solid #B08D4F' : '1px solid rgba(28,24,20,.13)',
+                                    background: isBooked ? 'rgba(28,24,20,.05)' : (rescheduleTime === slot ? 'rgba(176,141,79,.12)' : 'transparent'),
+                                    color: isBooked ? '#aaa' : (rescheduleTime === slot ? '#B08D4F' : '#1C1814'),
+                                    opacity: isBooked ? .5 : 1,
+                                    transition: 'all .2s',
+                                  }}
+                                >
+                                  {slot}
+                                </button>
+                              )
+                            })}
                           </div>
                         </div>
 
