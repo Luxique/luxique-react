@@ -156,6 +156,35 @@ export default function DashboardPage() {
     return () => obs.disconnect()
   })
 
+  // Fetch booked slots for reschedule availability check
+  useEffect(() => {
+    if (!rescheduleDate) {
+      setBookedSlots([])
+      return
+    }
+
+    const fetchBookedSlots = async () => {
+      const dateStart = `${rescheduleDate}T00:00:00.000Z`
+      const dateEnd = `${rescheduleDate}T23:59:59.999Z`
+
+      const { data } = await supabase
+        .from('pending_bookings')
+        .select('slot_start')
+        .or('status.eq.paid,status.eq.pending')
+        .gte('slot_start', dateStart)
+        .lt('slot_start', dateEnd)
+
+      const slots = data?.map(b => {
+        const h = new Date(b.slot_start).getHours()
+        return `${h.toString().padStart(2, '0')}:00`
+      }) || []
+
+      setBookedSlots(slots)
+    }
+
+    fetchBookedSlots()
+  }, [rescheduleDate])
+
   const handleCancelBooking = async () => {
     if (!selectedBooking || !user) return
     if (isWithin24h(selectedBooking.slot_start) && !cancelAgreed) return
@@ -231,35 +260,6 @@ export default function DashboardPage() {
   }
 
   const firstName = profileFirstName || user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || ''
-
-  // Fetch booked slots for reschedule availability check
-  useEffect(() => {
-    if (!rescheduleDate) {
-      setBookedSlots([])
-      return
-    }
-
-    const fetchBookedSlots = async () => {
-      const dateStart = `${rescheduleDate}T00:00:00.000Z`
-      const dateEnd = `${rescheduleDate}T23:59:59.999Z`
-
-      const { data } = await supabase
-        .from('pending_bookings')
-        .select('slot_start')
-        .or('status.eq.paid,status.eq.pending')
-        .gte('slot_start', dateStart)
-        .lt('slot_start', dateEnd)
-
-      const slots = data?.map(b => {
-        const h = new Date(b.slot_start).getHours()
-        return `${h.toString().padStart(2, '0')}:00`
-      }) || []
-
-      setBookedSlots(slots)
-    }
-
-    fetchBookedSlots()
-  }, [rescheduleDate])
 
   // Best course to resume (highest pct but not 100%, or first with next lesson)
   const resumeCourse = courseProgress.length > 0
