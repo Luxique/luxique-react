@@ -122,7 +122,7 @@ export default function ChatWidget() {
           <div style={{ padding: '18px 22px', borderBottom: '1px solid rgba(196,162,101,0.18)', display: 'flex', alignItems: 'center', gap: 12 }}>
             <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chatbot-avatar.webp" alt="Loenique" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#FAF8F4', fontSize: 14, fontWeight: 500 }}>LUXIQUE</div>
+              <div style={{ color: '#FAF8F4', fontSize: 14, fontWeight: 500 }}>Loenique</div>
               <div style={{ color: '#C4A265', fontSize: 11, letterSpacing: '0.1em' }}>ONLINE</div>
             </div>
             <button
