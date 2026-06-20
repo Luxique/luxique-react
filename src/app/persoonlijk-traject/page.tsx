@@ -45,10 +45,10 @@ export default function PersoonlijkTrajectPage() {
       })
     })
 
-    // Lux chatbot buttons
-    const luxBtns = root.querySelectorAll('[data-lux]')
+    // Loenique chatbot buttons
+    const luxBtns = root.querySelectorAll('[data-loenique]')
     luxBtns.forEach(btn => {
-      btn.addEventListener('click', () => window.dispatchEvent(new Event('open-lux-chat')))
+      btn.addEventListener('click', () => window.dispatchEvent(new Event('open-loenique-chat')))
     })
 
     return () => {
@@ -254,7 +254,7 @@ export default function PersoonlijkTrajectPage() {
   .cta .btn{background:var(--gold);color:var(--dark2);width:auto;display:inline-flex;padding:16px 38px}
   .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
   .btn.ghost-light{background:transparent;color:var(--on-dark);border:1px solid rgba(246,241,231,.32);width:auto;padding:16px 32px}
-  [data-lux]{cursor:pointer}
+  [data-loenique]{cursor:pointer}
 
   @media(max-width:900px){
     .tracks-grid.two{grid-template-columns:1fr;gap:30px;max-width:460px;margin:0 auto}
@@ -293,7 +293,7 @@ export default function PersoonlijkTrajectPage() {
                     </div>
                     <div className="start-btns">
                       <a href="mailto:info@luxique.nl?subject=Aanmelden%20kennismakingsworkshop" className="btn">Plan een workshop</a>
-                      <button className="btn ghost" data-lux>Vraag het Lux</button>
+                      <button className="btn ghost" data-loenique>Vraag het Loenique</button>
                     </div>
                   </div>
                   <div className="start-r">
@@ -315,7 +315,7 @@ export default function PersoonlijkTrajectPage() {
               <div className="wrap">
                 <div className="reveal">
                   <h2 className="serif">Vind jouw <em>niveau</em></h2>
-                  <p>Elk traject vraagt een ander startpunt. Lees bij elk traject goed wie het wél en niet voor is — zo weet je zeker dat je op de juiste plek begint vóórdat je contact opneemt. Twijfel je nog? Begin met de kennismakingsworkshop hierboven, of laat Lux je helpen kiezen.</p>
+                  <p>Elk traject vraagt een ander startpunt. Lees bij elk traject goed wie het wél en niet voor is — zo weet je zeker dat je op de juiste plek begint vóórdat je contact opneemt. Twijfel je nog? Begin met de kennismakingsworkshop hierboven, of laat Loenique je helpen kiezen.</p>
                 </div>
               </div>
             </section>
@@ -551,9 +551,9 @@ export default function PersoonlijkTrajectPage() {
           
                   <div className="btn-row">
                     <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">Vraag dit traject aan</a>
-                    <button className="btn ghost" data-lux>Vraag het Lux</button>
+                    <button className="btn ghost" data-loenique>Vraag het Loenique</button>
                   </div>
-                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
+                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Loenique je helpen kiezen.</p>
                   <button className="close-d" data-close>↑ Sluit dagprogramma</button>
                 </div>
               </div>
@@ -635,9 +635,9 @@ export default function PersoonlijkTrajectPage() {
           
                   <div className="btn-row">
                     <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">Vraag dit traject aan</a>
-                    <button className="btn ghost" data-lux>Vraag het Lux</button>
+                    <button className="btn ghost" data-loenique>Vraag het Loenique</button>
                   </div>
-                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
+                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Loenique je helpen kiezen.</p>
                   <button className="close-d" data-close>↑ Sluit dagprogramma</button>
                 </div>
               </div>
@@ -737,9 +737,9 @@ export default function PersoonlijkTrajectPage() {
           
                   <div className="btn-row">
                     <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">Vraag dit traject aan</a>
-                    <button className="btn ghost" data-lux>Vraag het Lux</button>
+                    <button className="btn ghost" data-loenique>Vraag het Loenique</button>
                   </div>
-                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
+                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Loenique je helpen kiezen.</p>
                   <button className="close-d" data-close>↑ Sluit dagprogramma</button>
                 </div>
               </div>
@@ -844,9 +844,9 @@ export default function PersoonlijkTrajectPage() {
           
                   <div className="btn-row">
                     <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">Vraag dit traject aan</a>
-                    <button className="btn ghost" data-lux>Vraag het Lux</button>
+                    <button className="btn ghost" data-loenique>Vraag het Loenique</button>
                   </div>
-                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Lux je helpen kiezen.</p>
+                  <p className="aanvraag-note">Trajecten zijn op aanvraag en in overleg. Mail naar <a href="mailto:info@luxique.nl">info@luxique.nl</a> of laat Loenique je helpen kiezen.</p>
                   <button className="close-d" data-close>↑ Sluit dagprogramma</button>
                 </div>
               </div>
@@ -871,7 +871,7 @@ export default function PersoonlijkTrajectPage() {
                 <h2 className="serif reveal">Niet zeker welk traject<br /><em>bij je past?</em></h2>
                 <p className="reveal">Lux, onze chatbot, denkt met je mee — welk traject past bij jouw niveau, of hoe je er meerdere combineert tot één route op maat. Liever direct contact? Mail naar info@luxique.nl.</p>
                 <div className="cta-btns reveal">
-                  <button className="btn" data-lux>Vraag het Lux</button>
+                  <button className="btn" data-loenique>Vraag het Loenique</button>
                   <a href="mailto:info@luxique.nl?subject=Vraag%20over%20trajecten" className="btn ghost-light">Mail info@luxique.nl</a>
                 </div>
               </div>
