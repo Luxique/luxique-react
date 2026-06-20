@@ -22,6 +22,9 @@ export default function LuxKnowledgePage() {
     }
   }, [user, loading, role, router])
 
+  // If still loading, don't redirect yet — wait for auth to settle
+  // This prevents the login loop where role hasn't loaded yet
+
   useEffect(() => {
     if (!user || role !== 'admin') return
     fetchKnowledge()
