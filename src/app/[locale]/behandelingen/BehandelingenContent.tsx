@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
 import { LoginGate } from '@/components/LoginGate'
@@ -8,19 +9,13 @@ import CalEmbed from '@/components/CalEmbed'
 
 /* ─── Config (single source of truth for pricing) ─── */
 const PRICING = {
-  newSet: { name: 'Nieuwe Set', price: 130, duration: '± 3 uur', desc: 'Volledig nieuwe set, afgestemd op jouw oogvorm en wensen.' },
-  refill: { name: 'Refill', price: 90, duration: '± 2 uur', desc: 'Houd je set vol en mooi. Aanbevolen elke 2 tot 3 weken.' },
+  newSet: { price: 130 },
+  refill: { price: 90 },
 }
 
 const HERO_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/cta-behandelingen.webp'
 
-const FAQ = [
-  { q: 'Hoe lang duurt een behandeling?', a: 'Een nieuwe set duurt ongeveer 3 uur. Een refill (opvullen) duurt ongeveer 2 uur, afhankelijk van hoeveel lashes er bijgevuld moeten worden.' },
-  { q: 'Hoe vaak moet ik komen voor een refill?', a: 'Voor een vol resultaat raad ik aan om elke 2 tot 3 weken langs te komen. Je natuurlijke wimpers vallen uit en groeien aan, dus een regelmatige refill houdt je set er op zijn best uit.' },
-  { q: 'Doet het pijn?', a: 'Nee. De behandeling is volledig pijnloos. Je ligt comfortabel met gesloten ogen — veel klanten vinden het zo ontspannend dat ze in slaap vallen.' },
-  { q: 'Welke stijl past bij mij?', a: 'Dat bepalen we samen tijdens de consultatie. Op basis van je oogvorm, natuurlijke wimpers en wensen kies ik de styling die jouw blik het mooist versterkt.' },
-  { q: 'Zijn alle sets €130?', a: 'Ja. Alle sets worden volledig aangepast aan jouw ogen. Je kunt iedere gewenste stijl en vorm kiezen, maar deze wordt altijd afgestemd op jouw oogvorm, uitstraling en natuurlijke wimpers. Elke set is een customized set en heeft daarom één vaste prijs van €130.' },
-]
+/* FAQ array now built inside components from translations */
 
 const SHOWCASE_PHOTOS = [
   'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-1.webp',
@@ -66,6 +61,7 @@ function useReveal() {
 
 /* ─── FASE 1: HERO ─── */
 function Hero() {
+  const t = useTranslations('Behandelingen')
   return (
     <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-end overflow-hidden">
       <div
@@ -77,16 +73,16 @@ function Hero() {
       />
       <div className="relative z-[2] w-full pb-[5vh] px-[28px] max-w-[1180px] mx-auto">
         <p className="text-[0.74rem] uppercase tracking-[0.24em] text-[#D8B97A] font-medium mb-[18px]">
-          Behandelingen · Lashed by Chiva
+          {t('metaTitle')}
         </p>
         <h1
           className="font-['Cormorant_Garamond'] font-medium leading-[0.98] tracking-[-0.01em] text-[#FBF8F2] max-w-[14ch]"
           style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}
         >
-          Niet zomaar lashes — <em className="italic text-[#D8B97A]">jouw</em> lashes
+          {t('heroTitlePlain')} <em className="italic text-[#D8B97A]">{t('heroTitleEm')}</em>{t('heroTitlePost') && ' ' + t('heroTitlePost')}
         </h1>
         <p className="text-[rgba(251,248,242,0.85)] max-w-[42ch] mt-[22px] text-[1.12rem] leading-[1.6]">
-          Geen standaard set. Elke lash gekozen op jouw oogvorm, je gezicht en hoe jij je wil voelen.
+          {t('heroSubtitle')}
         </p>
         <div className="flex gap-[14px] mt-[32px] flex-wrap">
           <a
@@ -98,14 +94,14 @@ function Hero() {
               boxShadow: '0 12px 34px -14px rgba(216,185,122,0.7)',
             }}
           >
-            Boek je afspraak →
+            {t('heroCtaBook')}
           </a>
           <a
             href="#tarieven"
             className="inline-flex items-center gap-[9px] px-[30px] py-[15px] rounded-full font-medium text-[0.98rem] text-[#FBF8F2] no-underline border border-[rgba(251,248,242,0.4)] backdrop-blur-[6px] transition-colors hover:bg-[rgba(251,248,242,0.16)]"
             style={{ background: 'rgba(251,248,242,0.08)' }}
           >
-            Bekijk tarieven
+            {t('heroCtaPrices')}
           </a>
         </div>
       </div>
@@ -115,16 +111,17 @@ function Hero() {
 
 /* ─── FASE 2: TARIEVEN ─── */
 function Tarieven() {
+  const t = useTranslations('Behandelingen')
   return (
     <section id="tarieven" className="py-[clamp(90px,8vw,100px)] px-[28px]" style={{ scrollMarginTop: '80px' }}>
       <div className="max-w-[760px] mx-auto">
         <div className="text-center mb-[40px] reveal">
-          <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[12px]">Tarieven</span>
+          <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[12px]">{t('pricesEyebrow')}</span>
           <h2
             className="font-['Cormorant_Garamond'] font-medium"
             style={{ fontSize: 'clamp(2.1rem, 4vw, 3rem)' }}
           >
-            Een investering in <em className="italic text-[#B08D4F]">jezelf</em>
+            {t('pricesTitlePlain')} <em className="italic text-[#B08D4F]">{t('pricesTitleEm')}</em>
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
@@ -134,14 +131,14 @@ function Tarieven() {
             className="reveal block no-underline text-[#1C1814] bg-[#FBF8F2] border border-[rgba(28,24,20,0.13)] rounded-[18px] px-[28px] py-[26px] transition-all hover:-translate-y-[3px] hover:shadow-[0_22px_50px_-28px_rgba(28,24,20,0.4)] hover:border-[rgba(176,141,79,0.4)]"
           >
             <div className="flex justify-between items-baseline mb-[8px]">
-              <span className="font-['Cormorant_Garamond'] font-semibold text-[1.5rem]">{PRICING.newSet.name}</span>
-              <span className="text-[0.78rem] text-[#46403A] tracking-[0.04em]">{PRICING.newSet.duration}</span>
+              <span className="font-['Cormorant_Garamond'] font-semibold text-[1.5rem]">{t('newSetTitle')}</span>
+              <span className="text-[0.78rem] text-[#46403A] tracking-[0.04em]">{t('newSetDuration')}</span>
             </div>
             <div className="font-['Cormorant_Garamond'] font-semibold text-[2.8rem] leading-[1] text-[#B08D4F] mb-[10px]">
               <sup className="text-[1.1rem] align-super opacity-80">€</sup>{PRICING.newSet.price}
             </div>
-            <p className="text-[0.9rem] text-[#46403A] leading-[1.5] mb-[16px]">{PRICING.newSet.desc}</p>
-            <span className="text-[0.88rem] font-medium border-b border-[#B08D4F] pb-[2px]">Reserveer →</span>
+            <p className="text-[0.9rem] text-[#46403A] leading-[1.5] mb-[16px]">{t('newSetDesc')}</p>
+            <span className="text-[0.88rem] font-medium border-b border-[#B08D4F] pb-[2px]">{t('newSetCta')}</span>
           </a>
           {/* Refill */}
           <a
@@ -149,18 +146,18 @@ function Tarieven() {
             className="reveal block no-underline text-[#1C1814] bg-[#FBF8F2] border border-[rgba(28,24,20,0.13)] rounded-[18px] px-[28px] py-[26px] transition-all hover:-translate-y-[3px] hover:shadow-[0_22px_50px_-28px_rgba(28,24,20,0.4)] hover:border-[rgba(176,141,79,0.4)]"
           >
             <div className="flex justify-between items-baseline mb-[8px]">
-              <span className="font-['Cormorant_Garamond'] font-semibold text-[1.5rem]">{PRICING.refill.name}</span>
-              <span className="text-[0.78rem] text-[#46403A] tracking-[0.04em]">{PRICING.refill.duration}</span>
+              <span className="font-['Cormorant_Garamond'] font-semibold text-[1.5rem]">{t('refillTitle')}</span>
+              <span className="text-[0.78rem] text-[#46403A] tracking-[0.04em]">{t('refillDuration')}</span>
             </div>
             <div className="font-['Cormorant_Garamond'] font-semibold text-[2.8rem] leading-[1] text-[#B08D4F] mb-[10px]">
               <sup className="text-[1.1rem] align-super opacity-80">€</sup>{PRICING.refill.price}
             </div>
-            <p className="text-[0.9rem] text-[#46403A] leading-[1.5] mb-[16px]">{PRICING.refill.desc}</p>
-            <span className="text-[0.88rem] font-medium border-b border-[#B08D4F] pb-[2px]">Reserveer →</span>
+            <p className="text-[0.9rem] text-[#46403A] leading-[1.5] mb-[16px]">{t('refillDesc')}</p>
+            <span className="text-[0.88rem] font-medium border-b border-[#B08D4F] pb-[2px]">{t('refillCta')}</span>
           </a>
         </div>
         <p className="reveal text-center mt-[28px] text-[0.9rem] text-[#46403A]">
-          Elke set begint met een persoonlijk gesprek — we kijken samen naar wat bij jou past.
+          {t('pricesNote')}
         </p>
       </div>
     </section>
@@ -169,20 +166,28 @@ function Tarieven() {
 
 /* ─── FASE 3: FAQ ─── */
 function FAQSection() {
+  const t = useTranslations('Behandelingen')
+  const faqItems = [
+    { q: t('faqQ1'), a: t('faqA1') },
+    { q: t('faqQ2'), a: t('faqA2') },
+    { q: t('faqQ3'), a: t('faqA3') },
+    { q: t('faqQ4'), a: t('faqA4') },
+    { q: t('faqQ5'), a: t('faqA5') },
+  ]
   return (
     <section className="py-[clamp(100px,9vw,120px)] px-[28px]">
       <div className="max-w-[760px] mx-auto">
         <div className="text-center mb-[46px] reveal">
-          <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[14px]">Veelgestelde vragen</span>
+          <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[14px]">{t('faqEyebrow')}</span>
           <h2
             className="font-['Cormorant_Garamond'] font-medium"
             style={{ fontSize: 'clamp(2.2rem, 4vw, 3.2rem)' }}
           >
-            Goed om <em className="italic text-[#B08D4F]">te weten</em>
+            {t('faqTitlePlain')} <em className="italic text-[#B08D4F]">{t('faqTitleEm')}</em>
           </h2>
         </div>
         <div className="reveal border-t border-[rgba(28,24,20,0.13)]">
-          {FAQ.map((item, i) => (
+          {faqItems.map((item, i) => (
             <details key={i} className="group border-b border-[rgba(28,24,20,0.13)]">
               <summary className="px-[4px] py-[24px] cursor-pointer flex justify-between items-center select-none list-none gap-[20px]">
                 <span className="text-[#1C1814] text-[1.08rem]">{item.q}</span>
@@ -199,6 +204,7 @@ function FAQSection() {
 
 /* ─── FASE 4: CLOSING CTA ─── */
 function ClosingCTA() {
+  const t = useTranslations('Behandelingen')
   return (
     <section className="relative py-[clamp(80px,7vw,80px)] text-center overflow-hidden">
       <div
@@ -207,13 +213,13 @@ function ClosingCTA() {
       />
       <div className="relative z-[2] max-w-[1180px] mx-auto px-[28px]">
         <span className="block text-[0.74rem] uppercase tracking-[0.24em] text-[#D8B97A] font-medium mb-[18px]">
-          Ready om jezelf te trakteren?
+          {t('ctaHeading')}
         </span>
         <h2
           className="font-['Cormorant_Garamond'] font-medium text-[#FBF8F2] leading-[1.02]"
           style={{ fontSize: 'clamp(2.6rem, 5vw, 4.2rem)' }}
         >
-          Reserveer jouw <em className="italic text-[#D8B97A]">afspraak</em>
+          {t('ctaTitlePlain')} <em className="italic text-[#D8B97A]">{t('ctaTitleEm')}</em>
         </h2>
         <a
           href="#boeken"
@@ -224,7 +230,7 @@ function ClosingCTA() {
             boxShadow: '0 12px 34px -14px rgba(216,185,122,0.7)',
           }}
         >
-          Naar de agenda →
+          {t('ctaButton')}
         </a>
       </div>
     </section>
@@ -233,6 +239,7 @@ function ClosingCTA() {
 
 /* ─── FASE 5: WIDGET + SHOWCASE ─── */
 function BookSection() {
+  const t = useTranslations('Behandelingen')
   const { user } = useAuth()
   const [profileName, setProfileName] = useState<string | null>(null)
 
@@ -302,12 +309,12 @@ function BookSection() {
 
       <div className="relative z-[2] max-w-[1180px] mx-auto px-[28px]">
         <div className="text-center max-w-[60ch] mx-auto mb-[56px] reveal">
-          <p className="text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[16px]">Plan je moment</p>
+          <p className="text-[0.74rem] uppercase tracking-[0.24em] text-[#B08D4F] font-medium mb-[16px]">{t('bookingHeading')}</p>
           <h2
             className="font-['Cormorant_Garamond'] font-medium leading-[1.05]"
             style={{ fontSize: 'clamp(2.4rem, 4.5vw, 3.6rem)' }}
           >
-            Reserveer je <em className="italic text-[#B08D4F]">afspraak</em>
+            {t('bookingTitlePlain')} <em className="italic text-[#B08D4F]">{t('bookingTitleEm')}</em>
           </h2>
         </div>
 
