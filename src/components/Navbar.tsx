@@ -3,24 +3,35 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { useTranslations } from 'next-intl'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
   const pathname = usePathname()
+  // Safe translation: returns key as fallback if context is missing (admin routes)
+  let t: (k: string) => string
+  try {
+    t = useTranslations('Nav')
+  } catch {
+    t = (k: string) => {
+      const fallbacks: Record<string,string> = { behandelingen: 'Behandelingen', academy: 'Academy', overOns: 'Over ons', faq: 'FAQ', contact: 'Contact' }
+      return fallbacks[k] || k
+    }
+  }
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/')
+  const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/') || pathname.includes('/courses')
   const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
 
   // Single source of truth for nav links (desktop + mobile)
   const navLinks = [
-    { label: 'Behandelingen', href: '/behandelingen' },
-    { label: 'Academy', href: '/courses' },
-    { label: 'Over ons', href: '/about' },
-    { label: 'FAQ', href: '/faq' },
-    { label: 'Contact', href: '/contact' },
+    { label: t('behandelingen'), href: '/behandelingen' },
+    { label: t('academy'), href: '/courses' },
+    { label: t('overOns'), href: '/about' },
+    { label: t('faq'), href: '/faq' },
+    { label: t('contact'), href: '/contact' },
   ]
 
   useEffect(() => {
