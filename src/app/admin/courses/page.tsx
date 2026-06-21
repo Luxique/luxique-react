@@ -169,7 +169,7 @@ export default function CoursesOverviewPage() {
         body: JSON.stringify({
           title: newCourse.title,
           description: newCourse.description,
-          level: newCourse.level || 'Beginner',
+          level: newCourse.level || 'beginner',
           user_id: user?.id
         })
       })
@@ -181,7 +181,8 @@ export default function CoursesOverviewPage() {
       router.push(`/admin/courses/${data.id}/builder`)
     } catch (error) {
       console.error('Error creating course:', error)
-      alert('Er ging iets mis bij het aanmaken')
+      const msg = error instanceof Error ? error.message : 'Onbekende fout'
+      alert(`Cursus aanmaken gefaald: ${msg}`)
     }
   }
 
@@ -611,9 +612,9 @@ export default function CoursesOverviewPage() {
                   className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition appearance-none cursor-pointer"
                 >
                   <option value="">Kies niveau</option>
-                  <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
-                  <option value="Gevorderd">Gevorderd</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Gevorderd</option>
                 </select>
               </div>
               <div>

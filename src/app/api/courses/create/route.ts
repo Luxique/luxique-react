@@ -29,13 +29,23 @@ export async function POST(request: NextRequest) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 
+  // Normalize level to lowercase enum
+  const LEVEL_MAP: Record<string, string> = {
+    'beginner': 'beginner',
+    'intermediate': 'intermediate',
+    'advanced': 'advanced',
+    'gevorderd': 'advanced', // Dutch label maps to advanced
+    'expert': 'advanced',
+  }
+  const normalizedLevel = LEVEL_MAP[(level || '').toLowerCase()] || 'beginner'
+
   const { data, error } = await supabase
     .from('courses')
     .insert({
       title,
       description: description || '',
       slug,
-      level: level || 'Beginner',
+      level: normalizedLevel,
       price: 0,
       status: 'draft'
     })
@@ -43,7 +53,11 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[courses/create] DB error:', error.code, error.message, { level: normalizedLevel, title })
+    return NextResponse.json({ 
+      error: `Database fout (${error.code}): ${error.message}`,
+      details: { level: normalizedLevel, constraint: error.code === '23514' ? 'courses_level_check' : undefined }
+    }, { status: 500 })
   }
 
   return NextResponse.json({ data })
