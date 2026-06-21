@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl'
 import './hero-v2.css'
 import { GoogleIcon } from './ReviewsSection'
 
-const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/hero-bg.webp?width=1400&quality=70'
-const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header1.webp?width=1400&quality=70'
-const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header2.webp?width=1400&quality=70'
-const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header4.webp?width=1400&quality=70'
+const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/hero-bg.webp?width=1000&quality=70'
+const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header1.webp?width=1000&quality=70'
+const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header2.webp?width=1000&quality=70'
+const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header4.webp?width=1000&quality=70'
 
 const GOOGLE_REVIEWS_URL = 'https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D'
 
