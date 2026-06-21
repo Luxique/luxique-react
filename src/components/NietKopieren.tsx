@@ -1,8 +1,10 @@
 'use client'
 
 import { useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function NietKopieren() {
+  const t = useTranslations('Filosofie')
   const sectionRef = useRef<HTMLElement>(null)
   const photoLeftRef = useRef<HTMLDivElement>(null)
   const photoRightRef = useRef<HTMLDivElement>(null)
@@ -302,7 +304,7 @@ export default function NietKopieren() {
         }
       `}</style>
 
-      <div className="nkc-watermark" aria-hidden="true">Creëren</div>
+      <div className="nkc-watermark" aria-hidden="true">{t('title2')}</div>
 
       <div className="nkc-pphoto left" ref={photoLeftRef}>
         <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/creeeren-right.jpg" alt="Close-up wispy set" />
@@ -313,30 +315,30 @@ export default function NietKopieren() {
 
       <div className="nkc-plaque">
         <div className="nkc-medallion" aria-hidden="true">✦</div>
-        <span className="nkc-eyebrow nkc-r nkc-r1">Onze filosofie</span>
+        <span className="nkc-eyebrow nkc-r nkc-r1">{t('eyebrow')}</span>
         <h2 className="nkc-title nkc-r nkc-r2">
-          Niet kopiëren.
-          <span className="crea">Creëren.</span>
+          {t('title1')}
+          <span className="crea">{t('title2')}</span>
         </h2>
         <p className="nkc-lead nkc-r nkc-r3">
-          In een markt waar Russian volume de standaard was, koos ik voor wispy — lichter, natuurlijker, meer <em>&ldquo;me&rdquo;</em>. Mensen snapten het niet altijd in het begin. Maar ik bleef consistent, en nu is wispy één van de meest gevraagde styles.
+          {t('paragraph1Pre')}<em>{t('paragraph1Em')}</em>{t('paragraph1Post')}
         </p>
         <p className="nkc-body nkc-r nkc-r4">
-          LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Mijn aanpak is eenvoudig: <em>begin met het waarom, niet met het hoe.</em>
+          {t('paragraph2Pre')}<em>{t('paragraph2Em')}</em>
         </p>
         <div className="nkc-pullquote nkc-r nkc-r5">
-          Geen standaard maps.<br />
-          <span className="g">Customized only.</span>
+          {t('subTitle1')}<br />
+          <span className="g">{t('subTitle2')}</span>
         </div>
         <p className="nkc-body nkc-r nkc-r6">
-          Elke oogvorm is anders en verdient een unieke aanpak. Wij leren je kijken naar het oog, begrijpen wat nodig is, en een set ontwerpen die écht bij de persoon past.
+          {t('subDescription')}
         </p>
         <a className="nkc-cta nkc-r nkc-r6" href="/about">
-          Lees mijn verhaal <span className="arr">→</span>
+          {t('cta')} <span className="arr">→</span>
         </a>
         <div className="nkc-signature nkc-r nkc-r7">
-          <span className="name">Chiva</span>
-          <span className="role">Oprichter &amp; Lash Artist</span>
+          <span className="name">{t('name')}</span>
+          <span className="role">{t('role')}</span>
         </div>
       </div>
     </section>

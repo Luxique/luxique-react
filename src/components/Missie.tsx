@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
-/* ── Marquee row data ── */
+/* ── Marquee row data — decorative, stays hardcoded ── */
 const MARQUEE_ROWS = [
   { words: ['LUXIQUE', 'Academy'], dir: -1, speed: 0.6 },
   { words: ['STANDAARD', 'verhogen'], dir: 1, speed: 0.4 },
@@ -15,7 +16,19 @@ const MARQUEE_ROWS = [
   { words: ['MISSIE', 'Artist'], dir: -1, speed: 0.55 },
 ]
 
+/** Split text into per-word spans for scroll-fill effect */
+function WordSpans({ text, italic = false }: { text: string; italic?: boolean }) {
+  return (
+    <>
+      {text.split(' ').filter(Boolean).map((word, i) => (
+        <span key={i} className={`miss-w${italic ? ' it' : ''}`}>{word} </span>
+      ))}
+    </>
+  )
+}
+
 export default function Missie() {
+  const t = useTranslations('Missie')
   const heroRef = useRef<HTMLDivElement>(null)
   const rowRefs = useRef<(HTMLDivElement | null)[]>([])
   const missionRef = useRef<HTMLElement>(null)
@@ -132,12 +145,12 @@ export default function Missie() {
 
         {/* Floating image card */}
         <div className="relative z-[2] w-[min(420px,88%)] max-[860px]:w-[min(290px,74%)] max-[430px]:w-[70%] rounded-[20px] overflow-hidden shadow-[0_32px_80px_rgba(12,10,7,0.22),0_0_0_1px_rgba(196,162,101,0.1)] mt-6 max-[860px]:my-0 max-[860px]:mx-auto aspect-[831/1155] bg-[linear-gradient(145deg,#1e1a12,#141009)]">
-          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-statement.webp" alt="Educating future Lash Artists" className="w-full h-full object-cover" />
+          <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/missie-statement.webp" alt={t('titleLine1')} className="w-full h-full object-cover" />
 
           {/* Dark gold gradient overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-[linear-gradient(0deg,rgba(48,36,14,0.88),rgba(48,36,14,0.4)_40%,transparent)] flex flex-col justify-end p-6 pb-7">
             <h2 className="font-['Cormorant_Garamond'] text-[clamp(22px,3.5vw,36px)] font-normal text-[#FAF8F4] leading-[1.1] tracking-[-0.01em]">
-              Educating future<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Lash Artists.</span>
+              {t('titleLine1')}<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">{t('titleLine2')}</span>
             </h2>
           </div>
         </div>
@@ -200,27 +213,24 @@ export default function Missie() {
         `}</style>
         <div className="miss-grid">
           <div className="miss-col-head">
-            <span ref={eyebrowRef} className="miss-eyebrow">De missie</span>
+            <span ref={eyebrowRef} className="miss-eyebrow">{t('eyebrow')}</span>
             <h2 ref={statementRef} className="miss-statement">
-              <span className="miss-w">De</span>{' '}
-              <span className="miss-w">lash-industrie</span>{' '}
-              <span className="miss-w">verdient</span>{' '}
-              <span className="miss-w">een</span>{' '}
-              <span className="miss-w it">hogere</span>{' '}
-              <span className="miss-w it">standaard.</span>
+              <WordSpans text={t('headingPre')} />
+              <WordSpans text={t('headingEm')} italic />
+              <WordSpans text={t('headingPost')} />
             </h2>
             <div ref={ruleRef} className="miss-rule" />
           </div>
           <div className="miss-col-body">
             <div ref={bodyWrapRef} className="miss-body-wrap">
               <p className="text-[18px] font-normal text-[#1E1A14] leading-[1.8] mb-[18px]">
-                Lash extensions groeien al jaren hard — maar het <span className="text-[#B08D4F] font-medium">opleidingsniveau staat stil</span>.
+                {t('paragraph1Pre')}<span className="text-[#B08D4F] font-medium">{t('paragraph1Em')}</span>{t('paragraph1Post')}
               </p>
               <p className="text-[17px] font-light text-[#7A7268] leading-[1.8] mb-[18px]">
-                De meeste cursussen leren je repetitief werk: hetzelfde patroon, dezelfde map, keer op keer. <em className="italic text-[#B08D4F] not-italic font-medium">Je leert techniek, maar je leert niet begrijpen.</em>
+                {t('paragraph2Pre')}<em className="italic text-[#B08D4F] not-italic font-medium">{t('paragraph2Em')}</em>{t('paragraph2Post')}
               </p>
               <p className="text-[17px] font-light text-[#7A7268] leading-[1.8]">
-                Het resultaat? Een markt vol technici, maar zelden iemand die <em className="italic text-[#B08D4F] not-italic font-medium">écht het verschil maakt</em> — voor de klant én voor het vak.
+                {t('paragraph3Pre')}<em className="italic text-[#B08D4F] not-italic font-medium">{t('paragraph3Em')}</em>{t('paragraph3Post')}
               </p>
             </div>
           </div>
