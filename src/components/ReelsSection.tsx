@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 type ContentItem = {
@@ -35,26 +35,59 @@ function ContentCard({ item }: { item: ContentItem }) {
   const isReel = item.type === 'reel'
   const hasVideo = Boolean(item.videoUrl)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [videoLoaded, setVideoLoaded] = useState(false)
 
-  // Autoplay video immediately
+  // Lazy-load video only when near viewport; unload when far away
   useEffect(() => {
-    if (!hasVideo || !videoRef.current) return
+    if (!hasVideo || !cardRef.current) return
+
+    const card = cardRef.current
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !videoLoaded) {
+            // Near viewport — load the video source
+            setVideoLoaded(true)
+          } else if (!entry.isIntersecting && videoLoaded) {
+            // Far from viewport — unload to stop loop refetch
+            const video = videoRef.current
+            if (video) {
+              video.pause()
+              video.removeAttribute('src')
+              video.load()
+            }
+            setVideoLoaded(false)
+          }
+        })
+      },
+      { rootMargin: '200px' }
+    )
+
+    observer.observe(card)
+    return () => observer.disconnect()
+  }, [hasVideo, videoLoaded])
+
+  // Autoplay once loaded
+  useEffect(() => {
+    if (!videoLoaded || !videoRef.current) return
     const video = videoRef.current
     video.play().catch(() => {})
-  }, [hasVideo])
+  }, [videoLoaded])
 
   return (
-    <div className="flex-shrink-0 w-[260px] md:w-[280px] group cursor-pointer">
+    <div className="flex-shrink-0 w-[260px] md:w-[280px] group cursor-pointer" ref={cardRef}>
       <div className="relative aspect-[9/16] rounded-2xl overflow-hidden border border-white/[0.06] hover:border-[var(--rose)]/30 transition-all duration-300">
         {hasVideo && item.videoUrl ? (
           <video
             ref={videoRef}
-            src={item.videoUrl}
+            src={videoLoaded ? item.videoUrl : undefined}
             poster={item.posterUrl}
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="none"
             aria-label={item.title}
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
