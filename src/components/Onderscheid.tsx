@@ -1,38 +1,16 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-
-const POINTS = [
-  {
-    num: '01',
-    title: 'Van techniek naar signatuur',
-    paras: [
-      'Wij leren je niet alleen hoe je een set plaatst — wij leren je een eigen stijl ontwikkelen. Je verlaat de opleiding niet als kopie van iemand anders, maar met een aanpak die herkenbaar van jou is. Dat is wat klanten laat terugkomen.',
-      'We helpen je ontdekken wat jóuw handtekening is: welke sets je het beste liggen, welke looks je wilt neerzetten en hoe je die consistent maakt. In een markt vol technici die allemaal hetzelfde leveren, is een herkenbare stijl wat je onvergetelijk maakt — en wat je prijs rechtvaardigt.',
-    ],
-    take: 'Jouw stijl, jouw merk',
-  },
-  {
-    num: '02',
-    title: 'Kennis die verder gaat dan techniek',
-    paras: [
-      'Wij beginnen bij het waarom. Kleurtheorie, gezichtsproporties, oogvormanalyse — vóórdat je een tweezer aanraakt. Zodat je begrijpt wat je doet, niet alleen hoe. En dat begrip neem je mee naar elke klant die daarna in jouw stoel zit.',
-      'Techniek kun je nadoen, maar inzicht maakt het verschil. Snap je waaróm een bepaalde curl bij een bepaald oog past, dan kun je élke klant aan — ook degene die niet in een standaard map past. Je wordt geen uitvoerder, maar iemand die bewust keuzes maakt.',
-    ],
-    take: 'Kennis die blijft',
-  },
-  {
-    num: '03',
-    title: 'Coaching door een ervaren lash artist',
-    paras: [
-      'Chiva volgde een opleiding — en ging daarna verder waar anderen stopten. Ze experimenteerde, stuurde bij en ontwikkelde een eigen stijl waar nu veel vraag naar is. Wat ze je leert, heeft ze zelf bewezen: in een echte salon, met echte klanten, dag na dag.',
-      'Dat betekent geen theorie uit een boekje, maar lessen uit de praktijk: wat werkt, wat niet, en waar je in het begin op vastloopt. Je leert van iemand die precies weet hoe het is om te starten — en hoe je doorgroeit naar werk waar mensen voor terugkomen.',
-    ],
-    take: 'Bewezen in de praktijk',
-  },
-]
+import { useTranslations } from 'next-intl'
 
 export default function Onderscheid() {
+  const t = useTranslations('Onderscheid')
+
+  const POINTS = [
+    { num: t('item1Num'), title: t('item1Title'), para1: t('item1Para1'), para2: t('item1Para2'), take: t('item1Label') },
+    { num: t('item2Num'), title: t('item2Title'), para1: t('item2Para1'), para2: t('item2Para2'), take: t('item2Label') },
+    { num: t('item3Num'), title: t('item3Title'), para1: t('item3Para1'), para2: t('item3Para2'), take: t('item3Label') },
+  ]
   const secRef = useRef<HTMLElement>(null)
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
   const dotRefs = useRef<(HTMLSpanElement | null)[]>([])
@@ -314,7 +292,7 @@ export default function Onderscheid() {
             <div ref={(el) => { slideRefs.current[2] = el }} className="ond-slide">
               <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-03-coaching.webp" alt="Chiva in de salon" />
             </div>
-            <span className="ond-cap">✦ LXQ Academy</span>
+            <span className="ond-cap">{t('eyebrow')}</span>
             <div className="ond-dots">
               <i ref={(el) => { dotRefs.current[0] = el }} className="on" />
               <i ref={(el) => { dotRefs.current[1] = el }} />
@@ -324,9 +302,9 @@ export default function Onderscheid() {
         </div>
 
         <div className="ond-content">
-          <span className="ond-eyebrow ond-r ond-rh">Het verschil</span>
-          <h2 className="ond-h2 ond-r ond-rh">Wat ons onderscheidt</h2>
-          <p className="ond-sub ond-r ond-rh">Wat LXQ anders doet dan andere opleidingen.</p>
+          <span className="ond-eyebrow ond-r ond-rh">{t('kicker')}</span>
+          <h2 className="ond-h2 ond-r ond-rh">{t('title')}</h2>
+          <p className="ond-sub ond-r ond-rh">{t('subtitle')}</p>
 
           {POINTS.map((p, i) => (
             <div
@@ -337,9 +315,8 @@ export default function Onderscheid() {
               <div className="ond-num">{p.num}</div>
               <div>
                 <h3>{p.title}</h3>
-                {p.paras.map((para, j) => (
-                  <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
-                ))}
+                <p>{p.para1}</p>
+                <p>{p.para2}</p>
                 <div className="ond-take">
                   <span className="dot" />
                   <span>{p.take}</span>

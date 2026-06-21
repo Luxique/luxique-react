@@ -1,48 +1,17 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 
-const POINTS = [
-  {
-    num: '01',
-    title: 'Van techniek naar signatuur',
-    paras: [
-      'Wij leren je niet alleen hoe je een set plaatst — wij leren je een eigen stijl ontwikkelen. Je verlaat de opleiding niet als kopie van iemand anders, maar met een aanpak die herkenbaar van jou is. Dat is wat klanten laat terugkomen.',
-      'We helpen je ontdekken wat jóuw handtekening is: welke sets je het beste liggen, welke looks je wilt neerzetten en hoe je die consistent maakt. In een markt vol technici die allemaal hetzelfde leveren, is een herkenbare stijl wat je onvergetelijk maakt — en wat je prijs rechtvaardigt.',
-    ],
-    take: 'Jouw stijl, jouw merk',
-    img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-01-signatuur.webp',
-  },
-  {
-    num: '02',
-    title: 'Kennis die verder gaat dan techniek',
-    paras: [
-      'Wij beginnen bij het waarom. Kleurtheorie, gezichtsproporties, oogvormanalyse — vóórdat je een tweezer aanraakt. Zodat je begrijpt wat je doet, niet alleen hoe. En dat begrip neem je mee naar elke klant die daarna in jouw stoel zit.',
-      'Techniek kun je nadoen, maar inzicht maakt het verschil. Snap je waaróm een bepaalde curl bij een bepaald oog past, dan kun je élke klant aan — ook degene die niet in een standaard map past. Je wordt geen uitvoerder, maar iemand die bewust keuzes maakt.',
-    ],
-    take: 'Kennis die blijft',
-    img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-02-kennis.webp',
-  },
-  {
-    num: '03',
-    title: 'Coaching door een ervaren lash artist',
-    paras: [
-      'Chiva volgde een opleiding — en ging daarna verder waar anderen stopten. Ze experimenteerde, stuurde bij en ontwikkelde een eigen stijl waar nu veel vraag naar is. Wat ze je leert, heeft ze zelf bewezen: in een echte salon, met echte klanten, dag na dag.',
-      'Dat betekent geen theorie uit een boekje, maar lessen uit de praktijk: wat werkt, wat niet, en waar je in het begin op vastloopt. Je leert van iemand die precies weet hoe het is om te starten — en hoe je doorgroeit naar werk waar mensen voor terugkomen.',
-    ],
-    take: 'Bewezen in de praktijk',
-    img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-03-coaching.webp',
-  },
-]
-
-/**
- * OnderscheidMobile — mobile-only (<861px) scroll-pinning.
- * FIX v2: Only photo pins. All text scrolls. No fake next section.
- *
- * Technique: Pure CSS sticky. svh units for iOS Safari.
- * prefers-reduced-motion: clean stacked fallback.
- */
 export default function OnderscheidMobile() {
+  const t = useTranslations('Onderscheid')
+
+  const POINTS = [
+    { num: t('item1Num'), title: t('item1Title'), para1: t('item1Para1'), para2: t('item1Para2'), take: t('item1Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-01-signatuur.webp' },
+    { num: t('item2Num'), title: t('item2Title'), para1: t('item2Para1'), para2: t('item2Para2'), take: t('item2Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-02-kennis.webp' },
+    { num: t('item3Num'), title: t('item3Title'), para1: t('item3Para1'), para2: t('item3Para2'), take: t('item3Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-03-coaching.webp' },
+  ]
+
   const phRefs = useRef<(HTMLDivElement | null)[]>([])
   const dotRefs = useRef<(HTMLSpanElement | null)[]>([])
   const pointRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -315,7 +284,7 @@ export default function OnderscheidMobile() {
                   <img src={p.img} alt={p.title} />
                 </div>
               ))}
-              <span className="ond-mob-badge">✦ LXQ Academy</span>
+              <span className="ond-mob-badge">{t('eyebrow')}</span>
               <div className="ond-mob-dots">
                 <i ref={(el) => { dotRefs.current[0] = el }} className="on" />
                 <i ref={(el) => { dotRefs.current[1] = el }} />
@@ -330,9 +299,9 @@ export default function OnderscheidMobile() {
           {/* BACK: ALL text scrolls naturally (z2) */}
           <div className="ond-mob-content">
             <div className="ond-mob-head">
-              <span className="ond-mob-eyebrow">Het verschil</span>
-              <h2>Wat ons onderscheidt</h2>
-              <div className="lead">Wat LXQ anders doet dan andere opleidingen.</div>
+              <span className="ond-mob-eyebrow">{t('kicker')}</span>
+              <h2>{t('title')}</h2>
+              <div className="lead">{t('subtitle')}</div>
             </div>
 
             {POINTS.map((p, i) => (
@@ -343,9 +312,8 @@ export default function OnderscheidMobile() {
               >
                 <div className="num">{p.num}</div>
                 <h3>{p.title}</h3>
-                {p.paras.map((para, j) => (
-                  <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
-                ))}
+                <p>{p.para1}</p>
+                <p>{p.para2}</p>
                 <div className="ond-mob-take">
                   <span className="dot" />
                   <span>{p.take}</span>

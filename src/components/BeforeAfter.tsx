@@ -1,15 +1,17 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
 
-const BA_PAIRS = [
-  { name: 'Wispy Set', before: `${CDN}/ba-wispy-before.webp`, after: `${CDN}/ba-wispy-after.webp` },
-  { name: 'Medusa Set', before: `${CDN}/ba-medusa-before.webp`, after: `${CDN}/ba-medusa-after.webp` },
-]
-
 export default function BeforeAfter() {
+  const t = useTranslations('BeforeAfter')
+
+  const BA_PAIRS = [
+    { name: t('set1Label'), before: `${CDN}/ba-wispy-before.webp`, after: `${CDN}/ba-wispy-after.webp` },
+    { name: t('set2Label'), before: `${CDN}/ba-medusa-before.webp`, after: `${CDN}/ba-medusa-after.webp` },
+  ]
   useEffect(() => {
     document.querySelectorAll('[data-ba]').forEach(ba => {
       const after = ba.querySelector('.after-img') as HTMLImageElement
@@ -99,18 +101,18 @@ export default function BeforeAfter() {
         <div className="wrap">
           <div className="ba-grid">
             <div className="ba-copy reveal">
-              <span className="eyebrow">Resultaten</span>
-              <h2 className="serif">Before &amp; <em>After</em></h2>
-              <p>Geen voor-en-na om indruk te maken, maar om te laten zien hoe een set rond jouw oog wordt gebouwd.</p>
-              <p>Sleep de pill onder de foto en zie het verschil zelf.</p>
-              <span className="hint">← sleep de pill om te onthullen →</span>
+              <span className="eyebrow">{t('eyebrow')}</span>
+              <h2 className="serif">{t('title')}</h2>
+              <p>{t('description')}</p>
+              <p>{t('instruction')}</p>
+              <span className="hint">{t('dragHint')}</span>
             </div>
             <div className="ba-pair reveal">
               {BA_PAIRS.map((pair) => (
                 <div key={pair.name} className="ba" data-ba>
                   <img className="before-img" src={pair.before} alt="" />
                   <img className="after-img" src={pair.after} alt="" />
-                  <span className="tag before">Before</span><span className="tag after">After</span>
+                  <span className="tag before">{t('beforeLabel')}</span><span className="tag after">{t('afterLabel')}</span>
                   <div className="handle"></div>
                   <div className="name" data-grip>
                     <span className="arrows"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M9 7l-4 5 4 5M15 7l4 5-4 5"/></svg></span>
