@@ -955,10 +955,14 @@ export default function PersoonlijkTrajectPage() {
         <div className="wrap">
           <div className="disc-card reveal">
             <span className="eyebrow">Goed om te weten</span>
-            <h2 className="serif">Het juiste niveau is jouw verantwoordelijkheid</h2>
+            <h2 className="serif">Het kiezen van het juiste niveau is erg belangrijk</h2>
             <p>Onze trajecten bouwen voort op een bepaald startniveau. Bij de specialisatie- en doorgroeitrajecten (Wispy, Medusa en Lash Tech to Artist) gaan we ervan uit dat je de vereiste basistechnieken al beheerst — deze worden tijdens de cursus niet opnieuw behandeld.</p>
-            <p><b>Mochten we tijdens de cursus constateren dat je niet aan het vereiste niveau voldoet, dan kan de cursus worden stopgezet zonder restitutie van het cursusbedrag.</b> Het inschatten van je eigen niveau is je eigen verantwoordelijkheid.</p>
-            <p>Twijfel je of je aan de voorwaarden voldoet? Neem dan eerst contact op via <a href="mailto:info@luxique.nl" style={{color:'var(--gold)'}}>info@luxique.nl</a>, plan de kennismakingsworkshop, of laat Loenique met je meedenken. We adviseren je graag eerlijk over het juiste startpunt — zodat je traject vanaf dag één bij je past.</p>
+            <p>Het goed inschatten van jouw eigen niveau is jouw verantwoordelijkheid. <b>Mochten we tijdens de cursus constateren dat je niet aan het vereiste niveau voldoet, dan kan de cursus worden stopgezet zonder restitutie van het cursusbedrag.</b></p>
+            <p>Twijfel je of je aan de voorwaarden voldoet? Neem dan eerst contact op, plan de kennismakingsworkshop, of laat Loenique met je meedenken. We adviseren je graag eerlijk over het juiste startpunt — zodat je traject vanaf dag één bij je past.</p>
+            <div className="cta-btns" style={{marginTop:'24px'}}>
+              <a href="mailto:info@luxique.nl?subject=Vraag%20over%20niveau%20en%20trajecten" className="btn" style={{width:'auto',padding:'14px 28px'}}>Neem contact op</a>
+              <button className="btn ghost" data-loenique style={{width:'auto',padding:'14px 28px'}}>Vraag het Loenique</button>
+            </div>
           </div>
         </div>
       </section>
