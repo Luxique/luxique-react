@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function FAQ() {
+  const t = useTranslations('FAQ')
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -40,15 +42,15 @@ export default function FAQ() {
   }, [])
 
   const faqs = [
-    { q: 'Heb ik ervaring nodig voor de cursus?', a: 'Nee! De Medusa cursus is speciaal ontworpen voor beginners. Je start vanaf nul en bouwt op tot een volledige lash artist.' },
-    { q: 'Hoe lang duurt het persoonlijk traject?', a: 'Het persoonlijk traject is verspreid over meerdere dagen, afhankelijk van jouw niveau en doelen. Neem contact op voor een vrijblijvend gesprek.' },
-    { q: 'Zijn de materialen inbegrepen?', a: 'Ja, bij het persoonlijk traject zijn alle materialen inbegrepen. Bij de online cursussen ontvang je een materialenlijst met aanbevelingen.' },
-    { q: 'Krijg ik een certificaat?', a: 'Ja, na succesvolle afronding ontvang je een officieel LXQ Academy certificaat.' },
-    { q: 'Wat is het verschil tussen online en IRL?', a: 'Online leer je op eigen tempo via videolessen. Het IRL traject is bij Chiva op locatie in Arnhem, met hands-on begeleiding en maximaal 2 cursisten per dag.' },
-    { q: 'Hoe boek ik een behandeling?', a: 'Via de &ldquo;Book Now&rdquo; knop bovenin de pagina kun je direct een afspraak inplannen. Kies tussen Nieuwe Set (180 min) of Opvullen (120 min).' },
-    { q: 'Wanneer moet ik mijn wimpers laten opvullen?', a: 'Ik vul wimpers op tot 3 weken na je afspraak. De prijs voor een opvulbehandeling is altijd €90, ongeacht of je binnen 1 week, 2 weken of 3 weken terugkomt. Na 3 weken wordt er een nieuwe set geplaatst.' },
-    { q: 'Zijn alle sets €130?', a: 'Ja. Alle sets worden volledig aangepast aan jouw ogen. Je kunt iedere gewenste stijl en vorm kiezen, maar deze wordt altijd afgestemd op jouw oogvorm, uitstraling en natuurlijke wimpers. Elke set is een customized set en heeft daarom één vaste prijs van €130. Voor iedere nieuwe set reserveer ik 3 uur in mijn agenda, zodat er voldoende tijd is om jouw set perfect te creëren.' },
-    { q: 'Wat is het annuleringsbeleid?', a: 'Afspraken kunnen tot 24 uur van tevoren kosteloos worden geannuleerd. Bij no-show of late annulering worden de volledige kosten in rekening gebracht.' },
+    { q: t('q1'), a: t('a1') },
+    { q: t('q2'), a: t('a2') },
+    { q: t('q3'), a: t('a3') },
+    { q: t('q4'), a: t('a4') },
+    { q: t('q5'), a: t('a5') },
+    { q: t('q6'), a: t('a6') },
+    { q: t('q7'), a: t('a7') },
+    { q: t('q8'), a: t('a8') },
+    { q: t('q9'), a: t('a9') },
   ]
 
   return (
@@ -152,20 +154,20 @@ export default function FAQ() {
       <section id="faq" className="faq-dark">
         <div className="wrap">
           <div className="head">
-            <span className="eyebrow">FAQ</span>
-            <h2>Veelgestelde <em>vragen</em></h2>
-            <p>Niet gevonden wat je zocht? Stel je vraag gerust via de chat.</p>
+            <span className="eyebrow">{t('eyebrow')}</span>
+            <h2>{t('title')}</h2>
+            <p>{t('subtitle')}</p>
           </div>
           <div className="faq-list" ref={listRef}>
             {faqs.map((f, i) => (
               <div key={i} className={`faq-item${i === 0 ? ' open' : ''}`}>
                 <button className="q">
                   <span className="num">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="q-text" dangerouslySetInnerHTML={{ __html: f.q }} />
+                  <span className="q-text">{f.q}</span>
                   <span className="ic" />
                 </button>
                 <div className="a">
-                  <div className="a-inner" dangerouslySetInnerHTML={{ __html: f.a }} />
+                  <div className="a-inner">{f.a}</div>
                 </div>
               </div>
             ))}
