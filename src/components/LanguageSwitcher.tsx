@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTransition } from 'react'
 
 const LANGUAGES = [
   { code: 'nl', flag: '🇳🇱', name: 'Nederlands' },
@@ -12,8 +13,19 @@ const LANGUAGES = [
   { code: 'it', flag: '🇮🇹', name: 'Italiano' },
 ] as const
 
+// Cache for prefetched message files — survives across components/renders
+const messageCache = new Map<string, Promise<unknown>>()
+
+async function prefetchMessages(locale: string) {
+  if (messageCache.has(locale)) return messageCache.get(locale)
+  const promise = import(`../../messages/${locale}.json`).then(m => m.default)
+  messageCache.set(locale, promise)
+  return promise
+}
+
 export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
@@ -33,6 +45,15 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  // Prefetch all locale message files when dropdown opens or on hover
+  const prefetchAll = useCallback(() => {
+    LANGUAGES.forEach(lang => {
+      if (lang.code !== currentLocale) {
+        prefetchMessages(lang.code)
+      }
+    })
+  }, [currentLocale])
+
   const switchTo = (locale: string) => {
     setOpen(false)
     if (locale === currentLocale) return
@@ -45,14 +66,19 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
       newSegments.splice(1, 0, locale)
     }
     const newPath = newSegments.join('/') || `/${locale}`
-    router.push(newPath)
+
+    // Use transition — React keeps old content visible until new is ready
+    startTransition(() => {
+      router.push(newPath)
+    })
   }
 
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
-        className="h-[52px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0 transition hover:border-[rgba(196,162,101,0.3)]"
+        onClick={() => open ? setOpen(false) : (setOpen(true), prefetchAll())}
+        onMouseEnter={prefetchAll}
+        className={`h-[52px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0 transition hover:border-[rgba(196,162,101,0.3)] ${isPending ? 'opacity-70' : ''}`}
         style={compact ? { width: '48px' } : { padding: '0 16px', gap: '6px' }}
         title={current.name}
       >
