@@ -196,7 +196,7 @@ export default function Hero() {
               </p>
 
               <div className="flex gap-[9px] flex-wrap">
-                <a href="/courses" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
+                <a href="/courses" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-[#C4A265] text-[#3D2E14] hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
                   {t('ctaAcademy')}
                 </a>
                 <a href="/behandelingen" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-transparent text-[#1A1815] border-[1.5px] border-[rgba(26,24,21,0.2)] hover:border-[rgba(26,24,21,0.45)] hover:bg-[rgba(196,162,101,0.06)] transition-all tracking-[0.02em]">

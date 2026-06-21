@@ -200,7 +200,7 @@ export default function ChatWidget() {
               }}
             />
             <button onClick={() => send(input)} disabled={loading} style={{
-              background: loading ? '#8B7445' : '#C4A265', color: '#0C0A07', border: 'none', borderRadius: 12,
+              background: loading ? '#8B7445' : '#C4A265', color: '#3D2E14', border: 'none', borderRadius: 12,
               padding: '10px 16px', cursor: loading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 500,
               fontFamily: "'Outfit', sans-serif",
             }}>

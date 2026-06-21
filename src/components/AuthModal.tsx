@@ -397,7 +397,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           color: #C4A265;
         }
         .auth-submit {
-          background: linear-gradient(135deg, #C4A265, #a8893f);
+          background: linear-gradient(135deg, #C4A265, #a8893f); color: #3D2E14;
           border: none;
           border-radius: 10px;
           padding: 14px;

@@ -72,7 +72,7 @@ export default function BeforeAfter() {
         .ba-section .ba-grid{display:grid;grid-template-columns:0.85fr 1.15fr;gap:48px;align-items:center}
         .ba-section .ba-copy .eyebrow{display:block;margin-bottom:16px}
         .ba-section .ba-copy h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2.6rem,4.5vw,4rem);line-height:1.02;margin-bottom:20px}
-        .ba-section .ba-copy h2 em{font-style:italic;color:#B08D4F}
+        .ba-section .ba-copy h2 em{font-style:italic;color:#8A6B30}
         .ba-section .ba-copy p{color:#46403A;font-size:1rem;max-width:42ch;margin-bottom:14px}
         .ba-section .ba-copy .hint{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:.84rem;color:#B08D4F;font-weight:500}
         .ba-section .ba-pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}

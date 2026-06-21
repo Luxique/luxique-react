@@ -87,7 +87,7 @@ export default function EmailConfirmHandler() {
           width: 56px;
           height: 56px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #C4A265, #a8893f);
+          background: linear-gradient(135deg, #C4A265, #a8893f); color: #3D2E14;
           color: #FAF8F4;
           display: flex;
           align-items: center;
@@ -111,7 +111,7 @@ export default function EmailConfirmHandler() {
           margin: 0 0 28px;
         }
         .confirm-btn {
-          background: linear-gradient(135deg, #C4A265, #a8893f);
+          background: linear-gradient(135deg, #C4A265, #a8893f); color: #3D2E14;
           border: none;
           border-radius: 10px;
           padding: 14px 40px;

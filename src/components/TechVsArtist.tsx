@@ -42,7 +42,7 @@ export default function TechVsArtist() {
         .tva-head { text-align:center; max-width:780px; margin-inline:auto; margin-bottom:clamp(40px,5vw,64px); position:relative; z-index:6; }
         .tva-eyebrow { display:inline-block; font-family:var(--body); font-weight:500; font-size:.78rem; letter-spacing:.22em; text-transform:uppercase; color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:.5em 1.25em; margin-bottom:1.4rem; }
         .tva-head h2 { font-family:var(--display); font-weight:500; font-size:clamp(2.6rem,5.2vw,4.1rem); line-height:1.04; letter-spacing:-.01em; color:var(--ink); }
-        .tva-head h2 em { font-style:italic; color:var(--gold); }
+        .tva-head h2 em { font-style:italic; color:#8A6B30; }
         .tva-head p { margin-top:1.1rem; color:var(--ink-soft); font-size:1.15rem; position:relative; display:inline-block; }
 
         .word-anchor { position:relative; }
