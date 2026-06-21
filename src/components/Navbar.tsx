@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useTranslations } from 'next-intl'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
@@ -24,6 +25,10 @@ export default function Navbar() {
 
   const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/') || pathname.includes('/courses')
   const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
+
+  // Extract current locale from path
+  const pathSegments = pathname.split('/')
+  const currentLocale = pathSegments[1] && ['nl', 'en', 'es', 'fr', 'de'].includes(pathSegments[1]) ? pathSegments[1] : 'nl'
 
   // Single source of truth for nav links (desktop + mobile)
   const navLinks = [
@@ -126,6 +131,11 @@ export default function Navbar() {
           ))}
         </div>
 
+        {/* Language Switcher — only on locale routes (not admin) */}
+        {pathname.match(/^\/(nl|en|es|fr|de)(\/|$)/) && (
+          <LanguageSwitcher />
+        )}
+
         {/* Login / Profile circle */}
         {user ? (
           <div className="relative" ref={dropdownRef}>
@@ -197,6 +207,20 @@ export default function Navbar() {
                 {l.label}
               </a>
             ))}
+            <hr className="border-[rgba(196,162,101,0.1)] my-2" />
+            {/* Mobile language switcher */}
+            <div className="flex gap-2 px-3 py-2 flex-wrap">
+              {[['nl','🇳🇱'],['en','🇬🇧'],['es','🇪🇸'],['fr','🇫🇷'],['de','🇩🇪']].map(([code, flag]) => {
+                const isActive = currentLocale === code
+                return (
+                  <a key={code} href={`/${code}${pathname.replace(/^\/(nl|en|es|fr|de)/, '')}`}
+                    className={`text-[18px] px-2 py-1 rounded-lg transition ${isActive ? 'bg-[rgba(196,162,101,0.15)] ring-1 ring-[rgba(196,162,101,0.3)]' : 'opacity-50 hover:opacity-100'}`}
+                    onClick={() => setMobileOpen(false)}>
+                    {flag}
+                  </a>
+                )
+              })}
+            </div>
             <hr className="border-[rgba(196,162,101,0.1)] my-2" />
             {user ? (
               <>
