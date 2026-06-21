@@ -78,15 +78,17 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
       <button
         onClick={() => open ? setOpen(false) : (setOpen(true), prefetchAll())}
         onMouseEnter={prefetchAll}
+        aria-label={`Taal selecteren, huidig: ${current.name}`}
+        aria-expanded={open}
         className={`h-[52px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0 transition hover:border-[rgba(196,162,101,0.3)] ${isPending ? 'opacity-70' : ''}`}
         style={compact ? { width: '48px' } : { padding: '0 16px', gap: '6px' }}
         title={current.name}
       >
-        <span className="text-[18px] leading-none">{current.flag}</span>
+        <span className="text-[18px] leading-none" aria-hidden="true">{current.flag}</span>
         {!compact && (
           <span className="text-[12px] font-medium text-[#3d382f] hidden md:inline">{current.code.toUpperCase()}</span>
         )}
-        <svg className={`w-[10px] h-[10px] text-[#6b6357] transition-transform ${open ? 'rotate-180' : ''}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg aria-hidden="true" className={`w-[10px] h-[10px] text-[#6b6357] transition-transform ${open ? 'rotate-180' : ''}`} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>

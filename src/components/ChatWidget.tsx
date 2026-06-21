@@ -88,6 +88,8 @@ export default function ChatWidget() {
       {!hideOnAcademy && (<button
         className="luxique-chat-btn"
         onClick={() => setOpen(!open)}
+        aria-label={open ? 'Chat sluiten' : 'Chat openen'}
+        aria-expanded={open}
         style={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
           width: 60, height: 60, borderRadius: '50%',

@@ -55,6 +55,7 @@ function ContentCard({ item }: { item: ContentItem }) {
             loop
             playsInline
             preload="metadata"
+            aria-label={item.title}
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
         ) : item.imageUrl ? (

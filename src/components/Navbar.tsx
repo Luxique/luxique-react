@@ -102,8 +102,10 @@ export default function Navbar() {
         {/* Mobile: hamburger circle — FIRST in DOM */}
         <button onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Menu sluiten" : "Menu openen"}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
           className="md:hidden w-[48px] h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">
-          <div className="flex flex-col gap-[4.5px] items-center">
+          <div className="flex flex-col gap-[4.5px] items-center" aria-hidden="true">
             <span className={`w-[18px] h-[1.5px] bg-[#0C0A07] rounded-[2px] transition-all ${mobileOpen ? 'rotate-45 translate-y-[6px]' : ''}`} />
             <span className={`w-[18px] h-[1.5px] bg-[#0C0A07] rounded-[2px] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
             <span className={`w-[18px] h-[1.5px] bg-[#0C0A07] rounded-[2px] transition-all ${mobileOpen ? '-rotate-45 -translate-y-[6px]' : ''}`} />
@@ -202,7 +204,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
+        <div id="mobile-menu" className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
           <div className="absolute left-[14px] w-[260px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] p-6 space-y-1" style={{ top: 'calc(env(safe-area-inset-top) + 76px)' }} onClick={e => e.stopPropagation()}>
             {navLinks.map(l => (
               <a key={l.href} href={l.href} className="block text-[14px] py-2.5 px-3 rounded-xl text-[#3d382f] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>
