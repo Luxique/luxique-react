@@ -1778,6 +1778,7 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   if (loading) return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
   if (!user) return null
   if (role !== 'admin') return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
+  if (!course) return <div className="min-h-screen bg-[#FAF8F4] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Cursus laden...</div></div>
 
   {/* Pulse Animation Styles */}
   <style jsx>{`
