@@ -158,7 +158,7 @@ export default function TechVsArtist() {
             {/* LASH TECHNICIAN */}
             <article className="tva-card card--tech">
               <div className="card-media">
-                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/tva-lash-tech.webp?width=1000&quality=70" alt="Lash Technician" />
+                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/tva-lash-tech.webp?width=1200&quality=75&resize=contain" alt="Lash Technician" />
               </div>
               <div className="card-body">
                 <h3>{t('techLabel')}</h3>
@@ -172,7 +172,7 @@ export default function TechVsArtist() {
             <article className="tva-card card--artist">
               <div className="card-media">
                 <span className="tva-pill">{t('artistBridge')}</span>
-                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/tva-lash-artist.webp?width=1000&quality=70" alt="Lash Artist" />
+                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/tva-lash-artist.webp?width=1200&quality=75&resize=contain" alt="Lash Artist" />
               </div>
               <div className="card-body">
                 <h3>{t('artistLabel')}</h3>
@@ -192,7 +192,7 @@ export default function TechVsArtist() {
           {/* Chiva quote - subtle */}
           <figure className="quote-block">
             <div className="quote-portrait">
-              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/tva-chiva-quote.webp?width=900&quality=75" alt="Chiva Daams" />
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/tva-chiva-quote.webp?width=900&quality=75&resize=contain" alt="Chiva Daams" />
             </div>
             <div className="quote-body">
               <blockquote>{t('quote')}</blockquote>

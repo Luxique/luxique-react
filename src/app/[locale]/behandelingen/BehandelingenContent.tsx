@@ -13,19 +13,19 @@ const PRICING = {
   refill: { price: 90 },
 }
 
-const HERO_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/cta-behandelingen.webp?width=1400&quality=75'
+const HERO_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/cta-behandelingen.webp?width=1400&quality=75&resize=contain'
 
 /* FAQ array now built inside components from translations */
 
 const SHOWCASE_PHOTOS = [
-  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-1.webp?width=600&quality=75',
-  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-2.webp?width=600&quality=75',
-  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-3.webp?width=600&quality=75',
-  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-4.webp?width=600&quality=75',
-  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-5.webp?width=600&quality=75',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-1.webp?width=600&quality=75&resize=contain',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-2.webp?width=600&quality=75&resize=contain',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-3.webp?width=600&quality=75&resize=contain',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-4.webp?width=600&quality=75&resize=contain',
+  'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-5.webp?width=600&quality=75&resize=contain',
 ]
 
-const CLOSING_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/hero-behandelingen.webp?width=1400&quality=75'
+const CLOSING_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/hero-behandelingen.webp?width=1400&quality=75&resize=contain'
 
 /* ─── Reveal observer ─── */
 function useReveal() {

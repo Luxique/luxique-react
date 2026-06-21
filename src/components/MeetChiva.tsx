@@ -69,8 +69,8 @@ function OrbCanvas() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block will-change-transform" />
 }
 
-const CHIVA_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chiva-portrait-v2.webp?width=900&quality=75'
-const ACTION_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chiva-action.webp?width=900&quality=75'
+const CHIVA_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chiva-portrait-v2.webp?width=900&quality=75&resize=contain'
+const ACTION_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chiva-action.webp?width=900&quality=75&resize=contain'
 
 export default function MeetChiva() {
   const t = useTranslations('MeetChiva')

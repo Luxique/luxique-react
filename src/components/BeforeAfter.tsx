@@ -9,8 +9,8 @@ export default function BeforeAfter() {
   const t = useTranslations('BeforeAfter')
 
   const BA_PAIRS = [
-    { name: t('set1Label'), before: `${CDN}/ba-wispy-before.webp?width=1500&quality=75`, after: `${CDN}/ba-wispy-after.webp?width=1500&quality=75` },
-    { name: t('set2Label'), before: `${CDN}/ba-medusa-before.webp?width=1500&quality=75`, after: `${CDN}/ba-medusa-after.webp?width=1500&quality=75` },
+    { name: t('set1Label'), before: `${CDN}/ba-wispy-before.webp?width=1500&quality=75&resize=contain`, after: `${CDN}/ba-wispy-after.webp?width=1500&quality=75&resize=contain` },
+    { name: t('set2Label'), before: `${CDN}/ba-medusa-before.webp?width=1500&quality=75&resize=contain`, after: `${CDN}/ba-medusa-after.webp?width=1500&quality=75&resize=contain` },
   ]
   useEffect(() => {
     document.querySelectorAll('[data-ba]').forEach(ba => {

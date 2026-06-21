@@ -1,6 +1,7 @@
 'use client'
 
 import './academy-redesign.css'
+import { useTranslations } from 'next-intl'
 
 /* ═══════════════════════════════════════════════════════
    AcademySection — Redesigned portrait card grid
@@ -42,6 +43,8 @@ function formatPrice(cents: number | null): string {
 }
 
 export default function AcademySection({ courses, loading }: Props) {
+  const t = useTranslations('Academy')
+
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#0c100d' }}>
       <div className="lxq-courses-wrap">
@@ -49,16 +52,16 @@ export default function AcademySection({ courses, loading }: Props) {
         {/* ══ HERO ══ */}
         <header className="lxq-hero">
           <div className="lxq-hero-main">
-            <div className="lxq-eyebrow">LXQ Academy</div>
+            <div className="lxq-eyebrow">{t('heroEyebrow')}</div>
             <h1 className="lxq-h1">
-              Leer denken als<br />een <em>lash artist.</em>
+              {t('heroTitlePlain')}<br />{t('heroTitleEm')}
             </h1>
             <p className="lxq-hero-p">
-              Eerst begrijpen, dan doen. Online opleidingen van Chiva — opgebouwd uit theorie, techniek en persoonlijke feedback.
+              {t('heroSubtitle')}
             </p>
             <div className="lxq-hero-cta">
               <a href="#cursussen" className="lxq-btn-ghost">
-                Bekijk de opleidingen ↓
+                {t('heroCta')}
               </a>
             </div>
           </div>
@@ -66,10 +69,10 @@ export default function AcademySection({ courses, loading }: Props) {
             <div className="lxq-teacher-avatar">
               <img src={`${CDN_IMG}/chiva-portrait-v2.webp`} alt="Chiva" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
             </div>
-            <div className="lxq-teacher-label">Lessen gegeven door</div>
-            <h3 className="lxq-teacher-name">Chiva</h3>
-            <div className="lxq-teacher-role">Lash Artist & Educator</div>
-            <a href="/about" className="lxq-teacher-link">Lees haar verhaal →</a>
+            <div className="lxq-teacher-label">{t('instructorEyebrow')}</div>
+            <h3 className="lxq-teacher-name">{t('instructorName')}</h3>
+            <div className="lxq-teacher-role">{t('instructorRole')}</div>
+            <a href="/about" className="lxq-teacher-link">{t('instructorCta')}</a>
           </aside>
         </header>
 
@@ -77,8 +80,8 @@ export default function AcademySection({ courses, loading }: Props) {
         <main id="cursussen">
           <div className="lxq-section-head">
             <div>
-              <div className="lxq-eyebrow">Cursussen</div>
-              <h2 className="lxq-section-h2">Onze <em>opleidingen</em></h2>
+              <div className="lxq-eyebrow">{t('coursesEyebrow')}</div>
+              <h2 className="lxq-section-h2">{t('coursesTitlePlain')} <em>{t('coursesTitleEm')}</em></h2>
             </div>
           </div>
 
@@ -117,7 +120,7 @@ export default function AcademySection({ courses, loading }: Props) {
                       )}
                       <span className="lxq-lock">
                         <svg width="10" height="12" viewBox="0 0 11 13" fill="none" stroke="#c9a86a" strokeWidth="1.3"><rect x="1" y="5.5" width="9" height="6.5" rx="1.6"/><path d="M3 5.5V4a2.5 2.5 0 015 0v1.5"/></svg>
-                        Toegang na inschrijving
+                        {t('cardAccessLabel')}
                       </span>
                     </div>
                     <div className="lxq-course-body">
@@ -131,10 +134,10 @@ export default function AcademySection({ courses, loading }: Props) {
                           <span className="lxq-price">
                             <span className="lxq-amount">{formatPrice(course.price_cents)}</span>
                           </span>
-                          <span className="lxq-price-terms">Eenmalig · incl. btw</span>
+                          <span className="lxq-price-terms">{t('cardPriceLabel')}</span>
                         </div>
-                        <a href={`/cursus/${course.slug}`} className="lxq-btn-primary lxq-btn-full">Join the Academy →</a>
-                        <span className="lxq-micro">Eerste les gratis met een account</span>
+                        <a href={`/cursus/${course.slug}`} className="lxq-btn-primary lxq-btn-full">{t('cardCta')}</a>
+                        <span className="lxq-micro">{t('cardFootnote')}</span>
                       </div>
                     </div>
                   </article>
@@ -144,22 +147,22 @@ export default function AcademySection({ courses, loading }: Props) {
               {/* Persoonlijk Traject — always last card */}
               <article className="lxq-course-card lxq-card-exclusive">
                 <div className="lxq-course-thumb lxq-thumb-exclusive">
-                  <span className="lxq-pill" style={{ borderColor: 'rgba(245,239,227,0.08)', color: 'rgba(242,236,221,0.62)' }}>Exclusief</span>
-                  <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/persoonlijk-traject-card.webp?width=800&quality=75" alt="Persoonlijk Traject" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <span className="lxq-pill" style={{ borderColor: 'rgba(245,239,227,0.08)', color: 'rgba(242,236,221,0.62)' }}>{t('trajectEyebrow')}</span>
+                  <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/persoonlijk-traject-card.webp?width=800&quality=75&resize=contain" alt="Persoonlijk Traject" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div className="lxq-course-body">
-                  <h3>Persoonlijk Traject<br /><em style={{ fontStyle: 'italic', color: '#c9a86a', fontWeight: 400 }}>met Chiva.</em></h3>
-                  <p className="lxq-course-sub">Intensieve 1:1 begeleiding over meerdere dagen — volledig op maat, beperkte beschikbaarheid.</p>
+                  <h3>{t('trajectTitlePlain')}<br /><em style={{ fontStyle: 'italic', color: '#c9a86a', fontWeight: 400 }}>{t('trajectTitleEm')}</em></h3>
+                  <p className="lxq-course-sub">{t('trajectDesc')}</p>
                   <ul className="lxq-usps">
-                    <li>Meerdere dagen 1:1</li>
-                    <li>Volledig op maat</li>
-                    <li>Beperkte beschikbaarheid</li>
+                    <li>{t('trajectFeature1')}</li>
+                    <li>{t('trajectFeature2')}</li>
+                    <li>{t('trajectFeature3')}</li>
                   </ul>
                   <div className="lxq-course-foot">
                     <div className="lxq-price-row">
-                      <span className="lxq-op-aanvraag">op aanvraag</span>
+                      <span className="lxq-op-aanvraag">{t('trajectPriceLabel')}</span>
                     </div>
-                    <a href="/persoonlijk-traject" className="lxq-btn-outline">Meer informatie →</a>
+                    <a href="/persoonlijk-traject" className="lxq-btn-outline">{t('trajectCta')}</a>
                   </div>
                 </div>
               </article>
@@ -170,11 +173,11 @@ export default function AcademySection({ courses, loading }: Props) {
           {/* ══ GRATIS START BANNER ══ */}
           <section className="lxq-free-banner">
             <div>
-              <h4>Gratis starten met <em>de eerste les.</em></h4>
-              <p>Maak een account en bekijk direct de preview les van elke cursus. Geen creditcard, geen verplichtingen.</p>
-              <div className="lxq-banner-login">Al een account? <a href="/login">Inloggen</a></div>
+              <h4>{t('ctaTitlePlain')} <em>{t('ctaTitleEm')}</em></h4>
+              <p>{t('ctaDesc')}</p>
+              <div className="lxq-banner-login">{t('ctaHasAccount')} <a href="/login">{t('ctaLogin')}</a></div>
             </div>
-            <a href="/register" className="lxq-btn-primary">Maak gratis account</a>
+            <a href="/register" className="lxq-btn-primary">{t('ctaCreate')}</a>
           </section>
         </main>
       </div>
