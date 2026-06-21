@@ -347,17 +347,17 @@
     "ctaBook": "Reserva un tratamiento"
   },
   "Contact": {
-    "title": "Contact",
-    "labelName": "Naam",
-    "labelEmail": "E-mailadres",
-    "labelMessage": "Bericht",
-    "submit": "Verstuur",
+    "title": "Contacto",
+    "labelName": "Nombre",
+    "labelEmail": "Correo electrónico",
+    "labelMessage": "Mensaje",
+    "submit": "Enviar",
     "infoName": "LXQ Academy",
-    "infoLocation": "Arnhem, Nederland",
+    "infoLocation": "Arnhem, Países Bajos",
     "infoEmail": "info@luxique.nl",
-    "socialsLabel": "Socials",
+    "socialsLabel": "Redes",
     "socialsHandle": "@lashedbychiva",
-    "chatHint": "💬 Chat met ons — rechtsonder vind je onze chatbot."
+    "chatHint": "💬 Chatea con nosotras — abajo a la derecha encontrarás nuestro chatbot."
   },
   "FaqPage": {
     "title": "Veelgestelde vragen",
