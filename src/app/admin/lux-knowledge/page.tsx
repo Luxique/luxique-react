@@ -16,14 +16,12 @@ export default function LuxKnowledgePage() {
   const [error, setError] = useState('')
   const [loadingData, setLoadingData] = useState(true)
 
+  // EXACT same pattern as working admin/page.tsx:
+  // Only redirect to login if !loading && !user (not logged in).
+  // Don't check role in the redirect — handle non-admin with a message.
   useEffect(() => {
-    if (!loading && (!user || role !== 'admin')) {
-      router.push('/login?redirect=/admin/lux-knowledge')
-    }
-  }, [user, loading, role, router])
-
-  // If still loading, don't redirect yet — wait for auth to settle
-  // This prevents the login loop where role hasn't loaded yet
+    if (!loading && !user) router.push('/login?redirect=/admin/lux-knowledge')
+  }, [user, loading, router])
 
   useEffect(() => {
     if (!user || role !== 'admin') return
@@ -104,12 +102,24 @@ export default function LuxKnowledgePage() {
     setSaving(false)
   }
 
-  if (loading || !user || role !== 'admin') {
+  if (loading) {
     return (
       <>
         <Navbar />
         <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-[#B08D4F] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </>
+    )
+  }
+
+  if (role !== 'admin') {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center flex-col gap-4">
+          <div className="text-[#888] text-[14px]">Geen toegang.</div>
+          <a href="/dashboard" className="text-[13px] text-[#D4AF37]">← Terug</a>
         </div>
       </>
     )
