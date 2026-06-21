@@ -271,9 +271,9 @@ export default function PersoonlijkTrajectContent() {
         .start-btns .btn.ghost{color:var(--on-dark);border-color:rgba(246,241,231,.3)}
 
         /* ===== DAGPROGRAMMA ===== */
-        .detail{background:var(--dark2);color:var(--on-dark);overflow:hidden;max-height:0;transition:max-height .6s cubic-bezier(.16,1,.3,1)}
-        .detail.open{max-height:7000px}
-        .detail-inner{padding:80px 0 90px;position:relative;
+        .detail{background:var(--dark2);color:var(--on-dark);overflow:hidden;display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s cubic-bezier(.16,1,.3,1)}
+        .detail.open{grid-template-rows:1fr}
+        .detail-inner{padding:80px 0 90px;position:relative;overflow:hidden;
           background:radial-gradient(110% 70% at 50% 0%, rgba(176,141,79,.12), transparent 55%)}
         .detail .eyebrow{color:var(--gold-bright)}
         .detail h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2.2rem,4.5vw,3.4rem);line-height:1;margin:14px 0 10px}

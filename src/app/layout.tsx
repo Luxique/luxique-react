@@ -56,11 +56,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html className={`${outfit.variable} ${cormorant.variable} ${jost.variable} ${pinyon.variable}`}>
+    <html lang="nl" className={`${outfit.variable} ${cormorant.variable} ${jost.variable} ${pinyon.variable}`}>
       <head>
         <meta name="theme-color" content="#FAF8F4" />
         <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            try {
+              var p = window.location.pathname.split('/')[1];
+              var locales = ['nl','en','es','fr','de','it'];
+              if (locales.indexOf(p) !== -1) {
+                document.documentElement.lang = p;
+              }
+            } catch(e){}
+          })();
+        ` }} />
       </head>
       <body>{children}</body>
     </html>

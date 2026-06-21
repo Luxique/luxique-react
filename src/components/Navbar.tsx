@@ -101,6 +101,7 @@ export default function Navbar() {
       <nav className="fixed left-0 right-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px]" style={{ top: 'calc(env(safe-area-inset-top) + 14px)' }}>
         {/* Mobile: hamburger circle — FIRST in DOM */}
         <button onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? "Menu sluiten" : "Menu openen"}
           className="md:hidden w-[48px] h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">
           <div className="flex flex-col gap-[4.5px] items-center">
             <span className={`w-[18px] h-[1.5px] bg-[#0C0A07] rounded-[2px] transition-all ${mobileOpen ? 'rotate-45 translate-y-[6px]' : ''}`} />

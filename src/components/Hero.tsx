@@ -146,6 +146,7 @@ export default function Hero() {
               <button
                 key={i}
                 onClick={() => goTo(i)}
+                aria-label={`Ga naar slide ${i + 1}`}
                 className={`hero-v2-dot ${current === i ? 'on' : ''}`}
               />
             ))}
@@ -240,6 +241,7 @@ export default function Hero() {
             <div className="absolute bottom-3.5 left-0 right-0 z-[5] flex gap-[5px] px-4 justify-center">
               {SLIDES.map((slide, i) => (
                 <button key={i} onClick={() => goTo(i)}
+                  aria-label={`Ga naar ${slide.title}`}
                   className={`relative overflow-hidden cursor-pointer transition-colors
                     w-auto flex-1 max-w-[60px] h-[3px] rounded-full bg-[rgba(12,10,7,0.45)] backdrop-blur-[10px] border-none`}>
                   <span className="hidden">{slide.title}</span>

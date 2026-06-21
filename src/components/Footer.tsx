@@ -26,7 +26,7 @@ export default function Footer() {
 
           {/* Behandelingen */}
           <div>
-            <h5 className="text-[13px] font-semibold mb-4 text-white/60">{t('behandelingenTitle')}</h5>
+            <h4 className="text-[13px] font-semibold mb-4 text-white/60">{t('behandelingenTitle')}</h4>
             <a href="/behandelingen" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">{t('behandelingen1')}</a>
             <a href="/behandelingen" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">{t('behandelingen2')}</a>
             <a href="/behandelingen" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">{t('behandelingen3')}</a>
@@ -34,14 +34,14 @@ export default function Footer() {
 
           {/* Academy */}
           <div>
-            <h5 className="text-[13px] font-semibold mb-4 text-white/60">{t('academyTitle')}</h5>
+            <h4 className="text-[13px] font-semibold mb-4 text-white/60">{t('academyTitle')}</h4>
             <a href="/courses" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">{t('academy1')}</a>
             <a href="/persoonlijk-traject" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition">{t('academy2')}</a>
           </div>
 
           {/* Info */}
           <div>
-            <h5 className="text-[13px] font-semibold mb-4 text-white/60">{t('infoTitle')}</h5>
+            <h4 className="text-[13px] font-semibold mb-4 text-white/60">{t('infoTitle')}</h4>
             <a href="/about" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">{t('info1')}</a>
             <a href="/faq" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">{t('info2')}</a>
             <a href="/contact" className="block text-[12px] text-white/40 hover:text-[var(--rose)] transition mb-2">{t('info3')}</a>
