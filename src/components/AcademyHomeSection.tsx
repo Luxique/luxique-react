@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function AcademyHomeSection() {
+  const t = useTranslations('AcademySection')
+  const t2 = useTranslations('DenkenAlsArtist')
   const secRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
@@ -284,28 +287,28 @@ export default function AcademyHomeSection() {
       `}</style>
 
       <div className="acad-head">
-        <span className="acad-eyebrow acad-r acad-rh">LXQ Academy</span>
-        <h2 className="acad-r acad-rh">Online Leerplatform &amp; Persoonlijk Traject</h2>
-        <p className="acad-r acad-rh">Leer op jouw eigen tempo via onze videocursussen, of kies voor een persoonlijk traject bij Chiva op locatie.</p>
+        <span className="acad-eyebrow acad-r acad-rh">{t('eyebrow')}</span>
+        <h2 className="acad-r acad-rh">{t('title')}</h2>
+        <p className="acad-r acad-rh">{t('subtitle')}</p>
       </div>
 
       <div className="acad-pillars">
         <article className="acad-card gold acad-r acad-c1">
-          <span className="acad-badge">Meest gekozen</span>
+          <span className="acad-badge">{t('popularBadge')}</span>
           <div className="acad-ico-badge">
             <svg className="acad-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M9.7 8.4l5 3.1-5 3.1z" fill="currentColor" stroke="none"/><path d="M8 20.5h8"/>
             </svg>
           </div>
-          <h3>Online Leerplatform</h3>
-          <p className="acad-desc">Videocursussen op jouw eigen tempo. Start wanneer jij wilt, leer waar je wilt.</p>
+          <h3>{t('onlineTitle')}</h3>
+          <p className="acad-desc">{t('onlineDesc')}</p>
           <ul className="acad-checks">
-            <li><span className="acad-ck">✓</span>Medusa cursus — beginnersniveau</li>
-            <li><span className="acad-ck">✓</span>Wispy cursus — vervolgmodule</li>
-            <li><span className="acad-ck">✓</span>Certificaat bij afronding</li>
-            <li><span className="acad-ck">✓</span>Levenslange toegang</li>
+            <li><span className="acad-ck">✓</span>{t('onlineFeature1')}</li>
+            <li><span className="acad-ck">✓</span>{t('onlineFeature2')}</li>
+            <li><span className="acad-ck">✓</span>{t('onlineFeature3')}</li>
+            <li><span className="acad-ck">✓</span>{t('onlineFeature4')}</li>
           </ul>
-          <a className="acad-cta" href="/courses">Bekijk de cursussen <span className="arr">→</span></a>
+          <a className="acad-cta" href="/courses">{t('onlineCta')} <span className="arr">→</span></a>
         </article>
 
         <article className="acad-card dark acad-r acad-c2">
@@ -314,24 +317,24 @@ export default function AcademyHomeSection() {
               <circle cx="9" cy="8" r="3.2"/><path d="M3.4 19.5c0-3.3 2.5-5.5 5.6-5.5s5.6 2.2 5.6 5.5"/><path d="M16.6 5.3a3 3 0 0 1 0 5.6"/><path d="M18.7 19.5c0-2.3-.9-4-2.3-5.1"/>
             </svg>
           </div>
-          <h3>Persoonlijk Traject</h3>
-          <p className="acad-desc">Verspreid over meerdere dagen leer je alle kneepjes van het vak bij Chiva op locatie in Arnhem.</p>
+          <h3>{t('trajectTitle')}</h3>
+          <p className="acad-desc">{t('trajectDesc')}</p>
           <ul className="acad-checks">
-            <li><span className="acad-ck">✓</span>Hands-on op locatie Arnhem</li>
-            <li><span className="acad-ck">✓</span>Alle materialen inbegrepen</li>
-            <li><span className="acad-ck">✓</span>Volledig op maat</li>
+            <li><span className="acad-ck">✓</span>{t('trajectFeature1')}</li>
+            <li><span className="acad-ck">✓</span>{t('trajectFeature2')}</li>
+            <li><span className="acad-ck">✓</span>{t('trajectFeature3')}</li>
           </ul>
-          <a className="acad-cta" href="/persoonlijk-traject">Meer informatie <span className="arr">→</span></a>
+          <a className="acad-cta" href="/persoonlijk-traject">{t('trajectCta')} <span className="arr">→</span></a>
         </article>
       </div>
 
       <div className="acad-bar acad-r acad-rb">
         <div>
-          <div className="lbl">De academie</div>
-          <h3>Leren denken als een artist.</h3>
-          <p>LXQ Academy is onze manier om alles door te geven wat wij hebben geleerd. Niet alleen de techniek, maar het denken als een artist. Chiva heeft al vele studenten opgeleid, en haar filosofie is simpel: elke oogvorm verdient een unieke aanpak.</p>
+          <div className="lbl">{t2('eyebrow')}</div>
+          <h3>{t2('title')}</h3>
+          <p>{t2('description')}</p>
         </div>
-        <a className="acad-cta" href="/about">Lees meer <span className="arr">→</span></a>
+        <a className="acad-cta" href="/about">{t2('cta')} <span className="arr">→</span></a>
       </div>
     </section>
   )

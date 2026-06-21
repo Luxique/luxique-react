@@ -1,20 +1,17 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 interface Props {
   theme?: 'light' | 'dark'
 }
 
 export default function ComparisonTable({ theme = 'light' }: Props) {
+  const t = useTranslations('Vergelijking')
+
   const features = [
-    'Werken met oogvormen',
-    'Droopyness actief voorkomen',
-    'Alle curls — J, B, L en verder',
-    'Spikes maken én correct plaatsen',
-    'Bottom lashes technieken',
-    'Wet sets creëren',
-    'Je werk professioneel fotograferen',
-    'Mentorship na de cursus',
-    'Leer in jouw eigen tempo',
+    t('row1'), t('row2'), t('row3'), t('row4'), t('row5'),
+    t('row6'), t('row7'), t('row8'), t('row9'),
   ]
 
   const checkSVG = (
@@ -30,13 +27,13 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
       <div className="comp-page-width">
         <div className="comp-grid">
           <div className={isDark ? 'comp-content comp-content-dark' : 'comp-content'}>
-            <p className="comp-eyebrow">Vergelijking</p>
+            <p className="comp-eyebrow">{t('eyebrow')}</p>
             <h2 className={isDark ? 'comp-title comp-title-dark' : 'comp-title'}>
-              Niet elke opleiding is hetzelfde. <em>Dit is het verschil.</em>
+              {t('title1')} <em>{t('title2')}</em>
             </h2>
             <div className="comp-desc">
               <p className={isDark ? 'comp-desc-dark' : ''}>
-                De meeste cursussen leren je een set kunstjes. Bij Luxique Academy leer je het vak — van oogvorm tot fotografie, met begeleiding die doorgaat na je diploma.
+                {t('subtitle')}
               </p>
             </div>
           </div>
@@ -46,10 +43,10 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
               <div className="comp-header comp-header-spacer" />
               <div className="comp-header comp-header-lxq">
                 <span className="comp-spark">✦</span>
-                <span className="comp-col-name">LXQ<br />Academy</span>
+                <span className="comp-col-name">{t('colLxq')}</span>
               </div>
               <div className="comp-header comp-header-std">
-                <span className="comp-col-name-std">Standaard<br />cursus</span>
+                <span className="comp-col-name-std">{t('colStandard')}</span>
               </div>
             </div>
 
@@ -82,7 +79,7 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
         </div>
 
         <p className={isDark ? 'comp-closing comp-closing-dark' : 'comp-closing'}>
-          Bij Luxique Academy studeer je niet af als iemand die weet <em>hoe</em> het moet, maar als iemand die begrijpt <em>waarom</em> — en dat is precies wat klanten laat terugkomen.
+          {t('footerPre')} <em>{t('footerEm1')}</em> {t('footerMid')} <em>{t('footerEm2')}</em> {t('footerPost')}
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 /* ── data ── */
 type Source = 'google' | 'treatwell'
@@ -87,6 +88,7 @@ function TreatwellIcon() {
 
 /* ── Card ── */
 function ReviewCard({ review, visible }: { review: Review; visible: boolean }) {
+  const t = useTranslations('Reviews')
   const [expanded, setExpanded] = useState(false)
   const expandable = needsExpand(review.text)
 
@@ -111,14 +113,14 @@ function ReviewCard({ review, visible }: { review: Review; visible: boolean }) {
         </div>
         <span className={`card-source ${review.source}`}>
           {review.source === 'google' ? <GoogleIcon /> : <TreatwellIcon />}
-          {review.source === 'google' ? 'Google' : 'Treatwell'}
+          {review.source === 'google' ? t('googleLabel') : t('treatwellLabel')}
         </span>
       </div>
 
       {/* Stars */}
       <div className="card-stars">
         <div className="stars">{Array.from({ length: review.stars }, (_, i) => <span key={i} className="star">★</span>)}</div>
-        {review.verified && <span className="verified">✓ Geverifieerd</span>}
+        {review.verified && <span className="verified">✓ {t('verified')}</span>}
       </div>
 
       {/* Text */}
@@ -128,7 +130,7 @@ function ReviewCard({ review, visible }: { review: Review; visible: boolean }) {
         </div>
         {expandable && (
           <button className="toggle-btn" onClick={() => setExpanded(!expanded)}>
-            {expanded ? 'Minder tonen ▲' : 'Meer tonen ▼'}
+            {expanded ? '▲' : t('showMore') + ' ▼'}
           </button>
         )}
       </div>
@@ -142,6 +144,7 @@ function ReviewCard({ review, visible }: { review: Review; visible: boolean }) {
 
 /* ── Main ── */
 export default function ReviewsSection() {
+  const t = useTranslations('Reviews')
   const [shown, setShown] = useState(BATCH)
   const allLoaded = shown >= REVIEWS.length
   const gridRef = useRef<HTMLDivElement>(null)
@@ -160,33 +163,33 @@ export default function ReviewsSection() {
     <section className="reviews-section">
       {/* Header */}
       <div className="section-header">
-        <span className="eyebrow">Wat klanten zeggen</span>
+        <span className="eyebrow">{t('eyebrow')}</span>
         <h2>
-          Lashes die <em>spreken</em><br />voor zichzelf
+          {t('title1')}<br />{t('title2')}
         </h2>
 
         <div className="source-pills">
           <div className="source-pill">
             <GoogleIcon />
-            <span>Google</span>
+            <span>{t('googleLabel')}</span>
             <span className="pill-stars">★★★★★</span>
-            <span className="pill-count">20 reviews</span>
+            <span className="pill-count">{t('googleCount')}</span>
           </div>
           <div className="source-pill">
             <TreatwellIcon />
-            <span>Treatwell</span>
+            <span>{t('treatwellLabel')}</span>
             <span className="pill-stars">★★★★★</span>
-            <span className="pill-count">13 reviews</span>
+            <span className="pill-count">{t('treatwellCount')}</span>
           </div>
         </div>
 
         <div className="rating-row">
-          <span className="rating-num">5.0</span>
+          <span className="rating-num">{t('totalRating')}</span>
           <div className="rating-detail">
             <div className="rating-stars">
               <span className="s">★</span><span className="s">★</span><span className="s">★</span><span className="s">★</span><span className="s">★</span>
             </div>
-            <span className="rating-label">33 beoordelingen totaal</span>
+            <span className="rating-label">{t('totalCount')}</span>
           </div>
         </div>
       </div>
@@ -203,7 +206,7 @@ export default function ReviewsSection() {
       {/* Load more */}
       <div className={`load-more-cta${allLoaded ? ' all-loaded' : ''}`}>
         <button className="load-more-btn" onClick={loadMore}>
-          Meer reviews laden <span style={{ fontSize: 10, opacity: 0.7 }}>▼</span>
+          {t('loadMore')} <span style={{ fontSize: 10, opacity: 0.7 }}>▼</span>
         </button>
       </div>
 
@@ -211,7 +214,7 @@ export default function ReviewsSection() {
       <div className="mt-12 text-center">
         <a href="https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D" target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-2 text-[#1A1815] font-medium hover:text-[#C4A265] transition-colors text-[15px]">
-          Lees al onze reviews op Google
+          {t('readAll')}
           <span>→</span>
         </a>
       </div>
