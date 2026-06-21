@@ -26,23 +26,28 @@ export async function generateMetadata({ params }: Props) {
   const title = homepage.metaTitle || 'LXQ Academy — The Art of Lashes, Perfected'
   const description = homepage.metaDescription || 'Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists.'
   
-  // Generate hreflang alternate links
+  const BASE_URL = 'https://www.luxique.nl'
+  
+  // Generate absolute hreflang alternate links for all locales
   const alternates: Record<string, string> = {}
   for (const loc of routing.locales) {
-    alternates[loc] = `/${loc}`
+    alternates[loc] = `${BASE_URL}/${loc}`
   }
+  // x-default points to default locale
+  alternates['x-default'] = `${BASE_URL}/${routing.defaultLocale}`
   
   return {
     title,
     description,
     alternates: {
-      canonical: `/${locale}`,
+      canonical: `${BASE_URL}/${locale}`,
       languages: alternates,
     },
     openGraph: {
       title,
       description,
       type: 'website',
+      url: `${BASE_URL}/${locale}`,
     }
   }
 }
