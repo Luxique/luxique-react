@@ -150,7 +150,7 @@ export default function TechVsArtist() {
         <div className="tva-container">
           <div className="tva-head">
             <span className="tva-eyebrow">{t('eyebrow')}</span>
-            <h2>{t('titlePlain1')}<em>{t('titleEm1')}</em>{t('titlePlain2')}<em>{t('titleEm2')}</em>.</h2>
+            <h2>{t('titlePlain1')}<em>{t('titleEm1')}</em>{t('titlePlain2')}<em>{t('titleEm2')}</em></h2>
             <p>{t('titlePlain3')}<span className="word-anchor">{t('titleEm3')}<svg className="curl" viewBox="0 0 140 104" fill="none"><path d="M2 19 C 34 5, 62 13, 54 39 C 47 60, 14 57, 22 36 C 28 20, 56 24, 72 40 C 90 56, 100 66, 104 76"/><path className="head-arrow" d="M104 76 l -15 -1 M104 76 l 1 -15"/></svg></span></p>
           </div>
 
