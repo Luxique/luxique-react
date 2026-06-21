@@ -1,0 +1,145 @@
+{
+  "Homepage": {
+    "metaTitle": "",
+    "metaDescription": ""
+  },
+  "Nav": {
+    "home": "",
+    "behandelingen": "",
+    "academy": "",
+    "persoonlijkTraject": "",
+    "overOns": "",
+    "contact": "",
+    "faq": "",
+    "boek": "",
+    "login": "",
+    "dashboard": ""
+  },
+  "Hero": {
+    "slide1_title": "",
+    "slide1_sub": "",
+    "slide1_reviewName": "",
+    "slide1_reviewText": "",
+    "slide2_title": "",
+    "slide2_sub": "",
+    "slide2_reviewName": "",
+    "slide2_reviewText": "",
+    "slide3_title": "",
+    "slide3_sub": "",
+    "slide3_reviewName": "",
+    "slide3_reviewText": "",
+    "slide4_title": "",
+    "slide4_sub": "",
+    "slide4_reviewName": "",
+    "slide4_reviewText": "",
+    "googleRating": "",
+    "googleReviewCount": "",
+    "googleReviewsText": ""
+  },
+  "TechVsArtist": {
+    "eyebrow": "",
+    "title": "",
+    "subtitle": "",
+    "techLabel": "",
+    "techDescription": "",
+    "artistLabel": "",
+    "artistDescription": "",
+    "vsText": ""
+  },
+  "MeetChiva": {
+    "eyebrow": "",
+    "title": "",
+    "description": ""
+  },
+  "NietKopieren": {
+    "eyebrow": "",
+    "title": "",
+    "description": ""
+  },
+  "Missie": {
+    "eyebrow": "",
+    "title": "",
+    "description": ""
+  },
+  "ComparisonTable": {
+    "title": "",
+    "subtitle": "",
+    "colLuxique": "",
+    "colOther": "",
+    "feature1": "",
+    "feature2": "",
+    "feature3": "",
+    "feature4": "",
+    "feature5": ""
+  },
+  "AcademyHomeSection": {
+    "eyebrow": "",
+    "title": "",
+    "description": "",
+    "onlineTitle": "",
+    "onlineDescription": "",
+    "onlineFeature1": "",
+    "onlineFeature2": "",
+    "onlineFeature3": "",
+    "onlineCta": "",
+    "trajectTitle": "",
+    "trajectDescription": "",
+    "trajectFeature1": "",
+    "trajectFeature2": "",
+    "trajectFeature3": "",
+    "trajectCta": "",
+    "barLabel": "",
+    "barSubtext": ""
+  },
+  "ReviewsSection": {
+    "title": "",
+    "subtitle": "",
+    "review1_name": "",
+    "review1_text": "",
+    "review2_name": "",
+    "review2_text": "",
+    "review3_name": "",
+    "review3_text": "",
+    "review4_name": "",
+    "review4_text": "",
+    "googleRating": "",
+    "googleReviewCount": ""
+  },
+  "FAQ": {
+    "title": "",
+    "subtitle": "",
+    "q1": "",
+    "a1": "",
+    "q2": "",
+    "a2": "",
+    "q3": "",
+    "a3": "",
+    "q4": "",
+    "a4": "",
+    "q5": "",
+    "a5": "",
+    "q6": "",
+    "a6": "",
+    "q7": "",
+    "a7": "",
+    "q8": "",
+    "a8": ""
+  },
+  "Footer": {
+    "tagline": "",
+    "behandelingen": "",
+    "academy": "",
+    "persoonlijkTraject": "",
+    "overOns": "",
+    "contact": "",
+    "faq": "",
+    "voorwaarden": "",
+    "copyright": ""
+  },
+  "ChatWidget": {
+    "title": "",
+    "welcomeMessage": "",
+    "placeholder": "",
+    "sendButton": ""
+  }
+}

@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import createMiddleware from 'next-intl/middleware'
+import { routing } from './i18n/routing'
+
+// Create the next-intl middleware
+const intlMiddleware = createMiddleware(routing)
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next()
   const pathname = request.nextUrl.pathname
 
+  // Skip entirely for API routes and Next internals
   if (pathname.startsWith('/_next') || pathname.startsWith('/api/')) {
-    return response
+    return NextResponse.next()
   }
 
-  // Skip restrictive headers for admin routes (course builder needs eval for React hydration + Mux)
+  // For admin routes, apply security headers only (no intl processing)
   if (pathname.startsWith('/admin')) {
+    const response = NextResponse.next()
     response.headers.set('Content-Security-Policy', [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.mux.com",
@@ -24,7 +30,22 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Security headers for non-admin routes
+  // Check if pathname already has a locale prefix
+  const hasLocale = routing.locales.some(
+    locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+
+  let response: NextResponse
+
+  if (hasLocale) {
+    // Already has locale — process with intl middleware for cookie management
+    response = intlMiddleware(request) as NextResponse
+  } else {
+    // No locale prefix — let intl middleware handle redirect to default locale
+    response = intlMiddleware(request) as NextResponse
+  }
+
+  // Apply security headers to all responses
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -35,5 +56,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
+  // Skip static files, API routes, admin routes, and Next internals
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api|admin).*)'],
 }
