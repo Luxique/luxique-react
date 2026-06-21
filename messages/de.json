@@ -345,5 +345,18 @@
     "ctaTitleEm": "Weg zu gehen?",
     "ctaAcademy": "Academy entdecken",
     "ctaBook": "Behandlung buchen"
+  },
+  "Contact": {
+    "title": "Kontakt",
+    "labelName": "Name",
+    "labelEmail": "E-Mail-Adresse",
+    "labelMessage": "Nachricht",
+    "submit": "Senden",
+    "infoName": "LXQ Academy",
+    "infoLocation": "Arnhem, Niederlande",
+    "infoEmail": "info@luxique.nl",
+    "socialsLabel": "Socials",
+    "socialsHandle": "@lashedbychiva",
+    "chatHint": "💬 Chatte mit uns — unten rechts findest du unseren Chatbot."
   }
 }
