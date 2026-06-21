@@ -60,6 +60,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [completedDate, setCompletedDate] = useState<string>('')
 
   // Fetch exam blocks
   useEffect(() => {
@@ -171,7 +172,11 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     }
 
     setSubmitting(false)
-    setScreen(pct >= passingScore ? 'pass' : 'fail')
+    const passed = pct >= passingScore
+    if (passed) {
+      setCompletedDate(new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }))
+    }
+    setScreen(passed ? 'pass' : 'fail')
   }
 
   const handleRetakeWrong = () => {
@@ -479,7 +484,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
             {courseTitle}
           </div>
           <div style={{ fontSize: 12, color: colors.muted, fontFamily: '"Jost", sans-serif' }}>
-            {new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {completedDate}
           </div>
         </div>
 
