@@ -9,6 +9,7 @@ const LANGUAGES = [
   { code: 'es', flag: '🇪🇸', name: 'Español' },
   { code: 'fr', flag: '🇫🇷', name: 'Français' },
   { code: 'de', flag: '🇩🇪', name: 'Deutsch' },
+  { code: 'it', flag: '🇮🇹', name: 'Italiano' },
 ] as const
 
 export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
