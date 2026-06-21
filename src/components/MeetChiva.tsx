@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 function OrbCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -72,6 +73,7 @@ const CHIVA_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/pu
 const ACTION_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/chiva-action.webp'
 
 export default function MeetChiva() {
+  const t = useTranslations('MeetChiva')
   return (
     <section className="px-[14px] max-[860px]:px-[10px] flex flex-col gap-[14px]">
 
@@ -102,13 +104,13 @@ export default function MeetChiva() {
         <div className="relative z-[4] min-[860px]:ml-[540px] max-[860px]:pt-6 max-[860px]:px-6 min-[860px]:py-12 min-[860px]:pr-12 flex-1 flex flex-col justify-start min-[860px]:justify-end gap-4 max-[860px]:items-start max-[860px]:text-left">
           <span className="text-[9.5px] font-semibold tracking-[0.24em] uppercase text-[#7A6340] inline-flex items-center gap-2">
             <span className="block w-[24px] h-[1px] bg-[#7A6340] opacity-50" />
-            Meet <span className="text-[#C4A265]">Chiva</span>
+            {t('meet')} <span className="text-[#C4A265]">{t('name')}</span>
           </span>
           <h2 className="font-['Outfit'] font-medium text-[clamp(42px,5.2vw,66px)] leading-[1.08] text-[#1A1815] tracking-[-0.02em]">
-            Lash artist.<br />Educator.<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">Oprichter.</span>
+            {t('roleLine1')}<br />{t('roleLine2')}<br /><span className="font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">{t('roleLine3')}</span>
           </h2>
           <p className="text-[17px] font-light text-[#7A7268] leading-[1.7] max-w-[360px] max-[860px]:hidden">
-            Ik begon met lashes en voelde meteen: dit is precies wat ik wil doen. Maar op mijn eigen manier. Wat volgde was een studio in Arnhem, een eigen stijl, en vele studenten die ik heb mogen begeleiden tot lash artist.
+            {t('intro')}
           </p>
         </div>
 
@@ -121,8 +123,8 @@ export default function MeetChiva() {
         {/* Name tag badge — desktop only */}
         <div className="absolute bottom-0 left-0 right-0 z-[4] px-12 pb-7 max-[860px]:hidden flex items-end justify-end">
           <div className="bg-[rgba(250,248,244,0.75)] backdrop-blur-[16px] border border-[rgba(196,162,101,0.25)] rounded-[12px] px-[18px] py-[10px] flex flex-col gap-[2px]">
-            <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A6340]">The Woman Behind Luxique</span>
-            <span className="font-['Cormorant_Garamond'] text-[16px] italic text-[#1E1A14] leading-none">Chiva — Lash Artist &amp; Educator</span>
+            <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-[#7A6340]">{t('caption')}</span>
+            <span className="font-['Cormorant_Garamond'] text-[16px] italic text-[#1E1A14] leading-none">{t('captionSub')}</span>
           </div>
         </div>
       </div>

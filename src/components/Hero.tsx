@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import './hero-v2.css'
 import { GoogleIcon } from './ReviewsSection'
 
@@ -20,38 +21,28 @@ const AVATARS = [
   { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-3.webp' },
 ]
 
-const SLIDES = [
-  {
-    img: IMG_ORIG,
-    title: 'Medusa Set',
-    sub: 'Behandeling · Arnhem',
-    review: { name: 'Michela Eriu', text: 'Ik was al super lang op zoek naar iemand die medusa lashes kon doen. Chiva heeft me echt precies gegeven wat ik wilde.', source: 'Google', stars: 5 },
-  },
-  {
-    img: IMG_2,
-    title: 'Groepscoaching',
-    sub: 'Opleiding · Arnhem',
-    review: { name: 'Aisha Castro Kaiser', text: 'Door deze cursus voel ik me veel zelfverzekerder in mijn werk en zie ik echt verschil in mijn resultaten.', source: 'Google', stars: 5 },
-  },
-  {
-    img: IMG_3,
-    title: 'Gecertificeerd',
-    sub: 'Opleiding · Geslaagd',
-    review: { name: 'Melina Yoldas', text: 'Een enorme verrijking voor mijn ontwikkeling als wimperstylist. Niet alleen techniek, maar ook inzicht en professionele groei.', source: 'Google', stars: 5 },
-  },
-  {
-    img: IMG_1,
-    title: 'Before & After',
-    sub: 'Behandeling · Arnhem',
-    review: { name: 'Maud Lommers', text: 'Beste lash artist ever. Ze denkt super goed met je mee en mn wimpers zijn nog nooit zo mooi geweest.', source: 'Google', stars: 5 },
-  },
+// Review texts stay hardcoded — these are real customer reviews (dynamic content)
+const SLIDE_REVIEWS = [
+  { name: 'Michela Eriu', text: 'Ik was al super lang op zoek naar iemand die medusa lashes kon doen. Chiva heeft me echt precies gegeven wat ik wilde.', source: 'Google', stars: 5 },
+  { name: 'Aisha Castro Kaiser', text: 'Door deze cursus voel ik me veel zelfverzekerder in mijn werk en zie ik echt verschil in mijn resultaten.', source: 'Google', stars: 5 },
+  { name: 'Melina Yoldas', text: 'Een enorme verrijking voor mijn ontwikkeling als wimperstylist. Niet alleen techniek, maar ook inzicht en professionele groei.', source: 'Google', stars: 5 },
+  { name: 'Maud Lommers', text: 'Beste lash artist ever. Ze denkt super goed met je mee en mn wimpers zijn nog nooit zo mooi geweest.', source: 'Google', stars: 5 },
 ]
 
 const DURATION = 4500
 
 export default function Hero() {
+  const t = useTranslations('Hero')
   const [current, setCurrent] = useState(0)
   const [animKey, setAnimKey] = useState(0)
+
+  // Build slides from translations + hardcoded review data
+  const SLIDES = [
+    { img: IMG_ORIG, title: t('slide1_title'), sub: t('slide1_sub'), review: SLIDE_REVIEWS[0] },
+    { img: IMG_2, title: t('slide2_title'), sub: t('slide2_sub'), review: SLIDE_REVIEWS[1] },
+    { img: IMG_3, title: t('slide3_title'), sub: t('slide3_sub'), review: SLIDE_REVIEWS[2] },
+    { img: IMG_1, title: t('slide4_title'), sub: t('slide4_sub'), review: SLIDE_REVIEWS[3] },
+  ]
 
   const goTo = useCallback((index: number) => {
     setCurrent(index)
@@ -126,15 +117,15 @@ export default function Hero() {
             </a>
 
             <h1 className="hero-v2-h1">
-              We Teach
-              <em>The Art of Lashes.</em>
+              {t('titleLine1')}
+              <em>{t('titleLine2')}</em>
             </h1>
             <p className="hero-v2-p">
-              Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland&apos;s #1 lash educator.
+              {t('subtitle')}
             </p>
             <div className="hero-v2-cta">
-              <a href="/courses" className="hero-v2-cta-primary">Bekijk de academy</a>
-              <a href="/behandelingen" className="hero-v2-cta-ghost">Boek een treatment</a>
+              <a href="/courses" className="hero-v2-cta-primary">{t('ctaAcademy')}</a>
+              <a href="/behandelingen" className="hero-v2-cta-ghost">{t('ctaBook')}</a>
             </div>
           </div>
 
@@ -194,20 +185,20 @@ export default function Hero() {
               </a>
 
               <h1 className="font-['Outfit'] font-medium leading-[1.02] mb-[20px] max-w-[900px]">
-                <span className="block text-[clamp(40px,6vw,80px)] text-[#1A1815] tracking-[-0.02em]">We Teach</span>
-                <span className="block text-[clamp(40px,6vw,80px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">The Art of Lashes.</span>
+                <span className="block text-[clamp(40px,6vw,80px)] text-[#1A1815] tracking-[-0.02em]">{t('titleLine1')}</span>
+                <span className="block text-[clamp(40px,6vw,80px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">{t('titleLine2')}</span>
               </h1>
 
               <p className="text-[17px] text-[#7A7268] leading-[1.6] mb-[30px] max-w-[560px]">
-                Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland&apos;s #1 lash educator.
+                {t('subtitle')}
               </p>
 
               <div className="flex gap-[9px] flex-wrap">
                 <a href="/courses" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] hover:shadow-[0_6px_20px_rgba(196,162,101,0.28)] hover:-translate-y-[1px] transition-all tracking-[0.02em]">
-                  Bekijk de academy
+                  {t('ctaAcademy')}
                 </a>
                 <a href="/behandelingen" className="text-[14px] font-medium px-[20px] py-[10px] rounded-full bg-transparent text-[#1A1815] border-[1.5px] border-[rgba(26,24,21,0.2)] hover:border-[rgba(26,24,21,0.45)] hover:bg-[rgba(196,162,101,0.06)] transition-all tracking-[0.02em]">
-                  Boek een treatment
+                  {t('ctaBook')}
                 </a>
               </div>
             </div>
