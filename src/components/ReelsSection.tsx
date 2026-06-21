@@ -160,7 +160,7 @@ export default function ReelsSection() {
   }, [])
 
   return (
-    <section className="py-20 bg-[var(--dark)] relative overflow-hidden">
+    <section className="pt-20 pb-0 bg-[var(--dark)] relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--dark)] via-[#1e1a15] to-[var(--dark)]" />
       <div className="relative z-10">
         {/* Header */}

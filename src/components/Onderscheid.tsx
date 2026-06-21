@@ -93,11 +93,14 @@ export default function Onderscheid() {
     <section ref={secRef} className="ond-section">
       <style>{`
         .ond-section {
+          width: 100%;
+          padding: clamp(40px, 6vw, 80px) 0;
+          background: linear-gradient(165deg, #1f3328 0%, #162820 50%, #0f1c16 100%);
+        }
+        .ond-inner {
           max-width: 1200px;
           margin-inline: auto;
-          padding: clamp(20px, 4vw, 40px) clamp(24px, 5vw, 56px);
-          background: linear-gradient(165deg, #1f3328 0%, #162820 50%, #0f1c16 100%);
-          border-radius: 26px;
+          padding: 0 clamp(24px, 5vw, 56px);
         }
         .ond-grid {
           display: grid;
@@ -203,7 +206,7 @@ export default function Onderscheid() {
           display: grid;
           grid-template-columns: auto 1fr;
           gap: clamp(20px, 2.4vw, 34px);
-          padding: clamp(30px, 3.6vw, 48px) 0 clamp(38px, 4.4vw, 60px);
+          padding: clamp(90px, 10vw, 144px) 0 clamp(114px, 13vw, 180px);
           border-top: 1px solid rgba(176,141,79,.15);
           opacity: .26;
           transform: translateY(10px);
@@ -279,6 +282,7 @@ export default function Onderscheid() {
         }
       `}</style>
 
+      <div className="ond-inner">
       <div className="ond-grid">
 
         <div className="ond-media ond-r ond-rm">
@@ -326,6 +330,7 @@ export default function Onderscheid() {
           ))}
 
         </div>
+      </div>
       </div>
     </section>
   )
