@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import Navbar from '@/components/Navbar'
 
 export default function AboutPage() {
+  const t = useTranslations('AboutPage')
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -176,11 +178,11 @@ export default function AboutPage() {
           <section className="hero">
             <div className="ghost serif">Chiva</div>
             <div className="wrap">
-              <div className="eyebrow rv">Over de oprichter</div>
-              <h1 className="rv d1">Chiva<span className="l2 serif">Daams.</span></h1>
-              <p className="sub rv d2">Lash artist, educator en oprichter van LUXIQUE. Wat begon met één tweezer en een obsessie voor detail, groeide uit tot een academy die een nieuwe lichting lash artists vormt.</p>
+              <div className="eyebrow rv">{t('heroEyebrow')}</div>
+              <h1 className="rv d1">{t('heroTitlePlain')}<span className="l2 serif">{t('heroTitleEm')}</span></h1>
+              <p className="sub rv d2">{t('heroIntro')}</p>
             </div>
-            <div className="scrollcue"><span>scroll</span><span className="bar"></span></div>
+            <div className="scrollcue"><span>{t('heroScroll')}</span><span className="bar"></span></div>
           </section>
 
           {/* INTRO + PORTRAIT */}
@@ -188,13 +190,13 @@ export default function AboutPage() {
             <div className="wrap intro-grid">
               <div className="portrait clip">
                 <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-us-profile.webp" alt="Chiva Daams" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
-                <span className="tag">Arnhem · sinds 2019</span>
+                <span className="tag">{t('heroLocation')}</span>
               </div>
               <div>
-                <h2 className="serif rv">Niet de snelste route — <em>de juiste.</em></h2>
-                <p className="rv d1">Chiva geloofde nooit in trucjes of shortcuts. Waar anderen leerden hoe je een set plaatst, wilde zij begrijpen wáárom een set werkt. Oogvorm, balans, symmetrie — de fundering onder elke mooie set.</p>
-                <p className="rv d2">Die obsessie voor het waaróm werd het hart van LUXIQUE. Geen kopieën, maar artists die hun eigen signatuur durven neerzetten — en die snappen wat ze doen.</p>
-                <span className="sig serif rv d3">— Chiva</span>
+                <h2 className="serif rv">{t('introTitlePlain')} <em>{t('introTitleEm')}</em></h2>
+                <p className="rv d1">{t('introPara1')}</p>
+                <p className="rv d2">{t('introPara2')}</p>
+                <span className="sig serif rv d3">{t('introAttribution')}</span>
               </div>
             </div>
           </section>
@@ -203,24 +205,24 @@ export default function AboutPage() {
           <section className="journey">
             <div className="wrap">
               <div className="head">
-                <div className="k rv">De reis</div>
-                <h2 className="serif rv d1">Van tweezer <em>naar academy</em></h2>
+                <div className="k rv">{t('journeyEyebrow')}</div>
+                <h2 className="serif rv d1">{t('journeyTitlePlain')} <em>{t('journeyTitleEm')}</em></h2>
               </div>
               <div className="steps">
                 <div className="step rv">
-                  <div className="n serif">01</div>
-                  <h3 className="serif">De start</h3>
-                  <p>Begonnen met een massagetafel, met een visie voor ogen en het geduld om het écht goed te leren. Elke set een nieuwe les.</p>
+                  <div className="n serif">{t('journeyStep1Num')}</div>
+                  <h3 className="serif">{t('journeyStep1Title')}</h3>
+                  <p>{t('journeyStep1Desc')}</p>
                 </div>
                 <div className="step rv d1">
-                  <div className="n serif">02</div>
-                  <h3 className="serif">De studio</h3>
-                  <p>Een eigen plek in Arnhem, waar klanten niet voor zomaar lashes komen — maar voor lashes die bij hún ogen passen.</p>
+                  <div className="n serif">{t('journeyStep2Num')}</div>
+                  <h3 className="serif">{t('journeyStep2Title')}</h3>
+                  <p>{t('journeyStep2Desc')}</p>
                 </div>
                 <div className="step rv d2">
-                  <div className="n serif">03</div>
-                  <h3 className="serif">De academy</h3>
-                  <p>De kennis doorgeven. LXQ Academy vormt een nieuwe lichting artists — online én in de praktijk.</p>
+                  <div className="n serif">{t('journeyStep3Num')}</div>
+                  <h3 className="serif">{t('journeyStep3Title')}</h3>
+                  <p>{t('journeyStep3Desc')}</p>
                 </div>
               </div>
             </div>
@@ -229,27 +231,27 @@ export default function AboutPage() {
           {/* PHILOSOPHY */}
           <section className="philo">
             <div className="wrap">
-              <div className="k rv">De filosofie</div>
-              <div className="quote serif rv d1">&ldquo;Niet kopiëren. <b>Creëren.</b> Elke artist verdient een eigen handtekening.&rdquo;</div>
-              <div className="by rv d2">— Chiva Daams, oprichter LUXIQUE</div>
+              <div className="k rv">{t('philosophyEyebrow')}</div>
+              <div className="quote serif rv d1">{t('philosophyQuoteLine1')} <b>{t('philosophyQuoteLine2')}</b> {t('philosophyQuoteLine3')}</div>
+              <div className="by rv d2">{t('philosophyAttribution')}</div>
             </div>
           </section>
 
           {/* DUO PHOTO */}
           <section className="duo">
             <div className="wrap duo-grid">
-              <div className="ph2"><div className="img" data-speed="0.08" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-studio.webp)' }}></div><span className="cap serif">in de studio</span></div>
-              <div className="ph2"><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-academy.webp)' }}></div><span className="cap serif">de academy</span></div>
+              <div className="ph2"><div className="img" data-speed="0.08" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-studio.webp)' }}></div><span className="cap serif">{t('philosophyCaption1')}</span></div>
+              <div className="ph2"><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-academy.webp)' }}></div><span className="cap serif">{t('philosophyCaption2')}</span></div>
             </div>
           </section>
 
           {/* VALUES */}
           <section className="values">
             <div className="wrap">
-              <h2 className="serif rv">Waar LUXIQUE <em>voor staat</em></h2>
-              <div className="vrow rv"><span className="vn serif">01</span><span className="vt serif">Begrijpen</span><span className="vd">We leren het waarom, niet alleen het hoe. Inzicht dat blijft, bij elke klant.</span></div>
-              <div className="vrow rv d1"><span className="vn serif">02</span><span className="vt serif">Signatuur</span><span className="vd">Geen kopieën. Elke artist ontwikkelt een herkenbaar eigen handschrift.</span></div>
-              <div className="vrow rv d2"><span className="vn serif">03</span><span className="vt serif">Begeleiding</span><span className="vd">Je staat er na de opleiding niet alleen voor. Mentoring die blijft.</span></div>
+              <h2 className="serif rv">{t('valuesTitlePlain')} <em>{t('valuesTitleEm')}</em></h2>
+              <div className="vrow rv"><span className="vn serif">{t('value1Num')}</span><span className="vt serif">{t('value1Title')}</span><span className="vd">{t('value1Desc')}</span></div>
+              <div className="vrow rv d1"><span className="vn serif">{t('value2Num')}</span><span className="vt serif">{t('value2Title')}</span><span className="vd">{t('value2Desc')}</span></div>
+              <div className="vrow rv d2"><span className="vn serif">{t('value3Num')}</span><span className="vt serif">{t('value3Title')}</span><span className="vd">{t('value3Desc')}</span></div>
             </div>
           </section>
 
@@ -257,10 +259,10 @@ export default function AboutPage() {
           <section className="cta">
             <div className="ghost2 serif">LUXIQUE</div>
             <div className="wrap">
-              <h2 className="serif rv">Klaar om je eigen <em>weg te gaan?</em></h2>
+              <h2 className="serif rv">{t('ctaTitlePlain')} <em>{t('ctaTitleEm')}</em></h2>
               <div className="btns rv d1">
-                <a href="/courses" className="btn btn-gold">Bekijk de academy</a>
-                <a href="/#behandelingen" className="btn btn-ghost">Boek een behandeling</a>
+                <a href="/courses" className="btn btn-gold">{t('ctaAcademy')}</a>
+                <a href="/#behandelingen" className="btn btn-ghost">{t('ctaBook')}</a>
               </div>
             </div>
           </section>
