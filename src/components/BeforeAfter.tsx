@@ -3,14 +3,14 @@
 import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 
-const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
+const CDN = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images'
 
 export default function BeforeAfter() {
   const t = useTranslations('BeforeAfter')
 
   const BA_PAIRS = [
-    { name: t('set1Label'), before: `${CDN}/ba-wispy-before.webp`, after: `${CDN}/ba-wispy-after.webp` },
-    { name: t('set2Label'), before: `${CDN}/ba-medusa-before.webp`, after: `${CDN}/ba-medusa-after.webp` },
+    { name: t('set1Label'), before: `${CDN}/ba-wispy-before.webp?width=1500&quality=75`, after: `${CDN}/ba-wispy-after.webp?width=1500&quality=75` },
+    { name: t('set2Label'), before: `${CDN}/ba-medusa-before.webp?width=1500&quality=75`, after: `${CDN}/ba-medusa-after.webp?width=1500&quality=75` },
   ]
   useEffect(() => {
     document.querySelectorAll('[data-ba]').forEach(ba => {

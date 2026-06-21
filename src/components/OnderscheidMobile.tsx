@@ -7,9 +7,9 @@ export default function OnderscheidMobile() {
   const t = useTranslations('Onderscheid')
 
   const POINTS = [
-    { num: t('item1Num'), title: t('item1Title'), para1: t('item1Para1'), para2: t('item1Para2'), take: t('item1Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-01-signatuur.webp' },
-    { num: t('item2Num'), title: t('item2Title'), para1: t('item2Para1'), para2: t('item2Para2'), take: t('item2Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-02-kennis.webp' },
-    { num: t('item3Num'), title: t('item3Title'), para1: t('item3Para1'), para2: t('item3Para2'), take: t('item3Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-03-coaching.webp' },
+    { num: t('item1Num'), title: t('item1Title'), para1: t('item1Para1'), para2: t('item1Para2'), take: t('item1Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/ond-01-signatuur.webp?width=800&quality=75' },
+    { num: t('item2Num'), title: t('item2Title'), para1: t('item2Para1'), para2: t('item2Para2'), take: t('item2Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/ond-02-kennis.webp?width=800&quality=75' },
+    { num: t('item3Num'), title: t('item3Title'), para1: t('item3Para1'), para2: t('item3Para2'), take: t('item3Label'), img: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/ond-03-coaching.webp?width=800&quality=75' },
   ]
 
   const phRefs = useRef<(HTMLDivElement | null)[]>([])

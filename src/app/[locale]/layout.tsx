@@ -59,6 +59,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
+      <head>
+        <link rel="preconnect" href="https://osldoolmbpqayxhgmbum.supabase.co" />
+        <link rel="dns-prefetch" href="https://osldoolmbpqayxhgmbum.supabase.co" />
+      </head>
       <AuthProvider>
         <Navbar />
         <main>{children}</main>

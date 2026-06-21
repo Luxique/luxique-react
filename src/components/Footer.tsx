@@ -18,7 +18,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div>
-            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/lxq-logo-07.webp" alt="LUXIQUE Academy" className="h-[80px] w-auto mb-3" />
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/lxq-logo-07.webp?width=400&quality=80" alt="LUXIQUE Academy" className="h-[80px] w-auto mb-3" />
             <p className="text-[12px] text-white/40 leading-relaxed">
               {t('tagline')}
             </p>

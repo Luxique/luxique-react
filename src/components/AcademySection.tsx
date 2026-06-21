@@ -33,7 +33,7 @@ interface Props {
   loading?: boolean
 }
 
-const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images'
+const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images'
 
 function formatPrice(cents: number | null): string {
   if (!cents) return '€ 0'
@@ -145,7 +145,7 @@ export default function AcademySection({ courses, loading }: Props) {
               <article className="lxq-course-card lxq-card-exclusive">
                 <div className="lxq-course-thumb lxq-thumb-exclusive">
                   <span className="lxq-pill" style={{ borderColor: 'rgba(245,239,227,0.08)', color: 'rgba(242,236,221,0.62)' }}>Exclusief</span>
-                  <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/persoonlijk-traject-card.webp" alt="Persoonlijk Traject" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/persoonlijk-traject-card.webp?width=800&quality=75" alt="Persoonlijk Traject" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div className="lxq-course-body">
                   <h3>Persoonlijk Traject<br /><em style={{ fontStyle: 'italic', color: '#c9a86a', fontWeight: 400 }}>met Chiva.</em></h3>

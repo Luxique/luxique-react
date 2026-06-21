@@ -307,10 +307,10 @@ export default function NietKopieren() {
       <div className="nkc-watermark" aria-hidden="true">{t('title2')}</div>
 
       <div className="nkc-pphoto left" ref={photoLeftRef}>
-        <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/creeeren-right.jpg" alt="Close-up wispy set" />
+        <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/creeeren-right.jpg?width=900&quality=75" alt="Close-up wispy set" />
       </div>
       <div className="nkc-pphoto right" ref={photoRightRef}>
-        <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/creeeren-left.jpg" alt="Chiva aan het werk" />
+        <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/creeeren-left.jpg?width=900&quality=75" alt="Chiva aan het werk" />
       </div>
 
       <div className="nkc-plaque">

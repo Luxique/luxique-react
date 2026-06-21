@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl'
 import './hero-v2.css'
 import { GoogleIcon } from './ReviewsSection'
 
-const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/hero-bg.webp'
-const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header1.webp'
-const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header2.webp'
-const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/header4.webp'
+const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/hero-bg.webp?width=1400&quality=70'
+const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header1.webp?width=1400&quality=70'
+const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header2.webp?width=1400&quality=70'
+const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header4.webp?width=1400&quality=70'
 
 const GOOGLE_REVIEWS_URL = 'https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D'
 
@@ -16,9 +16,9 @@ const GOOGLE_RATING = { stars: 5, count: 47, display: '5.0' }
 
 // Placeholder avatars for pill (using real photos from behandelingen)
 const AVATARS = [
-  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-1.webp' },
-  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-2.webp' },
-  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/het-werk-3.webp' },
+  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-1.webp?width=80&quality=75' },
+  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-2.webp?width=80&quality=75' },
+  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-3.webp?width=80&quality=75' },
 ]
 
 // Review texts stay hardcoded — these are real customer reviews (dynamic content)
@@ -77,6 +77,7 @@ export default function Hero() {
               alt={slide.title}
               className="hero-v2-bg"
               style={{ opacity: current === i ? 1 : 0 }}
+              fetchPriority={i === 0 ? "high" : "low"}
             />
           ))}
 

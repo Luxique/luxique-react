@@ -284,13 +284,13 @@ export default function Onderscheid() {
         <div className="ond-media ond-r ond-rm">
           <div className="ond-photo">
             <div ref={(el) => { slideRefs.current[0] = el }} className="ond-slide on">
-              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-01-signatuur.webp" alt="Eigen stijl / signature set" />
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/ond-01-signatuur.webp?width=800&quality=75" alt="Eigen stijl / signature set" />
             </div>
             <div ref={(el) => { slideRefs.current[1] = el }} className="ond-slide">
-              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-02-kennis.webp" alt="Kennis / oogvormanalyse" />
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/ond-02-kennis.webp?width=800&quality=75" alt="Kennis / oogvormanalyse" />
             </div>
             <div ref={(el) => { slideRefs.current[2] = el }} className="ond-slide">
-              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/ond-03-coaching.webp" alt="Chiva in de salon" />
+              <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/ond-03-coaching.webp?width=800&quality=75" alt="Chiva in de salon" />
             </div>
             <span className="ond-cap">{t('eyebrow')}</span>
             <div className="ond-dots">

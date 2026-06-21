@@ -189,7 +189,7 @@ export default function AboutPage() {
           <section className="intro">
             <div className="wrap intro-grid">
               <div className="portrait clip">
-                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-us-profile.webp" alt="Chiva Daams" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
+                <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/about-us-profile.webp?width=900&quality=75" alt="Chiva Daams" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover' }} />
                 <span className="tag">{t('heroLocation')}</span>
               </div>
               <div>
@@ -240,8 +240,8 @@ export default function AboutPage() {
           {/* DUO PHOTO */}
           <section className="duo">
             <div className="wrap duo-grid">
-              <div className="ph2"><div className="img" data-speed="0.08" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-studio.webp)' }}></div><span className="cap serif">{t('philosophyCaption1')}</span></div>
-              <div className="ph2"><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/about-duo-academy.webp)' }}></div><span className="cap serif">{t('philosophyCaption2')}</span></div>
+              <div className="ph2"><div className="img" data-speed="0.08" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/about-duo-studio.webp?width=800&quality=75)' }}></div><span className="cap serif">{t('philosophyCaption1')}</span></div>
+              <div className="ph2"><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/about-duo-academy.webp?width=800&quality=75)' }}></div><span className="cap serif">{t('philosophyCaption2')}</span></div>
             </div>
           </section>
 
