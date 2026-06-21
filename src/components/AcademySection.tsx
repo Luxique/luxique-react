@@ -145,10 +145,7 @@ export default function AcademySection({ courses, loading }: Props) {
               <article className="lxq-course-card lxq-card-exclusive">
                 <div className="lxq-course-thumb lxq-thumb-exclusive">
                   <span className="lxq-pill" style={{ borderColor: 'rgba(245,239,227,0.08)', color: 'rgba(242,236,221,0.62)' }}>Exclusief</span>
-                  <div className="lxq-thumb-placeholder">
-                    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#f2ecdd" strokeWidth="1"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"/></svg>
-                    Foto Chiva
-                  </div>
+                  <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/public/images/persoonlijk-traject-card.webp" alt="Persoonlijk Traject" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div className="lxq-course-body">
                   <h3>Persoonlijk Traject<br /><em style={{ fontStyle: 'italic', color: '#c9a86a', fontWeight: 400 }}>met Chiva.</em></h3>
