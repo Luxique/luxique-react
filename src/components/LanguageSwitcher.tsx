@@ -20,7 +20,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
 
   // Extract current locale from path
   const segments = pathname.split('/')
-  const currentLocale = segments[1] && ['nl', 'en', 'es', 'fr', 'de'].includes(segments[1]) ? segments[1] : 'nl'
+  const currentLocale = segments[1] && LANGUAGES.some(l => l.code === segments[1]) ? segments[1] : 'nl'
   const current = LANGUAGES.find(l => l.code === currentLocale) || LANGUAGES[0]
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
 
     // Replace the locale segment in the path
     const newSegments = [...segments]
-    if (newSegments[1] && ['nl', 'en', 'es', 'fr', 'de'].includes(newSegments[1])) {
+    if (newSegments[1] && LANGUAGES.some(l => l.code === newSegments[1])) {
       newSegments[1] = locale
     } else {
       newSegments.splice(1, 0, locale)

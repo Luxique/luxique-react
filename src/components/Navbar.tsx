@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useTranslations } from 'next-intl'
 import LanguageSwitcher from './LanguageSwitcher'
+import { routing } from '@/i18n/routing'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
@@ -28,7 +29,7 @@ export default function Navbar() {
 
   // Extract current locale from path
   const pathSegments = pathname.split('/')
-  const currentLocale = pathSegments[1] && ['nl', 'en', 'es', 'fr', 'de'].includes(pathSegments[1]) ? pathSegments[1] : 'nl'
+  const currentLocale = pathSegments[1] && routing.locales.includes(pathSegments[1] as any) ? pathSegments[1] : 'nl'
 
   // Single source of truth for nav links (desktop + mobile)
   const navLinks = [
@@ -132,7 +133,7 @@ export default function Navbar() {
         </div>
 
         {/* Language Switcher — only on locale routes (not admin) */}
-        {pathname.match(/^\/(nl|en|es|fr|de)(\/|$)/) && (
+        {pathname.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
           <LanguageSwitcher />
         )}
 
@@ -210,10 +211,10 @@ export default function Navbar() {
             <hr className="border-[rgba(196,162,101,0.1)] my-2" />
             {/* Mobile language switcher */}
             <div className="flex gap-2 px-3 py-2 flex-wrap">
-              {[['nl','🇳🇱'],['en','🇬🇧'],['es','🇪🇸'],['fr','🇫🇷'],['de','🇩🇪']].map(([code, flag]) => {
+              {[['nl','🇳🇱'],['en','🇬🇧'],['es','🇪🇸'],['fr','🇫🇷'],['de','🇩🇪'],['it','🇮🇹']].map(([code, flag]) => {
                 const isActive = currentLocale === code
                 return (
-                  <a key={code} href={`/${code}${pathname.replace(/^\/(nl|en|es|fr|de)/, '')}`}
+                  <a key={code} href={`/${code}${pathname.replace(/^\/(nl|en|es|fr|de|it)/, '')}`}
                     className={`text-[18px] px-2 py-1 rounded-lg transition ${isActive ? 'bg-[rgba(196,162,101,0.15)] ring-1 ring-[rgba(196,162,101,0.3)]' : 'opacity-50 hover:opacity-100'}`}
                     onClick={() => setMobileOpen(false)}>
                     {flag}

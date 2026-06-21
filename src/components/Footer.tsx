@@ -1,6 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Footer() {
   // Safe translation: returns key as fallback if context is missing (admin routes)
@@ -73,6 +74,9 @@ export default function Footer() {
 
         <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[11px] text-white/30">{t('copyright')}</p>
+          <div className="[&>button]:!bg-white/10 [&>button]:!border-white/20 [&>button:hover]:!border-white/40">
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
     </footer>
