@@ -1,7 +1,6 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { supabase } from '@/lib/supabase-client'
 import { useSearchParams } from 'next/navigation'
 
 function ForgotPasswordForm() {
@@ -18,15 +17,17 @@ function ForgotPasswordForm() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
+    try {
+      const res = await fetch('/api/auth/send-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) throw new Error('Er ging iets mis')
       setSent(true)
+    } catch {
+      setError('Er ging iets mis bij het versturen van de reset-mail. Probeer het opnieuw.')
+    } finally {
       setLoading(false)
     }
   }
