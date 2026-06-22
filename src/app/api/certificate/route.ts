@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     let completedAt = new Date().toISOString()
+    let examPassed = false
 
     if (examLesson) {
       const { data: progress } = await supabase
@@ -101,11 +102,49 @@ export async function POST(request: NextRequest) {
         .eq('lesson_id', examLesson.id)
         .single()
 
-      if (!progress?.completed) {
+      examPassed = !!progress?.completed
+      if (!examPassed) {
         return NextResponse.json({ error: 'Exam not passed yet' }, { status: 403 })
       }
-      if (progress.completed_at) {
-        completedAt = progress.completed_at
+      if (progress!.completed_at) {
+        completedAt = progress!.completed_at
+      }
+    } else {
+      // No exam lesson — check if all content lessons are completed
+      const { data: contentLessons } = await supabase
+        .from('lessons')
+        .select('id')
+        .eq('course_id', courseId)
+        .neq('lesson_type', 'exam')
+
+      if (contentLessons && contentLessons.length > 0) {
+        const { data: allProgress } = await supabase
+          .from('lesson_progress')
+          .select('lesson_id, completed')
+          .eq('user_id', userId)
+          .in('lesson_id', contentLessons.map(l => l.id))
+
+        const allDone = contentLessons.every(l =>
+          allProgress?.some(p => p.lesson_id === l.id && p.completed)
+        )
+
+        if (!allDone) {
+          return NextResponse.json({ error: 'Course not completed yet' }, { status: 403 })
+        }
+
+        // Use the latest completed_at as the certificate date
+        const { data: latestProgress } = await supabase
+          .from('lesson_progress')
+          .select('completed_at')
+          .eq('user_id', userId)
+          .in('lesson_id', contentLessons.map(l => l.id))
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (latestProgress?.completed_at) {
+          completedAt = latestProgress.completed_at
+        }
       }
     }
 
