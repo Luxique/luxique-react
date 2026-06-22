@@ -273,7 +273,7 @@ export default function CoursesOverviewPage() {
 
       <div className="min-h-screen bg-[#F0EDE6]">
         {/* Topbar */}
-        <div className="h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-6 sticky top-[52px] z-40">
+        <div className="h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-6 sticky top-[66px] z-40">
           <div className="flex items-center gap-3">
             <span className="font-['AvenirNext','Avenir_Next','Avenir','Century_Gothic',sans-serif] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
               Luxique
