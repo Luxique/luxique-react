@@ -75,6 +75,12 @@ function LoginForm() {
               />
             </div>
 
+            <div className="flex justify-end">
+              <a href="/forgot-password" className="text-[11px] text-[#888] hover:text-[#D4AF37] transition">
+                Wachtwoord vergeten?
+              </a>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
