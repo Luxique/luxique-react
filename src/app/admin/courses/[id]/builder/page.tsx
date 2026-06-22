@@ -287,7 +287,27 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
     // Sync current blocks to course state first
     let courseToSave = course
-    if (currentLesson) {
+    
+    // Sync ALL cached blocks to course state before save
+    if (blocksCache && Object.keys(blocksCache).length > 0) {
+      courseToSave = {
+        ...course,
+        lessons: course.lessons?.map(lesson => {
+          // Check if this lesson has cached blocks
+          const cachedBlocks = blocksCache[lesson.id]
+          if (cachedBlocks) {
+            return { ...lesson, blocks: cachedBlocks }
+          }
+          // If not cached and it's the active lesson, use current blocks
+          if (currentLesson?.id === lesson.id) {
+            return { ...lesson, blocks }
+          }
+          // Otherwise keep original blocks
+          return lesson
+        })
+      }
+    } else if (currentLesson) {
+      // Fallback: only sync active lesson if no cache exists
       courseToSave = {
         ...course,
         lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
@@ -455,7 +475,23 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     try {
       // First, save course content (but override status to published in ONE update)
       let courseToSave = course
-      if (currentLesson) {
+      
+      // Sync ALL cached blocks to course state before publish
+      if (blocksCache && Object.keys(blocksCache).length > 0) {
+        courseToSave = {
+          ...course,
+          lessons: course.lessons?.map(lesson => {
+            const cachedBlocks = blocksCache[lesson.id]
+            if (cachedBlocks) {
+              return { ...lesson, blocks: cachedBlocks }
+            }
+            if (currentLesson?.id === lesson.id) {
+              return { ...lesson, blocks }
+            }
+            return lesson
+          })
+        }
+      } else if (currentLesson) {
         courseToSave = {
           ...course,
           lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
