@@ -273,7 +273,7 @@ export default function CoursesOverviewPage() {
 
       <div className="min-h-screen bg-[#F0EDE6]">
         {/* Topbar */}
-        <div className="h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-6 sticky top-0 z-[100]">
+        <div className="h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-6 sticky top-[52px] z-40">
           <div className="flex items-center gap-3">
             <span className="font-['AvenirNext','Avenir_Next','Avenir','Century_Gothic',sans-serif] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
               Luxique
@@ -432,7 +432,9 @@ export default function CoursesOverviewPage() {
               {filteredCourses.map((course) => (
                 <div
                   key={course.id}
-                  className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_4px_18px_rgba(30,26,20,0.08)] hover:-translate-y-px"
+                  className={`bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_4px_18px_rgba(30,26,20,0.08)] hover:-translate-y-px ${
+                    course.status === 'archived' ? 'bg-[#E8E3DB] opacity-60' : ''
+                  }`}
                   onClick={() => router.push(`/admin/courses/${course.id}/builder`)}
                 >
                   {/* Thumbnail */}
@@ -450,8 +452,12 @@ export default function CoursesOverviewPage() {
                         </svg>
                       </div>
                     )}
-                    <span className={`absolute top-2.5 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2 py-1 rounded-full ${getStatusClass(course.status)}`}>
-                      {getStatusLabel(course.status)}
+                    <span className={`absolute top-2.5 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2 py-1 rounded-full ${
+                      course.status === 'archived'
+                        ? 'bg-[#7A7268] text-white'
+                        : getStatusClass(course.status)
+                    }`}>
+                      {course.status === 'archived' ? 'GEARCHIVEERD' : getStatusLabel(course.status)}
                     </span>
                     <span className="absolute top-2.5 right-2.5 text-[8.5px] font-semibold tracking-[0.12em] uppercase px-2 py-1 rounded-full bg-[rgba(12,10,7,0.6)] backdrop-blur-md text-[rgba(250,248,244,0.6)] border border-[rgba(255,255,255,0.08)]">
                       {course.level}
@@ -519,7 +525,8 @@ export default function CoursesOverviewPage() {
                     >
                       <button
                         onClick={() => router.push(`/admin/courses/${course.id}/builder`)}
-                        className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border-none bg-[#C4A265] text-white hover:bg-[#DFC08A] transition flex items-center justify-center gap-1.5"
+                        className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border-none bg-[#C4A265] text-white hover:bg-[#DFC08A] transition flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={course.status === 'archived'}
                       >
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
