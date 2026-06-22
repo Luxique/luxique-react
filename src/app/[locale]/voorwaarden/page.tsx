@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 export default function VoorwaardenPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const t = useTranslations('Policies')
+  const locale = useLocale()
+  const isNL = locale === 'nl'
 
   useEffect(() => {
     // Reading progress
@@ -52,7 +54,7 @@ export default function VoorwaardenPage() {
     --body:"Jost",system-ui,sans-serif;
   }
   html{scroll-behavior:smooth}
-  .juridisch-root{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.05rem;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .juridisch-root{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1.05rem;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:clip}
   .juridisch-root .serif{font-family:var(--display)}
   .juridisch-root em{font-style:italic}
   .juridisch-root section{position:relative}
@@ -74,7 +76,7 @@ export default function VoorwaardenPage() {
   .juridisch-hero .ghost{position:absolute;right:-4vw;bottom:-2vh;font-family:var(--display);font-weight:600;font-size:22vw;color:rgba(176,141,79,.07);pointer-events:none;letter-spacing:.02em;z-index:0}
   .juridisch-hero .wrap{position:relative;z-index:1}
   .juridisch-wrap{display:grid;grid-template-columns:240px 1fr;gap:64px;padding-top:80px;padding-bottom:120px}
-  .juridisch-index{position:sticky;top:40px;align-self:start;font-size:.9rem}
+  .juridisch-index{position:sticky;top:80px;align-self:start;font-size:.9rem}
   .juridisch-index .index-label{font-family:var(--body);font-weight:600;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1.2rem}
   .juridisch-index a{display:flex;align-items:baseline;gap:12px;padding:.5rem 0;color:var(--ink-soft);text-decoration:none;transition:color .2s}
   .juridisch-index a:hover{color:var(--ink)}
@@ -152,7 +154,7 @@ export default function VoorwaardenPage() {
 
     <main class="juridisch-content">
 
-      ${t('disclaimer') ? `<div class="juridisch-disclaimer">${t('disclaimer')}</div>` : ''}
+      ${!isNL && t('disclaimer') ? `<div class="juridisch-disclaimer">${t('disclaimer')}</div>` : ''}
 
       <!-- 1. TERMS -->
       <section class="juridisch-doc" id="voorwaarden">
