@@ -28,7 +28,7 @@ interface Course {
 }
 
 export default function CoursesOverviewPage() {
-  const { user, role, loading } = useAuth()
+  const { user, role, loading, signOut } = useAuth()
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [stats, setStats] = useState({
@@ -225,11 +225,11 @@ export default function CoursesOverviewPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-[#F0EDE6] flex items-center justify-center"><div className="text-[#7A7268] text-[14px]">Laden...</div></div>
+    return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center pt-[50px]"><div className="text-[#888] text-[14px]">Laden...</div></div>
   }
 
   if (!user || role !== 'admin') {
-    return <div className="min-h-screen bg-[#F0EDE6] flex items-center justify-center flex-col gap-4"><div className="text-[#7A7268] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
+    return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center flex-col gap-4 pt-[50px]"><div className="text-[#888] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
   }
 
   const filteredCourses = getFilteredCourses()
@@ -237,99 +237,69 @@ export default function CoursesOverviewPage() {
   return (
     <>
       <style jsx global>{`
-        :root {
-          --gold: #C4A265;
-          --gold-l: #DFC08A;
-          --gold-d: #7A6340;
-          --cream: #FAF8F4;
-          --cream2: #F0EDE6;
-          --cream3: #E8E3DB;
-          --dark: #0C0A07;
-          --dark2: #161310;
-          --text: #1E1A14;
-          --muted: #7A7268;
-          --green: #4CAF82;
-          --red: #E05A4E;
-        }
         html, body {
           font-family: 'Outfit', sans-serif;
           -webkit-font-smoothing: antialiased;
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#F0EDE6]">
-        {/* Topbar */}
-        <div className="h-[50px] bg-[#FAF8F4] border-b border-[rgba(30,26,20,0.09)] flex items-center justify-between px-6 sticky top-[66px] z-40">
-          <div className="flex items-center gap-3">
-            <span className="font-['AvenirNext','Avenir_Next','Avenir','Century_Gothic',sans-serif] text-[12px] font-extralight tracking-[0.34em] text-[#C4A265] uppercase">
-              Luxique
-            </span>
-            <div className="w-px h-4 bg-[rgba(30,26,20,0.09)]"></div>
-            <span className="text-[13px] text-[#7A7268]">Academy beheer</span>
-          </div>
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => router.push('/')}
-              className="text-[12px] font-medium px-4 py-1.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition flex items-center gap-1.5"
-            >
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
-              </svg>
-              Naar site
-            </button>
-            <button
-              onClick={() => setShowModal(true)}
-              className="text-[12px] font-medium px-4 py-1.5 rounded-full bg-[#C4A265] text-white hover:bg-[#DFC08A] transition flex items-center gap-1.5"
-            >
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 4.5v15m7.5-7.5h-15"/>
-              </svg>
-              Nieuwe cursus
-            </button>
+      <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
+        {/* Admin topbar */}
+        <div className="bg-white border-b border-[#eee] px-6 py-4 sticky top-[50px] z-30">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase">LXQ Admin</span>
+              <h1 className="font-['Cormorant_Garamond'] text-[24px] text-[#1a1a1a]">Cursussen</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">← Website</a>
+              <button onClick={() => setShowModal(true)} className="text-[12px] text-white px-3 py-1.5 rounded-full bg-[#0C0A07] hover:bg-[#333] transition">+ Nieuwe cursus</button>
+            </div>
           </div>
         </div>
 
-        {/* Page */}
-        <div className="max-w-[1100px] mx-auto px-6 py-7">
-
-          {/* Header */}
-          <div className="flex items-end justify-between mb-6">
-            <div>
-              <h1 className="font-['Cormorant_Garamond',serif] text-[28px] font-normal text-[#1E1A14] tracking-[-0.01em] mb-1">
-                Cursussen
-              </h1>
-              <p className="text-[13px] text-[#7A7268] font-light">
-                Beheer en bewerk alle LXQ Academy cursussen
-              </p>
+        <div className="max-w-7xl mx-auto px-6 py-6 flex gap-6">
+          {/* Admin sidebar */}
+          <div className="w-[220px] shrink-0">
+            <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-[120px]">
+              <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">📊 Overzicht</a>
+              <a href="/admin/customers" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">👥 Klanten</a>
+              <div className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] bg-[#0C0A07] text-white border-b border-[#f5f5f5]">📚 Cursussen</div>
+              <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">📅 Agenda</a>
+              <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">💶 Financiën</a>
+              <div onClick={() => setShowModal(true)} className="w-full flex items-center gap-3 px-5 py-4 text-[13px] border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition cursor-pointer">➕ Nieuwe cursus</div>
             </div>
           </div>
 
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+
           {/* Stats Strip — 3 tegels (voltooiingsrate verwijderd) */}
           <div className="grid grid-cols-3 gap-2.5 mb-6">
-            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
-              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+            <div className="bg-white border border-[#eee] rounded-[14px] p-4 px-5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1a1a1a] leading-none tracking-[-0.02em] mb-0.5">
                 {courses.filter(c => c.status === 'published').length}
               </div>
-              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#888]">
                 Live cursussen
               </div>
             </div>
             <div
-              className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5 cursor-pointer hover:border-[rgba(196,162,101,0.3)] transition"
+              className="bg-white border border-[#eee] rounded-[14px] p-4 px-5 cursor-pointer hover:border-[rgba(196,162,101,0.3)] transition"
               onClick={() => router.push('/admin/customers')}
             >
-              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1a1a1a] leading-none tracking-[-0.02em] mb-0.5">
                 {stats.totalStudents}
               </div>
-              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#888]">
                 Studenten →
               </div>
             </div>
-            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
-              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
+            <div className="bg-white border border-[#eee] rounded-[14px] p-4 px-5">
+              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1a1a1a] leading-none tracking-[-0.02em] mb-0.5">
                 {formatRevenue(stats.totalRevenue)}
               </div>
-              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
+              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#888]">
                 Totale omzet
               </div>
             </div>
@@ -342,47 +312,47 @@ export default function CoursesOverviewPage() {
               className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'all'
                   ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
-                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+                  : 'border-[#eee] text-[#888] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1a1a1a]'
               }`}
             >
               Alle cursussen
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'all' ? 'bg-[#C4A265] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.length}</span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'all' ? 'bg-[#C4A265] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#888]'}`}>{courses.length}</span>
             </button>
             <button
               onClick={() => setFilter('published')}
               className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'published'
                   ? 'bg-[rgba(76,175,130,0.1)] border-[rgba(76,175,130,0.3)] text-[#2d6b4f]'
-                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+                  : 'border-[#eee] text-[#888] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1a1a1a]'
               }`}
             >
               Live
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'published' ? 'bg-[#4CAF82] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.filter(c => c.status === 'published').length}</span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'published' ? 'bg-[#4CAF82] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#888]'}`}>{courses.filter(c => c.status === 'published').length}</span>
             </button>
             <button
               onClick={() => setFilter('draft')}
               className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'draft'
                   ? 'bg-[rgba(224,160,74,0.1)] border-[rgba(224,160,74,0.3)] text-[#8a5a1e]'
-                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+                  : 'border-[#eee] text-[#888] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1a1a1a]'
               }`}
             >
               Concept
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'draft' ? 'bg-[#E0A04A] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.filter(c => c.status === 'draft').length}</span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'draft' ? 'bg-[#E0A04A] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#888]'}`}>{courses.filter(c => c.status === 'draft').length}</span>
             </button>
             <button
               onClick={() => setFilter('archived')}
               className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'archived'
                   ? 'bg-[rgba(122,114,104,0.1)] border-[rgba(122,114,104,0.3)] text-[#5a534a]'
-                  : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
+                  : 'border-[#eee] text-[#888] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1a1a1a]'
               }`}
             >
               Gearchiveerd
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'archived' ? 'bg-[#7A7268] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.filter(c => c.status === 'archived').length}</span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'archived' ? 'bg-[#7A7268] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#888]'}`}>{courses.filter(c => c.status === 'archived').length}</span>
             </button>
             <div className="ml-auto relative">
-              <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#7A7268]" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#888]" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
               </svg>
               <input
@@ -390,7 +360,7 @@ export default function CoursesOverviewPage() {
                 placeholder="Zoeken..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-full py-1 px-3 pl-8 text-[12px] outline-none w-[200px] focus:border-[rgba(196,162,101,0.4)] focus:w-[240px] transition-all"
+                className="bg-white border border-[#eee] rounded-full py-1 px-3 pl-8 text-[12px] outline-none w-[200px] focus:border-[rgba(196,162,101,0.4)] focus:w-[240px] transition-all"
               />
             </div>
           </div>
@@ -398,12 +368,12 @@ export default function CoursesOverviewPage() {
           {/* Course Cards Grid */}
           {loadingCourses ? (
             <div className="flex items-center justify-center py-16">
-              <div className="text-[#7A7268] text-[14px]">Laden...</div>
+              <div className="text-[#888] text-[14px]">Laden...</div>
             </div>
           ) : filteredCourses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-2.5">
               <div className="text-[40px] opacity-40">📚</div>
-              <p className="text-[15px] font-normal text-[#7A7268]">
+              <p className="text-[15px] font-normal text-[#888]">
                 Geen cursussen gevonden
               </p>
               <p className="text-[12px] text-[rgba(30,26,20,0.35)] max-w-[280px] leading-relaxed">
@@ -417,8 +387,8 @@ export default function CoursesOverviewPage() {
               {filteredCourses.map((course) => (
                 <div
                   key={course.id}
-                  className={`bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_4px_18px_rgba(30,26,20,0.08)] hover:-translate-y-px ${
-                    course.status === 'archived' ? 'bg-[#E8E3DB] opacity-60' : ''
+                  className={`bg-white border border-[#eee] rounded-[14px] overflow-hidden transition-all cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_4px_18px_rgba(30,26,20,0.08)] hover:-translate-y-px ${
+                    course.status === 'archived' ? 'bg-[#f0f0f0] opacity-60' : ''
                   }`}
                   onClick={() => router.push(`/admin/courses/${course.id}/builder`)}
                 >
@@ -453,29 +423,29 @@ export default function CoursesOverviewPage() {
 
                   {/* Card Body */}
                   <div className="p-4">
-                    <p className="font-['Cormorant_Garamond',serif] text-[18px] font-normal text-[#1E1A14] tracking-[-0.01em] mb-0.5">
+                    <p className="font-['Cormorant_Garamond',serif] text-[18px] font-normal text-[#1a1a1a] tracking-[-0.01em] mb-0.5">
                       {course.title}
                     </p>
-                    <p className="text-[11.5px] text-[#7A7268] font-light mb-3">
+                    <p className="text-[11.5px] text-[#888] font-light mb-3">
                       {course.description || 'Geen beschrijving'}
                     </p>
 
                     {/* Meta */}
                     <div className="flex gap-3.5 mb-3.5">
-                      <div className="flex items-center gap-1 text-[11px] text-[#7A7268]">
+                      <div className="flex items-center gap-1 text-[11px] text-[#888]">
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
                         </svg>
                         {course.lessons_count || 0} lessen
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] text-[#7A7268]">
+                      <div className="flex items-center gap-1 text-[11px] text-[#888]">
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         {formatDuration(course.duration_minutes || 0)}
                       </div>
                       {course.has_quiz && (
-                        <div className="flex items-center gap-1 text-[11px] text-[#7A7268]">
+                        <div className="flex items-center gap-1 text-[11px] text-[#888]">
                           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
@@ -485,21 +455,21 @@ export default function CoursesOverviewPage() {
                     </div>
 
                     {/* Earnings Row */}
-                    <div className="flex items-center justify-between py-2.5 border-y border-[rgba(30,26,20,0.09)] mb-3">
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#7A7268]">
+                    <div className="flex items-center justify-between py-2.5 border-y border-[#eee] mb-3">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#888]">
                         <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                           <path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
                         </svg>
-                        <strong className="text-[14px] font-semibold text-[#1E1A14]">
+                        <strong className="text-[14px] font-semibold text-[#1a1a1a]">
                           {course.students_count || 0}
                         </strong>
                         {' '}studenten
                       </div>
                       <div className="text-right">
-                        <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1E1A14] leading-none tracking-[-0.01em]">
+                        <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1a1a1a] leading-none tracking-[-0.01em]">
                           {formatRevenue(course.revenue || 0)}
                         </div>
-                        <div className="text-[9.5px] text-[#7A7268] tracking-[0.1em] uppercase">
+                        <div className="text-[9.5px] text-[#888] tracking-[0.1em] uppercase">
                           Omzet
                         </div>
                       </div>
@@ -533,7 +503,7 @@ export default function CoursesOverviewPage() {
                       ) : (
                         <button
                           onClick={() => router.push(`/courses/${course.slug}`)}
-                          className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border border-[rgba(30,26,20,0.09)] bg-[#F0EDE6] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition flex items-center justify-center gap-1.5"
+                          className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border border-[#eee] bg-[#f5f5f5] text-[#888] hover:text-[#1a1a1a] hover:border-[rgba(30,26,20,0.22)] transition flex items-center justify-center gap-1.5"
                         >
                           <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
@@ -544,7 +514,7 @@ export default function CoursesOverviewPage() {
                       )}
                       <button
                         onClick={() => handleArchiveCourse(course.id, course.status)}
-                        className="flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border border-[rgba(30,26,20,0.09)] bg-transparent text-[#7A7268] hover:bg-[rgba(224,90,78,0.08)] hover:border-[rgba(224,90,78,0.3)] hover:text-[#E05A4E] transition"
+                        className="flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border border-[#eee] bg-transparent text-[#888] hover:bg-[rgba(224,90,78,0.08)] hover:border-[rgba(224,90,78,0.3)] hover:text-[#E05A4E] transition"
                         title={course.status === 'archived' ? 'De-archiveren' : 'Archiveren'}
                       >
                         <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -566,15 +536,16 @@ export default function CoursesOverviewPage() {
                     <path d="M12 4.5v15m7.5-7.5h-15"/>
                   </svg>
                 </div>
-                <p className="font-['Cormorant_Garamond',serif] text-[17px] font-normal text-[#1E1A14]">
+                <p className="font-['Cormorant_Garamond',serif] text-[17px] font-normal text-[#1a1a1a]">
                   Nieuwe cursus
                 </p>
-                <p className="text-[11.5px] text-[#7A7268] font-light leading-relaxed">
+                <p className="text-[11.5px] text-[#888] font-light leading-relaxed">
                   Maak een nieuwe cursus aan en begin met bouwen in de course builder
                 </p>
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
 
@@ -585,19 +556,19 @@ export default function CoursesOverviewPage() {
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-[#FAF8F4] rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]"
+            className="bg-white rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1E1A14] mb-1.5">
+            <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1a1a1a] mb-1.5">
               Nieuwe cursus aanmaken
             </p>
-            <p className="text-[12.5px] text-[#7A7268] font-light mb-5.5 leading-relaxed">
+            <p className="text-[12.5px] text-[#888] font-light mb-5.5 leading-relaxed">
               Vul de basisgegevens in. Alles kun je later verder aanpassen in de course builder.
             </p>
 
             <div className="flex flex-col gap-3 mb-5">
               <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] tracking-[0.06em] block mb-0.5">
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">
                   Cursusnaam
                 </label>
                 <input
@@ -605,17 +576,17 @@ export default function CoursesOverviewPage() {
                   value={newCourse.title}
                   onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
                   placeholder="bijv. Wispy Lash Mastery"
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition"
+                  className="w-full bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition"
                 />
               </div>
               <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] tracking-[0.06em] block mb-0.5">
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">
                   Niveau
                 </label>
                 <select
                   value={newCourse.level}
                   onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value })}
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition appearance-none cursor-pointer"
+                  className="w-full bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition appearance-none cursor-pointer"
                 >
                   <option value="">Kies niveau</option>
                   <option value="beginner">Beginner</option>
@@ -624,7 +595,7 @@ export default function CoursesOverviewPage() {
                 </select>
               </div>
               <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] tracking-[0.06em] block mb-0.5">
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">
                   Korte omschrijving
                 </label>
                 <input
@@ -632,7 +603,7 @@ export default function CoursesOverviewPage() {
                   value={newCourse.description}
                   onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
                   placeholder="bijv. Vervolgmodule — Wispy techniek"
-                  className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition"
+                  className="w-full bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] focus:shadow-[0_0_0_3px_rgba(196,162,101,0.06)] transition"
                 />
               </div>
             </div>
@@ -640,7 +611,7 @@ export default function CoursesOverviewPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 text-[13px] font-normal py-2.5 rounded-full border border-[rgba(30,26,20,0.09)] bg-transparent cursor-pointer text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition"
+                className="flex-1 text-[13px] font-normal py-2.5 rounded-full border border-[#eee] bg-transparent cursor-pointer text-[#888] hover:text-[#1a1a1a] hover:border-[rgba(30,26,20,0.22)] transition"
               >
                 Annuleren
               </button>

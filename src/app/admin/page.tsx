@@ -111,9 +111,9 @@ export default function AdminPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F5F5F4]">
+    <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
       {/* Top bar */}
-      <div className="bg-white border-b border-[#eee] px-6 py-4">
+      <div className="bg-white border-b border-[#eee] px-6 py-4 sticky top-[50px] z-30">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase">LXQ Admin</span>
@@ -133,11 +133,25 @@ export default function AdminPage() {
         <div className="w-[220px] shrink-0">
           <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">
             {tabs.map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
-                className={`w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] last:border-0 transition ${tab === t.key ? 'bg-[#0C0A07] text-white' : 'text-[#666] hover:bg-[#fafafa]'}`}>
-                {t.icon}
-                {t.key === 'overview' ? 'Overzicht' : t.key === 'customers' ? `Klanten` : t.key === 'courses' ? 'Cursussen' : t.key === 'calendar' ? 'Agenda' : 'Financiën'}
-              </button>
+              t.key === 'customers' ? (
+                <a key={t.key} href="/admin/customers"
+                  className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">
+                  {t.icon}
+                  Klanten
+                </a>
+              ) : t.key === 'courses' ? (
+                <a key={t.key} href="/admin/courses"
+                  className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">
+                  {t.icon}
+                  Cursussen
+                </a>
+              ) : (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className={`w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] last:border-0 transition ${tab === t.key ? 'bg-[#0C0A07] text-white' : 'text-[#666] hover:bg-[#fafafa]'}`}>
+                  {t.icon}
+                  {t.key === 'overview' ? 'Overzicht' : t.key === 'calendar' ? 'Agenda' : 'Financiën'}
+                </button>
+              )
             ))}
             <a href="/admin/courses" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition">
               <span className="text-[16px]">📚</span>

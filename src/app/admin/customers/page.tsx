@@ -127,9 +127,9 @@ export default function AdminCustomersPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#F5F5F4]">
+    <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
       {/* Top bar — same as /admin */}
-      <div className="bg-white border-b border-[#eee] px-6 py-4">
+      <div className="bg-white border-b border-[#eee] px-6 py-4 sticky top-[50px] z-30">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase">LXQ Admin</span>
