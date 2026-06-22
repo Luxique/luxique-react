@@ -31,10 +31,8 @@ export default function CoursesOverviewPage() {
   const router = useRouter()
   const [courses, setCourses] = useState<Course[]>([])
   const [stats, setStats] = useState({
-    totalCourses: 0,
     totalStudents: 0,
-    totalRevenue: 0,
-    completionRate: 0
+    totalRevenue: 0
   })
   const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -103,30 +101,13 @@ export default function CoursesOverviewPage() {
 
       setCourses(coursesWithCounts)
 
-      // Calculate stats
-      const totalCourses = coursesWithCounts.length
+      // Calculate stats — alleen echte data
       const totalStudents = coursesWithCounts.reduce((sum, c) => sum + (c.students_count || 0), 0)
-      const totalRevenue = coursesWithCounts.reduce((sum, c) => sum + (c.price || 0) * (c.students_count || 0), 0)
-
-      // Calculate completion rate (enrollments with completed_at / total enrollments)
-      const { count: completedEnrollments } = await supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-        .not('completed_at', 'is', null)
-
-      const { count: totalEnrollments } = await supabase
-        .from('enrollments')
-        .select('*', { count: 'exact', head: true })
-
-      const completionRate = totalEnrollments && totalEnrollments > 0
-        ? Math.round(((completedEnrollments || 0) / totalEnrollments) * 100)
-        : 0
+      const totalRevenue = coursesWithCounts.reduce((sum, c) => sum + Math.round(((c.price || 0) / 100)) * (c.students_count || 0), 0)
 
       setStats({
-        totalCourses,
         totalStudents,
-        totalRevenue,
-        completionRate
+        totalRevenue
       })
     } catch (error) {
       console.error('Error fetching courses:', error)
@@ -318,22 +299,25 @@ export default function CoursesOverviewPage() {
             </div>
           </div>
 
-          {/* Stats Strip */}
-          <div className="grid grid-cols-4 gap-2.5 mb-6">
+          {/* Stats Strip — 3 tegels (voltooiingsrate verwijderd) */}
+          <div className="grid grid-cols-3 gap-2.5 mb-6">
             <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
               <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
-                {stats.totalCourses}
+                {courses.filter(c => c.status === 'published').length}
               </div>
               <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
-                Cursussen
+                Live cursussen
               </div>
             </div>
-            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
+            <div
+              className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5 cursor-pointer hover:border-[rgba(196,162,101,0.3)] transition"
+              onClick={() => router.push('/admin/customers')}
+            >
               <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
                 {stats.totalStudents}
               </div>
               <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
-                Studenten
+                Studenten →
               </div>
             </div>
             <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
@@ -344,57 +328,53 @@ export default function CoursesOverviewPage() {
                 Totale omzet
               </div>
             </div>
-            <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] p-4 px-5">
-              <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1E1A14] leading-none tracking-[-0.02em] mb-0.5">
-                {stats.completionRate}%
-              </div>
-              <div className="text-[10px] font-semibold tracking-[0.18em] uppercase text-[#7A7268]">
-                Voltooiingsrate
-              </div>
-            </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-1.5 mb-4.5 flex-wrap">
+          {/* Filters — met telbadges */}
+          <div className="flex gap-1.5 mb-8 flex-wrap">
             <button
               onClick={() => setFilter('all')}
-              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'all'
                   ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
                   : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
               }`}
             >
               Alle cursussen
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'all' ? 'bg-[#C4A265] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.length}</span>
             </button>
             <button
               onClick={() => setFilter('published')}
-              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'published'
-                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  ? 'bg-[rgba(76,175,130,0.1)] border-[rgba(76,175,130,0.3)] text-[#2d6b4f]'
                   : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
               }`}
             >
               Live
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'published' ? 'bg-[#4CAF82] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.filter(c => c.status === 'published').length}</span>
             </button>
             <button
               onClick={() => setFilter('draft')}
-              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'draft'
-                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  ? 'bg-[rgba(224,160,74,0.1)] border-[rgba(224,160,74,0.3)] text-[#8a5a1e]'
                   : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
               }`}
             >
               Concept
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'draft' ? 'bg-[#E0A04A] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.filter(c => c.status === 'draft').length}</span>
             </button>
             <button
               onClick={() => setFilter('archived')}
-              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition ${
+              className={`text-[11.5px] font-medium px-3.5 py-1 rounded-full border cursor-pointer transition flex items-center gap-1.5 ${
                 filter === 'archived'
-                  ? 'bg-[rgba(196,162,101,0.1)] border-[rgba(196,162,101,0.3)] text-[#7A6340]'
+                  ? 'bg-[rgba(122,114,104,0.1)] border-[rgba(122,114,104,0.3)] text-[#5a534a]'
                   : 'border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(30,26,20,0.18)] hover:text-[#1E1A14]'
               }`}
             >
               Gearchiveerd
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${filter === 'archived' ? 'bg-[#7A7268] text-white' : 'bg-[rgba(30,26,20,0.06)] text-[#7A7268]'}`}>{courses.filter(c => c.status === 'archived').length}</span>
             </button>
             <div className="ml-auto relative">
               <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#7A7268]" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -452,12 +432,14 @@ export default function CoursesOverviewPage() {
                         </svg>
                       </div>
                     )}
-                    <span className={`absolute top-2.5 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2 py-1 rounded-full ${
-                      course.status === 'archived'
+                    <span className={`absolute top-2.5 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2.5 py-1 rounded-full ${
+                      course.status === 'published'
+                        ? 'bg-[#4CAF82] text-white'
+                        : course.status === 'archived'
                         ? 'bg-[#7A7268] text-white'
-                        : getStatusClass(course.status)
+                        : 'bg-[#E0A04A] text-white'
                     }`}>
-                      {course.status === 'archived' ? 'GEARCHIVEERD' : getStatusLabel(course.status)}
+                      {course.status === 'archived' ? 'GEARCHIVEERD' : course.status === 'published' ? 'LIVE' : 'CONCEPT'}
                     </span>
                     <span className="absolute top-2.5 right-2.5 text-[8.5px] font-semibold tracking-[0.12em] uppercase px-2 py-1 rounded-full bg-[rgba(12,10,7,0.6)] backdrop-blur-md text-[rgba(250,248,244,0.6)] border border-[rgba(255,255,255,0.08)]">
                       {course.level}
@@ -531,18 +513,30 @@ export default function CoursesOverviewPage() {
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
                         </svg>
-                        Bewerken
+                        {course.status === 'archived' ? 'Gearchiveerd' : 'Bewerken'}
                       </button>
-                      <button
-                        onClick={() => router.push(`/courses/${course.slug}`)}
-                        className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border border-[rgba(30,26,20,0.09)] bg-[#F0EDE6] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition flex items-center justify-center gap-1.5"
-                      >
-                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-                          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        Preview
-                      </button>
+                      {course.status === 'archived' ? (
+                        <button
+                          onClick={() => handleArchiveCourse(course.id, course.status)}
+                          className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border border-[rgba(76,175,130,0.3)] bg-[rgba(76,175,130,0.08)] text-[#2d6b4f] hover:bg-[rgba(76,175,130,0.15)] transition flex items-center justify-center gap-1.5"
+                        >
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          Dearchiveren
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => router.push(`/courses/${course.slug}`)}
+                          className="flex-1 text-[12px] font-medium py-2 px-3 rounded-lg border border-[rgba(30,26,20,0.09)] bg-[#F0EDE6] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition flex items-center justify-center gap-1.5"
+                        >
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          </svg>
+                          Preview
+                        </button>
+                      )}
                       <button
                         onClick={() => handleArchiveCourse(course.id, course.status)}
                         className="flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border border-[rgba(30,26,20,0.09)] bg-transparent text-[#7A7268] hover:bg-[rgba(224,90,78,0.08)] hover:border-[rgba(224,90,78,0.3)] hover:text-[#E05A4E] transition"
@@ -663,15 +657,12 @@ export default function CoursesOverviewPage() {
           color: white;
         }
         .status-concept {
-          background: rgba(255,255,255,0.15);
-          color: rgba(255,255,255,0.7);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(255,255,255,0.1);
+          background: #E0A04A;
+          color: white;
         }
         .status-archived {
-          background: rgba(0,0,0,0.4);
-          color: rgba(255,255,255,0.5);
-          backdrop-filter: blur(8px);
+          background: #7A7268;
+          color: white;
         }
       `}</style>
     </>
