@@ -980,7 +980,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                     setHeroUploading(true)
                     setHeroProcessing(false)
                     try {
-                      const res = await fetch('/api/mux/upload-url', { method: 'POST' })
+                      const res = await fetch('/api/mux/upload-url', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_free: true }) })
                       const { upload_url, upload_id } = await res.json()
                       console.log('[HERO UPLOAD] Got upload URL, starting upload...')
                       await new Promise<void>((resolve, reject) => {
@@ -1039,7 +1039,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                       playbackId={course.heroMuxPlaybackId}
                       variant="hero"
                       title={course.title || 'Hero video'}
-                      signed={true}
+                      signed={false}
                       courseId={course?.id}
                       isFree={true}
                     />
@@ -1607,8 +1607,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           setVideoUploading(true)
           setVideoUploadProgress(0)
           try {
-            // 1. Get upload URL from backend
-            const res = await fetch('/api/mux/upload-url', { method: 'POST' })
+            // 1. Get upload URL from backend — free lessons use public playback
+            const lessonIsFree = currentLesson?.free ?? false
+            const res = await fetch('/api/mux/upload-url', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_free: lessonIsFree }) })
             const { upload_url, upload_id } = await res.json()
             
             // 2. Upload to Mux via XHR for progress tracking
@@ -1675,9 +1676,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   playbackId={block.content.mux_playback_id as string}
                   variant="lesson"
                   title={block.content.video_title as string || 'Les video'}
-                  signed={true}
+                  signed={currentLesson?.free ?? false}
                   courseId={course?.id}
-                  isFree={true}
+                  isFree={currentLesson?.free ?? false}
                 />
               </div>
             ) : videoUploading ? (
@@ -2229,9 +2230,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                                   <LuxiqueMuxPlayer
                                     playbackId={block.content.mux_playback_id as string}
                                     variant="lesson"
-                                    signed={true}
+                                    signed={currentLesson?.free ?? false}
                                     courseId={course?.id}
-                                    isFree={true}
+                                    isFree={currentLesson?.free ?? false}
                                   />
                                 </div>
                               )}

@@ -426,7 +426,7 @@ export default function LessonPage() {
                               playbackId={bc.muxPlaybackId}
                               variant="lesson"
                               title={block.title || 'Video'}
-                              signed={true}
+                              signed={!lesson.is_free}
                               courseId={lesson.course_id}
                               isFree={lesson.is_free}
                               onProgress={handleVideoProgress}
