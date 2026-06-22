@@ -371,9 +371,34 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       }
       console.log(`[saveCourse] Lesson "${lesson.name}" upsert OK`)
 
-      // 3. Sla blokken op voor deze les
+      // 3. Sync blokken voor deze les — delete alleen wat echt verwijderd is
       const lessonBlocks = lesson.blocks || []
-      console.log(`[saveCourse] Saving ${lessonBlocks.length} blocks for lesson "${lesson.name}"`)
+      console.log(`[saveCourse] Syncing ${lessonBlocks.length} blocks for lesson "${lesson.name}"`)
+      
+      // Eerst: haal huidige blokken uit DB
+      const { data: existingBlocks } = await supabase
+        .from('blocks')
+        .select('id')
+        .eq('lesson_id', lesson.id)
+      const existingBlockIds = new Set(existingBlocks?.map(b => b.id) || [])
+      const newBlockIds = new Set(lessonBlocks.map(b => b.id))
+      
+      // Verwijder blokken die in DB maar NIET meer in de builder staan
+      const blocksToDelete = Array.from(existingBlockIds).filter(id => !newBlockIds.has(id))
+      if (blocksToDelete.length > 0) {
+        console.log(`[saveCourse] Deleting ${blocksToDelete.length} removed blocks for lesson "${lesson.name}"`)
+        const { error: deleteError } = await supabase
+          .from('blocks')
+          .delete()
+          .in('id', Array.from(blocksToDelete))
+          if (deleteError) {
+            console.error('[saveCourse] Block delete FAILED:', deleteError)
+            alert(`Fout bij verwijderen oude blokken: ${deleteError.message}`)
+            return
+          }
+      }
+      
+      // Dan: upsert nieuwe/gewijzigde blokken
       for (let i = 0; i < lessonBlocks.length; i++) {
         const block = lessonBlocks[i]
         const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
@@ -495,6 +520,20 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           if (lessonError) console.error('Lesson upsert failed:', lessonError)
 
           const lessonBlocks = lesson.blocks || []
+          
+          // Sync blocks — delete only removed ones
+          const { data: existingBlocks } = await supabase
+            .from('blocks')
+            .select('id')
+            .eq('lesson_id', lesson.id)
+          const existingBlockIds = new Set(existingBlocks?.map(b => b.id) || [])
+          const newBlockIds = new Set(lessonBlocks.map(b => b.id))
+          
+          const blocksToDelete = Array.from(existingBlockIds).filter(id => !newBlockIds.has(id))
+          if (blocksToDelete.length > 0) {
+            await supabase.from('blocks').delete().in('id', Array.from(blocksToDelete))
+          }
+          
           for (let i = 0; i < lessonBlocks.length; i++) {
             const block = lessonBlocks[i]
             const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
