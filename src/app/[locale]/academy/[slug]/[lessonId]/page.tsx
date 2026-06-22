@@ -64,11 +64,15 @@ export default function LessonPage() {
 
   // Rail
   const lastBlockRef = useRef<HTMLDivElement>(null)
-  const [railOpen, setRailOpen] = useState(() => {
-    if (typeof window === 'undefined') return true
-    return localStorage.getItem('lux-rail-open') !== 'closed'
-  })
+  const [railOpen, setRailOpen] = useState(true)
   const [railMobileOpen, setRailMobileOpen] = useState(false)
+
+  // Load rail state from localStorage after mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setRailOpen(localStorage.getItem('lux-rail-open') !== 'closed')
+    }
+  }, [])
 
   // Quiz: track attempts per question block
   const [quizAttempts, setQuizAttempts] = useState<Record<string, number>>({})      // blockId → attempt count
@@ -423,6 +427,7 @@ export default function LessonPage() {
                         <>
                           <div className="video" style={{ position: 'relative' }}>
                             <LuxiqueMuxPlayer
+                              key={bc.muxPlaybackId}
                               playbackId={bc.muxPlaybackId}
                               variant="lesson"
                               title={block.title || 'Video'}

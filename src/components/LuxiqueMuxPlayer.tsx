@@ -39,7 +39,14 @@ export default function LuxiqueMuxPlayer({
   const [tokenError, setTokenError] = useState(false)
 
   useEffect(() => {
-    if (!signed || !playbackId) return
+    // Reset token state when signed changes to false
+    if (!signed) {
+      setToken(undefined)
+      setTokenError(false)
+      return
+    }
+
+    if (!playbackId) return
 
     let cancelled = false
 
