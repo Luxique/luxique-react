@@ -341,54 +341,9 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* ═══ CALENDAR — Cal.com embed ═══ */}
+          {/* ═══ CALENDAR — Agenda Overview ═══ */}
           {tab === 'calendar' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
-                <div className="px-5 py-4 border-b border-[#eee] flex items-center justify-between">
-                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda — Cal.com</h3>
-                  <a href="https://cal.com/luxique" target="_blank" className="text-[11px] px-3 py-1 rounded-full border border-[#ddd] text-[#888] hover:border-[#C4A265] hover:text-[#C4A265] transition">Open Cal.com ↗</a>
-                </div>
-                <div className="p-4">
-                  <iframe
-                    src="https://cal.com/luxique?embed=
-"
-                    title="Cal.com Agenda"
-                    className="w-full border-0 rounded-xl"
-                    style={{ height: '600px' }}
-                  />
-                </div>
-              </div>
-
-              {/* Bookings from Supabase */}
-              <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
-                <div className="px-5 py-4 border-b border-[#eee]">
-                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Boekingen (uit database)</h3>
-                </div>
-                {bookings.length > 0 ? (
-                  <div className="divide-y divide-[#f5f5f5]">
-                    {bookings.map(b => (
-                      <div key={b.id} className="flex items-center gap-4 px-5 py-4">
-                        <div className="w-12 h-12 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
-                          <span className="text-[9px] font-semibold uppercase">{new Date(b.appointment_date).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
-                          <span className="text-[16px] font-bold">{new Date(b.appointment_date).getDate()}</span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[13px] font-medium">{b.treatment_name}</p>
-                          <p className="text-[11px] text-[#aaa]">{new Date(b.appointment_date).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
-                        </div>
-                        <span className={`text-[11px] px-3 py-1 rounded-full font-medium ${b.status === 'confirmed' ? 'bg-green-50 text-green-600' : b.status === 'completed' ? 'bg-blue-50 text-blue-600' : b.status === 'cancelled' ? 'bg-red-50 text-red-400' : 'bg-[#f5f5f5] text-[#888]'}`}>{b.status}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center">
-                    <p className="text-[13px] text-[#888]">Geen boekingen gevonden</p>
-                    <p className="text-[11px] text-[#aaa] mt-1">Boekingen verschijnen hier automatisch als klanten boeken via Cal.com</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <CalendarTab />
           )}
 
           {/* ═══ FINANCE ═══ */}
@@ -501,6 +456,101 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+type CalBooking = {
+    id: number; uid: string; title: string; status: string;
+    startTime: string; endTime: string; location: string;
+    paid: boolean; customerName: string; customerEmail: string;
+    eventTypeTitle: string; eventTypeSlug: string;
+    price: number; currency: string; cancellationReason: string | null;
+  }
+
+/* ── CalendarTab — Agenda overview from cal.com API ── */
+function CalendarTab() {
+  const [calBookings, setCalBookings] = useState<CalBooking[]>([])
+  const [loadingCal, setLoadingCal] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/cal/bookings')
+      .then(r => r.json())
+      .then(data => {
+        setCalBookings(data.bookings || [])
+        setLoadingCal(false)
+      })
+      .catch(() => setLoadingCal(false))
+  }, [])
+
+  const now = new Date()
+  const upcoming = calBookings.filter(b => new Date(b.startTime) >= now)
+  const past = calBookings.filter(b => new Date(b.startTime) < now)
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+  const fmtPrice = (cents: number, _cur: string) => `€${(cents / 100).toFixed(2)}`
+
+  const BookingCard = ({ b }: { b: CalBooking }) => (
+    <div className="flex items-center gap-4 px-5 py-4 border-b border-[#f5f5f5] last:border-0">
+      <div className="w-12 h-12 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
+        <span className="text-[9px] font-semibold uppercase">{new Date(b.startTime).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
+        <span className="text-[16px] font-bold">{new Date(b.startTime).getDate()}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-medium">{b.eventTypeTitle}</p>
+        <p className="text-[11px] text-[#888]">{b.customerName} — {fmtDate(b.startTime)} · {fmtTime(b.startTime)}</p>
+        {b.location && <p className="text-[10px] text-[#aaa] truncate">📍 {b.location}</p>}
+      </div>
+      <div className="text-right shrink-0">
+        {b.price > 0 && <p className="text-[12px] font-medium mb-0.5">{fmtPrice(b.price, b.currency)}</p>}
+        <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${
+          b.status === 'ACCEPTED' ? 'bg-green-50 text-green-600' :
+          b.status === 'CANCELLED' ? 'bg-red-50 text-red-400' :
+          b.status === 'PENDING' ? 'bg-yellow-50 text-yellow-600' :
+          'bg-[#f5f5f5] text-[#888]'
+        }`}>{b.status}</span>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda — Afspraken Overzicht</h3>
+        <a href="https://cal.com/luxique" target="_blank" className="text-[11px] px-3 py-1 rounded-full border border-[#eee] text-[#888] hover:border-[#C4A265] hover:text-[#C4A265] transition">Open Cal.com ↗</a>
+      </div>
+
+      {loadingCal ? (
+        <div className="bg-white rounded-2xl border border-[#eee] p-8 text-center text-[13px] text-[#888]">Laden...</div>
+      ) : calBookings.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#eee] p-8 text-center">
+          <p className="text-[13px] text-[#888]">Geen afspraken gevonden</p>
+          <p className="text-[11px] text-[#aaa] mt-1">Nieuwe boekingen via cal.com verschijnen hier automatisch</p>
+        </div>
+      ) : (
+        <>
+          {/* Upcoming */}
+          {upcoming.length > 0 && (
+            <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+              <div className="px-5 py-3 border-b border-[#eee]">
+                <h4 className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Aankomend ({upcoming.length})</h4>
+              </div>
+              {upcoming.map(b => <BookingCard key={b.id} b={b} />)}
+            </div>
+          )}
+
+          {/* Past */}
+          {past.length > 0 && (
+            <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+              <div className="px-5 py-3 border-b border-[#eee]">
+                <h4 className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Verleden ({past.length})</h4>
+              </div>
+              {past.map(b => <BookingCard key={b.id} b={b} />)}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
