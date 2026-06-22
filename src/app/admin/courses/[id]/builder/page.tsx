@@ -209,6 +209,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
+  const [blocksCache, setBlocksCache] = useState<Record<string, Block[]>>({})  // Per-les cache
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
   const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
@@ -272,6 +273,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       });
       return reordered;
     });
+    // Update cache
+    if (currentLesson?.id) {
+      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }));
+    }
   };
 
   const toSlug = (title: string) =>
@@ -432,8 +437,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
 
     console.log('[saveCourse] ✅ Save complete!')
+    
+    // Update cache met opgeslagen blokken
+    if (currentLesson?.id) {
+      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+    }
+    
     alert('Concept opgeslagen! ⏱ Wijzigingen zijn binnen ~1 minuut live op de cursuspagina.')
-  }, [course, currentLesson, blocks, currentContext])
+  }, [course, currentLesson, blocks, currentContext, blocksCache])
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [publishing, setPublishing] = useState(false)
@@ -583,6 +594,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           .catch(e => console.error('[publishCourse] Stripe price sync failed (non-blocking):', e))
       }
 
+      // Update cache met gepubliceerde blokken
+      if (currentLesson?.id) {
+        setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+      }
+      
       alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
     } catch (err) {
       console.error('[publishCourse] Error:', err)
@@ -750,6 +766,12 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
+    
+    // Sla huidige blokken op in cache (als we van een les wisselen)
+    if (currentLesson?.id) {
+      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+    }
+    
     if (type === 'lesson' && item && 'free' in item) {
       setCurrentLesson(item as Lesson)
       // Load blocks for this lesson
@@ -763,7 +785,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   }
 
   const loadBlocksForLesson = async (lessonId: string) => {
-    // Check lokale state eerst (voor nieuwe cursussen)
+    // Check cache EERST (niet-opgeslagen wijzigingen)
+    if (blocksCache[lessonId]) {
+      setBlocks(blocksCache[lessonId])
+      return
+    }
+    
+    // Check lokale state (voor nieuwe cursussen)
     const localLesson = course?.lessons?.find(l => l.id === lessonId)
     if (localLesson?.blocks && localLesson.blocks.length > 0) {
       setBlocks(localLesson.blocks)
@@ -819,6 +847,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const quizBlockTypes: BlockType[] = ['quiz']
   const availableBlockTypes = isQuizLesson ? quizBlockTypes : contentBlockTypes
 
+  // Helper om blocks en cache te updaten (zodat les-wissel blokken behoudt)
+  const setBlocksWithCache = useCallback((newBlocks: Block[]) => {
+    setBlocks(newBlocks)
+    if (currentLesson?.id) {
+      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: newBlocks }))
+    }
+  }, [currentLesson])
+
   const addBlock = (type: BlockType) => {
     const newBlock: Block = type === 'quiz'
       ? { id: uid(), type, question: '', option_type: 'text', options: [
@@ -826,7 +862,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           { id: uid(), text: '', image_url: '', correct: false },
         ] }
       : { id: uid(), type }
-    setBlocks([...blocks, newBlock])
+    setBlocksWithCache([...blocks, newBlock])
     setPickerOpen(false)
   }
 
@@ -845,12 +881,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   }
 
   const deleteBlock = (id: string) => {
-    setBlocks(blocks.filter(b => b.id !== id))
+    setBlocksWithCache(blocks.filter(b => b.id !== id))
   }
 
   const updateBlock = useCallback((blockId: string, updates: Partial<Block>) => {
-    setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, ...updates } : b))
-  }, [])
+    const updated = blocks.map(b => b.id === blockId ? { ...b, ...updates } : b)
+    setBlocks(updated)
+    if (currentLesson?.id) {
+      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: updated }))
+    }
+  }, [blocks, currentLesson])
 
   const addLesson = (type: 'content' | 'quiz' | 'exam' = 'content') => {
     if (!course) return
@@ -1687,7 +1727,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                       }
                     : b
                 })
-                setBlocks(updatedBlocks)
+                setBlocksWithCache(updatedBlocks)
                 break
               }
               attempts++
