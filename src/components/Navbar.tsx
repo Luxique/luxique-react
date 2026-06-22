@@ -4,12 +4,14 @@ import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { useTranslations } from 'next-intl'
+import { usePreviewMode } from '@/contexts/PreviewContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import { routing } from '@/i18n/routing'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
   const pathname = usePathname()
+  const { isPreview } = usePreviewMode()
   // Safe translation: returns key as fallback if context is missing (admin routes)
   let t: (k: string) => string
   try {
@@ -135,8 +137,8 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Language Switcher — only on locale routes (not admin), desktop only */}
-        {!pathname?.startsWith('/admin') && pathname?.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
+        {/* Language Switcher — only on locale routes (not admin), desktop only, NOT in preview mode */}
+        {!isPreview && !pathname?.startsWith('/admin') && pathname?.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
           <div className="hidden md:block">
             <LanguageSwitcher />
           </div>

@@ -15,6 +15,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <NextIntlClientProvider locale="nl" messages={nlMessages}>
       <AuthProvider>
+        {/* Navbar hidden on builder pages (builder has its own nav) */}
         {!isBuilderPage && <Navbar />}
         <main>{children}</main>
         <Footer />

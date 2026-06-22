@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
+import { PreviewProvider } from '@/contexts/PreviewContext'
 import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
@@ -2314,14 +2315,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 }}>
                   {currentContext === 'global' && (
                     <NextIntlClientProvider locale="nl" messages={nlMessages}>
-                      <CourseLandingClient
-                        {...mapBuilderToLandingProps(
-                          course,
-                          currentLesson ? course.lessons || [] : course.lessons || []
-                        )}
-                        reviews={REVIEWS}
-                        previewMode={true}
-                      />
+                      <PreviewProvider isPreview={true}>
+                        <CourseLandingClient
+                          {...mapBuilderToLandingProps(
+                            course,
+                            currentLesson ? course.lessons || [] : course.lessons || []
+                          )}
+                          reviews={REVIEWS}
+                          previewMode={true}
+                        />
+                      </PreviewProvider>
                     </NextIntlClientProvider>
                   )}
                   
