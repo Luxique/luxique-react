@@ -13,6 +13,7 @@ export interface Block {
   content?: string | {
     mux_asset_id?: string
     mux_playback_id?: string
+    mux_public_playback_id?: string
     [key: string]: unknown
   }
   url?: string

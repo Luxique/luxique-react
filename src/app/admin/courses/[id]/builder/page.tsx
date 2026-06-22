@@ -1001,16 +1001,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                       let savedPlaybackId: string | null = null
                       while (attempts < 90) {
                         await new Promise(r => setTimeout(r, 2000))
-                        const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
+                        const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}&is_free=true`)
                         const data = await statusRes.json()
-                        console.log(`[HERO UPLOAD] Poll ${attempts+1}: status=${data.status}, playback_id=${data.playback_id || 'none'}`)
-                        const { status, asset_id, playback_id } = data
+                        console.log(`[HERO UPLOAD] Poll ${attempts+1}: status=${data.status}, playback_id=${data.playback_id || 'none'}, public_playback_id=${data.public_playback_id || 'none'}`)
+                        const { status, asset_id, playback_id, public_playback_id } = data
                         
                         // Save playback_id as soon as it exists — don't wait for 'ready'
                         if (playback_id && !savedPlaybackId) {
                           console.log('[HERO UPLOAD] ✅ Got playback_id:', playback_id, '(status:', status, ')')
                           savedPlaybackId = playback_id
-                          setCourse(prev => prev ? { ...prev, heroMuxPlaybackId: playback_id, heroMuxAssetId: asset_id } : prev)
+                          setCourse(prev => prev ? { ...prev, heroMuxPlaybackId: playback_id, heroMuxAssetId: asset_id, heroMuxPublicPlaybackId: public_playback_id } : prev)
                           setHeroProcessing(false)
                           break
                         }
@@ -1629,8 +1629,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             let attempts = 0
             while (attempts < 30) {
               await new Promise(r => setTimeout(r, 2000))
-              const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}`)
-              const { status, asset_id, playback_id } = await statusRes.json()
+              const lessonIsFree = currentLesson?.free ?? false
+              const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}&is_free=${lessonIsFree}`)
+              const { status, asset_id, playback_id, public_playback_id } = await statusRes.json()
               if (status === 'ready' && playback_id) {
                 // Update block content with Mux IDs — token is fetched on-demand by LuxiqueMuxPlayer
                 const updatedBlocks = blocks.map(b => {
@@ -1642,6 +1643,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                           ...currentContent,
                           mux_asset_id: asset_id,
                           mux_playback_id: playback_id,
+                          mux_public_playback_id: public_playback_id,
                         }
                       }
                     : b

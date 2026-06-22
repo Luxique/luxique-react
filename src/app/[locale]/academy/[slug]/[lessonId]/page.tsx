@@ -32,6 +32,7 @@ function extractBlockContent(block: Block) {
     subtitle: (c?.subtitle as string) || block.subtitle,
     body: typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : ''),
     muxPlaybackId: (c?.mux_playback_id as string) || undefined,
+    muxPublicPlaybackId: (c?.mux_public_playback_id as string) || undefined,
     question: (c?.question as string) || block.question,
     options: (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
     optionType: (c?.option_type as string) || block.option_type || ((c?.options as Array<{ image_url?: string }>)?.some((o: { image_url?: string }) => o.image_url) ? 'image' : 'text'),
@@ -428,7 +429,7 @@ export default function LessonPage() {
                           <div className="video" style={{ position: 'relative' }}>
                             <LuxiqueMuxPlayer
                               key={bc.muxPlaybackId}
-                              playbackId={bc.muxPlaybackId}
+                              playbackId={lesson.is_free ? (bc.muxPublicPlaybackId || bc.muxPlaybackId) : bc.muxPlaybackId}
                               variant="lesson"
                               title={block.title || 'Video'}
                               signed={!lesson.is_free}
