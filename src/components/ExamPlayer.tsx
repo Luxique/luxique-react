@@ -187,14 +187,12 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const handleDownloadCertificate = async () => {
     setGeneratingPdf(true)
     try {
-      const res = await fetch('/api/exam/certificate', {
+      const res = await fetch('/api/certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user?.id,
           courseId,
-          courseTitle,
-          lessonId,
         }),
       })
       if (res.ok) {

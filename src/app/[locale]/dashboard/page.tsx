@@ -18,6 +18,12 @@ type PendingBooking = {
 const RESCHEDULE_SLOTS = ['09:00', '12:00']
 type LessonRow = { id: string; title: string; slug: string; sort_order: number; lesson_type: string; course_id: string }
 type ProgressRow = { lesson_id: string; completed: boolean }
+
+type ExamCert = {
+  hasExam: boolean
+  examPassed: boolean
+  certDownloadable: boolean
+}
 type CourseProgress = {
   course: Course
   totalLessons: number
@@ -26,6 +32,8 @@ type CourseProgress = {
   nextLesson: LessonRow | null
   nextLessonNumber: number
   isDone: boolean
+  examPassed: boolean
+  hasExam: boolean
 }
 
 function formatDateNL(iso: string) {
@@ -62,6 +70,7 @@ export default function DashboardPage() {
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([])
   const [totalCompletedLessons, setTotalCompletedLessons] = useState(0)
   const [progressLoading, setProgressLoading] = useState(true)
+  const [downloadingCert, setDownloadingCert] = useState<string | null>(null)
   const revealRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
@@ -69,6 +78,32 @@ export default function DashboardPage() {
     supabase.from('profiles').select('first_name').eq('id', user.id).single()
       .then(({ data }) => setProfileFirstName(data?.first_name || ''))
   }, [user])
+
+  const handleDownloadCertificate = async (courseId: string, courseTitle: string) => {
+    if (!user) return
+    setDownloadingCert(courseId)
+    try {
+      const res = await fetch('/api/certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, courseId }),
+      })
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `LUXIQUE-Certificate-${courseTitle}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+      } else {
+        console.error('Certificate download failed:', await res.text())
+      }
+    } catch (err) {
+      console.error('Certificate download error:', err)
+    }
+    setDownloadingCert(null)
+  }
 
   useEffect(() => {
     if (!loading && !user) router.push('/login?redirect=/dashboard')
@@ -109,14 +144,17 @@ export default function DashboardPage() {
       // Compute per-course progress
       const cp: CourseProgress[] = courses.map(course => {
         const cLessons = allLessons.filter(l => l.course_id === course.id && (l.lesson_type || 'content') !== 'exam')
+        const examLesson = allLessons.find(l => l.course_id === course.id && l.lesson_type === 'exam')
         const completedCount = cLessons.filter(l => progressMap.get(l.id)).length
         const pct = cLessons.length > 0 ? Math.round((completedCount / cLessons.length) * 100) : 0
         // Find next uncompleted lesson (first incomplete, by sort order)
         const next = cLessons.find(l => !progressMap.get(l.id)) || null
         const nextNum = next ? cLessons.indexOf(next) + 1 : cLessons.length
+        const examPassed = examLesson ? !!progressMap.get(examLesson.id) : false
         return {
           course, totalLessons: cLessons.length, completedLessons: completedCount,
-          pct, nextLesson: next, nextLessonNumber: nextNum, isDone: pct === 100
+          pct, nextLesson: next, nextLessonNumber: nextNum, isDone: pct === 100,
+          examPassed, hasExam: !!examLesson
         }
       })
 
@@ -497,17 +535,44 @@ export default function DashboardPage() {
                           <span>{cp.pct}%</span>
                         </div>
                         {/* CTA */}
-                        <div style={{ marginTop:'auto', paddingTop:20 }}>
-                          <a href={lpath(`/academy/${cp.course.slug}`)} style={{
-                            display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
-                            color: cp.isDone ? '#B08D4F' : '#1C1814', fontWeight:500, fontSize:'.88rem',
-                            border: `1px solid ${cp.isDone ? '#B08D4F' : '#1C1814'}`, borderRadius:100, padding:'10px 22px',
-                            transition:'background .25s, color .25s',
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = cp.isDone ? '#B08D4F' : '#1C1814'; e.currentTarget.style.color = '#FBF8F2' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = cp.isDone ? '#B08D4F' : '#1C1814' }}>
-                            {cp.isDone ? 'Certificaat bekijken →' : 'Verder leren →'}
-                          </a>
+                        <div style={{ marginTop:'auto', paddingTop:20, display:'flex', gap:10, flexWrap:'wrap' }}>
+                          {cp.examPassed ? (
+                            <button
+                              onClick={() => handleDownloadCertificate(cp.course.id, cp.course.title)}
+                              disabled={downloadingCert === cp.course.id}
+                              style={{
+                                display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
+                                color:'#FBF8F2', fontWeight:500, fontSize:'.88rem',
+                                background:'linear-gradient(180deg,#E4C98A,#C4A265)',
+                                border:'none', borderRadius:100, padding:'10px 22px', cursor:'pointer',
+                                transition:'opacity .25s', opacity: downloadingCert === cp.course.id ? 0.6 : 1,
+                              }}
+                            >
+                              {downloadingCert === cp.course.id ? 'PDF genereren...' : '⬇ Download certificaat'}
+                            </button>
+                          ) : cp.isDone && cp.hasExam ? (
+                            <a href={lpath(`/academy/${cp.course.slug}`)} style={{
+                              display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
+                              color:'#B08D4F', fontWeight:500, fontSize:'.88rem',
+                              border: '1px solid #B08D4F', borderRadius:100, padding:'10px 22px',
+                              transition:'background .25s, color .25s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#B08D4F'; e.currentTarget.style.color = '#FBF8F2' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#B08D4F' }}>
+                              Eindtoets maken →
+                            </a>
+                          ) : (
+                            <a href={lpath(`/academy/${cp.course.slug}`)} style={{
+                              display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
+                              color: cp.isDone ? '#B08D4F' : '#1C1814', fontWeight:500, fontSize:'.88rem',
+                              border: `1px solid ${cp.isDone ? '#B08D4F' : '#1C1814'}`, borderRadius:100, padding:'10px 22px',
+                              transition:'background .25s, color .25s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = cp.isDone ? '#B08D4F' : '#1C1814'; e.currentTarget.style.color = '#FBF8F2' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = cp.isDone ? '#B08D4F' : '#1C1814' }}>
+                              {cp.isDone ? 'Certificaat bekijken →' : 'Verder leren →'}
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>
