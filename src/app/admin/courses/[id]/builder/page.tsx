@@ -1990,7 +1990,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             <div className="flex-1">
               <div className="font-['Cormorant_Garamond'] text-[17px] font-medium text-[#1E1A14] tracking-[-0.01em]">
                 {currentContext === 'global' && 'Cursus overzicht'}
-                {currentContext === 'lesson' && currentLesson && `${currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${currentLesson.num}`} — ${currentLesson.name}`}
+                {currentContext === 'lesson' && currentLesson && (() => {
+                  const contentIndex = (course?.lessons || [])
+                    .filter(l => l.lesson_type === 'content' || l.lesson_type === undefined)
+                    .findIndex(l => l.id === currentLesson.id)
+                  const actualNum = contentIndex !== -1 ? contentIndex + 1 : currentLesson.num
+                  return currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${actualNum} — ${currentLesson.name}`
+                })()}
                 {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
               </div>
               <div className="text-[11px] text-[#7A7268] font-light">
@@ -2209,7 +2215,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                       <div className="max-w-4xl mx-auto">
                         <div className="mb-8">
                           <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">
-                            {currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${currentLesson.num}`}: {currentLesson.name}
+                            {(() => {
+                              const contentIndex = (course?.lessons || [])
+                                .filter(l => l.lesson_type === 'content' || l.lesson_type === undefined)
+                                .findIndex(l => l.id === currentLesson.id)
+                              const actualNum = contentIndex !== -1 ? contentIndex + 1 : currentLesson.num
+                              return currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${actualNum}`
+                            })()}: {currentLesson.name}
                           </h1>
                           <p className="text-[#7A7268]">
                             {currentLesson.duration && (
