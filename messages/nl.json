@@ -745,6 +745,7 @@
     "finalMail": "Email info@luxique.nl"
   },
   "Policies": {
+    "disclaimer": "Deze Engelse versie is een vertaling ten behoeve van uw gemak. De Nederlandse versie van deze voorwaarden en beleidsregels is juridisch bindend; in geval van een discrepantie prevaleert de Nederlandse tekst.",
     "heroEyebrow": "Goed om te weten",
     "heroTitlePlain": "Voorwaarden &",
     "heroTitleEm": "beleid",
@@ -777,7 +778,7 @@
     "art1Def1Label": "LUXIQUE / wij:",
     "art1Def1": "de eenmanszaak (KvK 94764158), geëxploiteerd onder de naam LUXIQUE.",
     "art1Def2Label": "Klant:",
-    "art1Def2": "iedere natuurlijke persoon die een behandeling, cursus, traject of ander aanbod afneemt.",
+    "art1Def2": "ieder natuurlijke persoon die een behandeling, cursus, traject of ander aanbod afneemt.",
     "art1Def3Label": "Behandeling:",
     "art1Def3": "een lashbehandeling (nieuwe set, refill/opvulling) op afspraak in de studio.",
     "art1Def4Label": "Online cursus:",
@@ -810,10 +811,13 @@
     "art6_2": "6.2 Bij annuleren, verplaatsen of niet verschijnen binnen 24 uur vóór de aanvang van de afspraak vervalt de aanbetaling en bestaat geen recht op terugbetaling of verrekening. De aanbetaling strekt in dat geval ter vergoeding van de exclusief voor jou gereserveerde tijd en de reeds verrichte voorbereiding. Dit geldt ook wanneer de verhindering buiten jouw schuld ontstaat, zoals — maar niet beperkt tot — autopech, vertraging of uitval van openbaar vervoer, het ontbreken van vervoer, of een ziek familielid.",
     "art6_3": "6.3 Kom je meer dan 20 minuten na de afgesproken starttijd, dan kan de behandeling niet meer volledig worden uitgevoerd, vervalt de afspraak en vervalt de aanbetaling. LUXIQUE mag de behandeling in dat geval naar eigen inzicht alsnog verkort uitvoeren binnen de resterende tijd; dit is geen recht van de klant en geeft geen recht op (gedeeltelijke) terugbetaling.",
     "art6CursusSub": "Persoonlijke trajecten / workshops / cursussen op locatie",
+    "art6_4Num": "6.4",
     "art6_4Label": "Annuleren tot 7 dagen vóór start:",
     "art6_4": "je krijgt het betaalde bedrag terug, min € 130 voor reeds ingekochte materialen. Je annulering moet ons uiterlijk 7 dagen vóór de startdatum bereiken via info@luxique.nl.",
+    "art6_5Num": "6.5",
     "art6_5Label": "Tussen 7 en 3 dagen vóór start:",
     "art6_5": "je kunt de cursus eenmalig kosteloos verplaatsen naar andere data. Terugbetaling is niet meer mogelijk.",
+    "art6_6Num": "6.6",
     "art6_6Label": "Binnen 3 dagen vóór start of na aanvang:",
     "art6_6": "geen restitutie en geen verplaatsing meer mogelijk. De cursusdagen zijn exclusief voor jou gereserveerd.",
     "art6OnlineSub": "Online cursussen",
@@ -901,7 +905,7 @@
     "priv7e": "Vercel — hosting van de website;",
     "priv7f": "Anthropic — de AI-chatbot op de website;",
     "priv7g": "mijndomein — domein en e-mail.",
-    "priv7Outro": "Wij verkopen je gegevens nooit aan derden.",
+    "priv7Outro": "We verkopen je gegevens nooit aan derden.",
     "priv8Title": "8. Cookies en statistieken",
     "priv8": "Onze website gebruikt cookies en Vercel Analytics om het gebruik te meten, en mogelijk een Meta Pixel voor advertenties. Zie de cookieverklaring.",
     "priv9Title": "9. Jouw rechten",
@@ -965,10 +969,7 @@
     "bizEmail": "info@luxique.nl",
     "bizPhone": "+31 6 57729588",
     "bizInstagram": "@lashedbychiva",
-    "bizWebsite": "www.luxique.nl",
-    "art6_4Num": "6.4",
-    "art6_5Num": "6.5",
-    "art6_6Num": "6.6"
+    "bizWebsite": "www.luxique.nl"
   },
   "Academy": {
     "heroEyebrow": "LXQ Academy",
