@@ -136,7 +136,7 @@ export default function Navbar() {
         </div>
 
         {/* Language Switcher — only on locale routes (not admin), desktop only */}
-        {pathname.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
+        {pathname.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && !pathname.startsWith('/admin') && (
           <div className="hidden md:block">
             <LanguageSwitcher />
           </div>
