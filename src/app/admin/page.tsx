@@ -161,14 +161,14 @@ export default function AdminPage() {
                 {[
                   { label: 'Inkomen deze maand', value: `€${monthlyRevenue.toLocaleString('nl-NL')}`, sub: `${thisMonth.length} betalingen`, accent: true },
                   { label: 'Totaal inkomen', value: `€${totalRevenue.toLocaleString('nl-NL')}`, sub: `${enrollments.length} inschrijvingen` },
-                  { label: 'Actieve studenten', value: String(activeStudents), sub: `${profiles.length} totaal` },
+                  { label: 'Actieve studenten', value: String(activeStudents), sub: `${profiles.length} totaal`, href: '/admin/customers' },
                   { label: 'Aankomende afspraken', value: String(upcomingBookings.length), sub: 'deze week' },
                 ].map(s => (
-                  <div key={s.label} className="bg-white rounded-2xl p-5 border border-[#eee]">
+                  <a key={s.label} href={s.href || '#'} className={`bg-white rounded-2xl p-5 border border-[#eee] block ${s.href ? 'hover:border-[#D4AF37] transition' : ''}`}>
                     <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">{s.label}</p>
                     <p className={`text-[28px] font-['Cormorant_Garamond'] leading-1 ${s.accent ? 'text-[#C4A265]' : 'text-[#1a1a1a]'}`}>{s.value}</p>
                     <p className="text-[11px] text-[#aaa] mt-1">{s.sub}</p>
-                  </div>
+                  </a>
                 ))}
               </div>
 

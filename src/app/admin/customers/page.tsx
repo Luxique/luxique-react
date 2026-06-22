@@ -15,8 +15,16 @@ type Profile = {
 type Enrollment = {
   id: string; course_id: string; status: string; payment_method: string | null;
   payment_amount: number | null; paid_at: string | null; enrolled_at: string;
-  granted_by: string | null; courses: { title: string }[]
+  granted_by: string | null; stripe_payment_intent_id: string | null;
+  courses: { title: string }[]
 }
+
+type LessonProgress = {
+  id: string; lesson_id: string; completed: boolean; completed_at: string | null;
+  course_id: string; last_position_seconds: number; quiz_answers: Record<string, unknown>
+}
+
+type Lesson = { id: string; title: string; sort_order: number }
 
 type Booking = {
   id: string; treatment_name: string; appointment_date: string; status: string; notes: string | null
@@ -30,6 +38,8 @@ export default function AdminCustomersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [progress, setProgress] = useState<LessonProgress[]>([])
+  const [lessonsByCourse, setLessonsByCourse] = useState<Record<string, Lesson[]>>({})
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading])
@@ -42,9 +52,32 @@ export default function AdminCustomersPage() {
   useEffect(() => {
     if (!selectedId) return
     supabase.from('enrollments')
-      .select('id, course_id, status, payment_method, payment_amount, paid_at, enrolled_at, granted_by, courses(title)')
+      .select('id, course_id, status, payment_method, payment_amount, paid_at, enrolled_at, granted_by, stripe_payment_intent_id, courses(title)')
       .eq('user_id', selectedId).order('enrolled_at', { ascending: false })
-      .then(({ data }) => setEnrollments((data || []) as Enrollment[]))
+      .then(({ data }) => {
+        const enrolled = (data || []) as Enrollment[]
+        setEnrollments(enrolled)
+        // Fetch lessons for each enrolled course
+        const courseIds = Array.from(new Set(enrolled.map(e => e.course_id)))
+        if (courseIds.length > 0) {
+          supabase.from('lessons')
+            .select('id, title, sort_order, course_id')
+            .in('course_id', courseIds)
+            .order('sort_order')
+            .then(({ data: lessonsData }) => {
+              const grouped: Record<string, Lesson[]> = {}
+              ;(lessonsData || []).forEach((l: Lesson & { course_id: string }) => {
+                if (!grouped[l.course_id]) grouped[l.course_id] = []
+                grouped[l.course_id].push({ id: l.id, title: l.title, sort_order: l.sort_order })
+              })
+              setLessonsByCourse(grouped)
+            })
+        }
+      })
+    supabase.from('lesson_progress')
+      .select('id, lesson_id, completed, completed_at, course_id, last_position_seconds, quiz_answers')
+      .eq('user_id', selectedId)
+      .then(({ data }) => setProgress((data || []) as LessonProgress[]))
     supabase.from('bookings')
       .select('id, treatment_name, appointment_date, status, notes')
       .eq('user_id', selectedId).order('appointment_date', { ascending: false })
@@ -171,30 +204,93 @@ export default function AdminCustomersPage() {
               {/* Academy */}
               <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Academy — Cursussen</h3>
+                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Academy — Cursussen & Voortgang</h3>
                   <span className="text-[11px] bg-[#D4AF37]/10 text-[#D4AF37] px-2 py-0.5 rounded-full font-medium">{enrollments.length} inschrijvingen</span>
                 </div>
                 {enrollments.length > 0 ? (
-                  <div className="space-y-2">
-                    {enrollments.map(e => (
-                      <div key={e.id} className="flex items-center justify-between py-3 border-b border-[#f5f5f5] last:border-0">
-                        <div>
-                          <p className="text-[13px] font-medium">{e.courses?.[0]?.title || 'Cursus'}</p>
-                          <p className="text-[11px] text-[#aaa]">Ingeschreven {fmt(e.enrolled_at)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[13px] font-medium">{e.payment_amount ? `€${e.payment_amount}` : '—'}</p>
-                          <div className="flex items-center gap-2 justify-end mt-0.5">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              e.payment_method === 'stripe' ? 'bg-purple-50 text-purple-600' :
-                              e.payment_method === 'manual' ? 'bg-[#D4AF37]/10 text-[#D4AF37]' :
-                              'bg-[#f5f5f5] text-[#888]'
-                            }`}>{e.payment_method || 'geen'}</span>
-                            {e.paid_at && <span className="text-[10px] text-green-500">✓ Betaald {fmt(e.paid_at)}</span>}
+                  <div className="space-y-4">
+                    {enrollments.map(e => {
+                      const courseLessons = lessonsByCourse[e.course_id] || []
+                      const courseProgress = progress.filter(p => p.course_id === e.course_id)
+                      const completedCount = courseProgress.filter(p => p.completed).length
+                      const totalCount = courseLessons.length
+                      const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+
+                      // Access duration (12 months from enrolled_at)
+                      const enrolledDate = new Date(e.enrolled_at)
+                      const expiryDate = new Date(enrolledDate)
+                      expiryDate.setDate(expiryDate.getDate() + 365)
+                      const daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                      const isExpired = daysLeft < 0
+                      const monthsLeft = Math.floor(Math.abs(daysLeft) / 30)
+
+                      return (
+                        <div key={e.id} className="border border-[#f0f0f0] rounded-xl p-4">
+                          {/* Course header */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <p className="text-[14px] font-semibold">{e.courses?.[0]?.title || 'Cursus'}</p>
+                              <p className="text-[11px] text-[#aaa] mt-0.5">Ingeschreven {fmt(e.enrolled_at)}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[14px] font-semibold">{e.payment_amount ? `€${e.payment_amount}` : '—'}</p>
+                              <div className="flex items-center gap-1.5 justify-end mt-0.5">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                                  e.payment_method === 'stripe' ? 'bg-purple-50 text-purple-600' :
+                                  e.payment_method === 'manual' ? 'bg-[#D4AF37]/10 text-[#D4AF37]' :
+                                  'bg-[#f5f5f5] text-[#888]'
+                                }`}>{e.payment_method || 'geen'}</span>
+                                {e.stripe_payment_intent_id && (
+                                  <span className="text-[10px] text-[#bbb] font-mono" title={e.stripe_payment_intent_id}>Stripe✓</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
+
+                          {/* Access duration bar */}
+                          <div className="flex items-center gap-2 mb-3 text-[11px]">
+                            <span className={`px-2 py-0.5 rounded-full font-medium ${isExpired ? 'bg-red-50 text-red-500' : daysLeft < 30 ? 'bg-orange-50 text-orange-500' : 'bg-green-50 text-green-600'}`}>
+                              {isExpired ? `Verlopen ${Math.abs(monthsLeft)} md geleden` : daysLeft < 30 ? `${daysLeft} dagen over` : `${monthsLeft} maanden over`}
+                            </span>
+                            <span className="text-[#aaa]">Toegang tot {fmt(expiryDate.toISOString())}</span>
+                          </div>
+
+                          {/* Progress bar */}
+                          {totalCount > 0 && (
+                            <div className="mb-2">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11px] font-medium text-[#666]">Voortgang</span>
+                                <span className="text-[11px] font-semibold text-[#1a1a1a]">{completedCount}/{totalCount} lessen · {pct}%</span>
+                              </div>
+                              <div className="h-2 bg-[#f0f0f0] rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : pct > 0 ? 'bg-[#D4AF37]' : 'bg-transparent'}`} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Lesson breakdown */}
+                          {courseLessons.length > 0 && (
+                            <div className="space-y-1 mt-2">
+                              {courseLessons.map(lesson => {
+                                const lp = courseProgress.find(p => p.lesson_id === lesson.id)
+                                const hasQuiz = lp?.quiz_answers && Object.keys(lp.quiz_answers).length > 0
+                                return (
+                                  <div key={lesson.id} className="flex items-center gap-2 py-1 text-[12px]">
+                                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] ${lp?.completed ? 'bg-green-100 text-green-600' : 'bg-[#f0f0f0] text-[#aaa]'}`}>
+                                      {lp?.completed ? '✓' : '○'}
+                                    </span>
+                                    <span className={lp?.completed ? 'text-[#333]' : 'text-[#999]'}>{lesson.title}</span>
+                                    {hasQuiz && (
+                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-500 font-medium">quiz</span>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className="text-[13px] text-[#888] py-2">Geen cursussen</p>

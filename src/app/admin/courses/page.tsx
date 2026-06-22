@@ -22,6 +22,7 @@ interface Course {
   duration_seconds?: number
   duration_minutes?: number
   students_count?: number
+  revenue?: number
   has_quiz?: boolean
   has_certificate?: boolean
 }
@@ -76,11 +77,14 @@ export default function CoursesOverviewPage() {
             .select('*', { count: 'exact', head: true })
             .eq('course_id', course.id)
 
-          // Count enrollments
-          const { count: enrollmentsCount } = await supabase
+          // Count enrollments + get actual payment amounts
+          const { data: enrollmentData } = await supabase
             .from('enrollments')
-            .select('*', { count: 'exact', head: true })
+            .select('payment_amount, payment_method')
             .eq('course_id', course.id)
+
+          const enrollmentsCount = enrollmentData?.length || 0
+          const courseRevenue = enrollmentData?.reduce((sum, e) => sum + (e.payment_amount || 0), 0) || 0
 
           // Get total duration from lessons
           const { data: lessonsData } = await supabase
@@ -94,6 +98,7 @@ export default function CoursesOverviewPage() {
             ...course,
             lessons_count: lessonsCount || 0,
             students_count: enrollmentsCount || 0,
+            revenue: courseRevenue,
             duration_minutes: totalMinutes
           }
         })
@@ -101,9 +106,9 @@ export default function CoursesOverviewPage() {
 
       setCourses(coursesWithCounts)
 
-      // Calculate stats — alleen echte data
+      // Calculate stats — echte data uit payment_amount
       const totalStudents = coursesWithCounts.reduce((sum, c) => sum + (c.students_count || 0), 0)
-      const totalRevenue = coursesWithCounts.reduce((sum, c) => sum + Math.round(((c.price || 0) / 100)) * (c.students_count || 0), 0)
+      const totalRevenue = coursesWithCounts.reduce((sum, c) => sum + (c.revenue || 0), 0)
 
       setStats({
         totalStudents,
@@ -492,7 +497,7 @@ export default function CoursesOverviewPage() {
                       </div>
                       <div className="text-right">
                         <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1E1A14] leading-none tracking-[-0.01em]">
-                          {formatRevenue((course.price || 0) * (course.students_count || 0))}
+                          {formatRevenue(course.revenue || 0)}
                         </div>
                         <div className="text-[9.5px] text-[#7A7268] tracking-[0.1em] uppercase">
                           Omzet
