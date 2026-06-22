@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
 
@@ -41,6 +42,8 @@ function isWithin24h(slotStart: string) {
 export default function DashboardPage() {
   const { user, enrollments, loading } = useAuth()
   const router = useRouter()
+  const locale = useLocale() as string
+  const lpath = (p: string) => `/${locale}${p}`
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [pendingBookings, setPendingBookings] = useState<PendingBooking[]>([])
@@ -394,7 +397,7 @@ export default function DashboardPage() {
                     <p style={{ color:'#46403A', fontSize:'.95rem' }}>Alle lessen voltooid 🎉</p>
                   )}
                   {resumeCourse.nextLesson && (
-                    <a href={`/academy/${resumeCourse.course.slug}/${resumeCourse.nextLesson.id}`} style={{
+                    <a href={lpath(`/academy/${resumeCourse.course.slug}/${resumeCourse.nextLesson.id}`)} style={{
                       display:'inline-flex', alignItems:'center', gap:10, marginTop:20,
                       background:'#B08D4F', color:'#1C1814', textDecoration:'none',
                       fontWeight:500, fontSize:'.95rem', padding:'13px 26px', borderRadius:100,
@@ -429,7 +432,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize:32, marginBottom:12 }}>✦</div>
                 <p style={{ fontSize:'1.05rem', color:'#1C1814', fontWeight:500, marginBottom:4 }}>Nog geen cursus</p>
                 <p style={{ fontSize:'.9rem', color:'#888', marginBottom:20 }}>Ontdek de Academy en start vandaag nog.</p>
-                <a href="/courses" style={{ display:'inline-block', background:'#B08D4F', color:'#1C1814', textDecoration:'none', fontWeight:500, fontSize:'.9rem', padding:'12px 28px', borderRadius:100 }}>
+                <a href={lpath('/courses')} style={{ display:'inline-block', background:'#B08D4F', color:'#1C1814', textDecoration:'none', fontWeight:500, fontSize:'.9rem', padding:'12px 28px', borderRadius:100 }}>
                   Ontdek de Academy →
                 </a>
               </div>
@@ -456,7 +459,7 @@ export default function DashboardPage() {
               <div>
                 <div className="dash-reveal" style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:24, gap:18, flexWrap:'wrap' }}>
                   <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814' }}>Mijn cursussen</h3>
-                  <a href="/courses" style={{ textDecoration:'none', color:'#46403A', fontSize:'.88rem', borderBottom:'1px solid rgba(28,24,20,.13)', paddingBottom:2 }}>Alle cursussen bekijken</a>
+                  <a href={lpath('/courses')} style={{ textDecoration:'none', color:'#46403A', fontSize:'.88rem', borderBottom:'1px solid rgba(28,24,20,.13)', paddingBottom:2 }}>Alle cursussen bekijken</a>
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:22 }}>
                   {courseProgress.map(cp => (
@@ -495,7 +498,7 @@ export default function DashboardPage() {
                         </div>
                         {/* CTA */}
                         <div style={{ marginTop:'auto', paddingTop:20 }}>
-                          <a href={`/academy/${cp.course.slug}`} style={{
+                          <a href={lpath(`/academy/${cp.course.slug}`)} style={{
                             display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
                             color: cp.isDone ? '#B08D4F' : '#1C1814', fontWeight:500, fontSize:'.88rem',
                             border: `1px solid ${cp.isDone ? '#B08D4F' : '#1C1814'}`, borderRadius:100, padding:'10px 22px',
@@ -575,7 +578,7 @@ export default function DashboardPage() {
             {courseProgress.length > 0 ? (
               <div className="space-y-3">
                 {courseProgress.map(cp => (
-                  <a key={cp.course.id} href={`/academy/${cp.course.slug}`} style={{ display:'flex', alignItems:'center', gap:20, background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', textDecoration:'none', transition:'border-color .2s' }}
+                  <a key={cp.course.id} href={lpath(`/academy/${cp.course.slug}`)} style={{ display:'flex', alignItems:'center', gap:20, background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', textDecoration:'none', transition:'border-color .2s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor='#B08D4F'}
                     onMouseLeave={e => e.currentTarget.style.borderColor='rgba(28,24,20,.13)'}>
                     <div style={{ width:64, height:64, borderRadius:14, background:'#f5f5f5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, flexShrink:0 }}>🎬</div>
@@ -594,7 +597,7 @@ export default function DashboardPage() {
               <div style={{ background:'#FBF8F2', borderRadius:20, padding:'48px 32px', border:'1px solid rgba(28,24,20,.13)', textAlign:'center' }}>
                 <div style={{ fontSize:36, marginBottom:16 }}>✦</div>
                 <p style={{ fontSize:'1rem', color:'#888', marginBottom:20 }}>Je bent nog niet ingeschreven voor een cursus</p>
-                <a href="/courses" style={{ display:'inline-block', padding:'12px 32px', borderRadius:100, background:'#B08D4F', color:'#1C1814', fontWeight:500, fontSize:'.9rem', textDecoration:'none' }}>Bekijk cursussen</a>
+                <a href={lpath('/courses')} style={{ display:'inline-block', padding:'12px 32px', borderRadius:100, background:'#B08D4F', color:'#1C1814', fontWeight:500, fontSize:'.9rem', textDecoration:'none' }}>Bekijk cursussen</a>
               </div>
             )}
           </div>

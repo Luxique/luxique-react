@@ -15,7 +15,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // For admin routes, apply security headers only (no intl processing)
-  if (pathname.startsWith('/admin')) {
+  // /cursus/ is outside [locale]/ — skip intl redirect to avoid 404
+  if (pathname.startsWith('/admin') || pathname.startsWith('/cursus')) {
     const response = NextResponse.next()
     response.headers.set('Content-Security-Policy', [
       "default-src 'self'",
@@ -57,5 +58,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Skip static files, API routes, admin routes, and Next internals
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api|admin).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api|admin|cursus).*)'],
 }

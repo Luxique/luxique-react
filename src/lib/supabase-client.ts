@@ -8,7 +8,9 @@ function makeClient(): SupabaseClient {
       get: () => () => Promise.resolve({ data: null, error: null })
     })
   }
-  return createClient(url, key)
+  return createClient(url, key, {
+    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true },
+  })
 }
 
 let _client: SupabaseClient | null = null

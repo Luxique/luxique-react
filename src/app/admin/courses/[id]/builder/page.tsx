@@ -1,5 +1,6 @@
 'use client'
 
+import BuilderErrorBoundary from './BuilderErrorBoundary'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
@@ -198,7 +199,7 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
 function uid() { return crypto.randomUUID() }
 
 /* ── Main Course Builder Component ── */
-export default function CourseBuilderPage({ params }: { params: { id: string } }) {
+function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const { user, role, loading } = useAuth()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
@@ -2336,5 +2337,12 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
         </div>
       </div>
     </div>
+  )
+}
+export default function CourseBuilderPage(props: { params: { id: string } }) {
+  return (
+    <BuilderErrorBoundary>
+      <CourseBuilderPageInner {...props} />
+    </BuilderErrorBoundary>
   )
 }
