@@ -4,6 +4,8 @@ import BuilderErrorBoundary from './BuilderErrorBoundary'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { NextIntlClientProvider } from 'next-intl'
+import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
@@ -2187,14 +2189,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   margin: previewDevice === 'mobile' ? '0 auto' : undefined,
                 }}>
                   {currentContext === 'global' && (
-                    <CourseLandingClient
-                      {...mapBuilderToLandingProps(
-                        course,
-                        currentLesson ? course.lessons || [] : course.lessons || []
-                      )}
-                      reviews={REVIEWS}
-                      previewMode={true}
-                    />
+                    <NextIntlClientProvider locale="nl" messages={nlMessages}>
+                      <CourseLandingClient
+                        {...mapBuilderToLandingProps(
+                          course,
+                          currentLesson ? course.lessons || [] : course.lessons || []
+                        )}
+                        reviews={REVIEWS}
+                        previewMode={true}
+                      />
+                    </NextIntlClientProvider>
                   )}
                   
                   {currentContext === 'lesson' && currentLesson && (
