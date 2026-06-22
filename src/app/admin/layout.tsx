@@ -18,8 +18,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Navbar hidden on builder pages (builder has its own nav) */}
         {!isBuilderPage && <Navbar />}
         <main>{children}</main>
-        <Footer />
-        <ChatWidget />
+        {/* Footer & ChatWidget hidden on builder pages */}
+        {!isBuilderPage && <Footer />}
+        {!isBuilderPage && <ChatWidget />}
       </AuthProvider>
     </NextIntlClientProvider>
   )
