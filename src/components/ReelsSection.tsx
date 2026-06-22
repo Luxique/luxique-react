@@ -19,16 +19,16 @@ const CDN_VID = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/publ
 const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images'
 
 const contentItems: ContentItem[] = [
-  { type: 'reel', title: 'Wispy Set Timelapse', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp?width=900&quality=75&resize=contain` },
-  { type: 'image', title: 'Wispy Volume Set', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp?width=900&quality=75&resize=contain` },
-  { type: 'reel', title: 'Eye Mapping Tutorial', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4`, posterUrl: `${CDN_IMG}/reel-poster-3.webp?width=900&quality=75&resize=contain` },
-  { type: 'reel', title: 'Before & After', views: '15.2K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-4.mp4`, posterUrl: `${CDN_IMG}/reel-poster-4.webp?width=900&quality=75&resize=contain` },
-  { type: 'image', title: 'Classic Lash Result', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp?width=900&quality=75&resize=contain` },
-  { type: 'reel', title: 'Lash Curl Guide', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4`, posterUrl: `${CDN_IMG}/reel-poster-2.webp?width=900&quality=75&resize=contain` },
-  { type: 'image', title: 'Close Up — Spikes', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp?width=900&quality=75&resize=contain` },
-  { type: 'reel', title: 'Volume Fan Making', views: '10.1K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-5.mp4`, posterUrl: `${CDN_IMG}/reel-poster-5.webp?width=900&quality=75&resize=contain` },
-  { type: 'image', title: 'Wet Set Look', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp?width=900&quality=75&resize=contain` },
-  { type: 'reel', title: 'Russian Volume', views: '1M', duration: '0:22', videoUrl: `${CDN_VID}/viral-russian-volume.mp4`, isViral: true, viralStats: '59.4K likes · 1M weergaven' },
+  { type: 'reel', title: 'Certificaat behaald 🎓', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp?width=900&quality=75&resize=contain` },
+  { type: 'image', title: 'Medusa ✨', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'Group workshop 👥', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4`, posterUrl: `${CDN_IMG}/reel-poster-3.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'Client intake 📋', views: '15.2K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-4.mp4`, posterUrl: `${CDN_IMG}/reel-poster-4.webp?width=900&quality=75&resize=contain` },
+  { type: 'image', title: 'Certified lash artist 💫', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'Your sign to become a lash artist 🔥', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4`, posterUrl: `${CDN_IMG}/reel-poster-2.webp?width=900&quality=75&resize=contain` },
+  { type: 'image', title: 'Our students at work 🎨', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'LUXIQUE Academy graduate 🏆', views: '10.1K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-5.mp4`, posterUrl: `${CDN_IMG}/reel-poster-5.webp?width=900&quality=75&resize=contain` },
+  { type: 'image', title: 'Certificaat behaald 🎓', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'Medusa 💫', views: '1M', duration: '0:22', videoUrl: `${CDN_VID}/viral-russian-volume.mp4`, isViral: true, viralStats: '59.4K likes · 1M weergaven' },
 ]
 
 function ContentCard({ item }: { item: ContentItem }) {
@@ -115,8 +115,8 @@ function ContentCard({ item }: { item: ContentItem }) {
         <div className="absolute top-3 left-3 z-10 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded-md text-[9px] text-white/60 font-medium uppercase tracking-wider">{isReel ? 'Reel' : 'Photo'}</div>
 
         {/* Bottom info */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-          <p className="text-[13px] text-white font-semibold leading-tight mb-1">{item.title}</p>
+        <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/85 via-black/50 to-transparent">
+          <p className="text-[14px] text-white font-semibold leading-tight mb-1 tracking-wide">{item.title}</p>
           {item.isViral && item.viralStats ? (
             <span className="text-[10px] font-medium" style={{ color: '#E0C078' }}>🔥 {item.viralStats}</span>
           ) : (
@@ -160,7 +160,7 @@ export default function ReelsSection() {
   }, [])
 
   return (
-    <section className="pt-20 pb-0 bg-[var(--dark)] relative overflow-hidden">
+    <section className="pt-12 pb-0 bg-[var(--dark)] relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[var(--dark)] via-[#1e1a15] to-[var(--dark)]" />
       <div className="relative z-10">
         {/* Header */}

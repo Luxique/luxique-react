@@ -30,8 +30,8 @@ export default function Home() {
       <OnderscheidMobile />
       <div className="ond-mob-overlay-target"><div id="oogvormen" data-theme-color="#FFFFFF" data-theme-dark="false" className="my-[28px] max-[860px]:my-0"><EyeShapes /></div></div>
       <Reveal><div id="behandelingen" data-theme-color="#FAFAFA" data-theme-dark="false" className="px-[14px] py-[28px] max-[860px]:px-[10px] max-[860px]:pt-0"><BeforeAfter /></div></Reveal>
-      <Reveal><div id="reels" data-theme-color="#0e0b09" data-theme-dark="true" className="my-[28px] max-[860px]:my-0"><ReelsSection /></div></Reveal>
-      <Reveal><div id="academy" data-theme-color="#0e0b09" data-theme-dark="true" style={{ background: 'radial-gradient(110% 70% at 50% -8%, rgba(176,141,79,.12), transparent 60%), linear-gradient(180deg, #201b17, #0e0b09 75%)', padding: 'clamp(20px,3vw,28px) 0' }}><div className="max-w-[1180px] mx-auto px-[28px]"><ComparisonTable theme="dark" /><AcademyHomeSection /></div></div></Reveal>
+      <Reveal><div id="reels" data-theme-color="#0e0b09" data-theme-dark="true" className="mt-[28px] mb-0 max-[860px]:my-0"><ReelsSection /></div></Reveal>
+      <Reveal><div id="academy" data-theme-color="#0e0b09" data-theme-dark="true" style={{ background: 'radial-gradient(110% 70% at 50% -8%, rgba(176,141,79,.12), transparent 60%), linear-gradient(180deg, #0e0b09, #0e0b09 75%)', padding: 'clamp(20px,3vw,28px) 0' }}><div className="max-w-[1180px] mx-auto px-[28px]"><ComparisonTable theme="dark" /><AcademyHomeSection /></div></div></Reveal>
       <Reveal><div id="reviews" data-theme-color="#141210" data-theme-dark="true"><ReviewsSection /></div></Reveal>
       <Reveal><div id="faq" data-theme-color="#0b0908" data-theme-dark="true"><FAQ /></div></Reveal>
     </>

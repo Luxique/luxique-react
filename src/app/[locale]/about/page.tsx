@@ -163,8 +163,9 @@ export default function AboutPage() {
           .about-page .cta .wrap{position:relative;z-index:1}
 
           @media(max-width:860px){
-            .about-page .intro-grid{grid-template-columns:1fr;gap:36px}
-            .about-page .portrait{max-width:80%;margin:0 auto}
+            .about-page .intro-grid{grid-template-columns:1fr;gap:28px}
+            .about-page .portrait{max-width:100%;margin:0 auto;aspect-ratio:4/5;order:-1}
+            .about-page .intro-grid .portrait{grid-row:1}
             .about-page .steps{grid-template-columns:1fr;gap:18px}
             .about-page .duo-grid{grid-template-columns:1fr;gap:18px}
             .about-page .ph2:nth-child(2){margin-top:0}
