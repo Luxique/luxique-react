@@ -44,6 +44,9 @@ export default function CoursesOverviewPage() {
     description: ''
   })
   const [loadingCourses, setLoadingCourses] = useState(true)
+  const [editingDesc, setEditingDesc] = useState<string | null>(null)
+  const [descDraft, setDescDraft] = useState('')
+  const [uploadingThumb, setUploadingThumb] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -118,6 +121,63 @@ export default function CoursesOverviewPage() {
       console.error('Error fetching courses:', error)
     } finally {
       setLoadingCourses(false)
+    }
+  }
+
+  // Thumbnail upload
+  const handleThumbnailUpload = async (courseId: string, file: File | undefined) => {
+    if (!file) return
+    setUploadingThumb(true)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const fileName = `${courseId}/thumbnail-${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('course-images')
+        .upload(fileName, file, { cacheControl: '3600', upsert: true })
+      if (uploadError) throw uploadError
+      const { data: urlData } = supabase.storage
+        .from('course-images')
+        .getPublicUrl(fileName)
+      const thumbUrl = `${urlData.publicUrl}?width=800&quality=80&resize=contain`
+      const { error: updateError } = await supabase
+        .from('courses')
+        .update({ thumbnail_url: thumbUrl })
+        .eq('id', courseId)
+      if (updateError) throw updateError
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, thumbnail_url: thumbUrl } : c))
+    } catch (err) {
+      alert('Thumbnail upload mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
+    } finally {
+      setUploadingThumb(false)
+    }
+  }
+
+  // Thumbnail delete
+  const handleThumbnailDelete = async (courseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ thumbnail_url: null })
+        .eq('id', courseId)
+      if (error) throw error
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, thumbnail_url: undefined } : c))
+    } catch (err) {
+      alert('Verwijderen mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
+    }
+  }
+
+  // Description save
+  const handleDescSave = async (courseId: string) => {
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({ description: descDraft })
+        .eq('id', courseId)
+      if (error) throw error
+      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, description: descDraft } : c))
+      setEditingDesc(null)
+    } catch (err) {
+      alert('Opslaan mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
     }
   }
 
@@ -393,7 +453,10 @@ export default function CoursesOverviewPage() {
                   onClick={() => router.push(`/admin/courses/${course.id}/builder`)}
                 >
                   {/* Thumbnail */}
-                  <div className="w-full aspect-video bg-gradient-to-br from-[#1e1a12] to-[#0f0c07] relative overflow-hidden flex items-center justify-center">
+                  <div
+                    className="w-full aspect-video bg-gradient-to-br from-[#1e1a12] to-[#0f0c07] relative overflow-hidden flex items-center justify-center group/thumb"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {course.thumbnail_url ? (
                       <img
                         src={course.thumbnail_url}
@@ -407,6 +470,28 @@ export default function CoursesOverviewPage() {
                         </svg>
                       </div>
                     )}
+                    {/* Thumbnail upload/edit/delete overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover/thumb:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover/thumb:opacity-100">
+                      <label className="cursor-pointer bg-white/90 hover:bg-white text-[#1a1a1a] text-[11px] font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+                        {course.thumbnail_url ? 'Wijzig' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleThumbnailUpload(course.id, e.target.files?.[0])}
+                        />
+                      </label>
+                      {course.thumbnail_url && (
+                        <button
+                          onClick={() => handleThumbnailDelete(course.id)}
+                          className="bg-white/90 hover:bg-red-50 text-[#888] hover:text-red-500 text-[11px] font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition"
+                          title="Verwijder thumbnail"
+                        >
+                          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                        </button>
+                      )}
+                    </div>
                     <span className={`absolute top-2.5 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2.5 py-1 rounded-full ${
                       course.status === 'published'
                         ? 'bg-[#4CAF82] text-white'
@@ -426,9 +511,40 @@ export default function CoursesOverviewPage() {
                     <p className="font-['Cormorant_Garamond',serif] text-[18px] font-normal text-[#1a1a1a] tracking-[-0.01em] mb-0.5">
                       {course.title}
                     </p>
-                    <p className="text-[11.5px] text-[#888] font-light mb-3">
-                      {course.description || 'Geen beschrijving'}
-                    </p>
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <p className="text-[11.5px] text-[#888] font-light flex-1">
+                        {course.description || 'Geen beschrijving'}
+                      </p>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); if (editingDesc === course.id) { setEditingDesc(null) } else { setDescDraft(course.description || ''); setEditingDesc(course.id) } }}
+                        className="flex-shrink-0 text-[10px] text-[#aaa] hover:text-[#C4A265] transition mt-0.5"
+                        title="Bewerk beschrijving"
+                      >
+                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+                      </button>
+                    </div>
+                    {editingDesc === course.id && (
+                      <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+                        <textarea
+                          value={descDraft}
+                          onChange={(e) => setDescDraft(e.target.value)}
+                          className="w-full text-[12px] border border-[#C4A265] rounded-lg p-2 outline-none resize-none"
+                          rows={3}
+                          placeholder="Cursus beschrijving..."
+                          autoFocus
+                        />
+                        <div className="flex gap-1.5 mt-1.5">
+                          <button
+                            onClick={() => handleDescSave(course.id)}
+                            className="text-[11px] font-medium px-3 py-1 rounded-lg bg-[#C4A265] text-white hover:bg-[#DFC08A] transition"
+                          >Opslaan</button>
+                          <button
+                            onClick={() => setEditingDesc(null)}
+                            className="text-[11px] font-medium px-3 py-1 rounded-lg border border-[#eee] text-[#888] hover:bg-[#f5f5f5] transition"
+                          >Annuleer</button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Meta */}
                     <div className="flex gap-3.5 mb-3.5">
