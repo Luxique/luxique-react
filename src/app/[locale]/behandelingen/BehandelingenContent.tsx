@@ -63,7 +63,7 @@ function useReveal() {
 function Hero() {
   const t = useTranslations('Behandelingen')
   return (
-    <section className="relative min-h-[60vh] md:min-h-[68vh] flex items-end overflow-hidden">
+    <section className="relative min-h-[72vh] md:min-h-[68vh] flex items-end overflow-hidden pt-[4vh] md:pt-0">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{
