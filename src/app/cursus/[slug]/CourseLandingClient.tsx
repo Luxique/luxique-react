@@ -923,7 +923,7 @@ function RichTextBlock({ data }: { data: Record<string, unknown> }) {
       <div className="container">
         <div className="sec-head">
           {eyebrow && <span className="eyebrow">— {eyebrow} —</span>}
-          {title && <h2>{title}</h2>}
+          {title && <h2 dangerouslySetInnerHTML={{ __html: title }} />}
         </div>
         
         <div className="rich-text-content">

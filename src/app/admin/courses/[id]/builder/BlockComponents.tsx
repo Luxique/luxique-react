@@ -42,24 +42,33 @@ const colors = {
 /* ── TextBlock (Rich Text via RichTextField) ── */
 export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => (
   <div className="space-y-2">
-    <input
-      type="text"
-      placeholder="Hoofdtitel..."
-      value={block.title || ''}
-      onChange={(e) => onUpdate(block.id, { title: e.target.value })}
-      className="w-full bg-transparent border-none outline-none font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
-    />
-    <input
-      type="text"
-      placeholder="Subtitel of introductie..."
-      value={block.subtitle || ''}
-      onChange={(e) => onUpdate(block.id, { subtitle: e.target.value })}
-      className="w-full bg-transparent border-none outline-none text-[14px] text-[#7A7268] mt-1"
-    />
-    <RichTextField
-      content={typeof block.content === 'string' ? block.content : ''}
-      onChange={(html) => onUpdate(block.id, { content: html })}
-    />
+    <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
+      <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide mb-0.5">Titel</div>
+      <RichTextField
+        content={block.title || ''}
+        onChange={(html) => onUpdate(block.id, { title: html })}
+        variant="inline"
+        placeholder="Hoofdtitel..."
+        className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
+      />
+    </div>
+    <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
+      <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide mb-0.5">Subtitel / Introductie</div>
+      <RichTextField
+        content={block.subtitle || ''}
+        onChange={(html) => onUpdate(block.id, { subtitle: html })}
+        variant="inline"
+        placeholder="Subtitel of introductie..."
+        className="text-[14px] text-[#7A7268]"
+      />
+    </div>
+    <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
+      <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide mb-0.5">Body tekst</div>
+      <RichTextField
+        content={typeof block.content === 'string' ? block.content : ''}
+        onChange={(html) => onUpdate(block.id, { content: html })}
+      />
+    </div>
   </div>
 ))
 TextBlock.displayName = 'TextBlock'

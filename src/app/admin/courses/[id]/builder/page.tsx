@@ -2372,10 +2372,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                               {block.type === 'text' && (
                                 <div>
                                   {block.title && (
-                                    <h3 className="text-xl font-semibold text-[#1E1A14] mb-3">{block.title}</h3>
+                                    <h3 className="text-xl font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
                                   )}
                                   {block.subtitle && (
-                                    <h4 className="text-lg text-[#7A6340] mb-3">{block.subtitle}</h4>
+                                    <h4 className="text-lg text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
                                   )}
                                   {block.content && (
                                     <div className="text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
