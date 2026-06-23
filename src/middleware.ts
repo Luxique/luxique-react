@@ -58,5 +58,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Skip static files, API routes, admin routes, and Next internals
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api|admin|cursus).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api|admin|cursus|certificate-template).*)'],
 }
