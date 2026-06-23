@@ -64,6 +64,7 @@ export default function AdminPage() {
       user_id: grantUserId, course_id: grantCourseId, status: 'active',
       payment_method: 'manual', paid_at: new Date().toISOString(),
       enrolled_at: new Date().toISOString(), granted_by: user?.id,
+      access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     }, { onConflict: 'user_id,course_id' })
     setShowGrant(false); setGrantUserId(''); setGrantCourseId('')
     refresh(); setGranting(false)

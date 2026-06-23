@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('enrollments')
-    .select('id, status')
+    .select('id, status, access_expires_at')
     .eq('user_id', user_id)
     .eq('course_id', course_id)
     .eq('status', 'active')
@@ -25,6 +25,17 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Check if access has expired
+  let accessExpired = false
+  let accessExpiresAt: string | null = null
+  if (data && data.length > 0) {
+    const enrollment = data[0]
+    accessExpiresAt = enrollment.access_expires_at
+    if (enrollment.access_expires_at && new Date(enrollment.access_expires_at) < new Date()) {
+      accessExpired = true
+    }
   }
 
   // Also check admin role
@@ -36,5 +47,10 @@ export async function GET(request: NextRequest) {
 
   const isAdmin = (profile?.role_level >= 100) || (profile?.role === 'admin')
 
-  return NextResponse.json({ enrolled: (data && data.length > 0) || isAdmin, role: isAdmin ? 'admin' : 'student' })
+  return NextResponse.json({ 
+    enrolled: ((data && data.length > 0) && !accessExpired) || isAdmin, 
+    role: isAdmin ? 'admin' : 'student',
+    accessExpired,
+    accessExpiresAt,
+  })
 }

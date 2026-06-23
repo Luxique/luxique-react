@@ -17,6 +17,7 @@ type Enrollment = {
   course_id: string
   status: string
   enrolled_at: string
+  access_expires_at: string | null
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return
     supabase
       .from('enrollments')
-      .select('course_id, status, enrolled_at')
+      .select('course_id, status, enrolled_at, access_expires_at')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .then(({ data }) => setEnrollments(data || []))

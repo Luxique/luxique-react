@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       course_id,
       status: 'active',
       enrolled_at: now,
+      access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       payment_method: 'stripe',
       stripe_payment_intent_id: payment_intent_id || null,
       paid_amount_cents: amount_total,
