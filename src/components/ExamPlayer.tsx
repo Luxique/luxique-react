@@ -60,6 +60,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [generatingPdf, setGeneratingPdf] = useState(false)
+  const [certError, setCertError] = useState<string | null>(null)
   const [completedDate, setCompletedDate] = useState<string>('')
 
   // Fetch exam blocks
@@ -186,6 +187,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
 
   const handleDownloadCertificate = async () => {
     setGeneratingPdf(true)
+    setCertError(null)
     try {
       const res = await fetch('/api/certificate', {
         method: 'POST',
@@ -200,12 +202,17 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'luxique-certificaat.pdf'
+        a.download = 'LUXIQUE-certificaat.pdf'
         a.click()
         URL.revokeObjectURL(url)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        console.error('Certificate generation failed:', res.status, data)
+        setCertError('Certificaat genereren mislukt. Probeer het opnieuw.')
       }
     } catch (err) {
       console.error('Certificate generation failed:', err)
+      setCertError('Netwerkfout — controleer je verbinding en probeer opnieuw.')
     }
     setGeneratingPdf(false)
   }
@@ -503,6 +510,11 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         >
           {generatingPdf ? 'PDF wordt gegenereerd...' : 'Download certificaat (PDF)'}
         </button>
+        {certError && (
+          <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#f87171', fontSize: 13, fontFamily: '"Jost", sans-serif', textAlign: 'center' }}>
+            ⚠️ {certError}
+          </div>
+        )}
       </div>
     )
   }

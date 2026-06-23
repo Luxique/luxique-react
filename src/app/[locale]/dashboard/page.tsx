@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const [totalCompletedLessons, setTotalCompletedLessons] = useState(0)
   const [progressLoading, setProgressLoading] = useState(true)
   const [downloadingCert, setDownloadingCert] = useState<string | null>(null)
+  const [certError, setCertError] = useState<string | null>(null)
   const revealRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export default function DashboardPage() {
   const handleDownloadCertificate = async (courseId: string, courseTitle: string) => {
     if (!user) return
     setDownloadingCert(courseId)
+    setCertError(null)
     try {
       const res = await fetch('/api/certificate', {
         method: 'POST',
@@ -98,9 +100,11 @@ export default function DashboardPage() {
         URL.revokeObjectURL(url)
       } else {
         console.error('Certificate download failed:', await res.text())
+        setCertError('Certificaat genereren mislukt. Probeer het opnieuw.')
       }
     } catch (err) {
       console.error('Certificate download error:', err)
+      setCertError('Netwerkfout — probeer opnieuw.')
     }
     setDownloadingCert(null)
   }
@@ -537,6 +541,7 @@ export default function DashboardPage() {
                         {/* CTA */}
                         <div style={{ marginTop:'auto', paddingTop:20, display:'flex', gap:10, flexWrap:'wrap' }}>
                           {cp.examPassed ? (
+                            <>
                             <button
                               onClick={() => handleDownloadCertificate(cp.course.id, cp.course.title)}
                               disabled={downloadingCert === cp.course.id}
@@ -550,6 +555,10 @@ export default function DashboardPage() {
                             >
                               {downloadingCert === cp.course.id ? 'PDF genereren...' : '⬇ Download certificaat'}
                             </button>
+                            {certError && downloadingCert === null && (
+                              <div style={{ fontSize:'.78rem', color:'#ef4444', marginTop:6, width:'100%' }}>{certError}</div>
+                            )}
+                            </>
                           ) : cp.isDone && cp.hasExam ? (
                             <a href={lpath(`/academy/${cp.course.slug}`)} style={{
                               display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
