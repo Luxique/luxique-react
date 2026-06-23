@@ -39,11 +39,15 @@
     background-size:26px 26px}
   .watermark{
     position:absolute; top:50%; left:50%;
-    width:120%; height:auto;
+    width:120%; height:300px;
     transform:translate(-50%,-50%) rotate(-25deg);
-    opacity:.01;
+    opacity:.015;
     z-index:1; pointer-events:none;
     filter:saturate(0) brightness(2);
+    background-image:url('/lxq-logo-watermark.png');
+    background-size:contain;
+    background-position:center;
+    background-repeat:no-repeat;
   }
 
 
@@ -123,7 +127,7 @@
     <span class="glow br"></span>
     <span class="glow center"></span>
     <div class="frame"></div>
-    <img class="watermark" src="/lxq-logo-watermark.png" alt="" crossorigin="anonymous" />
+    <div class="watermark"></div>
 
     <div class="inner">
       <div>

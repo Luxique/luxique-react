@@ -62,6 +62,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const [generatingPdf, setGeneratingPdf] = useState(false)
   const [certError, setCertError] = useState<string | null>(null)
   const [completedDate, setCompletedDate] = useState<string>('')
+  const [reviewMode, setReviewMode] = useState(false)
 
   // Fetch exam blocks
   useEffect(() => {
@@ -86,15 +87,34 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     fetchBlocks()
   }, [lessonId])
 
-  // Check for existing attempt (to support retake)
+  // Check for existing attempt (to support retake) + skip to pass screen if already completed
   useEffect(() => {
     if (!user) return
     const checkPrevious = async () => {
       const { data } = await supabase.from('lesson_progress')
-        .select('quiz_answers, completed')
+        .select('quiz_answers, completed, completed_at')
         .eq('user_id', user!.id)
         .eq('lesson_id', lessonId)
         .single()
+      
+      // If exam already passed, go straight to pass screen
+      if (data?.completed) {
+        if (data.completed_at) {
+          setCompletedDate(new Date(data.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))
+        }
+        // Compute score from saved answers
+        if (data.quiz_answers && typeof data.quiz_answers === 'object') {
+          const prev = data.quiz_answers as Record<string, { chosen: string; correct: boolean }>
+          const correctCount = Object.values(prev).filter(v => v.correct).length
+          const total = Object.keys(prev).length
+          setScore(total > 0 ? Math.round((correctCount / total) * 100) : 100)
+          setTotalQuestions(total)
+        }
+        setScreen('pass')
+        setLoading(false)
+        return
+      }
+      
       if (data?.quiz_answers && typeof data.quiz_answers === 'object') {
         const prev = data.quiz_answers as Record<string, { chosen: string; correct: boolean }>
         const prevAnswers: Record<string, string> = {}
@@ -521,6 +541,27 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
           <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#f87171', fontSize: 13, fontFamily: '"Jost", sans-serif', textAlign: 'center' }}>
             ⚠️ {certError}
           </div>
+        )}
+        {/* Secondary CTA: review questions */}
+        {!reviewMode && (
+          <button
+            onClick={() => { setReviewMode(true); setScreen('question'); setCurrentIndex(0) }}
+            style={{
+              marginTop: 12,
+              background: 'transparent',
+              color: colors.muted,
+              border: `1px solid ${colors.bg3}`,
+              borderRadius: 12,
+              padding: '12px 28px',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: '"Jost", sans-serif',
+              transition: 'border-color .2s, color .2s',
+            }}
+          >
+            Toetsvragen opnieuw bekijken
+          </button>
         )}
       </div>
     )
