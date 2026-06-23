@@ -90,18 +90,21 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, courseId }),
       })
-      if (res.ok) {
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `LUXIQUE-Certificate-${courseTitle}.pdf`
-        a.click()
-        URL.revokeObjectURL(url)
-      } else {
-        console.error('Certificate download failed:', await res.text())
+      if (!res.ok) {
+        console.error('Certificate API failed:', await res.text())
         setCertError('Certificaat genereren mislukt. Probeer het opnieuw.')
+        return
       }
+      const { generateCertificatePDF, generateCertificateId, formatCertDate } = await import('@/lib/certificate-client')
+      const data = await res.json()
+      const certId = generateCertificateId(user.id, courseId)
+      const dateStr = formatCertDate(data.completedAt)
+      await generateCertificatePDF({
+        recipientName: data.recipientName,
+        courseName: data.courseTitle,
+        dateStr,
+        certificateId: certId,
+      })
     } catch (err) {
       console.error('Certificate download error:', err)
       setCertError('Netwerkfout — probeer opnieuw.')

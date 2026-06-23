@@ -189,6 +189,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     setGeneratingPdf(true)
     setCertError(null)
     try {
+      // 1. Fetch certificate metadata from API
       const res = await fetch('/api/certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,19 +198,25 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
           courseId,
         }),
       })
-      if (res.ok) {
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'LUXIQUE-certificaat.pdf'
-        a.click()
-        URL.revokeObjectURL(url)
-      } else {
+      if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        console.error('Certificate generation failed:', res.status, data)
+        console.error('Certificate API error:', res.status, data)
         setCertError('Certificaat genereren mislukt. Probeer het opnieuw.')
+        return
       }
+
+      // 2. Generate PDF client-side
+      const { generateCertificatePDF, generateCertificateId, formatCertDate } = await import('@/lib/certificate-client')
+      const data = await res.json()
+      const certId = generateCertificateId(user!.id, courseId)
+      const dateStr = formatCertDate(data.completedAt)
+
+      await generateCertificatePDF({
+        recipientName: data.recipientName,
+        courseName: data.courseTitle,
+        dateStr,
+        certificateId: certId,
+      })
     } catch (err) {
       console.error('Certificate generation failed:', err)
       setCertError('Netwerkfout — controleer je verbinding en probeer opnieuw.')
