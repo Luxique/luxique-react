@@ -70,6 +70,17 @@ export async function generateCertificatePDF(data: CertificateData): Promise<voi
   try {
     // 3. Wait for fonts to be ready (critical for Pinyon Script, Cormorant)
     await (document as any).fonts.ready
+
+    // 3b. Wait for all images to be fully loaded (critical for PNG logos)
+    const imgs = Array.from(container.querySelectorAll('img')) as HTMLImageElement[]
+    await Promise.all(imgs.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve()
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve() // don't block on error
+      })
+    }))
+
     await new Promise(r => setTimeout(r, 300))
 
     // 4. Find the root element to capture
