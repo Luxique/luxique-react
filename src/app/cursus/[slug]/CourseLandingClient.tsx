@@ -530,11 +530,11 @@ function CurriculumSection({
           {lessons.length > 5 && (
             <div style={{
               position: 'absolute',
-              bottom: '18px',
+              bottom: '34px',
               left: 0,
               right: 0,
               textAlign: 'center',
-              zIndex: 3,
+              zIndex: 5,
               pointerEvents: 'none',
             }}>
               <p style={{
