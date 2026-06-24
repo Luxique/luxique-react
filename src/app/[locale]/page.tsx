@@ -33,8 +33,9 @@ export default function Home() {
       <Reveal><div id="reels" data-theme-color="#0e0b09" data-theme-dark="true" className="mt-[28px] mb-0 max-[860px]:my-0"><ReelsSection /></div></Reveal>
       <Reveal><div id="academy" data-theme-color="#0e0b09" data-theme-dark="true" style={{ background: 'radial-gradient(110% 70% at 50% -8%, rgba(176,141,79,.12), transparent 60%), linear-gradient(180deg, #0e0b09, #0e0b09 75%)', padding: 'clamp(20px,3vw,28px) 0' }}><div className="max-w-[1180px] mx-auto px-[28px]">
         <div className="text-center mb-12">
+          <span className="block text-[12px] font-medium tracking-[0.2em] uppercase text-[#E4C98A] mb-3">Onze meest gewilde cursus</span>
           <h2 className="font-['Cormorant_Garamond'] text-[3.5rem] font-medium leading-[1.1] text-[#EDE7DB] mb-4">
-            Onze meest gewilde cursus: <span className="text-[#E4C98A] italic">de Lash Artist cursus</span>
+            De Lash Artist cursus
           </h2>
         </div>
         <ComparisonTable theme="dark" /><AcademyHomeSection /></div></div></Reveal>

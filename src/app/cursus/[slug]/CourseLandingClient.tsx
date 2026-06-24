@@ -470,6 +470,7 @@ function CurriculumSection({
     <section className="section" id="curriculum">
       <div className="container">
         <div className="sec-head">
+          <h2 className="sec-title">Wat ga je leren</h2>
           {course.curriculum_eyebrow && (
             <span className="eyebrow">— {course.curriculum_eyebrow} —</span>
           )}
@@ -626,11 +627,7 @@ function FAQSection() {
   const faqItems = [
     {
       question: 'Hoe lang heb ik toegang tot de cursus?',
-      answer: 'Ondersteuning door Loenique. Zodra je je inschrijft heb je permanente ondersteuning tot alle modules, inclusief toekomstige updates.'
-    },
-    {
-      question: 'Krijg ik persoonlijke feedback van Chiva?',
-      answer: 'Ja. Je kan je werk uploaden voor review en Chiva kijkt het persoonlijk na. Dit is geen anonieme cursus.'
+      answer: 'Je hebt 12 maanden toegang tot alle lessen en modules, inclusief updates in die periode. Vragen? Stuur ons een mailtje.'
     },
     {
       question: 'Heb ik al ervaring nodig om te starten?',

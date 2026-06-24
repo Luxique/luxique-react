@@ -102,7 +102,7 @@ export default function AcademySection({ courses, loading }: Props) {
                       : null)
                 const usps = course.what_you_learn && course.what_you_learn.length > 0
                   ? course.what_you_learn
-                  : ['Online lessen · video, theorie & quizzen', 'Persoonlijke feedback van Chiva', `${course.access_duration_text || '12 maanden'} toegang & updates`, 'Certificaat bij afronding']
+                  : ['Online lessen · video, theorie & quizzen', `${course.access_duration_text || '12 maanden'} toegang & updates`, 'Certificaat bij afronding']
 
                 return (
                   <article key={course.id} className="lxq-course-card">

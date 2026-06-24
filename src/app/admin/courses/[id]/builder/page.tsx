@@ -1267,38 +1267,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* FLEX BLOKKEN Section */}
-          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
-            <div className="p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
-              <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">FLEX BLOKKEN</span>
-            </div>
-            <div className="p-3">
-              <button className="flex items-center justify-center gap-2 p-3 rounded-lg border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                + Flexibel blok toevoegen
-              </button>
-              
-              {(course?.landingBlocks || []).map((block, i) => (
-                <div key={i} className="bg-white border border-[rgba(26,24,21,0.09)] rounded-lg p-3 mt-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">{block.type}</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <button className="text-[rgba(26,24,21,0.25)] hover:text-[#C4A265] p-1">⤴</button>
-                      <button className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1">✕</button>
-                    </div>
-                  </div>
-                  <div className="text-[12px] text-[#7A7268]">
-                    Mini-form voor {block.type} komt later
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* CURRICULUM Section Card */}
           <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
             <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
@@ -1316,16 +1284,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   onChange={(e) => updateCourseField('curriculumEyebrow', e.target.value)}
                   className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
                   placeholder="bijv. — Wat ga je leren —"
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel</label>
-                <input
-                  type="text"
-                  value={course?.curriculumTitle || ''}
-                  onChange={(e) => updateCourseField('curriculumTitle', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Wat ga je leren?"
                 />
               </div>
               <div>
