@@ -23,10 +23,20 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get('cal-signature') || request.headers.get('x-cal-signature')
   const headersObj = Object.fromEntries(request.headers.entries())
 
+  // === DIAGNOSTIC: Log env var status ===
+  console.log('🔧 WEBHOOK DIAGNOSTIC:')
+  console.log(`  - SUPABASE_SERVICE_ROLE_KEY length: ${process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0}`)
+  console.log(`  - SUPABASE_SERVICE_ROLE_KEY defined: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`)
+  console.log(`  - NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL}`)
+  console.log(`  - CAL_WEBHOOK_SECRET length: ${process.env.CAL_WEBHOOK_SECRET?.length || 0}`)
+  console.log(`  - CAL_WEBHOOK_SECRET defined: ${!!process.env.CAL_WEBHOOK_SECRET}`)
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
+  console.log('🔧 Supabase client created')
 
   // === STEP 1: Write raw webhook to debug table BEFORE anything else ===
   let parsedForDebug: any = null
@@ -49,6 +59,9 @@ export async function POST(request: NextRequest) {
     console.log('📝 Webhook debug row written')
   } catch (e) {
     console.error('❌ Failed to write debug row:', e)
+    if (e instanceof Error) {
+      console.error('❌ Debug error details:', e.message, e.stack)
+    }
   }
 
   // === STEP 2: Signature check (log-only during setup) ===
