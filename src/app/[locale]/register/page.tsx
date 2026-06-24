@@ -47,6 +47,16 @@ export default function RegisterPage() {
       }
       setLoading(false)
     } else {
+      // Send branded M01 confirmation email via Resend (Supabase's own email should be disabled)
+      try {
+        await fetch('/api/auth/send-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        })
+      } catch (e) {
+        console.error('Failed to send branded confirmation email:', e)
+      }
       setLoading(false)
       setSuccess(true)
     }
