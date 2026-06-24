@@ -135,8 +135,16 @@ function BetalenContent() {
     }
 
     let attempts = 0
-    const MAX_ATTEMPTS = 8
+    const MAX_ATTEMPTS = 20 // Increased from 8 for more robust handling
     let cancelled = false
+
+    const getInterval = (attemptNum: number) => {
+      // Progressive backoff: faster initially, then slower
+      if (attemptNum === 1) return 0 // Immediate first attempt
+      if (attemptNum <= 3) return 100 // 100ms for attempts 2-3
+      if (attemptNum <= 6) return 500 // 500ms for attempts 4-6
+      return 1500 // 1.5s for attempts 7+
+    }
 
     const poll = async () => {
       if (cancelled) return
@@ -147,7 +155,7 @@ function BetalenContent() {
         return
       }
       if (attempts < MAX_ATTEMPTS) {
-        setTimeout(poll, 1500)
+        setTimeout(poll, getInterval(attempts))
       } else {
         if (!cancelled) {
           setError('Je boeking kon niet worden gevonden. Controleer je link of neem contact op.')
