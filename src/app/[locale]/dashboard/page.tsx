@@ -116,6 +116,15 @@ export default function DashboardPage() {
     if (!loading && !user) router.push('/login?redirect=/dashboard')
   }, [user, loading, router])
 
+  // Read tab from URL param on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam === 'overview' || tabParam === 'academy' || tabParam === 'boekingen') {
+      setActiveTab(tabParam)
+    }
+  }, [])
+
   // Fetch enrolled courses
   useEffect(() => {
     if (enrollments.length === 0) { setCourses([]); setProgressLoading(false); return }
