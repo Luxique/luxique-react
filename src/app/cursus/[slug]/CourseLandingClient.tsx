@@ -230,13 +230,13 @@ export default function CourseLandingClient({
       {/* Is dit iets voor jou? */}
       <IsDitIetsVoorJou />
 
-      {/* Flex Blocks */}
-      {(course.landing_blocks || [])
+      {/* Flex Blocks - REMOVED per klant feedback */}
+      {/* {(course.landing_blocks || [])
         .filter(block => !['what_you_learn', 'testimonials'].includes(block.type))
         .sort((a, b) => a.order - b.order)
         .map(block => (
           <FlexBlockRenderer key={block.id} block={block} />
-        ))}
+        ))} */}
       
       {/* Curriculum */}
       <CurriculumSection 
@@ -473,9 +473,6 @@ function CurriculumSection({
           {course.curriculum_eyebrow && (
             <span className="eyebrow">— {course.curriculum_eyebrow} —</span>
           )}
-          <h2>
-            Wat ga je <span className="serif-accent">leren</span>
-          </h2>
           {course.curriculum_intro && (
             <p>{course.curriculum_intro}</p>
           )}
@@ -544,7 +541,6 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
   const includesList = course.pricing_includes?.length
     ? [firstInclude, ...course.pricing_includes.slice(1)]
     : [
-    'Persoonlijke feedback van Chiva',
     '12 maanden toegang & updates',
     'Certificaat bij afronding',
     'Eindtoets en quizzen',
@@ -630,7 +626,7 @@ function FAQSection() {
   const faqItems = [
     {
       question: 'Hoe lang heb ik toegang tot de cursus?',
-      answer: 'Levenslang. Zodra je je inschrijft heb je permanent toegang tot alle modules, inclusief toekomstige updates.'
+      answer: 'Ondersteuning door Loenique. Zodra je je inschrijft heb je permanente ondersteuning tot alle modules, inclusief toekomstige updates.'
     },
     {
       question: 'Krijg ik persoonlijke feedback van Chiva?',

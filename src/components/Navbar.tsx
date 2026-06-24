@@ -161,7 +161,6 @@ export default function Navbar() {
                 </div>
                 {[
                   { icon: '📊', label: 'Dashboard', href: '/dashboard' },
-                  { icon: '🎬', label: 'Cursussen', href: '/courses' },
                   { icon: '👤', label: 'Profiel', href: '/profile' },
                 ].map(item => (
                   <a key={item.href} href={item.href} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[rgba(196,162,101,0.08)] transition">

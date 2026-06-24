@@ -299,19 +299,19 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           if (cachedBlocks) {
             return { ...lesson, blocks: cachedBlocks }
           }
-          // If not cached and it's the active lesson, use current blocks
+          // If not cached and it's the active lesson, use current blocks + all fields
           if (currentLesson?.id === lesson.id) {
-            return { ...lesson, blocks }
+            return { ...lesson, ...currentLesson }
           }
           // Otherwise keep original blocks
           return lesson
         })
       }
     } else if (currentLesson) {
-      // Fallback: only sync active lesson if no cache exists
+      // Fallback: sync ALL currentLesson fields (including name) to course
       courseToSave = {
         ...course,
-        lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, blocks } : l)
+        lessons: course.lessons?.map(l => l.id === currentLesson.id ? { ...l, ...currentLesson } : l)
       }
     }
 
@@ -995,8 +995,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   placeholder="bijv. NIEUW"
                 />
               </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel (deel 1)</label>
                 <input
                   type="text"
                   value={course?.heroTitle || ''}
@@ -1013,16 +1011,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   onChange={(e) => updateCourseField('heroTitleAccent', e.target.value)}
                   className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
                   placeholder="bijv. Basics"
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel (deel 2)</label>
-                <input
-                  type="text"
-                  value={course?.heroTitleSuffix || ''}
-                  onChange={(e) => updateCourseField('heroTitleSuffix', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Cursus"
                 />
               </div>
               <div>
