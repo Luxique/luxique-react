@@ -53,6 +53,9 @@ interface Course {
   comparison_features?: string[]
   comparison_col_lxq?: string
   comparison_col_standard?: string
+  comparison_footer_pre?: string
+  comparison_footer_em?: string
+  comparison_footer_post?: string
 }
 
 interface Lesson {
@@ -262,6 +265,9 @@ export default function CourseLandingClient({
         features={course.comparison_features}
         colLxq={course.comparison_col_lxq}
         colStandard={course.comparison_col_standard}
+        footerPre={course.comparison_footer_pre}
+        footerEm={course.comparison_footer_em}
+        footerPost={course.comparison_footer_post}
       />
       
       {/* Reviews */}

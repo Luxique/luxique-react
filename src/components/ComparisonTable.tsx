@@ -7,10 +7,12 @@ interface Props {
   features?: string[]
   colLxq?: string
   colStandard?: string
-  footerText?: string
+  footerPre?: string
+  footerEm?: string
+  footerPost?: string
 }
 
-export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, footerText: footerTextProp }: Props) {
+export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, footerPre: footerPreProp, footerEm: footerEmProp, footerPost: footerPostProp }: Props) {
   const t = useTranslations('Vergelijking')
 
   const defaultFeatures = [
@@ -21,7 +23,10 @@ export default function ComparisonTable({ theme = 'light', features: featuresPro
   const features = featuresProp || defaultFeatures
   const colLxq = colLxqProp || t('colLxq')
   const colStandard = colStandardProp || t('colStandard')
-  const footerText = footerTextProp || `${t('footerPre')} <em>${t('footerEm1')}</em> ${t('footerMid')} <em>${t('footerEm2')}</em> ${t('footerPost')}`
+  const footerPre = footerPreProp || `${t('footerPre')} <em>${t('footerEm1')}</em> ${t('footerMid')}`
+  const footerEm = footerEmProp || t('footerEm2')
+  const footerPost = footerPostProp || t('footerPost')
+  const footerText = `${footerPre} <em>${footerEm}</em> ${footerPost}`
 
   const checkSVG = (
     <svg viewBox="0 0 100 100" width="14" height="14">

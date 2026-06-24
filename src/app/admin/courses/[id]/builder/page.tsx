@@ -153,6 +153,9 @@ interface Course {
   comparisonFeatures?: string[]
   comparisonColLxq?: string
   comparisonColStandard?: string
+  comparisonFooterPre?: string
+  comparisonFooterEm?: string
+  comparisonFooterPost?: string
   faqItems?: Array<{question: string; answer: string}>
   landingBlocks?: Array<{type: string, data: Record<string, unknown>, order: number}>
 }
@@ -197,6 +200,9 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       comparison_features: builderCourse.comparisonFeatures,
       comparison_col_lxq: builderCourse.comparisonColLxq,
       comparison_col_standard: builderCourse.comparisonColStandard,
+      comparison_footer_pre: builderCourse.comparisonFooterPre,
+      comparison_footer_em: builderCourse.comparisonFooterEm,
+      comparison_footer_post: builderCourse.comparisonFooterPost,
       faq_items: builderCourse.faqItems,
       landing_blocks: (builderCourse.landingBlocks || []).map((b: {type: string, data: Record<string, unknown>, order: number}, i: number) => ({ id: `block-${i}`, ...b })),
     },
@@ -386,6 +392,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       comparison_features: courseToSave.comparisonFeatures || null,
       comparison_col_lxq: courseToSave.comparisonColLxq || null,
       comparison_col_standard: courseToSave.comparisonColStandard || null,
+      comparison_footer_pre: courseToSave.comparisonFooterPre || null,
+      comparison_footer_em: courseToSave.comparisonFooterEm || null,
+      comparison_footer_post: courseToSave.comparisonFooterPost || null,
       faq_items: courseToSave.faqItems || null,
       landing_blocks: courseToSave.landingBlocks || []
     })
@@ -563,6 +572,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         for_you_items: courseToSave.forYouItems || null,
         not_for_you_items: courseToSave.notForYouItems || null,
         comparison_features: courseToSave.comparisonFeatures || null,
+        comparison_col_lxq: courseToSave.comparisonColLxq || null,
+        comparison_col_standard: courseToSave.comparisonColStandard || null,
+        comparison_footer_pre: courseToSave.comparisonFooterPre || null,
+        comparison_footer_em: courseToSave.comparisonFooterEm || null,
+        comparison_footer_post: courseToSave.comparisonFooterPost || null,
         faq_items: courseToSave.faqItems || null,
         // PUBLISH in one shot — no intermediate draft state
         status: 'published',
@@ -780,6 +794,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         comparisonFeatures: courseData.comparison_features || ['Werken met verschillende oogvormen', 'Droopyness actief voorkomen', 'De juiste wimper selecteren per oog', 'Veilig werken met adhesieven', 'Een natuurlijke look creëren', 'Een dramatic volume set maken', 'Snelle applicatie zonder kwaliteitsverlies', 'Klantconsult en intake', 'Prijs stellen met zelfvertrouwen'],
         comparisonColLxq: courseData.comparison_col_lxq || undefined,
         comparisonColStandard: courseData.comparison_col_standard || undefined,
+        comparisonFooterPre: courseData.comparison_footer_pre || undefined,
+        comparisonFooterEm: courseData.comparison_footer_em || undefined,
+        comparisonFooterPost: courseData.comparison_footer_post || undefined,
         faqItems: courseData.faq_items || [
           { question: 'Hoe lang heb ik toegang tot de cursus?', answer: 'Je hebt 12 maanden toegang tot alle lessen en modules, inclusief updates in die periode. Vragen? Stuur ons een mailtje.' },
           { question: 'Heb ik al ervaring nodig om te starten?', answer: 'Nee. Medusa Lash Basics start bij de absolute basis. Motivatie en geduld zijn wel handig.' },
@@ -1632,6 +1649,33 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   onClick={() => updateCourseField('comparisonFeatures', [...(course?.comparisonFeatures || []), ''])}
                   className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
                 >+ Toevoegen</button>
+              </div>
+              {/* Closing text (3 parts: pre + accent + post) */}
+              <div className="mt-3 pt-3 border-t border-[rgba(26,24,21,0.08)]">
+                <label className="text-[10px] font-medium text-[#8B7355] mb-1 block">Afsluitende tekst — deel 1 (gewoon)</label>
+                <textarea
+                  value={course?.comparisonFooterPre || ''}
+                  onChange={(e) => updateCourseField('comparisonFooterPre', e.target.value)}
+                  rows={2}
+                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded resize-none"
+                  placeholder="Bij Luxique Academy studeer je niet af als iemand die weet"
+                />
+                <label className="text-[10px] font-medium text-[#8B7355] mb-1 mt-2 block">Afsluitende tekst — accent (goud, italic)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonFooterEm || ''}
+                  onChange={(e) => updateCourseField('comparisonFooterEm', e.target.value)}
+                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded"
+                  placeholder="hoe"
+                />
+                <label className="text-[10px] font-medium text-[#8B7355] mb-1 mt-2 block">Afsluitende tekst — deel 2 (gewoon)</label>
+                <textarea
+                  value={course?.comparisonFooterPost || ''}
+                  onChange={(e) => updateCourseField('comparisonFooterPost', e.target.value)}
+                  rows={2}
+                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded resize-none"
+                  placeholder="het moet, maar als iemand die begrijpt waarom — en dat is precies wat klanten laat terugkomen."
+                />
               </div>
             </div>
           </div>
