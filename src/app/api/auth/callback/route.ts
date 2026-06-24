@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const redirect = searchParams.get('redirect') || '/dashboard'
   const error = searchParams.get('error')
 
   if (error) {
@@ -17,7 +16,10 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
     await client.auth.exchangeCodeForSession(code)
+    // Redirect to a branded "email verified" page instead of silently going to dashboard
+    return NextResponse.redirect(new URL('/email-verified', request.url))
   }
 
-  return NextResponse.redirect(new URL(redirect, request.url))
+  // No code — redirect to login
+  return NextResponse.redirect(new URL('/login', request.url))
 }

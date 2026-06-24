@@ -52,7 +52,7 @@ export default function RegisterPage() {
         await fetch('/api/auth/send-confirmation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, password }),
         })
       } catch (e) {
         console.error('Failed to send branded confirmation email:', e)

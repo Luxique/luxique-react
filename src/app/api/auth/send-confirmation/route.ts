@@ -15,7 +15,8 @@ export const dynamic = 'force-dynamic'
  * prevent double emails.
  */
 export async function POST(req: NextRequest) {
-  const { email } = await req.json()
+  const body = await req.json()
+  const { email } = body
 
   if (!email || !email.includes('@')) {
     return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
@@ -27,18 +28,35 @@ export async function POST(req: NextRequest) {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 
-  // Generate a valid Supabase verification link
+  // Generate a signup confirmation link — this creates a link that,
+  // when clicked, sets email_confirmed_at in auth.users (unlike magiclink
+  // which only logs the user in without confirming the email).
+  // Type 'signup' requires a password; we pass the password from the request.
+  const { password } = body
+
   const { data, error } = await supabase.auth.admin.generateLink({
-    type: 'magiclink',
+    type: 'signup',
     email,
+    password: password || undefined,
   })
 
   if (error) {
-    console.error('M01: generateLink failed', error)
-    return NextResponse.json({ error: 'Could not generate confirmation link' }, { status: 400 })
+    // If signup link fails (e.g. user already exists), fall back to magiclink
+    console.warn('M01: signup generateLink failed, trying magiclink:', error.message)
+    const { data: mlData, error: mlError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    })
+    if (mlError) {
+      console.error('M01: magiclink also failed', mlError)
+      return NextResponse.json({ error: 'Could not generate confirmation link' }, { status: 400 })
+    }
+    var linkData = mlData
+  } else {
+    var linkData = data
   }
 
-  const confirmationUrl = data.properties?.action_link || ''
+  const confirmationUrl = linkData.properties?.action_link || ''
 
   if (!confirmationUrl) {
     console.error('M01: no action_link in generateLink response')
