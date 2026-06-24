@@ -47,6 +47,8 @@ interface Course {
   final_cta_title_accent?: string
   final_cta_lead?: string
   final_cta_button_text?: string
+  for_you_items?: string[]
+  not_for_you_items?: string[]
 }
 
 interface Lesson {
@@ -228,7 +230,10 @@ export default function CourseLandingClient({
       <DifferentiatorsSection course={course} />
 
       {/* Is dit iets voor jou? */}
-      <IsDitIetsVoorJou />
+      <IsDitIetsVoorJou
+        yesItems={course.for_you_items as string[] | undefined}
+        noItems={course.not_for_you_items as string[] | undefined}
+      />
 
       {/* Flex Blocks - REMOVED per klant feedback */}
       {/* {(course.landing_blocks || [])
@@ -523,24 +528,25 @@ function CurriculumSection({
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: '140px',
-                background: 'linear-gradient(to bottom, transparent, var(--curriculum-bg, #FAF8F4))',
+                height: '50px',
+                background: 'linear-gradient(transparent, #0C0A07)',
                 pointerEvents: 'none',
-                zIndex: 1,
+                zIndex: 2,
               }} />
               <div style={{
                 position: 'absolute',
-                bottom: '20px',
+                bottom: '14px',
                 left: 0,
                 right: 0,
                 textAlign: 'center',
-                zIndex: 2,
+                zIndex: 3,
                 pointerEvents: 'none',
               }}>
                 <p style={{
-                  fontSize: '14px',
-                  color: '#7A7268',
+                  fontSize: '15px',
+                  color: 'rgba(250, 248, 244, 0.5)',
                   fontStyle: 'italic',
+                  fontFamily: "'Cormorant Garamond', serif",
                   margin: 0,
                 }}>En nog veel meer…</p>
               </div>

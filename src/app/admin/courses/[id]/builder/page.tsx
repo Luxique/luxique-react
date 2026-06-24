@@ -148,6 +148,8 @@ interface Course {
   finalCtaTitleAccent?: string
   finalCtaLead?: string
   finalCtaButtonText?: string
+  forYouItems?: string[]
+  notForYouItems?: string[]
   landingBlocks?: Array<{type: string, data: Record<string, unknown>, order: number}>
 }
 
@@ -186,6 +188,8 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       final_cta_title_accent: builderCourse.finalCtaTitleAccent,
       final_cta_lead: builderCourse.finalCtaLead,
       final_cta_button_text: builderCourse.finalCtaButtonText,
+      for_you_items: builderCourse.forYouItems,
+      not_for_you_items: builderCourse.notForYouItems,
       landing_blocks: (builderCourse.landingBlocks || []).map((b: {type: string, data: Record<string, unknown>, order: number}, i: number) => ({ id: `block-${i}`, ...b })),
     },
     lessons: (builderLessons || []).map(l => ({
@@ -369,6 +373,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       final_cta_title_accent: courseToSave.finalCtaTitleAccent || null,
       final_cta_lead: courseToSave.finalCtaLead || null,
       final_cta_button_text: courseToSave.finalCtaButtonText || null,
+      for_you_items: courseToSave.forYouItems || null,
+      not_for_you_items: courseToSave.notForYouItems || null,
       landing_blocks: courseToSave.landingBlocks || []
     })
     if (courseError) {
@@ -542,6 +548,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         final_cta_title_accent: courseToSave.finalCtaTitleAccent || null,
         final_cta_lead: courseToSave.finalCtaLead || null,
         final_cta_button_text: courseToSave.finalCtaButtonText || null,
+        for_you_items: courseToSave.forYouItems || null,
+        not_for_you_items: courseToSave.notForYouItems || null,
         // PUBLISH in one shot — no intermediate draft state
         status: 'published',
         is_published: true,
@@ -753,6 +761,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         finalCtaTitleAccent: courseData.final_cta_title_accent || undefined,
         finalCtaLead: courseData.final_cta_lead || undefined,
         finalCtaButtonText: courseData.final_cta_button_text || undefined,
+        forYouItems: courseData.for_you_items || undefined,
+        notForYouItems: courseData.not_for_you_items || undefined,
         landingBlocks: courseData.landing_blocks || []
       }
       
@@ -1482,6 +1492,67 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
                   placeholder="bijv. Inschrijven"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* IS DIT IETS VOOR JOU Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">IS DIT IETS VOOR JOU</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">✓ Voor jou als…</label>
+                {(course?.forYouItems || []).map((item, i) => (
+                  <div key={i} className="flex gap-1 mb-1">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const arr = [...(course?.forYouItems || [])]
+                        arr[i] = e.target.value
+                        updateCourseField('forYouItems', arr)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('forYouItems', (course?.forYouItems || []).filter((_, idx) => idx !== i))}
+                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('forYouItems', [...(course?.forYouItems || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
+                >+ Toevoegen</button>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">✕ Niet voor jou als…</label>
+                {(course?.notForYouItems || []).map((item, i) => (
+                  <div key={i} className="flex gap-1 mb-1">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const arr = [...(course?.notForYouItems || [])]
+                        arr[i] = e.target.value
+                        updateCourseField('notForYouItems', arr)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('notForYouItems', (course?.notForYouItems || []).filter((_, idx) => idx !== i))}
+                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('notForYouItems', [...(course?.notForYouItems || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
+                >+ Toevoegen</button>
               </div>
             </div>
           </div>

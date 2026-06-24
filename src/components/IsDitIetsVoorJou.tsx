@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 
 const checkPath = 'M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z'
 
-const yesItems = [
+const defaultYesItems = [
   'Je wilt begrijpen wáárom een techniek werkt, niet alleen nadoen.',
   'Je wilt van lashes je vak maken, niet je bijbaan.',
   'Je bent bereid te oefenen en feedback aan te nemen.',
@@ -12,14 +12,14 @@ const yesItems = [
   'Je wilt een prijs durven vragen die je werk waard is.',
 ]
 
-const noItems = [
+const defaultNoItems = [
   'Je zoekt een snelle truc of een certificaatje voor de show.',
   'Je wilt alleen kijken, niet oefenen.',
   'Je verwacht resultaat zonder feedback op je eigen werk.',
   'Je wilt de basis — anatomie, oogvormen — overslaan.',
 ]
 
-const statements = [
+const defaultStatements = [
   'Ik plak lashes, maar snap niet waarom een set bij de één weken houdt en bij de ander loslaat.',
   'Ik heb genoeg YouTube gezien — nu wil ik écht begrijpen wat ik doe.',
   'Ik wil hier mijn beroep van maken, niet mijn bijbaan.',
@@ -27,7 +27,18 @@ const statements = [
   'Ik mis iemand die naar mijn werk kijkt en eerlijk zegt wat beter kan.',
 ]
 
-export default function IsDitIetsVoorJou() {
+export default function IsDitIetsVoorJou({
+  yesItems: yesItemsProp,
+  noItems: noItemsProp,
+  statements: statementsProp,
+}: {
+  yesItems?: string[]
+  noItems?: string[]
+  statements?: string[]
+}) {
+  const yesItems = yesItemsProp && yesItemsProp.length > 0 ? yesItemsProp : defaultYesItems
+  const noItems = noItemsProp && noItemsProp.length > 0 ? noItemsProp : defaultNoItems
+  const statements = statementsProp && statementsProp.length > 0 ? statementsProp : defaultStatements
   const statementsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
