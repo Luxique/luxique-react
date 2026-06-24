@@ -194,6 +194,10 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       final_cta_button_text: builderCourse.finalCtaButtonText,
       for_you_items: builderCourse.forYouItems,
       not_for_you_items: builderCourse.notForYouItems,
+      comparison_features: builderCourse.comparisonFeatures,
+      comparison_col_lxq: builderCourse.comparisonColLxq,
+      comparison_col_standard: builderCourse.comparisonColStandard,
+      faq_items: builderCourse.faqItems,
       landing_blocks: (builderCourse.landingBlocks || []).map((b: {type: string, data: Record<string, unknown>, order: number}, i: number) => ({ id: `block-${i}`, ...b })),
     },
     lessons: (builderLessons || []).map(l => ({
@@ -773,10 +777,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         finalCtaButtonText: courseData.final_cta_button_text || undefined,
         forYouItems: courseData.for_you_items || undefined,
         notForYouItems: courseData.not_for_you_items || undefined,
-        comparisonFeatures: courseData.comparison_features || undefined,
+        comparisonFeatures: courseData.comparison_features || ['Werken met verschillende oogvormen', 'Droopyness actief voorkomen', 'De juiste wimper selecteren per oog', 'Veilig werken met adhesieven', 'Een natuurlijke look creëren', 'Een dramatic volume set maken', 'Snelle applicatie zonder kwaliteitsverlies', 'Klantconsult en intake', 'Prijs stellen met zelfvertrouwen'],
         comparisonColLxq: courseData.comparison_col_lxq || undefined,
         comparisonColStandard: courseData.comparison_col_standard || undefined,
-        faqItems: courseData.faq_items || undefined,
+        faqItems: courseData.faq_items || [
+          { question: 'Hoe lang heb ik toegang tot de cursus?', answer: 'Je hebt 12 maanden toegang tot alle lessen en modules, inclusief updates in die periode. Vragen? Stuur ons een mailtje.' },
+          { question: 'Heb ik al ervaring nodig om te starten?', answer: 'Nee. Medusa Lash Basics start bij de absolute basis. Motivatie en geduld zijn wel handig.' },
+          { question: 'Kan ik in termijnen betalen?', answer: 'Ja. Via Klarna kan je in 3 termijnen betalen zonder extra kosten. Direct toegang na eerste betaling.' },
+          { question: 'Krijg ik een certificaat?', answer: 'Ja. Na het succesvol afronden van de eindtoets ontvang je een Luxique Academy certificaat.' },
+        ],
         landingBlocks: courseData.landing_blocks || []
       }
       
