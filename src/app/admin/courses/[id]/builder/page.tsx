@@ -150,6 +150,10 @@ interface Course {
   finalCtaButtonText?: string
   forYouItems?: string[]
   notForYouItems?: string[]
+  comparisonFeatures?: string[]
+  comparisonColLxq?: string
+  comparisonColStandard?: string
+  faqItems?: Array<{question: string; answer: string}>
   landingBlocks?: Array<{type: string, data: Record<string, unknown>, order: number}>
 }
 
@@ -375,6 +379,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       final_cta_button_text: courseToSave.finalCtaButtonText || null,
       for_you_items: courseToSave.forYouItems || null,
       not_for_you_items: courseToSave.notForYouItems || null,
+      comparison_features: courseToSave.comparisonFeatures || null,
+      comparison_col_lxq: courseToSave.comparisonColLxq || null,
+      comparison_col_standard: courseToSave.comparisonColStandard || null,
+      faq_items: courseToSave.faqItems || null,
       landing_blocks: courseToSave.landingBlocks || []
     })
     if (courseError) {
@@ -550,6 +558,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         final_cta_button_text: courseToSave.finalCtaButtonText || null,
         for_you_items: courseToSave.forYouItems || null,
         not_for_you_items: courseToSave.notForYouItems || null,
+        comparison_features: courseToSave.comparisonFeatures || null,
+        faq_items: courseToSave.faqItems || null,
         // PUBLISH in one shot — no intermediate draft state
         status: 'published',
         is_published: true,
@@ -763,6 +773,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         finalCtaButtonText: courseData.final_cta_button_text || undefined,
         forYouItems: courseData.for_you_items || undefined,
         notForYouItems: courseData.not_for_you_items || undefined,
+        comparisonFeatures: courseData.comparison_features || undefined,
+        comparisonColLxq: courseData.comparison_col_lxq || undefined,
+        comparisonColStandard: courseData.comparison_col_standard || undefined,
+        faqItems: courseData.faq_items || undefined,
         landingBlocks: courseData.landing_blocks || []
       }
       
@@ -977,7 +991,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     })
   }
 
-  const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | undefined) => {
+  const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | Array<{question: string; answer: string}> | undefined) => {
     if (!course) return
     setCourse({ ...course, [field]: value })
   }
@@ -1553,6 +1567,118 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   onClick={() => updateCourseField('notForYouItems', [...(course?.notForYouItems || []), ''])}
                   className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
                 >+ Toevoegen</button>
+              </div>
+            </div>
+          </div>
+
+          {/* COMPARISON TABLE Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">COMPARISON TABLE</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Column 1 Header (LXQ)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonColLxq || ''}
+                  onChange={(e) => updateCourseField('comparisonColLxq', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Luxique Academy"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Column 2 Header (Standard)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonColStandard || ''}
+                  onChange={(e) => updateCourseField('comparisonColStandard', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Standaard"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Features</label>
+                {(course?.comparisonFeatures || []).map((item, i) => (
+                  <div key={i} className="flex gap-1 mb-1">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const arr = [...(course?.comparisonFeatures || [])]
+                        arr[i] = e.target.value
+                        updateCourseField('comparisonFeatures', arr)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('comparisonFeatures', (course?.comparisonFeatures || []).filter((_, idx) => idx !== i))}
+                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('comparisonFeatures', [...(course?.comparisonFeatures || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
+                >+ Toevoegen</button>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">FAQ</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Vragen & Antwoorden</label>
+                {(course?.faqItems || []).map((item, i) => (
+                  <div key={i} className="bg-white border border-[rgba(26,24,21,0.09)] rounded-lg p-3 mb-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-medium text-[#7A6340]">Vraag {i + 1}</span>
+                      <button
+                        onClick={() => {
+                          const updated = (course?.faqItems || []).filter((_, j) => j !== i)
+                          updateCourseField('faqItems', updated)
+                        }}
+                        className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                      >✕</button>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={item.question}
+                        onChange={(e) => {
+                          const updated = [...(course?.faqItems || [])]
+                          updated[i] = { ...updated[i], question: e.target.value }
+                          updateCourseField('faqItems', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                        placeholder="Vraag"
+                      />
+                      <textarea
+                        value={item.answer}
+                        onChange={(e) => {
+                          const updated = [...(course?.faqItems || [])]
+                          updated[i] = { ...updated[i], answer: e.target.value }
+                          updateCourseField('faqItems', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none min-h-[60px] resize-y"
+                        placeholder="Antwoord"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('faqItems', [...(course?.faqItems || []), { question: '', answer: '' }])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] transition mt-1"
+                >+ Vraag toevoegen</button>
               </div>
             </div>
           </div>

@@ -49,6 +49,10 @@ interface Course {
   final_cta_button_text?: string
   for_you_items?: string[]
   not_for_you_items?: string[]
+  faq_items?: Array<{question: string; answer: string}>
+  comparison_features?: string[]
+  comparison_col_lxq?: string
+  comparison_col_standard?: string
 }
 
 interface Lesson {
@@ -253,7 +257,12 @@ export default function CourseLandingClient({
       />
 
       {/* Comparison Table — dark theme */}
-      <ComparisonTable theme="dark" />
+      <ComparisonTable 
+        theme="dark" 
+        features={course.comparison_features}
+        colLxq={course.comparison_col_lxq}
+        colStandard={course.comparison_col_standard}
+      />
       
       {/* Reviews */}
       
@@ -264,7 +273,7 @@ export default function CourseLandingClient({
       <PricingSection course={course} onJoin={handleJoinCTA} user={user} lessons={sortedLessons} enrolled={enrolled} courseSlug={course.slug} />
       
       {/* FAQ */}
-      <FAQSection />
+      <FAQSection items={course.faq_items} />
       
       {/* Final CTA */}
       <FinalCTASection course={course} onJoin={handleJoinCTA} user={user} enrolled={enrolled} courseSlug={course.slug} />
@@ -657,8 +666,8 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
 }
 
 // FAQ Section Component
-function FAQSection() {
-  const faqItems = [
+function FAQSection({ items: itemsProp }: { items?: Array<{ question: string; answer: string }> }) {
+  const defaultItems = [
     {
       question: 'Hoe lang heb ik toegang tot de cursus?',
       answer: 'Je hebt 12 maanden toegang tot alle lessen en modules, inclusief updates in die periode. Vragen? Stuur ons een mailtje.'
@@ -677,29 +686,10 @@ function FAQSection() {
     },
     {
       question: 'Wat als ik tijdens de cursus ontdek dat dit vak toch niets voor mij is?',
-      answer: 'Helaas is restitutie niet mogelijk. De cursusdagen worden speciaal voor jou gereserveerd en kunnen daardoor niet meer aan iemand anders worden aangeboden. Om teleurstelling te voorkomen kun je vooraf een workshop van 1 uur boeken. Tijdens deze workshop ontdek je of het vak echt bij je past. Je maakt kennis met de materialen, leert werken met pincetten en kunt ervaren of het werk prettig is voor je ogen, houding en concentratie.'
-    },
-    {
-      question: 'Krijg ik een starterspakket bij de cursus?',
-      answer: 'Bij ieder persoonlijk traject ontvang je een starterspakket. Bij online cursussen is geen starterspakket inbegrepen. In de online cursussen staat duidelijk vermeld welke materialen en producten je zelf moet aanschaffen.'
-    },
-    {
-      question: 'Krijg ik een certificaat van deelname?',
-      answer: 'Ja. Na afloop van iedere cursus ontvang je een certificaat van deelname. Let op: een certificaat van deelname betekent dat je de theorie en informatie hebt gevolgd. Het is geen garantie dat je de technieken volledig beheerst of op professioneel niveau kunt uitvoeren.'
-    },
-    {
-      question: 'Is de cursus één op één?',
-      answer: 'De online cursussen volg je volledig zelfstandig. Je kunt inloggen wanneer het jou uitkomt en verdergaan waar je bent gebleven. De persoonlijke trajecten worden gegeven in kleine groepen van maximaal 2 personen. Wil je liever een volledig één-op-één traject? Dat is mogelijk tegen een meerprijs.'
-    },
-    {
-      question: 'Wat als ik hulp nodig heb tijdens een online cursus?',
-      answer: 'Je kunt altijd vragen stellen. Stuur een e-mail naar: info@luxique.nl. Wij streven ernaar om binnen 2 werkdagen te reageren. Daarnaast kun je gebruikmaken van de chatbot voor veelgestelde vragen en extra ondersteuning.'
-    },
-    {
-      question: 'Sta ik er alleen voor nadat ik de cursus heb afgerond?',
-      answer: 'Nee. Ook na het afronden van de cursus kun je rekenen op ondersteuning. Je wordt onderdeel van een community waarin cursisten elkaar helpen, ervaringen delen en elkaar ondersteunen tijdens hun groei als lash artist.'
+      answer: 'Helaas is restitutie niet mogelijk. De cursusdagen worden speciaal voor jou gereserveerd en kunnen daardoor niet meer aan iemand anders worden aangeboden. Om teleurstelling te voorkomen kun je vooraf een workshop van 1 uur boeken.'
     }
   ]
+  const faqItems = itemsProp && itemsProp.length > 0 ? itemsProp : defaultItems
 
   const [openIndex, setOpenIndex] = useState(0)
 

@@ -4,15 +4,24 @@ import { useTranslations } from 'next-intl'
 
 interface Props {
   theme?: 'light' | 'dark'
+  features?: string[]
+  colLxq?: string
+  colStandard?: string
+  footerText?: string
 }
 
-export default function ComparisonTable({ theme = 'light' }: Props) {
+export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, footerText: footerTextProp }: Props) {
   const t = useTranslations('Vergelijking')
 
-  const features = [
+  const defaultFeatures = [
     t('row1'), t('row2'), t('row3'), t('row4'), t('row5'),
     t('row6'), t('row7'), t('row8'), t('row9'),
   ]
+  
+  const features = featuresProp || defaultFeatures
+  const colLxq = colLxqProp || t('colLxq')
+  const colStandard = colStandardProp || t('colStandard')
+  const footerText = footerTextProp || `${t('footerPre')} <em>${t('footerEm1')}</em> ${t('footerMid')} <em>${t('footerEm2')}</em> ${t('footerPost')}`
 
   const checkSVG = (
     <svg viewBox="0 0 100 100" width="14" height="14">
@@ -43,10 +52,10 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
               <div className="comp-header comp-header-spacer" />
               <div className="comp-header comp-header-lxq">
                 <span className="comp-spark">✦</span>
-                <span className="comp-col-name">{t('colLxq')}</span>
+                <span className="comp-col-name">{colLxq}</span>
               </div>
               <div className="comp-header comp-header-std">
-                <span className="comp-col-name-std">{t('colStandard')}</span>
+                <span className="comp-col-name-std">{colStandard}</span>
               </div>
             </div>
 
@@ -78,9 +87,9 @@ export default function ComparisonTable({ theme = 'light' }: Props) {
           </div>
         </div>
 
-        <p className={isDark ? 'comp-closing comp-closing-dark' : 'comp-closing'}>
-          {t('footerPre')} <em>{t('footerEm1')}</em> {t('footerMid')} <em>{t('footerEm2')}</em> {t('footerPost')}
-        </p>
+        <p className={isDark ? 'comp-closing comp-closing-dark' : 'comp-closing'}
+          dangerouslySetInnerHTML={{ __html: footerText }}
+        />
       </div>
 
       <style jsx>{`
