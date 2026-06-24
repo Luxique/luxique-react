@@ -7,14 +7,14 @@ const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'Venlosingel 166, 6845 JD Arnhem'
 
-function formatDateNL(iso: string): string {
-  return new Date(iso).toLocaleDateString('nl-NL', {
+function formatDateEN(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 }
 
-function formatTimeNL(iso: string): string {
-  return new Date(iso).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+function formatTimeEN(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 }
 
 interface BookingData {
@@ -83,8 +83,8 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
       return
     }
 
-    const date = formatDateNL(booking.slot_start)
-    const time = formatTimeNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
+    const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const remainder = deposit // 50/50 split
 
@@ -150,8 +150,8 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       return
     }
 
-    const date = formatDateNL(booking.slot_start)
-    const time = formatTimeNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
+    const time = formatTimeEN(booking.slot_start)
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -196,8 +196,8 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
 // ============================================================
 export async function sendNewBookingNotification(booking: BookingData) {
   try {
-    const date = formatDateNL(booking.slot_start)
-    const time = formatTimeNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
+    const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const remainder = deposit
 
@@ -240,8 +240,8 @@ export async function sendNewBookingNotification(booking: BookingData) {
 // ============================================================
 export async function sendExpiredNotification(booking: BookingData) {
   try {
-    const date = formatDateNL(booking.slot_start)
-    const time = formatTimeNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
+    const time = formatTimeEN(booking.slot_start)
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -280,8 +280,8 @@ export async function sendExpiredNotification(booking: BookingData) {
 // ============================================================
 export async function sendCancellationNotification(booking: BookingData & { cancelled_within_24h?: boolean }) {
   try {
-    const date = formatDateNL(booking.slot_start)
-    const time = formatTimeNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
+    const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const within24h = booking.cancelled_within_24h
     const subject = within24h
@@ -335,8 +335,8 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
       return
     }
 
-    const date = formatDateNL(booking.slot_start)
-    const time = formatTimeNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
+    const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const within24h = booking.cancelled_within_24h
 
@@ -433,7 +433,7 @@ export async function sendReviewRequestEmail(booking: BookingData) {
     }
 
     const firstName = booking.customer_name?.split(' ')[0] || 'je'
-    const date = formatDateNL(booking.slot_start)
+    const date = formatDateEN(booking.slot_start)
 
     const { error } = await resend.emails.send({
       from: FROM,
