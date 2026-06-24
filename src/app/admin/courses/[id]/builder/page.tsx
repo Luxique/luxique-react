@@ -804,9 +804,19 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
     
-    // Sla huidige blokken op in cache (als we van een les wisselen)
+    // Sla huidige blokken EN lesson fields op (als we van een les wisselen)
     if (currentLesson?.id) {
       setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+      // Sync currentLesson fields (name, duration, etc.) back to course.lessons
+      setCourse(prevCourse => {
+        if (!prevCourse) return prevCourse
+        return {
+          ...prevCourse,
+          lessons: (prevCourse.lessons || []).map(l =>
+            l.id === currentLesson.id ? { ...l, ...currentLesson } : l
+          )
+        }
+      })
     }
     
     if (type === 'lesson' && item && 'free' in item) {
