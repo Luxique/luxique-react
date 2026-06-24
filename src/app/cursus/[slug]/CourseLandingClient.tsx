@@ -484,8 +484,14 @@ function CurriculumSection({
           )}
         </div>
         
-        <div className="curriculum-wrap" style={{ position: 'relative' }}>
-          {lessons.slice(0, 5).map((lesson, index) => (
+        <div className="curriculum-wrap" style={{
+          position: 'relative',
+          maxHeight: lessons.length > 5 ? '520px' : 'none',
+          overflow: 'hidden',
+          WebkitMaskImage: lessons.length > 5 ? 'linear-gradient(to bottom, #000 0, #000 calc(100% - 120px), transparent 100%)' : undefined,
+          maskImage: lessons.length > 5 ? 'linear-gradient(to bottom, #000 0, #000 calc(100% - 120px), transparent 100%)' : undefined,
+        }}>
+          {lessons.map((lesson, index) => (
             <div 
               key={lesson.id}
               className={`lesson-acc ${index === openLessonIndex ? 'open' : ''}`}
@@ -522,35 +528,23 @@ function CurriculumSection({
             </div>
           ))}
           {lessons.length > 5 && (
-            <>
-              <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: '50px',
-                background: 'linear-gradient(transparent, #0C0A07)',
-                pointerEvents: 'none',
-                zIndex: 2,
-              }} />
-              <div style={{
-                position: 'absolute',
-                bottom: '14px',
-                left: 0,
-                right: 0,
-                textAlign: 'center',
-                zIndex: 3,
-                pointerEvents: 'none',
-              }}>
-                <p style={{
-                  fontSize: '15px',
-                  color: 'rgba(250, 248, 244, 0.5)',
-                  fontStyle: 'italic',
-                  fontFamily: "'Cormorant Garamond', serif",
-                  margin: 0,
-                }}>En nog veel meer…</p>
-              </div>
-            </>
+            <div style={{
+              position: 'absolute',
+              bottom: '24px',
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              zIndex: 3,
+              pointerEvents: 'none',
+            }}>
+              <p style={{
+                fontSize: '15px',
+                color: 'rgba(250, 248, 244, 0.5)',
+                fontStyle: 'italic',
+                fontFamily: "'Cormorant Garamond', serif",
+                margin: 0,
+              }}>En nog veel meer…</p>
+            </div>
           )}
         </div>
       </div>
