@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic'
  * M01 — Account confirmation email (branded Resend)
  *
  * Sends a branded LUXIQUE confirmation email with a valid Supabase
- * verification link. Uses admin.generateLink({ type: 'magiclink' }) to
- * obtain a token that confirms the email AND logs the user in.
+ * verification link. Uses admin.generateLink({ type: 'signup' }) to
+ * generate a link that sets email_confirmed_at when clicked.
+ * The redirect_to is rewritten to /api/auth/callback → /email-verified.
  *
  * Called from the register page after supabase.auth.signUp().
  * Supabase's own confirm email should be disabled in Dashboard to
@@ -56,12 +57,22 @@ export async function POST(req: NextRequest) {
     var linkData = data
   }
 
-  const confirmationUrl = linkData.properties?.action_link || ''
+  let confirmationUrl = linkData.properties?.action_link || ''
 
   if (!confirmationUrl) {
     console.error('M01: no action_link in generateLink response')
     return NextResponse.json({ error: 'No confirmation link generated' }, { status: 500 })
   }
+
+  // Rewrite the redirect_to parameter to point to our auth callback,
+  // which routes to /email-verified after exchanging the session.
+  // Supabase's default redirect_to is the Site URL (root), which skips
+  // our callback and the verified-confirmation page.
+  const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl'}/api/auth/callback`
+  confirmationUrl = confirmationUrl.replace(
+    /redirect_to=[^&]+/,
+    `redirect_to=${encodeURIComponent(callbackUrl)}`
+  )
 
   const html = M01_TEMPLATE(confirmationUrl)
 
