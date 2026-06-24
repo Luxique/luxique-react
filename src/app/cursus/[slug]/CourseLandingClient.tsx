@@ -530,7 +530,7 @@ function CurriculumSection({
           {lessons.length > 5 && (
             <div style={{
               position: 'absolute',
-              bottom: '24px',
+              bottom: '18px',
               left: 0,
               right: 0,
               textAlign: 'center',
@@ -538,12 +538,16 @@ function CurriculumSection({
               pointerEvents: 'none',
             }}>
               <p style={{
-                fontSize: '15px',
-                color: 'rgba(250, 248, 244, 0.5)',
+                fontSize: '19px',
+                color: '#E4C98A',
                 fontStyle: 'italic',
                 fontFamily: "'Cormorant Garamond', serif",
+                letterSpacing: '0.01em',
                 margin: 0,
-              }}>En nog veel meer…</p>
+                textShadow: '0 2px 12px rgba(12,10,7,0.8)',
+              }}>
+                En nog veel meer <span style={{ fontSize: '14px', opacity: 0.7 }}>▾</span>
+              </p>
             </div>
           )}
         </div>
