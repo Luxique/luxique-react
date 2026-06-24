@@ -995,6 +995,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   placeholder="bijv. NIEUW"
                 />
               </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel</label>
                 <input
                   type="text"
                   value={course?.heroTitle || ''}
