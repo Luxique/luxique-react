@@ -14,6 +14,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing uid' }, { status: 400 })
   }
 
+  // === DIAGNOSTIC: Log env var status ===
+  console.log('🔧 FETCH-FROM-CAL DIAGNOSTIC:')
+  console.log(`  - CAL_API_KEY length: ${process.env.CAL_API_KEY?.length || 0}`)
+  console.log(`  - CAL_API_KEY defined: ${!!process.env.CAL_API_KEY}`)
+  console.log(`  - UID: ${uid}`)
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -38,12 +44,17 @@ export async function POST(request: NextRequest) {
     },
   })
 
+  console.log(`🔧 Cal.com API response status: ${calRes.status}`)
+
   if (!calRes.ok) {
+    console.error('🔧 Cal.com API error:', await calRes.text())
     return NextResponse.json({ error: 'Booking not found in Cal' }, { status: 404 })
   }
 
   const calData = await calRes.json()
   const booking = calData.data || calData
+  
+  console.log('🔧 Cal.com API booking keys:', Object.keys(booking))
 
   const eventTypeId = Number(booking.eventTypeId || booking.event_type_id)
   const eventConfig = PAID_EVENTS[eventTypeId]

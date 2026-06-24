@@ -96,7 +96,14 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleBookingCreated(payload: any, supabase: any) {
+  // === DIAGNOSTIC: Log RAW payload for API version check ===
+  console.log('🔧 RAW PAYLOAD (handleBookingCreated):', JSON.stringify(payload, null, 2))
+  console.log('🔧 KEYS IN PAYBACK:', Object.keys(payload))
+  
   const booking = payload.payload || payload.data || payload.event || payload.booking || payload
+  console.log('🔧 BOOKING OBJECT:', JSON.stringify(booking, null, 2))
+  console.log('🔧 KEYS IN BOOKING:', Object.keys(booking))
+  
   const eventTypeId = Number(booking.eventTypeId || booking.event_type_id || payload.eventTypeId)
 
   const eventConfig = PAID_EVENTS[eventTypeId]
