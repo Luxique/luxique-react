@@ -43,6 +43,7 @@ body {
   font-size: 17px;
   line-height: 1.65;
   color: var(--text);
+  overflow-x: hidden;
   background: #F3EFE7;
   min-height: 100%;
   -webkit-font-smoothing: antialiased;

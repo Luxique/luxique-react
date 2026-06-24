@@ -23,7 +23,7 @@ async function prefetchMessages(locale: string) {
   return promise
 }
 
-export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
+export default function LanguageSwitcher({ compact = false, flipUp = false }: { compact?: boolean; flipUp?: boolean }) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
@@ -94,7 +94,7 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[60px] w-[180px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] overflow-hidden py-1 z-50 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)]">
+        <div className={`absolute right-0 ${flipUp ? 'bottom-[60px]' : 'top-[60px]'} w-[180px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] overflow-hidden py-1 z-50 shadow-[${flipUp ? '0_-20px_50px_-15px_rgba(0,0,0,0.15)' : '0_20px_50px_-15px_rgba(0,0,0,0.15)'}]`}>
           {LANGUAGES.map(lang => (
             <button
               key={lang.code}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -15,13 +16,16 @@ const QUICK_REPLIES = [
   'Hoe kan ik boeken?',
 ]
 
-const WELCOME_MESSAGE = 'Hoi! 👋 Ik ben Loenique, de assistent van LUXIQUE. Waarmee kan ik je helpen?'
-const ERROR_MESSAGE = 'Sorry, ik ben er even niet. Mail ons op info@luxique.nl'
+
 
 export default function ChatWidget() {
+  const t = useTranslations('chat')
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const hideOnAcademy = pathname?.startsWith('/academy') ?? false
+
+  const welcomeMessage = t('chatWelcome')
+  const errorMessage = t('chatError')
 
   useEffect(() => {
     const openChat = () => setOpen(true)
@@ -29,7 +33,7 @@ export default function ChatWidget() {
     return () => window.removeEventListener('open-loenique-chat', openChat)
   }, [])
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: WELCOME_MESSAGE }
+    { role: 'assistant', content: welcomeMessage }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -54,9 +58,9 @@ export default function ChatWidget() {
         body: JSON.stringify({ messages: newMessages }),
       })
       const data = await res.json()
-      setMessages(prev => [...prev, { role: 'assistant', content: data.content || data.error || ERROR_MESSAGE }])
+      setMessages(prev => [...prev, { role: 'assistant', content: data.content || data.error || errorMessage }])
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: ERROR_MESSAGE }])
+      setMessages(prev => [...prev, { role: 'assistant', content: errorMessage }])
     } finally {
       setLoading(false)
     }

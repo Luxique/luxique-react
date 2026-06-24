@@ -479,8 +479,8 @@ function CurriculumSection({
           )}
         </div>
         
-        <div className="curriculum-wrap">
-          {lessons.map((lesson, index) => (
+        <div className="curriculum-wrap" style={{ position: 'relative' }}>
+          {lessons.slice(0, 5).map((lesson, index) => (
             <div 
               key={lesson.id}
               className={`lesson-acc ${index === openLessonIndex ? 'open' : ''}`}
@@ -516,6 +516,36 @@ function CurriculumSection({
               )}
             </div>
           ))}
+          {lessons.length > 5 && (
+            <>
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: '140px',
+                background: 'linear-gradient(to bottom, transparent, var(--curriculum-bg, #FAF8F4))',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                zIndex: 2,
+                pointerEvents: 'none',
+              }}>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#7A7268',
+                  fontStyle: 'italic',
+                  margin: 0,
+                }}>En nog veel meer…</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>

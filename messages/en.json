@@ -1007,5 +1007,10 @@
     "ctaHasAccount": "Already have an account?",
     "ctaLogin": "Log in",
     "ctaCreate": "Create free account"
+  },
+  "chat": {
+    "chatWelcome": "Hi! 👋 I'm Loenique, the LUXIQUE assistant. How can I help you?",
+    "chatError": "Sorry, I'm unavailable right now. Email us at info@luxique.nl",
+    "chatMore": "And much more…"
   }
 }
