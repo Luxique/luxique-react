@@ -12,7 +12,8 @@ interface Course {
   description?: string
   slug: string
   level: string
-  price: number
+  price?: number
+  price_cents?: number
   status: 'draft' | 'published' | 'archived'
   thumbnail_url?: string
   intro_video_mux_id?: string
@@ -189,7 +190,7 @@ export default function CoursesOverviewPage() {
     setEditingCourseId(course.id)
     setAcademyCardData({
       title: course.title || '',
-      priceCents: course.price || 0,
+      priceCents: course.price_cents || 0,
       description: course.description || '',
       whatYouLearn: course.what_you_learn || []
     })
@@ -202,13 +203,13 @@ export default function CoursesOverviewPage() {
         .from('courses')
         .update({
           title: academyCardData.title,
-          price: academyCardData.priceCents,
+          price_cents: academyCardData.priceCents,
           description: academyCardData.description,
           what_you_learn: academyCardData.whatYouLearn
         })
         .eq('id', editingCourseId)
       if (error) throw error
-      setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, title: academyCardData.title, price: academyCardData.priceCents, description: academyCardData.description, what_you_learn: academyCardData.whatYouLearn } : c))
+      setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, title: academyCardData.title, price_cents: academyCardData.priceCents, description: academyCardData.description, what_you_learn: academyCardData.whatYouLearn } : c))
       setEditingCourseId(null)
     } catch (err) {
       alert('Opslaan mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
@@ -631,7 +632,7 @@ export default function CoursesOverviewPage() {
                       </div>
                       <div className="text-center">
                         <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1a1a1a] leading-none tracking-[-0.01em]">
-                          {formatRevenue(course.price || 0)}
+                          {formatRevenue((course.price_cents || 0) / 100)}
                         </div>
                         <div className="text-[9.5px] text-[#888] tracking-[0.1em] uppercase">
                           Prijs
