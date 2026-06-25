@@ -1453,14 +1453,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Prijs (€)</label>
                 <input
                   type="text"
-                  value={course?.priceCents ? (course.priceCents / 100).toFixed(2).replace('.', ',') : '0,00'}
+                  value={course?.priceCents ? (course.priceCents / 100).toFixed(2).replace('.', ',') : ''}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.')
                     const euros = parseFloat(raw) || 0
                     updateCourseField('priceCents', Math.round(euros * 100))
                   }}
                   className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="1997,00"
+                  placeholder="0,00"
                 />
                 <p className="text-[9px] text-[#7A7268] mt-1">wordt naar Stripe gezet</p>
               </div>
