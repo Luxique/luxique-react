@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Mux from '@mux/mux-node';
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Get a signed playback token for a Mux asset.
  *

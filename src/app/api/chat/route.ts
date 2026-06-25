@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 const SYSTEM_PROMPT_FALLBACK = `Je bent "Loenique", de persoonlijke assistent van LUXIQUE — een lash studio en online academy van lash artist Chiva in Arnhem. Je praat namens LUXIQUE met bezoekers op de website.
 
 # Jouw toon

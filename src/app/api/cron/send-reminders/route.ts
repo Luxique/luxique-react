@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Daily reminder cron — sends reminders for paid bookings ~24h before appointment.
  *

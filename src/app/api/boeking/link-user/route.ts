@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Links a pending_booking to the logged-in user's user_id.
  * Called when the user lands on /boeking/betalen?uid=xxx

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Mux from '@mux/mux-node';
 
+export const dynamic = 'force-dynamic'
+
 interface AssetStatusResponse {
   status: string;
   asset_id?: string;

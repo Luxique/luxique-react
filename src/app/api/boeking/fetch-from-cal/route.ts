@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 const PAID_EVENTS: Record<number, { name: string; priceCents: number }> = {
   5492038: { name: 'Nieuwe Lash Set', priceCents: 13000 },
   5492037: { name: 'Lash Set opvullen', priceCents: 9000 },
