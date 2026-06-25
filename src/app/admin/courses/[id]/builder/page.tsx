@@ -153,6 +153,9 @@ interface Course {
   comparisonFeatures?: string[]
   comparisonColLxq?: string
   comparisonColStandard?: string
+  comparisonTitlePre?: string
+  comparisonTitleAccent?: string
+  comparisonIntroText?: string
   comparisonFooterPre?: string
   comparisonFooterEm?: string
   comparisonFooterPost?: string
@@ -200,6 +203,9 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       comparison_features: builderCourse.comparisonFeatures,
       comparison_col_lxq: builderCourse.comparisonColLxq,
       comparison_col_standard: builderCourse.comparisonColStandard,
+      comparison_title_pre: builderCourse.comparisonTitlePre,
+      comparison_title_accent: builderCourse.comparisonTitleAccent,
+      comparison_intro_text: builderCourse.comparisonIntroText,
       comparison_footer_pre: builderCourse.comparisonFooterPre,
       comparison_footer_em: builderCourse.comparisonFooterEm,
       comparison_footer_post: builderCourse.comparisonFooterPost,
@@ -392,6 +398,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       comparison_features: courseToSave.comparisonFeatures || null,
       comparison_col_lxq: courseToSave.comparisonColLxq || null,
       comparison_col_standard: courseToSave.comparisonColStandard || null,
+      comparison_title_pre: courseToSave.comparisonTitlePre || null,
+      comparison_title_accent: courseToSave.comparisonTitleAccent || null,
+      comparison_intro_text: courseToSave.comparisonIntroText || null,
       comparison_footer_pre: courseToSave.comparisonFooterPre || null,
       comparison_footer_em: courseToSave.comparisonFooterEm || null,
       comparison_footer_post: courseToSave.comparisonFooterPost || null,
@@ -574,6 +583,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         comparison_features: courseToSave.comparisonFeatures || null,
         comparison_col_lxq: courseToSave.comparisonColLxq || null,
         comparison_col_standard: courseToSave.comparisonColStandard || null,
+        comparison_title_pre: courseToSave.comparisonTitlePre || null,
+        comparison_title_accent: courseToSave.comparisonTitleAccent || null,
+        comparison_intro_text: courseToSave.comparisonIntroText || null,
         comparison_footer_pre: courseToSave.comparisonFooterPre || null,
         comparison_footer_em: courseToSave.comparisonFooterEm || null,
         comparison_footer_post: courseToSave.comparisonFooterPost || null,
@@ -794,6 +806,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         comparisonFeatures: courseData.comparison_features || ['Werken met verschillende oogvormen', 'Droopyness actief voorkomen', 'De juiste wimper selecteren per oog', 'Veilig werken met adhesieven', 'Een natuurlijke look creëren', 'Een dramatic volume set maken', 'Snelle applicatie zonder kwaliteitsverlies', 'Klantconsult en intake', 'Prijs stellen met zelfvertrouwen'],
         comparisonColLxq: courseData.comparison_col_lxq || undefined,
         comparisonColStandard: courseData.comparison_col_standard || undefined,
+        comparisonTitlePre: courseData.comparison_title_pre || undefined,
+        comparisonTitleAccent: courseData.comparison_title_accent || undefined,
+        comparisonIntroText: courseData.comparison_intro_text || undefined,
         comparisonFooterPre: courseData.comparison_footer_pre || undefined,
         comparisonFooterEm: courseData.comparison_footer_em || undefined,
         comparisonFooterPost: courseData.comparison_footer_post || undefined,
@@ -1605,6 +1620,36 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel — deel 1 (gewoon)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonTitlePre || ''}
+                  onChange={(e) => updateCourseField('comparisonTitlePre', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Niet elke opleiding is hetzelfde."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel — accent (goud, italic)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonTitleAccent || ''}
+                  onChange={(e) => updateCourseField('comparisonTitleAccent', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Dit is het verschil."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Intro-tekst</label>
+                <textarea
+                  value={course?.comparisonIntroText || ''}
+                  onChange={(e) => updateCourseField('comparisonIntroText', e.target.value)}
+                  rows={3}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
+                  placeholder="bijv. De meeste cursussen leren je een set kunstjes..."
+                />
+              </div>
               <div>
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Column 1 Header (LXQ)</label>
                 <input

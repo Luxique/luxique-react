@@ -7,12 +7,15 @@ interface Props {
   features?: string[]
   colLxq?: string
   colStandard?: string
+  titlePre?: string
+  titleAccent?: string
+  introText?: string
   footerPre?: string
   footerEm?: string
   footerPost?: string
 }
 
-export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, footerPre: footerPreProp, footerEm: footerEmProp, footerPost: footerPostProp }: Props) {
+export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, titlePre: titlePreProp, titleAccent: titleAccentProp, introText: introTextProp, footerPre: footerPreProp, footerEm: footerEmProp, footerPost: footerPostProp }: Props) {
   const t = useTranslations('Vergelijking')
 
   const defaultFeatures = [
@@ -27,6 +30,9 @@ export default function ComparisonTable({ theme = 'light', features: featuresPro
   const footerEm = footerEmProp || t('footerEm2')
   const footerPost = footerPostProp || t('footerPost')
   const footerText = `${footerPre} <em>${footerEm}</em> ${footerPost}`
+  const titlePre = titlePreProp || t('title1')
+  const titleAccent = titleAccentProp || t('title2')
+  const introText = introTextProp || t('subtitle')
 
   const checkSVG = (
     <svg viewBox="0 0 100 100" width="14" height="14">
@@ -43,11 +49,11 @@ export default function ComparisonTable({ theme = 'light', features: featuresPro
           <div className={isDark ? 'comp-content comp-content-dark' : 'comp-content'}>
             <p className="comp-eyebrow">{t('eyebrow')}</p>
             <h2 className={isDark ? 'comp-title comp-title-dark' : 'comp-title'}>
-              {t('title1')} <em>{t('title2')}</em>
+              {titlePre} <em>{titleAccent}</em>
             </h2>
             <div className="comp-desc">
               <p className={isDark ? 'comp-desc-dark' : ''}>
-                {t('subtitle')}
+                {introText}
               </p>
             </div>
           </div>
