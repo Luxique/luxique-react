@@ -1641,26 +1641,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 />
               </div>
               <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Column 1 Header (LXQ)</label>
-                <input
-                  type="text"
-                  value={course?.comparisonColLxq || ''}
-                  onChange={(e) => updateCourseField('comparisonColLxq', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Luxique Academy"
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Column 2 Header (Standard)</label>
-                <input
-                  type="text"
-                  value={course?.comparisonColStandard || ''}
-                  onChange={(e) => updateCourseField('comparisonColStandard', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Standaard"
-                />
-              </div>
-              <div>
                 <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Features</label>
                 {(course?.comparisonFeatures || []).map((item, i) => (
                   <div key={i} className="flex gap-1 mb-1">
