@@ -48,7 +48,7 @@ export default function CoursesOverviewPage() {
   const [editingDesc, setEditingDesc] = useState<string | null>(null)
   const [descDraft, setDescDraft] = useState('')
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null)
-  const [academyCardData, setAcademyCardData] = useState({ description: '', whatYouLearn: [] as string[] })
+  const [academyCardData, setAcademyCardData] = useState({ title: '', priceCents: 0, description: '', whatYouLearn: [] as string[] })
   const [uploadingThumb, setUploadingThumb] = useState(false)
 
   useEffect(() => {
@@ -188,6 +188,8 @@ export default function CoursesOverviewPage() {
   const openAcademyCardModal = (course: Course) => {
     setEditingCourseId(course.id)
     setAcademyCardData({
+      title: course.title || '',
+      priceCents: course.price || 0,
       description: course.description || '',
       whatYouLearn: course.what_you_learn || []
     })
@@ -199,12 +201,14 @@ export default function CoursesOverviewPage() {
       const { error } = await supabase
         .from('courses')
         .update({
+          title: academyCardData.title,
+          price: academyCardData.priceCents,
           description: academyCardData.description,
           what_you_learn: academyCardData.whatYouLearn
         })
         .eq('id', editingCourseId)
       if (error) throw error
-      setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, description: academyCardData.description, what_you_learn: academyCardData.whatYouLearn } : c))
+      setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, title: academyCardData.title, price: academyCardData.priceCents, description: academyCardData.description, what_you_learn: academyCardData.whatYouLearn } : c))
       setEditingCourseId(null)
     } catch (err) {
       alert('Opslaan mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
@@ -542,9 +546,23 @@ export default function CoursesOverviewPage() {
                       {course.title}
                     </p>
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <p className="text-[11.5px] text-[#888] font-light flex-1">
-                        {course.description || 'Geen beschrijving'}
-                      </p>
+                      <div className="flex-1">
+                        <p className="text-[11.5px] text-[#888] font-light mb-2">
+                          {course.description || 'Geen beschrijving'}
+                        </p>
+                        {course.what_you_learn && course.what_you_learn.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {course.what_you_learn.slice(0, 3).map((bullet, i) => (
+                              <span key={i} className="text-[9.5px] text-[#7A6340] bg-[#F3EEE6] px-2 py-0.5 rounded-full">
+                                {bullet}
+                              </span>
+                            ))}
+                            {course.what_you_learn.length > 3 && (
+                              <span className="text-[9.5px] text-[#888]">+{course.what_you_learn.length - 3}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); openAcademyCardModal(course) }}
                         className="flex-shrink-0 text-[10px] text-[#aaa] hover:text-[#C4A265] transition mt-0.5"
@@ -783,6 +801,31 @@ export default function CoursesOverviewPage() {
               Deze velden verschijnen op de publieke academy cursuskaarten.
             </p>
             <div className="flex flex-col gap-4 mb-6">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">Cursusnaam</label>
+                <input
+                  type="text"
+                  value={academyCardData.title}
+                  onChange={(e) => setAcademyCardData({ ...academyCardData, title: e.target.value })}
+                  className="w-full bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Medusa Lash Basics"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">Prijs (€)</label>
+                <input
+                  type="text"
+                  value={academyCardData.priceCents > 0 ? (academyCardData.priceCents / 100).toFixed(2).replace('.', ',') : ''}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9.,]/g, '').replace(',', '.')
+                    const euros = parseFloat(raw) || 0
+                    setAcademyCardData({ ...academyCardData, priceCents: Math.round(euros * 100) })
+                  }}
+                  className="w-full bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. 297,00"
+                />
+              </div>
               <div>
                 <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">Korte beschrijving</label>
                 <textarea
