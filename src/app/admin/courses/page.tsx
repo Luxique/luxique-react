@@ -25,6 +25,7 @@ interface Course {
   revenue?: number
   has_quiz?: boolean
   has_certificate?: boolean
+  what_you_learn?: string[]
 }
 
 export default function CoursesOverviewPage() {
@@ -46,6 +47,8 @@ export default function CoursesOverviewPage() {
   const [loadingCourses, setLoadingCourses] = useState(true)
   const [editingDesc, setEditingDesc] = useState<string | null>(null)
   const [descDraft, setDescDraft] = useState('')
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null)
+  const [academyCardData, setAcademyCardData] = useState({ description: '', whatYouLearn: [] as string[] })
   const [uploadingThumb, setUploadingThumb] = useState(false)
 
   useEffect(() => {
@@ -176,6 +179,33 @@ export default function CoursesOverviewPage() {
       if (error) throw error
       setCourses(prev => prev.map(c => c.id === courseId ? { ...c, description: descDraft } : c))
       setEditingDesc(null)
+    } catch (err) {
+      alert('Opslaan mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
+    }
+  }
+
+  // Academy card modal
+  const openAcademyCardModal = (course: Course) => {
+    setEditingCourseId(course.id)
+    setAcademyCardData({
+      description: course.description || '',
+      whatYouLearn: course.what_you_learn || []
+    })
+  }
+
+  const handleAcademyCardSave = async () => {
+    if (!editingCourseId) return
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .update({
+          description: academyCardData.description,
+          what_you_learn: academyCardData.whatYouLearn
+        })
+        .eq('id', editingCourseId)
+      if (error) throw error
+      setCourses(prev => prev.map(c => c.id === editingCourseId ? { ...c, description: academyCardData.description, what_you_learn: academyCardData.whatYouLearn } : c))
+      setEditingCourseId(null)
     } catch (err) {
       alert('Opslaan mislukt: ' + (err instanceof Error ? err.message : 'Onbekend'))
     }
@@ -516,9 +546,9 @@ export default function CoursesOverviewPage() {
                         {course.description || 'Geen beschrijving'}
                       </p>
                       <button
-                        onClick={(e) => { e.stopPropagation(); if (editingDesc === course.id) { setEditingDesc(null) } else { setDescDraft(course.description || ''); setEditingDesc(course.id) } }}
+                        onClick={(e) => { e.stopPropagation(); openAcademyCardModal(course) }}
                         className="flex-shrink-0 text-[10px] text-[#aaa] hover:text-[#C4A265] transition mt-0.5"
-                        title="Bewerk beschrijving"
+                        title="Bewerk academy card velden"
                       >
                         <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
                       </button>
@@ -737,6 +767,64 @@ export default function CoursesOverviewPage() {
               >
                 Aanmaken & bouwen →
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Academy Card Edit Modal */}
+      {editingCourseId && (
+        <div className="fixed inset-0 bg-[rgba(12,10,7,0.45)] backdrop-blur-sm z-[200] flex items-center justify-center" onClick={() => setEditingCourseId(null)}>
+          <div className="bg-white rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]" onClick={(e) => e.stopPropagation()}>
+            <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1a1a1a] mb-1.5">
+              Academy card bewerken
+            </p>
+            <p className="text-[12.5px] text-[#888] font-light mb-5.5 leading-relaxed">
+              Deze velden verschijnen op de publieke academy cursuskaarten.
+            </p>
+            <div className="flex flex-col gap-4 mb-6">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">Korte beschrijving</label>
+                <textarea
+                  value={academyCardData.description}
+                  onChange={(e) => setAcademyCardData({ ...academyCardData, description: e.target.value })}
+                  rows={2}
+                  className="w-full bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
+                  placeholder="bijv. Vervolgmodule — Wispy techniek"
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#888] tracking-[0.06em] block mb-0.5">Academy card bolletjes (features)</label>
+                {academyCardData.whatYouLearn.map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 mb-1.5">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const updated = [...academyCardData.whatYouLearn]
+                        updated[i] = e.target.value
+                        setAcademyCardData({ ...academyCardData, whatYouLearn: updated })
+                      }}
+                      className="flex-1 bg-white border border-[#eee] rounded-lg py-2 px-3 text-[13px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                      placeholder="bijv. Online lessen"
+                    />
+                    <button
+                      onClick={() => setAcademyCardData({ ...academyCardData, whatYouLearn: academyCardData.whatYouLearn.filter((_, j) => j !== i) })}
+                      className="text-[#aaa] hover:text-red-500 p-1 text-[16px]"
+                    >
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setAcademyCardData({ ...academyCardData, whatYouLearn: [...academyCardData.whatYouLearn, ''] })}
+                  className="text-[12px] text-[#C4A265] hover:text-[#7A6340] transition font-medium"
+                >+ Bolletje toevoegen</button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setEditingCourseId(null)} className="flex-1 text-[13px] font-normal py-2.5 rounded-full border border-[#eee] bg-transparent cursor-pointer text-[#888] hover:text-[#1a1a1a] hover:border-[rgba(30,26,20,0.22)] transition">Annuleren</button>
+              <button onClick={handleAcademyCardSave} className="flex-[2] text-[13px] font-semibold py-2.5 rounded-full bg-[#C4A265] text-white border-none cursor-pointer hover:bg-[#DFC08A] hover:shadow-[0_4px_14px_rgba(196,162,101,0.28)] transition">Opslaan</button>
             </div>
           </div>
         </div>

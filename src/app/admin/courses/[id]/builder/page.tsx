@@ -1072,51 +1072,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 />
                 <p className="text-[9px] text-[#A89B8E] mt-1">Deze naam wordt gebruikt op de academy pagina, pricing card, en overal waar de cursus getoond wordt.</p>
               </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Korte beschrijving (academy card)</label>
-                <textarea
-                  value={course?.shortDescription || ''}
-                  onChange={(e) => updateCourseField('shortDescription', e.target.value)}
-                  rows={2}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
-                  placeholder="Korte beschrijving voor de academy pagina..."
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Academy card bolletjes (features)</label>
-                {(course?.whatYouLearn || []).map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 mb-1.5">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => {
-                        const updated = [...(course?.whatYouLearn || [])]
-                        updated[i] = e.target.value
-                        updateCourseField('whatYouLearn', updated)
-                      }}
-                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                    />
-                    <button
-                      onClick={() => updateCourseField('whatYouLearn', (course?.whatYouLearn || []).filter((_, j) => j !== i))}
-                      className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
-                    >✕</button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => updateCourseField('whatYouLearn', [...(course?.whatYouLearn || []), ''])}
-                  className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
-                >+ Bolletje toevoegen</button>
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Thumbnail URL (academy card afbeelding)</label>
-                <input
-                  type="text"
-                  value={course?.thumbnailUrl || ''}
-                  onChange={(e) => updateCourseField('thumbnailUrl', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. https://image.mux.com/.../thumbnail.png"
-                />
-                <p className="text-[9px] text-[#A89B8E] mt-1">URL van de afbeelding. Als leeg, wordt automatisch de hero video thumbnail gebruikt.</p>
+              <div className="bg-[#F3EEE6] rounded-lg p-3 border border-[rgba(196,162,101,0.2)]">
+                <p className="text-[11px] text-[#7A6340] italic">Academy card velden (beschrijving, bolletjes, thumbnail) bewerk je op het cursusoverzicht (/admin/courses).</p>
               </div>
             </div>
           </div>
