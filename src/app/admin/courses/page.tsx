@@ -618,7 +618,7 @@ export default function CoursesOverviewPage() {
                       )}
                     </div>
 
-                    {/* Earnings Row */}
+                    {/* Stats Row — Studenten | Prijs | Omzet */}
                     <div className="flex items-center justify-between py-2.5 border-y border-[#eee] mb-3">
                       <div className="flex items-center gap-1.5 text-[11px] text-[#888]">
                         <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -628,6 +628,14 @@ export default function CoursesOverviewPage() {
                           {course.students_count || 0}
                         </strong>
                         {' '}studenten
+                      </div>
+                      <div className="text-center">
+                        <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1a1a1a] leading-none tracking-[-0.01em]">
+                          {formatRevenue(course.price || 0)}
+                        </div>
+                        <div className="text-[9.5px] text-[#888] tracking-[0.1em] uppercase">
+                          Prijs
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="font-['Cormorant_Garamond',serif] text-[18px] font-light text-[#1a1a1a] leading-none tracking-[-0.01em]">
