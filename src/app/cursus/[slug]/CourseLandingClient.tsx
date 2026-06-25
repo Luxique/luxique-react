@@ -56,9 +56,7 @@ interface Course {
   comparison_title_pre?: string
   comparison_title_accent?: string
   comparison_intro_text?: string
-  comparison_footer_pre?: string
-  comparison_footer_em?: string
-  comparison_footer_post?: string
+  comparison_footer_text?: string
 }
 
 interface Lesson {
@@ -271,9 +269,7 @@ export default function CourseLandingClient({
         titlePre={course.comparison_title_pre}
         titleAccent={course.comparison_title_accent}
         introText={course.comparison_intro_text}
-        footerPre={course.comparison_footer_pre}
-        footerEm={course.comparison_footer_em}
-        footerPost={course.comparison_footer_post}
+        footerText={course.comparison_footer_text}
       />
       
       {/* Reviews */}

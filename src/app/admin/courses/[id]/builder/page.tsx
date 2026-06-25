@@ -156,9 +156,7 @@ interface Course {
   comparisonTitlePre?: string
   comparisonTitleAccent?: string
   comparisonIntroText?: string
-  comparisonFooterPre?: string
-  comparisonFooterEm?: string
-  comparisonFooterPost?: string
+  comparisonFooterText?: string
   faqItems?: Array<{question: string; answer: string}>
   landingBlocks?: Array<{type: string, data: Record<string, unknown>, order: number}>
 }
@@ -206,9 +204,7 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       comparison_title_pre: builderCourse.comparisonTitlePre,
       comparison_title_accent: builderCourse.comparisonTitleAccent,
       comparison_intro_text: builderCourse.comparisonIntroText,
-      comparison_footer_pre: builderCourse.comparisonFooterPre,
-      comparison_footer_em: builderCourse.comparisonFooterEm,
-      comparison_footer_post: builderCourse.comparisonFooterPost,
+      comparison_footer_text: builderCourse.comparisonFooterText,
       faq_items: builderCourse.faqItems,
       landing_blocks: (builderCourse.landingBlocks || []).map((b: {type: string, data: Record<string, unknown>, order: number}, i: number) => ({ id: `block-${i}`, ...b })),
     },
@@ -401,9 +397,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       comparison_title_pre: courseToSave.comparisonTitlePre || null,
       comparison_title_accent: courseToSave.comparisonTitleAccent || null,
       comparison_intro_text: courseToSave.comparisonIntroText || null,
-      comparison_footer_pre: courseToSave.comparisonFooterPre || null,
-      comparison_footer_em: courseToSave.comparisonFooterEm || null,
-      comparison_footer_post: courseToSave.comparisonFooterPost || null,
+      comparison_footer_text: courseToSave.comparisonFooterText || null,
       faq_items: courseToSave.faqItems || null,
       landing_blocks: courseToSave.landingBlocks || []
     })
@@ -586,9 +580,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         comparison_title_pre: courseToSave.comparisonTitlePre || null,
         comparison_title_accent: courseToSave.comparisonTitleAccent || null,
         comparison_intro_text: courseToSave.comparisonIntroText || null,
-        comparison_footer_pre: courseToSave.comparisonFooterPre || null,
-        comparison_footer_em: courseToSave.comparisonFooterEm || null,
-        comparison_footer_post: courseToSave.comparisonFooterPost || null,
+        comparison_footer_text: courseToSave.comparisonFooterText || null,
         faq_items: courseToSave.faqItems || null,
         // PUBLISH in one shot — no intermediate draft state
         status: 'published',
@@ -809,9 +801,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         comparisonTitlePre: courseData.comparison_title_pre || undefined,
         comparisonTitleAccent: courseData.comparison_title_accent || undefined,
         comparisonIntroText: courseData.comparison_intro_text || undefined,
-        comparisonFooterPre: courseData.comparison_footer_pre || undefined,
-        comparisonFooterEm: courseData.comparison_footer_em || undefined,
-        comparisonFooterPost: courseData.comparison_footer_post || undefined,
+        comparisonFooterText: courseData.comparison_footer_text || undefined,
         faqItems: courseData.faq_items || [
           { question: 'Hoe lang heb ik toegang tot de cursus?', answer: 'Je hebt 12 maanden toegang tot alle lessen en modules, inclusief updates in die periode. Vragen? Stuur ons een mailtje.' },
           { question: 'Heb ik al ervaring nodig om te starten?', answer: 'Nee. Medusa Lash Basics start bij de absolute basis. Motivatie en geduld zijn wel handig.' },
@@ -1695,32 +1685,17 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
                 >+ Toevoegen</button>
               </div>
-              {/* Closing text (3 parts: pre + accent + post) */}
+              {/* Closing text */}
               <div className="mt-3 pt-3 border-t border-[rgba(26,24,21,0.08)]">
-                <label className="text-[10px] font-medium text-[#8B7355] mb-1 block">Afsluitende tekst — deel 1 (gewoon)</label>
+                <label className="text-[10px] font-medium text-[#8B7355] mb-1 block">Afsluitende tekst</label>
                 <textarea
-                  value={course?.comparisonFooterPre || ''}
-                  onChange={(e) => updateCourseField('comparisonFooterPre', e.target.value)}
-                  rows={2}
+                  value={course?.comparisonFooterText || ''}
+                  onChange={(e) => updateCourseField('comparisonFooterText', e.target.value)}
+                  rows={3}
                   className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded resize-none"
-                  placeholder="Bij Luxique Academy studeer je niet af als iemand die weet"
+                  placeholder="Bij Luxique Academy studeer je niet af als iemand die weet hoe het moet, maar als iemand die begrijpt waarom — en dat is precies wat klanten laat terugkomen."
                 />
-                <label className="text-[10px] font-medium text-[#8B7355] mb-1 mt-2 block">Afsluitende tekst — accent (goud, italic)</label>
-                <input
-                  type="text"
-                  value={course?.comparisonFooterEm || ''}
-                  onChange={(e) => updateCourseField('comparisonFooterEm', e.target.value)}
-                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded"
-                  placeholder="hoe"
-                />
-                <label className="text-[10px] font-medium text-[#8B7355] mb-1 mt-2 block">Afsluitende tekst — deel 2 (gewoon)</label>
-                <textarea
-                  value={course?.comparisonFooterPost || ''}
-                  onChange={(e) => updateCourseField('comparisonFooterPost', e.target.value)}
-                  rows={2}
-                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded resize-none"
-                  placeholder="het moet, maar als iemand die begrijpt waarom — en dat is precies wat klanten laat terugkomen."
-                />
+                <p className="text-[9px] text-[#A89B8E] mt-1">Tip: gebruik &lt;em&gt;tekst&lt;/em&gt; voor goud/italic accent</p>
               </div>
             </div>
           </div>

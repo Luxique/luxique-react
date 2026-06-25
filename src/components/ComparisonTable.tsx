@@ -10,12 +10,10 @@ interface Props {
   titlePre?: string
   titleAccent?: string
   introText?: string
-  footerPre?: string
-  footerEm?: string
-  footerPost?: string
+  footerText?: string
 }
 
-export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, titlePre: titlePreProp, titleAccent: titleAccentProp, introText: introTextProp, footerPre: footerPreProp, footerEm: footerEmProp, footerPost: footerPostProp }: Props) {
+export default function ComparisonTable({ theme = 'light', features: featuresProp, colLxq: colLxqProp, colStandard: colStandardProp, titlePre: titlePreProp, titleAccent: titleAccentProp, introText: introTextProp, footerText: footerTextProp }: Props) {
   const t = useTranslations('Vergelijking')
 
   const defaultFeatures = [
@@ -26,10 +24,7 @@ export default function ComparisonTable({ theme = 'light', features: featuresPro
   const features = featuresProp || defaultFeatures
   const colLxq = colLxqProp || t('colLxq')
   const colStandard = colStandardProp || t('colStandard')
-  const footerPre = footerPreProp || `${t('footerPre')} <em>${t('footerEm1')}</em> ${t('footerMid')}`
-  const footerEm = footerEmProp || t('footerEm2')
-  const footerPost = footerPostProp || t('footerPost')
-  const footerText = `${footerPre} <em>${footerEm}</em> ${footerPost}`
+  const footerText = footerTextProp || `${t('footerPre')} <em>${t('footerEm1')}</em> ${t('footerMid')} <em>${t('footerEm2')}</em> ${t('footerPost')}`
   const titlePre = titlePreProp || t('title1')
   const titleAccent = titleAccentProp || t('title2')
   const introText = introTextProp || t('subtitle')
