@@ -615,8 +615,8 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
           <div className="pricing-stage">
             <div className="pricing-card">
               <div className="inner">
-              <span className="eyebrow">Medusa Lash Basics</span>
-              <h3>Word een echte lash artist</h3>
+              <span className="eyebrow">Word een echte lash artist</span>
+              <h3>{course.title}</h3>
               
               <div className="price-big">
                 <span className="euro">€</span>

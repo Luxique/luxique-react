@@ -126,6 +126,7 @@ interface Course {
   quizzes?: Quiz[]
   // v3 fields
   heroBadgeText?: string
+  shortDescription?: string
   heroTitle?: string
   heroTitleAccent?: string
   heroTitleSuffix?: string
@@ -171,6 +172,7 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       slug: builderCourse.title?.toLowerCase().replace(/\s+/g, '-') || '',
       description: builderCourse.description,
       hero_badge_text: builderCourse.heroBadgeText,
+      short_description: builderCourse.shortDescription,
       hero_title: builderCourse.heroTitle,
       hero_title_accent: builderCourse.heroTitleAccent,
       hero_title_suffix: builderCourse.heroTitleSuffix,
@@ -367,6 +369,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       status: 'draft',
       // v3 fields
       hero_badge_text: courseToSave.heroBadgeText || null,
+      short_description: courseToSave.shortDescription || null,
       hero_title: courseToSave.heroTitle || null,
       hero_title_accent: courseToSave.heroTitleAccent || null,
       hero_title_suffix: courseToSave.heroTitleSuffix || null,
@@ -550,6 +553,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         certificate: courseToSave.certificate || false,
         // v3 fields
         hero_badge_text: courseToSave.heroBadgeText || null,
+        short_description: courseToSave.shortDescription || null,
         hero_title: courseToSave.heroTitle || null,
         hero_title_accent: courseToSave.heroTitleAccent || null,
         hero_title_suffix: courseToSave.heroTitleSuffix || null,
@@ -771,6 +775,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         quizzes: [],
         // v3 field mappings
         heroBadgeText: courseData.hero_badge_text || undefined,
+        shortDescription: courseData.short_description || undefined,
         heroTitle: courseData.hero_title || undefined,
         heroTitleAccent: courseData.hero_title_accent || undefined,
         heroTitleSuffix: courseData.hero_title_suffix || undefined,
@@ -787,7 +792,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         reviewsEyebrow: courseData.reviews_eyebrow || undefined,
         reviewsTitle: courseData.reviews_title || undefined,
         accessDurationText: courseData.access_duration_text || undefined,
-        pricingIncludes: courseData.pricing_includes || [],
+        pricingIncludes: courseData.pricing_includes?.length ? courseData.pricing_includes : ['12 maanden toegang & updates', 'Certificaat bij afronding', 'Eindtoets en quizzen', '14 dagen niet-goed-geld-terug'],
         finalCtaEyebrow: courseData.final_cta_eyebrow || undefined,
         finalCtaTitle: courseData.final_cta_title || undefined,
         finalCtaTitleAccent: courseData.final_cta_title_accent || undefined,
@@ -1041,6 +1046,39 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     if (currentContext === 'global') {
       return (
         <div className="space-y-3">
+          {/* Course Name — central source of truth */}
+          <div className="bg-[#FDFCFA] border-2 border-[rgba(196,162,101,0.3)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[rgba(196,162,101,0.08)] border-b border-[rgba(196,162,101,0.2)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">CURSUSNAAM</span>
+                <span className="text-[8px] font-bold tracking-[0.1em] uppercase px-2 py-1 rounded-full bg-[#C4A265] text-white">CENTRAAL</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Naam (verschijnt overal)</label>
+                <input
+                  type="text"
+                  value={course?.title || ''}
+                  onChange={(e) => updateCourseField('title', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[14px] font-['Cormorant_Garamond'] font-medium outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Medusa Lash Basics"
+                />
+                <p className="text-[9px] text-[#A89B8E] mt-1">Deze naam wordt gebruikt op de academy pagina, pricing card, en overal waar de cursus getoond wordt.</p>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Korte beschrijving (academy card)</label>
+                <textarea
+                  value={course?.shortDescription || ''}
+                  onChange={(e) => updateCourseField('shortDescription', e.target.value)}
+                  rows={2}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
+                  placeholder="Korte beschrijving voor de academy pagina..."
+                />
+              </div>
+            </div>
+          </div>
+
           {/* HERO Section Card */}
           <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
             <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
