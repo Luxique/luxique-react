@@ -113,6 +113,7 @@ interface Course {
   heroMuxPlaybackId?: string
   heroMuxAssetId?: string
   whatYouLearn?: string[]
+  thumbnailUrl?: string
   whoIsItFor?: string
   priceCents?: number
   stripePriceId?: string
@@ -193,6 +194,8 @@ function mapBuilderToLandingProps(builderCourse: Course, builderLessons: Lesson[
       price_cents: builderCourse.priceCents,
       access_duration_text: builderCourse.accessDurationText,
       pricing_includes: builderCourse.pricingIncludes,
+      what_you_learn: builderCourse.whatYouLearn,
+      thumbnail_url: builderCourse.thumbnailUrl,
       final_cta_eyebrow: builderCourse.finalCtaEyebrow,
       final_cta_title: builderCourse.finalCtaTitle,
       final_cta_title_accent: builderCourse.finalCtaTitleAccent,
@@ -358,6 +361,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       hero_mux_playback_id: courseToSave.heroMuxPlaybackId || null,
       hero_mux_asset_id: courseToSave.heroMuxAssetId || null,
       what_you_learn: courseToSave.whatYouLearn || [],
+      thumbnail_url: courseToSave.thumbnailUrl || null,
       who_is_it_for: courseToSave.whoIsItFor || null,
       price_cents: courseToSave.priceCents || 0,
       level: courseToSave.level || 'beginner',
@@ -543,6 +547,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         hero_mux_playback_id: courseToSave.heroMuxPlaybackId || null,
         hero_mux_asset_id: courseToSave.heroMuxAssetId || null,
         what_you_learn: courseToSave.whatYouLearn || [],
+        thumbnail_url: courseToSave.thumbnailUrl || null,
         who_is_it_for: courseToSave.whoIsItFor || null,
         price_cents: courseToSave.priceCents || 0,
         level: courseToSave.level || 'beginner',
@@ -761,7 +766,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         heroImageUrl: courseData.hero_image_url || undefined,
         heroMuxPlaybackId: courseData.hero_mux_playback_id || undefined,
         heroMuxAssetId: courseData.hero_mux_asset_id || undefined,
-        whatYouLearn: courseData.what_you_learn || [],
+        whatYouLearn: courseData.what_you_learn?.length ? courseData.what_you_learn : ['Online lessen · video, theorie & quizzen', '12 maanden toegang & updates', 'Certificaat bij afronding'],
+        thumbnailUrl: courseData.thumbnail_url || undefined,
         whoIsItFor: courseData.who_is_it_for || undefined,
         priceCents: courseData.price_cents || 0,
         stripePriceId: courseData.stripe_price_id || undefined,
@@ -1075,6 +1081,42 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
                   placeholder="Korte beschrijving voor de academy pagina..."
                 />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Academy card bolletjes (features)</label>
+                {(course?.whatYouLearn || []).map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 mb-1.5">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const updated = [...(course?.whatYouLearn || [])]
+                        updated[i] = e.target.value
+                        updateCourseField('whatYouLearn', updated)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('whatYouLearn', (course?.whatYouLearn || []).filter((_, j) => j !== i))}
+                      className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('whatYouLearn', [...(course?.whatYouLearn || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#7A6340] transition mt-1"
+                >+ Bolletje toevoegen</button>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Thumbnail URL (academy card afbeelding)</label>
+                <input
+                  type="text"
+                  value={course?.thumbnailUrl || ''}
+                  onChange={(e) => updateCourseField('thumbnailUrl', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. https://image.mux.com/.../thumbnail.png"
+                />
+                <p className="text-[9px] text-[#A89B8E] mt-1">URL van de afbeelding. Als leeg, wordt automatisch de hero video thumbnail gebruikt.</p>
               </div>
             </div>
           </div>

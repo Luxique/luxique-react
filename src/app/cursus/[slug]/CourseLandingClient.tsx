@@ -591,7 +591,7 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
   const firstInclude = durationStr ? `${lessonCount} lessen · ${durationStr} video` : `${lessonCount} lessen`
 
   const includesList = course.pricing_includes?.length
-    ? [firstInclude, ...course.pricing_includes.slice(1)]
+    ? [firstInclude, ...course.pricing_includes]
     : [
     '12 maanden toegang & updates',
     'Certificaat bij afronding',
