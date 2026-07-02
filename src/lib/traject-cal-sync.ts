@@ -73,19 +73,25 @@ export async function syncTrajectBlokNaarCalCom(
 
   // Default 19:00 als fallback (komt overeen met LUXIQUE werkdag eind)
   const eindtijd = instellingen?.werktijd_middag_eind || '19:00'
+  // NB: eindtijd wordt NIET naar cal.com gestuurd (event type length bepaalt duur).
+  // Wel bewaard voor toekomstig gebruik als cal.com end-time override ondersteunt.
+  void eindtijd
 
   const uids: string[] = []
   let daysSynced = 0
   let daysFailed = 0
+  let lastError: string | undefined
 
   for (const dag of opts.blok_dagen) {
     const startIso = `${dag}T${opts.starttijd}:00+02:00`
     const endIso = `${dag}T${eindtijd}:00+02:00`
 
+    // NB: we sturen GEEN 'end' veld — cal.com gebruikt de event type length.
+    // CJ moet het TRAJECT BLOK event type in cal.com instellen op de gewenste
+    // blok-duur (bijv. 10 uur voor een volledige werkdag).
     const payload = {
       eventTypeId: TRAJECT_BLOK_EVENT_TYPE_ID,
       start: startIso,
-      end: endIso,
       timeZone: 'Europe/Amsterdam',
       language: 'nl',
       metadata: {
@@ -116,8 +122,10 @@ export async function syncTrajectBlokNaarCalCom(
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => '')
-        console.error(`[traject-sync] Cal.com HTTP ${res.status} voor ${dag}:`, errBody.slice(0, 200))
+        const errMsg = `Cal.com HTTP ${res.status}: ${errBody.slice(0, 300)}`
+        console.error(`[traject-sync] ${errMsg} voor ${dag}`)
         daysFailed++
+        if (!lastError) lastError = errMsg
         continue
       }
 
@@ -127,8 +135,10 @@ export async function syncTrajectBlokNaarCalCom(
       daysSynced++
       console.log(`[traject-sync] ✅ ${dag} geblokkeerd (uid: ${uid})`)
     } catch (err) {
-      console.error(`[traject-sync] Fout voor ${dag}:`, err)
+      const errMsg = `Exception: ${String(err).slice(0, 300)}`
+      console.error(`[traject-sync] ${errMsg} voor ${dag}`)
       daysFailed++
+      if (!lastError) lastError = errMsg
     }
   }
 
@@ -141,5 +151,5 @@ export async function syncTrajectBlokNaarCalCom(
     status = 'failed'
   }
 
-  return { status, daysSynced, daysFailed, uids }
+  return { status, daysSynced, daysFailed, uids, error: lastError }
 }
