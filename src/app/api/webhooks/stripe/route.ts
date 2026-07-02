@@ -55,6 +55,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true })
     }
 
+    // === TRAJECT DEPOSIT PAYMENT ===
+    if (session.metadata?.type === 'traject_deposit') {
+      await handleTrajectDeposit(session, stripe)
+      return NextResponse.json({ received: true })
+    }
+
     // === COURSE ENROLLMENT PAYMENT ===
 
     // Extract user_id from metadata or client_reference_id
@@ -244,6 +250,117 @@ async function handleDepositPayment(session: { metadata?: { cal_booking_uid?: st
   } catch (err) {
     console.error('Mail: failed to send confirmation notifications (non-fatal):', err)
   }
+}
+
+/**
+ * TRAJECT DEPOSIT — handle 50% aanbetaling voor traject-boekingen.
+ *
+ * Anti-dubbelboeking: na betaling opnieuw checken of blok nog vrij is.
+ * Race-condition: als iemand tussentijds hetzelfde blok boekte → niet opslaan,
+ * auto-refund, log het.
+ */
+async function handleTrajectDeposit(session: any, stripe: any) {
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const md = session.metadata || {}
+  const cursus_id = md.cursus_id
+  const cursus_naam = md.cursus_naam
+  const startdatum = md.startdatum
+  const starttijd = md.starttijd
+  const klant_naam = md.klant_naam
+  const klant_email = md.klant_email
+  const aanbetaling_cents = Number(md.aanbetaling_cents || 0)
+  const restbedrag_cents = Number(md.restbedrag_cents || 0)
+
+  let blok_dagen: string[] = []
+  try {
+    blok_dagen = JSON.parse(md.blok_dagen || '[]')
+  } catch {
+    blok_dagen = []
+  }
+
+  const payment_intent_id = typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : session.payment_intent?.id
+
+  const stripe_session_id = session.id
+
+  console.log('Traject deposit webhook:', {
+    cursus_id, startdatum, starttijd, klant_email, stripe_session_id,
+  })
+
+  // IDEMPOTENCY: al verwerkt?
+  const { data: existing } = await supabase
+    .from('traject_boekingen')
+    .select('id')
+    .eq('stripe_session_id', stripe_session_id)
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    console.log('Traject deposit: al verwerkt (idempotent), skip', stripe_session_id)
+    return
+  }
+
+  // ANTI-DUBBELBOEKING: check opnieuw of blok vrij is
+  const { data: alleBoekingen } = await supabase
+    .from('traject_boekingen')
+    .select('blok_dagen')
+
+  const gevraagdSet = new Set(blok_dagen)
+  for (const rij of alleBoekingen ?? []) {
+    const existingDays: string[] = rij.blok_dagen ?? []
+    if (existingDays.some((d: string) => gevraagdSet.has(d))) {
+      // RACE CONDITION: blok is net geboekt door iemand anders
+      console.error('CRITICAL: Traject race-condition — blok al geboekt NA betaling.', {
+        cursus_id, startdatum, klant_email, stripe_session_id,
+      })
+
+      // Auto-refund
+      if (payment_intent_id) {
+        try {
+          await stripe.refunds.create({
+            payment_intent: payment_intent_id,
+            reason: 'duplicate',
+          })
+          console.error(`AUTO-REFUND: ${payment_intent_id} (${klant_email}) — blok al geboekt door ander.`)
+        } catch (err) {
+          console.error('CRITICAL: Auto-refund FAALT:', err)
+        }
+      }
+      return
+    }
+  }
+
+  // Save booking
+  const { error } = await supabase.from('traject_boekingen').insert({
+    cursus_id,
+    cursus_naam,
+    startdatum,
+    starttijd,
+    blok_dagen,
+    klant_naam,
+    klant_email,
+    aanbetaling_status: 'betaald',
+    restbedrag_status: 'open',
+    cal_sync_status: 'pending',
+    stripe_session_id,
+    stripe_payment_intent_id: payment_intent_id || null,
+    aanbetaling_cents,
+    restbedrag_cents,
+  })
+
+  if (error) {
+    console.error('Traject deposit: insert mislukt:', error)
+    return
+  }
+
+  console.log('✅ Traject boeking opgeslagen:', {
+    cursus_naam, startdatum, klant_email,
+  })
 }
 
 /**

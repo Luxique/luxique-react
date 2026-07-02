@@ -49,6 +49,10 @@ export default function TrajectBoekenContent() {
   const [error, setError] = useState<string | null>(null)
   const [instellingen, setInstellingen] = useState<TrajectInstellingen | null>(null)
   const [selectedStartTijd, setSelectedStartTijd] = useState<string | null>(null)
+  const [klantNaam, setKlantNaam] = useState('')
+  const [klantEmail, setKlantEmail] = useState('')
+  const [checkoutFout, setCheckoutFout] = useState<string | null>(null)
+  const [checkoutLaden, setCheckoutLaden] = useState(false)
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
@@ -217,6 +221,52 @@ export default function TrajectBoekenContent() {
     const isoDate = toLocalIso(date)
     setSelectedDate(isoDate)
     setSelectedStartTijd(null)
+  }
+
+  const startCheckout = async () => {
+    if (!selectedCursus || !selectedDate || !selectedStartTijd) return
+    if (klantNaam.trim().length < 2) {
+      setCheckoutFout('Vul je naam in')
+      return
+    }
+    if (!klantEmail.includes('@') || klantEmail.length < 5) {
+      setCheckoutFout('Vul een geldig e-mailadres in')
+      return
+    }
+
+    setCheckoutLaden(true)
+    setCheckoutFout(null)
+
+    try {
+      const res = await fetch('/api/traject/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cursus_id: selectedCursus.id,
+          cursus_naam: selectedCursus.naam,
+          startdatum: selectedDate,
+          starttijd: selectedStartTijd,
+          klant_naam: klantNaam.trim(),
+          klant_email: klantEmail.trim(),
+          prijs_cents: selectedCursus.prijs_cents,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`)
+      }
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setCheckoutFout(msg)
+    } finally {
+      setCheckoutLaden(false)
+    }
   }
 
   const isWorkshop = selectedCursus?.duur_werkdagen === 0
@@ -541,22 +591,68 @@ export default function TrajectBoekenContent() {
                   </div>
                 </div>
 
-                <div className="mt-8">
-                  <button
-                    className={`w-full font-bold py-4 px-6 rounded-lg transition-colors ${
-                      selectedStartTijd
-                        ? 'bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07]'
-                        : 'bg-[#C4A265]/20 text-[#C4A265]/50 cursor-not-allowed'
-                    }`}
-                    disabled={!selectedStartTijd}
-                    onClick={() => {
-                      if (!selectedStartTijd) return
-                      alert('Betaling komt in STAP 3c')
-                    }}
-                  >
-                    {selectedStartTijd ? 'Doorgaan naar betaling' : 'Kies eerst een starttijd'}
-                  </button>
-                </div>
+                {/* Klantgegevens + checkout */}
+                {selectedStartTijd && (
+                  <div className="mt-6 pt-6 border-t border-[#C4A265]/20 space-y-4">
+                    <h4 className="font-['Cormorant_Garamond'] text-xl text-[#C4A265]">
+                      Jouw gegevens
+                    </h4>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">Naam</label>
+                        <input
+                          type="text"
+                          value={klantNaam}
+                          onChange={e => setKlantNaam(e.target.value)}
+                          placeholder="Voor- en achternaam"
+                          className="w-full px-4 py-3 rounded-lg bg-[#0C0A07] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">E-mailadres</label>
+                        <input
+                          type="email"
+                          value={klantEmail}
+                          onChange={e => setKlantEmail(e.target.value)}
+                          placeholder="jou@email.nl"
+                          className="w-full px-4 py-3 rounded-lg bg-[#0C0A07] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]"
+                        />
+                      </div>
+                    </div>
+
+                    {checkoutFout && (
+                      <p className="text-red-400 text-sm">⚠️ {checkoutFout}</p>
+                    )}
+
+                    <button
+                      className={`w-full font-bold py-4 px-6 rounded-lg transition-colors ${
+                        checkoutLaden
+                          ? 'bg-[#C4A265]/50 text-[#0C0A07] cursor-wait'
+                          : 'bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07]'
+                      }`}
+                      disabled={checkoutLaden}
+                      onClick={startCheckout}
+                    >
+                      {checkoutLaden ? 'Doorverwijzen naar betaling...' : `Betaal aanbetaling (${formatPrice(aanbetaling)})`}
+                    </button>
+
+                    <p className="text-[#FBF8F2]/40 text-xs text-center">
+                      Je betaalt nu 50% aanbetaling via Stripe. Het restbedrag betaal je bij Chiva op de startdag.
+                    </p>
+                  </div>
+                )}
+
+                {!selectedStartTijd && (
+                  <div className="mt-8">
+                    <button
+                      className="w-full bg-[#C4A265]/20 text-[#C4A265]/50 cursor-not-allowed font-bold py-4 px-6 rounded-lg"
+                      disabled
+                    >
+                      Kies eerst een starttijd
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
