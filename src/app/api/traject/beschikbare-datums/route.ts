@@ -58,7 +58,7 @@ async function getCalComBezetteDagen(
     startAfter.setHours(0, 0, 0, 0)
 
     const url = new URL('https://api.cal.com/v2/bookings')
-    url.searchParams.set('limit', '200')
+    url.searchParams.set('limit', '100')
     url.searchParams.set('status', 'upcoming')
     url.searchParams.set('startTimeAfter', startAfter.toISOString())
     url.searchParams.set('startTimeBefore', horizonDate.toISOString())
