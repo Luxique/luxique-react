@@ -7,9 +7,31 @@ interface TrajectCursus {
   id: string
   naam: string
   duur_werkdagen: number
+  duur_uren_per_dag: number | null
   prijs_cents: number
   prijs_ex_btw: number
   actief: boolean
+}
+
+interface TrajectInstellingen {
+  werktijd_ochtend_start: string
+  werktijd_ochtend_eind: string
+  werktijd_middag_start: string
+  werktijd_middag_eind: string
+  pauze_lengte_minuten: number
+  pauze_inclusief: boolean
+}
+
+// —— Tijd helpers ——
+const parseMin = (t: string): number => {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+
+const fmtTijd = (min: number): string => {
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isToday, isPast } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -25,6 +47,8 @@ export default function TrajectBoekenContent() {
   const [loadingDates, setLoadingDates] = useState(false)
   const [horizonInfo, setHorizonInfo] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [instellingen, setInstellingen] = useState<TrajectInstellingen | null>(null)
+  const [selectedStartTijd, setSelectedStartTijd] = useState<string | null>(null)
 
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
@@ -45,6 +69,28 @@ export default function TrajectBoekenContent() {
     }
 
     loadCursussen()
+  }, [])
+
+  // Laad instellingen bij mount (werktijden + pauze)
+  useEffect(() => {
+    async function loadInstellingen() {
+      try {
+        const res = await fetch('/api/traject/settings', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        setInstellingen({
+          werktijd_ochtend_start: data.werktijd_ochtend_start,
+          werktijd_ochtend_eind: data.werktijd_ochtend_eind,
+          werktijd_middag_start: data.werktijd_middag_start,
+          werktijd_middag_eind: data.werktijd_middag_eind,
+          pauze_lengte_minuten: data.pauze_lengte_minuten ?? 60,
+          pauze_inclusief: data.pauze_inclusief ?? false,
+        })
+      } catch {
+        // stillijnd — default wordt gebruikt
+      }
+    }
+    loadInstellingen()
   }, [])
 
   // Laad beschikbare datums wanneer cursus gekozen wordt
@@ -170,9 +216,55 @@ export default function TrajectBoekenContent() {
 
     const isoDate = toLocalIso(date)
     setSelectedDate(isoDate)
+    setSelectedStartTijd(null)
   }
 
   const isWorkshop = selectedCursus?.duur_werkdagen === 0
+
+  // —— STARTTIJD-OPTIES BEREKENING ——
+  // AFHANKELIJK van cursus-type (lange trajecten vs 1-uur workshop)
+  // STAP 4 zal deze lijst filteren op bezette tijden (bestaande boekingen).
+  const starttijdOpties: { start: string; eind: string }[] = []
+
+  if (instellingen && selectedCursus && selectedDate) {
+    const ochtendStart = parseMin(instellingen.werktijd_ochtend_start)
+    const ochtendEind = parseMin(instellingen.werktijd_ochtend_eind)
+    const middagStart = parseMin(instellingen.werktijd_middag_start)
+    const middagEind = parseMin(instellingen.werktijd_middag_eind)
+    const pauzeMin = instellingen.pauze_lengte_minuten
+    const pauzeIncl = instellingen.pauze_inclusief
+
+    if (isWorkshop) {
+      // REGEL B: 1-uur workshop — elk half uur BINNEN werktijden, pauze-uur overslaan
+      const workshopDuur = selectedCursus.duur_uren_per_dag || 1
+      const workshopMin = workshopDuur * 60
+
+      // Ochtendblok: van ochtendStart tot ochtendEind
+      for (let t = ochtendStart; t + workshopMin <= ochtendEind; t += 30) {
+        starttijdOpties.push({ start: fmtTijd(t), eind: fmtTijd(t + workshopMin) })
+      }
+      // Middagblok: van middagStart tot middagEind (pauze-uur automatisch overgeslagen)
+      for (let t = middagStart; t + workshopMin <= middagEind; t += 30) {
+        starttijdOpties.push({ start: fmtTijd(t), eind: fmtTijd(t + workshopMin) })
+      }
+    } else {
+      // REGEL A: Lang traject — venster moet binnen volledige werkdag passen
+      // Werkdag = ochtendStart tot middagEind (inclusive pauze die al in de middag zit)
+      const werkdagEind = middagEind
+      const dagDuurUren = selectedCursus.duur_uren_per_dag || 8
+      const dagDuurMin = dagDuurUren * 60
+      // Pauze komt bovenop als niet inclusief
+      const vensterMin = dagDuurMin + (pauzeIncl ? 0 : pauzeMin)
+
+      // Starttijden op het halve uur, beginnend vanaf ochtendStart
+      for (let t = ochtendStart; t + vensterMin <= werkdagEind; t += 30) {
+        starttijdOpties.push({ start: fmtTijd(t), eind: fmtTijd(t + vensterMin) })
+      }
+    }
+  }
+
+  // Gekozen optie
+  const gekozenOptie = starttijdOpties.find(o => o.start === selectedStartTijd) || null
 
   if (loading) {
     return (
@@ -354,6 +446,41 @@ export default function TrajectBoekenContent() {
               )}
             </div>
 
+            {/* STARTTIJD-KEUZE — na datumkeuze */}
+            {selectedDate && instellingen && (
+              <div className="bg-[#1a1614] border border-[#C4A265]/20 p-8 rounded-lg">
+                <h3 className="font-['Cormorant_Garamond'] text-2xl text-[#C4A265] mb-2">
+                  Kies je starttijd
+                </h3>
+                <p className="text-[#FBF8F2]/60 text-sm mb-6">
+                  {isWorkshop
+                    ? `Workshop van ${selectedCursus.duur_uren_per_dag || 1} uur. Het pauzeuur (${instellingen.werktijd_ochtend_eind}–${instellingen.werktijd_middag_start}) is geblokkeerd.`
+                    : `Trajectdag van ${selectedCursus.duur_uren_per_dag || 8} uur${instellingen.pauze_inclusief ? ' (pauze inbegrepen)' : ` + ${instellingen.pauze_lengte_minuten} min pauze`}. De gekozen starttijd geldt voor alle trajectdagen.`}
+                </p>
+
+                {starttijdOpties.length === 0 ? (
+                  <p className="text-[#FBF8F2]/50 text-sm">Geen geschikte starttijden beschikbaar.</p>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {starttijdOpties.map(opt => (
+                      <button
+                        key={opt.start}
+                        onClick={() => setSelectedStartTijd(opt.start)}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition ${
+                          selectedStartTijd === opt.start
+                            ? 'bg-[#C4A265] text-[#0C0A07] font-bold'
+                            : 'bg-[#C4A265]/10 text-[#FBF8F2] hover:bg-[#C4A265]/30 border border-[#C4A265]/20'
+                        }`}
+                      >
+                        <div>{opt.start}</div>
+                        <div className="text-[10px] opacity-60">tot {opt.eind}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Samenvatting */}
             {selectedDate && (
               <div className="bg-[#1a1614] border-2 border-[#C4A265] p-8 rounded-lg">
@@ -390,6 +517,15 @@ export default function TrajectBoekenContent() {
                     </div>
                   )}
 
+                  {gekozenOptie && (
+                    <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
+                      <span className="text-lg">Tijd per dag</span>
+                      <span className="text-lg font-semibold">
+                        {gekozenOptie.start} – {gekozenOptie.eind}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
                     <span className="text-lg">Totaal</span>
                     <span className="text-lg font-semibold">
@@ -407,12 +543,18 @@ export default function TrajectBoekenContent() {
 
                 <div className="mt-8">
                   <button
-                    className="w-full bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07] font-bold py-4 px-6 rounded-lg transition-colors"
+                    className={`w-full font-bold py-4 px-6 rounded-lg transition-colors ${
+                      selectedStartTijd
+                        ? 'bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07]'
+                        : 'bg-[#C4A265]/20 text-[#C4A265]/50 cursor-not-allowed'
+                    }`}
+                    disabled={!selectedStartTijd}
                     onClick={() => {
+                      if (!selectedStartTijd) return
                       alert('Betaling komt in STAP 3c')
                     }}
                   >
-                    Doorgaan naar betaling
+                    {selectedStartTijd ? 'Doorgaan naar betaling' : 'Kies eerst een starttijd'}
                   </button>
                 </div>
               </div>
