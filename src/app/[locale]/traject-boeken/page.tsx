@@ -65,6 +65,7 @@ export default function TrajectBoekenContent() {
         }
 
         const data = await response.json()
+        setAllCalendarDates(data.availableDates.map((d: any) => d.date))
         setAvailableDates(data.availableDates.filter((d: any) => d.available).map((d: any) => d.date))
         setHorizonInfo(data.horizon)
       } catch (err) {
@@ -138,6 +139,11 @@ export default function TrajectBoekenContent() {
     const start = new Date(horizonInfo.start)
     const end = new Date(horizonInfo.einde)
     return date >= start && date <= end
+  }
+
+  const isDateReturnedByAPI = (date: Date) => {
+    const isoDate = date.toISOString().split('T')[0]
+    return allCalendarDates.includes(isoDate)
   }
 
   const handleDateClick = (date: Date) => {
@@ -284,25 +290,30 @@ export default function TrajectBoekenContent() {
                       const isWeekendDay = isWeekend(date)
                       const isPastDate = isPast(date) && !isToday(date)
                       const inHorizon = isDateInHorizon(date)
+                      const isReturnedByAPI = isDateReturnedByAPI(date)
 
                       let className =
-                        'aspect-square flex items-center justify-center rounded-lg cursor-pointer transition-colors '
+                        'aspect-square flex items-center justify-center rounded-lg transition-colors '
 
-                      if (isWeekendDay || !inHorizon || isPastDate) {
-                        className += 'opacity-30 cursor-not-allowed'
-                      } else if (isSelected) {
-                        className += 'bg-[#C4A265] text-[#0C0A07] font-bold'
+                      if (isSelected) {
+                        className += 'bg-[#C4A265] text-[#0C0A07] font-bold cursor-pointer'
+                      } else if (isWeekendDay) {
+                        className += 'text-[#C4A265]/30 cursor-not-allowed'
+                      } else if (!inHorizon || isPastDate) {
+                        className += 'text-[#C4A265]/20 cursor-not-allowed'
+                      } else if (!isReturnedByAPI) {
+                        className += 'text-[#C4A265]/20 cursor-not-allowed'
                       } else if (isAvailable) {
-                        className += 'bg-[#C4A265]/20 text-[#FBF8F2] hover:bg-[#C4A265]/40'
+                        className += 'bg-[#C4A265]/20 text-[#FBF8F2] cursor-pointer hover:bg-[#C4A265]/40'
                       } else {
-                        className += 'opacity-40 cursor-not-allowed'
+                        className += 'text-[#C4A265]/40 cursor-not-allowed line-through'
                       }
 
                       return (
                         <button
                           key={isoDate}
                           onClick={() => handleDateClick(date)}
-                          disabled={!isAvailable || isWeekendDay}
+                          disabled={!isAvailable || isWeekendDay || !inHorizon || isPastDate}
                           className={className}
                         >
                           {format(date, 'd')}
