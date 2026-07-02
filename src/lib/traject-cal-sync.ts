@@ -38,6 +38,8 @@ export async function syncTrajectBlokNaarCalCom(
   opts: TrajectSyncInput,
   supabase: SupabaseClient,
 ): Promise<TrajectSyncResult> {
+  console.log('[traject-sync] FUNCIČ START', { boekingId: opts.boekingId, dagen: opts.blok_dagen.length })
+
   // IDEMPOTENTIE: check cal_sync_status eerst
   const { data: existing } = await supabase
     .from('traject_boekingen')

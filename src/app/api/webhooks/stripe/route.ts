@@ -13,6 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { syncTrajectBlokNaarCalCom } from '@/lib/traject-cal-sync'
 
 export const dynamic = 'force-dynamic'
 
@@ -383,8 +384,10 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   }
 
   // STAP 4 Richting 1: Blokkeer trajectdagen in cal.com (TRAJECT BLOK event type)
+  console.log('[traject-sync] START blokkade voor boeking', insertedBoeking.id, 'dagen:', blok_dagen)
+
+  let syncStatus: 'synced' | 'partial' | 'failed' = 'failed'
   try {
-    const { syncTrajectBlokNaarCalCom } = await import('@/lib/traject-cal-sync')
     const syncResult = await syncTrajectBlokNaarCalCom({
       boekingId: insertedBoeking.id,
       cursus_naam,
@@ -394,24 +397,31 @@ async function handleTrajectDeposit(session: any, stripe: any) {
       klant_email,
     }, supabase)
 
-    await supabase
-      .from('traject_boekingen')
-      .update({ cal_sync_status: syncResult.status })
-      .eq('id', insertedBoeking.id)
-
-    console.log(`Traject cal.com sync: ${syncResult.status}`, {
-      days_synced: syncResult.daysSynced,
-      days_failed: syncResult.daysFailed,
+    syncStatus = syncResult.status === 'skipped' ? 'synced' : syncResult.status
+    console.log('[traject-sync] RESULT', {
+      status: syncResult.status,
+      daysSynced: syncResult.daysSynced,
+      daysFailed: syncResult.daysFailed,
       uids: syncResult.uids,
     })
   } catch (err) {
-    console.error('Traject cal.com sync: onverwachte fout (non-fatal):', err)
-    try {
-      await supabase
-        .from('traject_boekingen')
-        .update({ cal_sync_status: 'failed' })
-        .eq('id', insertedBoeking.id)
-    } catch {}
+    console.error('[traject-sync] CRASH:', err)
+    syncStatus = 'failed'
+  }
+
+  // ALTICAL status updaten — onafhankelijk van wat er boven gebeurde
+  try {
+    const { error: updateError } = await supabase
+      .from('traject_boekingen')
+      .update({ cal_sync_status: syncStatus })
+      .eq('id', insertedBoeking.id)
+    if (updateError) {
+      console.error('[traject-sync] DB update fout:', updateError.message)
+    } else {
+      console.log('[traject-sync] cal_sync_status gezet op:', syncStatus, 'voor boeking', insertedBoeking.id)
+    }
+  } catch (err) {
+    console.error('[traject-sync] DB update crash:', err)
   }
 }
 
