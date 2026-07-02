@@ -538,3 +538,153 @@ export async function getBookingWithCustomerFromCal(uid: string): Promise<Bookin
     return null
   }
 }
+
+// ============================================================
+// TRAJECT BOEKING MAILS
+// ============================================================
+
+export interface TrajectBoekingMailData {
+  boekingId: string
+  cursus_naam: string
+  startdatum: string
+  blok_dagen: string[]
+  starttijd: string
+  klant_naam: string
+  klant_email: string
+  aanbetaling_cents: number
+  restbedrag_cents: number
+}
+
+function formatDateNL(iso: string): string {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('nl-NL', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  })
+}
+
+function formatBedrag(cents: number): string {
+  return `€${(cents / 100).toFixed(2).replace('.', ',')}`
+}
+
+async function isTrajectMailVerzonden(boekingId: string, column: string): Promise<boolean> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data } = await supabase
+    .from('traject_boekingen')
+    .select(column)
+    .eq('id', boekingId)
+    .single()
+  return !!data?.[column as keyof typeof data]
+}
+
+async function markeerTrajectMailVerzonden(boekingId: string, column: string) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  await supabase
+    .from('traject_boekingen')
+    .update({ [column]: new Date().toISOString() })
+    .eq('id', boekingId)
+}
+
+export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
+  const { boekingId } = data
+  try {
+    if (await isTrajectMailVerzonden(boekingId, 'bevestiging_mail_verzonden_op')) {
+      console.log(`Traject mail: al verzonden voor ${boekingId}, skip`)
+      return
+    }
+
+    const datumsLijst = data.blok_dagen.length > 1
+      ? data.blok_dagen.map(d => `• ${formatDateNL(d)}`).join('<br/>')
+      : ''
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: data.klant_email,
+      subject: `Bevestiging: ${data.cursus_naam} — LUXIQUE`,
+      html: `<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="utf-8"/></head>
+<body style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
+  <div style="text-align: center; margin-bottom: 32px;">
+    <h1 style="color: #C4A265; font-size: 28px; letter-spacing: 0.05em; margin: 0;">LUXIQUE</h1>
+    <p style="color: #888; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; margin: 4px 0 0;">The art of lashes. Perfected.</p>
+  </div>
+
+  <h2 style="color: #0C0A07; font-size: 20px;">Je traject is bevestigd, ${data.klant_naam.split(' ')[0]}!</h2>
+
+  <p>Bedankt voor je boeking. Hieronder vind je de details:</p>
+
+  <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+    <tr><td style="padding: 8px 0; color: #888;">Traject</td><td style="padding: 8px 0; font-weight: bold;">${data.cursus_naam}</td></tr>
+    <tr><td style="padding: 8px 0; color: #888;">Startdatum</td><td style="padding: 8px 0; font-weight: bold;">${formatDateNL(data.startdatum)}</td></tr>
+    ${data.blok_dagen.length > 1 ? `<tr><td style="padding: 8px 0; color: #888; vertical-align: top;">Alle trajectdagen</td><td style="padding: 8px 0;">${datumsLijst}</td></tr>` : ''}
+    <tr><td style="padding: 8px 0; color: #888;">Starttijd per dag</td><td style="padding: 8px 0; font-weight: bold;">${data.starttijd}</td></tr>
+  </table>
+
+  <div style="background: #f9f6f0; border-left: 3px solid #C4A265; padding: 16px; margin: 24px 0;">
+    <p style="margin: 0 0 8px;"><strong>Aanbetaling (betaald):</strong> ${formatBedrag(data.aanbetaling_cents)}</p>
+    <p style="margin: 0;"><strong>Restbedrag (te voldoen bij Chiva op de startdag — contant of pin):</strong> ${formatBedrag(data.restbedrag_cents)}</p>
+  </div>
+
+  <p style="margin-top: 32px;">We kijken uit naar je komst!</p>
+  <p style="color: #888; font-size: 13px;">— Chiva & het LUXIQUE team<br/>${STUDIO_ADDRESS}</p>
+</body>
+</html>`,
+    })
+
+    if (error) {
+      console.error('Traject mail: fout bij verzenden:', error)
+      return
+    }
+
+    await markeerTrajectMailVerzonden(boekingId, 'bevestiging_mail_verzonden_op')
+    console.log(`✅ Traject bevestigingsmail verzonden naar ${data.klant_email}`)
+  } catch (err) {
+    console.error('Traject mail: onverwachte fout:', err)
+  }
+}
+
+export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) {
+  try {
+    const datumsLijst = data.blok_dagen.length > 1
+      ? data.blok_dagen.map(d => formatDateNL(d)).join(', ')
+      : formatDateNL(data.startdatum)
+
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: CHIVA_EMAIL,
+      subject: `Nieuwe traject-boeking: ${data.cursus_naam}`,
+      html: `<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="utf-8"/></head>
+<body style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
+  <h2 style="color: #C4A265;">Nieuwe traject-boeking</h2>
+  <table style="width: 100%; border-collapse: collapse;">
+    <tr><td style="padding: 6px 0; color: #888;">Klant</td><td style="padding: 6px 0; font-weight: bold;">${data.klant_naam}</td></tr>
+    <tr><td style="padding: 6px 0; color: #888;">E-mail</td><td style="padding: 6px 0;">${data.klant_email}</td></tr>
+    <tr><td style="padding: 6px 0; color: #888;">Traject</td><td style="padding: 6px 0; font-weight: bold;">${data.cursus_naam}</td></tr>
+    <tr><td style="padding: 6px 0; color: #888;">Datums</td><td style="padding: 6px 0;">${datumsLijst}</td></tr>
+    <tr><td style="padding: 6px 0; color: #888;">Starttijd</td><td style="padding: 6px 0;">${data.starttijd}</td></tr>
+  </table>
+  <div style="background: #f9f6f0; border-left: 3px solid #C4A265; padding: 12px; margin-top: 16px;">
+    <p style="margin: 0 0 4px;"><strong>Aanbetaling (betaald):</strong> ${formatBedrag(data.aanbetaling_cents)}</p>
+    <p style="margin: 0;"><strong>Openstaand restbedrag:</strong> ${formatBedrag(data.restbedrag_cents)}</p>
+  </div>
+</body>
+</html>`,
+    })
+
+    if (error) {
+      console.error('Traject Chiva-notificatie: fout:', error)
+      return
+    }
+
+    console.log(`✅ Traject Chiva-notificatie verzonden naar ${CHIVA_EMAIL}`)
+  } catch (err) {
+    console.error('Traject Chiva-notificatie: onverwachte fout:', err)
+  }
+}

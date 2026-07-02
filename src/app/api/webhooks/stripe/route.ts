@@ -336,7 +336,7 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   }
 
   // Save booking
-  const { error } = await supabase.from('traject_boekingen').insert({
+  const { data: insertedBoeking, error } = await supabase.from('traject_boekingen').insert({
     cursus_id,
     cursus_naam,
     startdatum,
@@ -351,7 +351,7 @@ async function handleTrajectDeposit(session: any, stripe: any) {
     stripe_payment_intent_id: payment_intent_id || null,
     aanbetaling_cents,
     restbedrag_cents,
-  })
+  }).select('id').single()
 
   if (error) {
     console.error('Traject deposit: insert mislukt:', error)
@@ -359,8 +359,28 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   }
 
   console.log('✅ Traject boeking opgeslagen:', {
-    cursus_naam, startdatum, klant_email,
+    cursus_naam, startdatum, klant_email, id: insertedBoeking.id,
   })
+
+  // Stuur bevestigingsmail + Chiva-notificatie (fouten zijn non-fatal)
+  try {
+    const { sendTrajectBevestigingMail, sendTrajectNotificatieChiva } = await import('@/lib/email')
+    const mailData = {
+      boekingId: insertedBoeking.id,
+      cursus_naam,
+      startdatum,
+      blok_dagen,
+      starttijd,
+      klant_naam,
+      klant_email,
+      aanbetaling_cents,
+      restbedrag_cents,
+    }
+    await sendTrajectBevestigingMail(mailData)
+    await sendTrajectNotificatieChiva(mailData)
+  } catch (err) {
+    console.error('Traject mail: fout bij verzenden (non-fatal):', err)
+  }
 }
 
 /**
