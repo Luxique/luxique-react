@@ -76,7 +76,11 @@ async function patchEventTypeLength(
   }
 }
 
-/** Bereken blok-duur in minuten op basis van werktijden. */
+/** Bereken blok-duur in minuten op basis van werktijden.
+ *  Limiet: cal.com schedule van LUXIQUE ACADEMY is 8u (09:00-17:00 UTC = 11:00-19:00 lokaal).
+ *  Om 'no_available_users_found' te voorkomen, beperken we de duur tot max 480 min (8u).
+ *  CJ kan de cal.com schedule verbreden als hij echte 10u-blokken wil.
+ */
 function berekenBlokDuurMinuten(
   starttijd: string,
   instellingen: { werktijd_ochtend_start?: string; werktijd_middag_eind?: string } | null,
@@ -89,7 +93,12 @@ function berekenBlokDuurMinuten(
   const startMin = sh * 60 + sm
   const eindMin = eh * 60 + em
   const duur = eindMin - startMin
-  return duur > 0 ? duur : 600 // fallback 10 uur
+  const rawDuur = duur > 0 ? duur : 600 // fallback 10 uur
+
+  // CAP: 8 uur (480 min) — cal.com schedule van LUXIQUE is 8u.
+  // Langere blokken → 'no_available_users_found' error.
+  // Zodra CJ cal.com schedule verbreedt, kan deze cap omhoog.
+  return Math.min(rawDuur, 480)
 }
 
 /**
