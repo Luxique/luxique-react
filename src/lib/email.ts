@@ -597,8 +597,11 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
       return
     }
 
-    const datumsLijst = data.blok_dagen.length > 1
-      ? data.blok_dagen.map(d => `• ${formatDateNL(d)}`).join('<br/>')
+    const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
+    const heeftMeerdereDagen = data.blok_dagen.length > 1
+
+    const trajectDagenHtml = heeftMeerdereDagen
+      ? data.blok_dagen.map(d => `<tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(d)}</td></tr>`).join('')
       : ''
 
     const { error } = await resend.emails.send({
@@ -606,32 +609,55 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
       to: data.klant_email,
       subject: `Bevestiging: ${data.cursus_naam} — LUXIQUE`,
       html: `<!DOCTYPE html>
-<html lang="nl">
-<head><meta charset="utf-8"/></head>
-<body style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
-  <div style="text-align: center; margin-bottom: 32px;">
-    <h1 style="color: #C4A265; font-size: 28px; letter-spacing: 0.05em; margin: 0;">LUXIQUE</h1>
-    <p style="color: #888; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; margin: 4px 0 0;">The art of lashes. Perfected.</p>
-  </div>
-
-  <h2 style="color: #0C0A07; font-size: 20px;">Je traject is bevestigd, ${data.klant_naam.split(' ')[0]}!</h2>
-
-  <p>Bedankt voor je boeking. Hieronder vind je de details:</p>
-
-  <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
-    <tr><td style="padding: 8px 0; color: #888;">Traject</td><td style="padding: 8px 0; font-weight: bold;">${data.cursus_naam}</td></tr>
-    <tr><td style="padding: 8px 0; color: #888;">Startdatum</td><td style="padding: 8px 0; font-weight: bold;">${formatDateNL(data.startdatum)}</td></tr>
-    ${data.blok_dagen.length > 1 ? `<tr><td style="padding: 8px 0; color: #888; vertical-align: top;">Alle trajectdagen</td><td style="padding: 8px 0;">${datumsLijst}</td></tr>` : ''}
-    <tr><td style="padding: 8px 0; color: #888;">Starttijd per dag</td><td style="padding: 8px 0; font-weight: bold;">${data.starttijd}</td></tr>
-  </table>
-
-  <div style="background: #f9f6f0; border-left: 3px solid #C4A265; padding: 16px; margin: 24px 0;">
-    <p style="margin: 0 0 8px;"><strong>Aanbetaling (betaald):</strong> ${formatBedrag(data.aanbetaling_cents)}</p>
-    <p style="margin: 0;"><strong>Restbedrag (te voldoen bij Chiva op de startdag — contant of pin):</strong> ${formatBedrag(data.restbedrag_cents)}</p>
-  </div>
-
-  <p style="margin-top: 32px;">We kijken uit naar je komst!</p>
-  <p style="color: #888; font-size: 13px;">— Chiva & het LUXIQUE team<br/>${STUDIO_ADDRESS}</p>
+<html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Je traject is bevestigd</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#e8e6e1; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">Je LUXIQUE traject is bevestigd — bekijk de details.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#e8e6e1;">
+  <tr><td align="center" style="padding:40px 16px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#FAF8F4; border-radius:14px; overflow:hidden;">
+      <tr><td align="center" style="background-color:#0C0A07; padding:38px 40px 30px 40px;">
+        <img src="https://luxique.nl/lxq-email-logo.png" width="132" alt="LUXIQUE" style="display:block; width:132px; max-width:132px; height:auto; border:0;">
+      </td></tr>
+      <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
+      <tr><td style="padding:44px 48px 36px 48px;" align="center">
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Traject bevestigd</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Je bent ingepland, ${voornaam}</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Je traject is bevestigd — we kijken uit naar je komst. Hieronder vind je alle details:</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
+          <tr><td style="padding:22px 26px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Traject</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.cursus_naam}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Startdatum</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(data.startdatum)}</td></tr>
+              ${heeftMeerdereDagen ? trajectDagenHtml : ''}
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Starttijd per dag</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.starttijd}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Locatie</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${STUDIO_ADDRESS}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Aanbetaling (betaald)</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatBedrag(data.aanbetaling_cents)} (50%)</td></tr>
+            </table>
+          </td></tr>
+        </table>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Het restbedrag van <strong>${formatBedrag(data.restbedrag_cents)}</strong> voldoe je contant of met pin bij Chiva op de startdag.</div>
+      </td></tr>
+      <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
+      <tr><td align="center" style="padding:26px 48px 34px 48px;">
+        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:14px;">With love, Luxique</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#9a958b; padding-bottom:10px;"><a href="https://www.luxique.nl/voorwaarden#annulering" style="color:#9a958b; text-decoration:underline;">Annuleringsbeleid</a> &nbsp;&middot;&nbsp; <a href="https://www.luxique.nl/voorwaarden#voorwaarden" style="color:#9a958b; text-decoration:underline;">Algemene voorwaarden</a></div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b; text-decoration:underline;">luxique.nl</a></div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`,
     })
@@ -651,7 +677,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
 export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) {
   try {
     const datumsLijst = data.blok_dagen.length > 1
-      ? data.blok_dagen.map(d => formatDateNL(d)).join(', ')
+      ? data.blok_dagen.map(d => formatDateNL(d)).join('<br/>')
       : formatDateNL(data.startdatum)
 
     const { error } = await resend.emails.send({
@@ -659,21 +685,54 @@ export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) 
       to: CHIVA_EMAIL,
       subject: `Nieuwe traject-boeking: ${data.cursus_naam}`,
       html: `<!DOCTYPE html>
-<html lang="nl">
-<head><meta charset="utf-8"/></head>
-<body style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
-  <h2 style="color: #C4A265;">Nieuwe traject-boeking</h2>
-  <table style="width: 100%; border-collapse: collapse;">
-    <tr><td style="padding: 6px 0; color: #888;">Klant</td><td style="padding: 6px 0; font-weight: bold;">${data.klant_naam}</td></tr>
-    <tr><td style="padding: 6px 0; color: #888;">E-mail</td><td style="padding: 6px 0;">${data.klant_email}</td></tr>
-    <tr><td style="padding: 6px 0; color: #888;">Traject</td><td style="padding: 6px 0; font-weight: bold;">${data.cursus_naam}</td></tr>
-    <tr><td style="padding: 6px 0; color: #888;">Datums</td><td style="padding: 6px 0;">${datumsLijst}</td></tr>
-    <tr><td style="padding: 6px 0; color: #888;">Starttijd</td><td style="padding: 6px 0;">${data.starttijd}</td></tr>
-  </table>
-  <div style="background: #f9f6f0; border-left: 3px solid #C4A265; padding: 12px; margin-top: 16px;">
-    <p style="margin: 0 0 4px;"><strong>Aanbetaling (betaald):</strong> ${formatBedrag(data.aanbetaling_cents)}</p>
-    <p style="margin: 0;"><strong>Openstaand restbedrag:</strong> ${formatBedrag(data.restbedrag_cents)}</p>
-  </div>
+<html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Nieuwe traject-boeking</title>
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#e8e6e1; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#e8e6e1;">
+  <tr><td align="center" style="padding:40px 16px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#FAF8F4; border-radius:14px; overflow:hidden;">
+      <tr><td align="center" style="background-color:#0C0A07; padding:38px 40px 30px 40px;">
+        <img src="https://luxique.nl/lxq-email-logo.png" width="132" alt="LUXIQUE" style="display:block; width:132px; max-width:132px; height:auto; border:0;">
+      </td></tr>
+      <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
+      <tr><td style="padding:44px 48px 36px 48px;" align="center">
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Nieuwe boeking</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Traject geboekt</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
+          <tr><td style="padding:22px 26px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Klant</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.klant_naam}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">E-mail</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;"><a href="mailto:${data.klant_email}" style="color:#0C0A07; text-decoration:none;">${data.klant_email}</a></td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Traject</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.cursus_naam}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Datums</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${datumsLijst}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Starttijd</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.starttijd}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Aanbetaling (betaald)</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatBedrag(data.aanbetaling_cents)}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Openstaand restbedrag</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#C4A265; padding:0 0 14px 0;">${formatBedrag(data.restbedrag_cents)}</td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </td></tr>
+      <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
+      <tr><td align="center" style="padding:26px 48px 34px 48px;">
+        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:14px;">With love, Luxique</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b; text-decoration:underline;">luxique.nl</a></div>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`,
     })
