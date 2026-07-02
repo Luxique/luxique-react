@@ -1,28 +1,31 @@
 import { NextResponse } from 'next/server'
 import {
   berekenWerkdagenBlok,
-  isBlokBeschikbaar,
   getTrajectCursusById,
   getTrajectInstellingen,
 } from '@/lib/traject'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 interface AvailableDate {
   date: string
   available: boolean
-  block?: string[]  // Full block dates for long trajecten
+  block?: string[]
+}
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
 }
 
 /**
  * API endpoint: /api/traject/beschikbare-datums?cursusId=...
  *
- * Geeft alle mogelijke startdatums binnen de horizon terug in één call.
- *
- * Voor lange trajecten (duur_werkdagen >= 1): Checkt of het VOLLEDIGE blok vrij is.
- * Voor workshop (duur_werkdagen = 0): Checkt of de dag überhaupt vrij is (nu: geen traject-boeking).
- *
- * Voorsprong window wordt toegepast op de horizon:
- * - Trajecten moeten verder vooruit boekbaar zijn dan behandelingen
- * - Horizon = vandaag + boekbare_horizon_weken + traject_voorsprong_weken
+ * PERFORMANCE: haalt traject_boekingen ÉÉN keer op (was: per kandidaat-datum).
  */
 export async function GET(request: Request) {
   try {
@@ -32,11 +35,11 @@ export async function GET(request: Request) {
     if (!cursusId) {
       return NextResponse.json(
         { error: 'cursusId parameter is verplicht' },
-        { status: 400 }
+        { status: 400, headers: NO_STORE_HEADERS },
       )
     }
 
-    // Haal cursus en instellingen op
+    // 1. Cursus + instellingen in parallel (2 queries)
     const [cursus, instellingen] = await Promise.all([
       getTrajectCursusById(cursusId),
       getTrajectInstellingen(),
@@ -45,58 +48,74 @@ export async function GET(request: Request) {
     if (!cursus) {
       return NextResponse.json(
         { error: 'Cursus niet gevonden' },
-        { status: 404 }
+        { status: 404, headers: NO_STORE_HEADERS },
       )
     }
 
-    // Berekene horizon met voorsprong
+    // 2. ALLE traject_boekingen in ÉÉN query — bouw een Set van bezette datums
+    const { data: alleBoekingen, error: boekingError } = await supabaseAdmin
+      .from('traject_boekingen')
+      .select('blok_dagen')
+
+    if (boekingError) {
+      throw new Error(`DB-fout bij ophalen boekingen: ${boekingError.message}`)
+    }
+
+    // Bouw een Set van alle bezette datums (union over alle boekingen)
+    const bezetteDagenSet = new Set<string>()
+    for (const rij of alleBoekingen ?? []) {
+      const dagen: string[] = rij.blok_dagen ?? []
+      for (const d of dagen) {
+        bezetteDagenSet.add(d)
+      }
+    }
+
+    // 3. Horizon berekenen
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Horizon = vandaag + boekbare_horizon_weken + traject_voorsprong_weken
     const horizonWeeks = instellingen.boekbare_horizon_weken + instellingen.traject_voorsprong_weken
     const horizonDate = new Date(today)
     horizonDate.setDate(horizonDate.getDate() + (horizonWeeks * 7))
 
-    // Genereer alle werkdagen in de horizon
+    // Local ISO (voorkomt timezone shift)
+    const toIsoDate = (d: Date): string => {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    }
+
+    // 4. Loop door alle werkdagen — PUUR in memory, geen DB meer
     const availableDates: AvailableDate[] = []
     const cursor = new Date(today)
 
-    // Skip weekend als startdatum
     while (cursor.getDay() === 0 || cursor.getDay() === 6) {
       cursor.setDate(cursor.getDate() + 1)
     }
 
-    // Loop door alle werkdagen in de horizon
     while (cursor < horizonDate) {
       const dayOfWeek = cursor.getDay()
 
-      // Weekend nooit als startdatum (maar kan in blok zitten)
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        const isoDate = cursor.toISOString().split('T')[0]
+      if (dayOfWeek !== 0 && dayOfWeek !== 6 && cursor >= today) {
+        const isoDate = toIsoDate(cursor)
 
-        // Niet in het verleden
-        if (cursor >= today) {
-          if (cursus.duur_werkdagen === 0) {
-            // Workshop (1 uur) — check of de dag überhaupt vrij is
-            const blok = berekenWerkdagenBlok(isoDate, 0)
-            const check = await isBlokBeschikbaar(blok)
+        if (cursus.duur_werkdagen === 0) {
+          // Workshop — check of de dag vrij is
+          const blok = berekenWerkdagenBlok(isoDate, 0)
+          const beschikbaar = !blok.some(d => bezetteDagenSet.has(d))
 
-            availableDates.push({
-              date: isoDate,
-              available: check.beschikbaar,
-            })
-          } else {
-            // Lange traject — check of het VOLLEDIGE blok vrij is
-            const blok = berekenWerkdagenBlok(isoDate, cursus.duur_werkdagen)
-            const check = await isBlokBeschikbaar(blok)
+          availableDates.push({ date: isoDate, available: beschikbaar })
+        } else {
+          // Lang traject — check of het VOLLEDIGE blok vrij is
+          const blok = berekenWerkdagenBlok(isoDate, cursus.duur_werkdagen)
+          const beschikbaar = !blok.some(d => bezetteDagenSet.has(d))
 
-            availableDates.push({
-              date: isoDate,
-              available: check.beschikbaar,
-              block: check.beschikbaar ? blok : undefined,
-            })
-          }
+          availableDates.push({
+            date: isoDate,
+            available: beschikbaar,
+            block: beschikbaar ? blok : undefined,
+          })
         }
       }
 
@@ -111,20 +130,19 @@ export async function GET(request: Request) {
         prijs_cents: cursus.prijs_cents,
       },
       horizon: {
-        start: today.toISOString().split('T')[0],
-        einde: horizonDate.toISOString().split('T')[0],
+        start: toIsoDate(today),
+        einde: toIsoDate(horizonDate),
         boekbare_horizon_weken: instellingen.boekbare_horizon_weken,
         traject_voorsprong_weken: instellingen.traject_voorsprong_weken,
         totaal_horizon_weken: horizonWeeks,
       },
       availableDates,
-    })
-
+    }, { status: 200, headers: NO_STORE_HEADERS })
   } catch (error) {
     console.error('Fout in beschikbare-datums:', error)
     return NextResponse.json(
       { error: 'Interne fout' },
-      { status: 500 }
+      { status: 500, headers: NO_STORE_HEADERS },
     )
   }
 }
