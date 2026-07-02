@@ -15,7 +15,7 @@ export const revalidate = 0
 export const fetchCache = 'force-no-store'
 
 const SELECT_FIELDS =
-  'id, traject_voorsprong_weken, boekbare_horizon_weken, werktijd_ochtend_start, werktijd_ochtend_eind, werktijd_middag_start, werktijd_middag_eind, bijgewerkt_op'
+  'id, traject_voorsprong_weken, boekbare_horizon_weken, werktijd_ochtend_start, werktijd_ochtend_eind, werktijd_middag_start, werktijd_middag_eind, pauze_lengte_minuten, pauze_inclusief, bijgewerkt_op'
 
 // ---------------------------------------------------------------------------
 // TIME VALIDATION
@@ -110,6 +110,8 @@ export async function PUT(req: NextRequest) {
       werktijd_ochtend_eind,
       werktijd_middag_start,
       werktijd_middag_eind,
+      pauze_lengte_minuten,
+      pauze_inclusief,
     } = body
 
     // Validate integers
@@ -140,6 +142,23 @@ export async function PUT(req: NextRequest) {
       traject_voorsprong_weken: vsp,
       boekbare_horizon_weken: hor,
       bijgewerkt_op: new Date().toISOString(),
+    }
+
+    // Pauze lengte (optioneel, alleen als meegegeven)
+    if (pauze_lengte_minuten !== undefined) {
+      const plm = Number(pauze_lengte_minuten)
+      if (!Number.isInteger(plm) || plm < 0 || plm > 300) {
+        return NextResponse.json(
+          { error: 'pauze_lengte_minuten moet een geheel getal 0-300 zijn' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updatePayload.pauze_lengte_minuten = plm
+    }
+
+    // Pauze inclusief toggle (optioneel)
+    if (pauze_inclusief !== undefined) {
+      updatePayload.pauze_inclusief = Boolean(pauze_inclusief)
     }
 
     if (hasAllTimes) {

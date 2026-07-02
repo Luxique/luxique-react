@@ -21,7 +21,18 @@ interface TrajectSettings {
   werktijd_ochtend_eind: string
   werktijd_middag_start: string
   werktijd_middag_eind: string
+  pauze_lengte_minuten: number
+  pauze_inclusief: boolean
   bijgewerkt_op: string | null
+}
+
+interface TrajectCursus {
+  id: string
+  naam: string
+  duur_werkdagen: number
+  duur_uren_per_dag: number | null
+  prijs_cents: number
+  actief: boolean
 }
 
 const DEFAULTS = {
@@ -41,6 +52,13 @@ export default function TrajectInstellingenPaneel() {
   const [ochtendEind, setOchtendEind] = useState(DEFAULTS.werktijd_ochtend_eind)
   const [middagStart, setMiddagStart] = useState(DEFAULTS.werktijd_middag_start)
   const [middagEind, setMiddagEind] = useState(DEFAULTS.werktijd_middag_eind)
+  const [pauzeLengte, setPauzeLengte] = useState('60')
+  const [pauzeInclusief, setPauzeInclusief] = useState(false)
+
+  const [cursussen, setCursussen] = useState<TrajectCursus[]>([])
+  const [cursusEdits, setCursusEdits] = useState<Record<string, string>>({})
+  const [cursusOpslaan, setCursusOpslaan] = useState<string | null>(null)
+  const [cursusBericht, setCursusBericht] = useState<Record<string, { type: 'success' | 'error'; text: string }>>({})
 
   const [laden, setLaden] = useState(true)
   const [opslaan, setOpslaan] = useState(false)
@@ -62,6 +80,8 @@ export default function TrajectInstellingenPaneel() {
       setOchtendEind(data.werktijd_ochtend_eind || DEFAULTS.werktijd_ochtend_eind)
       setMiddagStart(data.werktijd_middag_start || DEFAULTS.werktijd_middag_start)
       setMiddagEind(data.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind)
+      setPauzeLengte(String(data.pauze_lengte_minuten ?? 60))
+      setPauzeInclusief(data.pauze_inclusief ?? false)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       setBericht({ type: 'error', text: `Laden mislukt: ${msg}` })
@@ -70,7 +90,19 @@ export default function TrajectInstellingenPaneel() {
     }
   }, [])
 
+  const laadCursussen = useCallback(async () => {
+    try {
+      const res = await fetch('/api/traject/cursussen', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      setCursussen(data.cursussen || [])
+    } catch {
+      // stillijgend
+    }
+  }, [])
+
   useEffect(() => { laad() }, [laad])
+  useEffect(() => { laadCursussen() }, [laadCursussen])
 
   const reset = () => {
     if (!settings) return
@@ -80,6 +112,8 @@ export default function TrajectInstellingenPaneel() {
     setOchtendEind(settings.werktijd_ochtend_eind || DEFAULTS.werktijd_ochtend_eind)
     setMiddagStart(settings.werktijd_middag_start || DEFAULTS.werktijd_middag_start)
     setMiddagEind(settings.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind)
+    setPauzeLengte(String(settings.pauze_lengte_minuten ?? 60))
+    setPauzeInclusief(settings.pauze_inclusief ?? false)
     setBericht(null)
   }
 
@@ -97,6 +131,8 @@ export default function TrajectInstellingenPaneel() {
           werktijd_ochtend_eind: ochtendEind,
           werktijd_middag_start: middagStart,
           werktijd_middag_eind: middagEind,
+          pauze_lengte_minuten: parseInt(pauzeLengte, 10),
+          pauze_inclusief: pauzeInclusief,
         }),
       })
       if (!res.ok) {
@@ -111,6 +147,8 @@ export default function TrajectInstellingenPaneel() {
       setOchtendEind(data.werktijd_ochtend_eind || DEFAULTS.werktijd_ochtend_eind)
       setMiddagStart(data.werktijd_middag_start || DEFAULTS.werktijd_middag_start)
       setMiddagEind(data.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind)
+      setPauzeLengte(String(data.pauze_lengte_minuten ?? 60))
+      setPauzeInclusief(data.pauze_inclusief ?? false)
       setBericht({ type: 'success', text: 'Opgeslagen ✓' })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -121,6 +159,35 @@ export default function TrajectInstellingenPaneel() {
     }
   }
 
+  const opslaanCursus = async (id: string) => {
+    setCursusOpslaan(id)
+    setCursusBericht(prev => ({ ...prev, [id]: { type: 'success', text: '' } }))
+    try {
+      const val = cursusEdits[id]
+      const res = await fetch(`/api/traject/cursussen/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duur_uren_per_dag: Number(val) }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        throw new Error(d.error || `HTTP ${res.status}`)
+      }
+      const updated = await res.json()
+      setCursussen(prev => prev.map(c => c.id === id ? { ...c, duur_uren_per_dag: updated.duur_uren_per_dag } : c))
+      setCursusEdits(prev => { const n = { ...prev }; delete n[id]; return n })
+      setCursusBericht(prev => ({ ...prev, [id]: { type: 'success', text: 'Opgeslagen ✓' } }))
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setCursusBericht(prev => ({ ...prev, [id]: { type: 'error', text: msg } }))
+    } finally {
+      setCursusOpslaan(null)
+      setTimeout(() => {
+        setCursusBericht(prev => { const n = { ...prev }; delete n[id]; return n })
+      }, 4000)
+    }
+  }
+
   const gewijzigd =
     settings !== null &&
     (voorsprong !== String(settings.traject_voorsprong_weken) ||
@@ -128,7 +195,9 @@ export default function TrajectInstellingenPaneel() {
       ochtendStart !== (settings.werktijd_ochtend_start || DEFAULTS.werktijd_ochtend_start) ||
       ochtendEind !== (settings.werktijd_ochtend_eind || DEFAULTS.werktijd_ochtend_eind) ||
       middagStart !== (settings.werktijd_middag_start || DEFAULTS.werktijd_middag_start) ||
-      middagEind !== (settings.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind))
+      middagEind !== (settings.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind) ||
+      pauzeLengte !== String(settings.pauze_lengte_minuten ?? 60) ||
+      pauzeInclusief !== (settings.pauze_inclusief ?? false))
 
   if (laden) {
     return (
@@ -335,6 +404,106 @@ export default function TrajectInstellingenPaneel() {
             </span>
           )}
         </div>
+      </div>
+
+      {/* ═══ PAUZE ═══ */}
+      <div className="bg-white rounded-2xl border border-[#eee] p-6 space-y-6">
+        <h4 className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#C4A265]">
+          ☕ Pauze-instelling
+        </h4>
+
+        <div>
+          <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
+            Pauze lengte (minuten)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={300}
+            value={pauzeLengte}
+            onChange={e => setPauzeLengte(e.target.value)}
+            className="w-[120px] px-4 py-2.5 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265] transition"
+          />
+          <p className="text-[11px] text-[#888] mt-1.5 leading-relaxed">
+            Hoe lang de pauze binnen een cursusdag is.
+          </p>
+        </div>
+
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-[#f9f9f9]">
+          <button
+            type="button"
+            onClick={() => setPauzeInclusief(!pauzeInclusief)}
+            className={`relative w-11 h-6 rounded-full transition ${pauzeInclusief ? 'bg-[#C4A265]' : 'bg-[#ddd]'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition ${pauzeInclusief ? 'translate-x-5' : ''}`} />
+          </button>
+          <div className="flex-1">
+            <p className="text-[13px] font-medium text-[#1a1a1a]">
+              Pauze zit ín de cursusduur
+            </p>
+            <p className="text-[11px] text-[#888] mt-1 leading-relaxed">
+              <strong>Aan:</strong> pauze zit ín de dagduur. Cursus 8u, start 09:00 → eind 17:00 (netto 7u les).
+              <br />
+              <strong>Uit:</strong> pauze komt erbovenop. Cursus 8u les, start 09:00 → 8u + 1u pauze = eind 18:00.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ CURSUSSEN ═══ */}
+      <div className="bg-white rounded-2xl border border-[#eee] p-6 space-y-4">
+        <h4 className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#C4A265]">
+          📚 Cursus-dagduur
+        </h4>
+        <p className="text-[11px] text-[#888] leading-relaxed">
+          Hoeveel uur een cursusdag duurt per cursus.
+        </p>
+
+        {cursussen.length === 0 ? (
+          <p className="text-[12px] text-[#aaa]">Geen cursussen gevonden.</p>
+        ) : (
+          <div className="space-y-3">
+            {cursussen.map(c => {
+              const editVal = cursusEdits[c.id] ?? String(c.duur_uren_per_dag ?? '')
+              const changed = cursusEdits[c.id] !== undefined && cursusEdits[c.id] !== String(c.duur_uren_per_dag ?? '')
+              const msg = cursusBericht[c.id]
+              return (
+                <div key={c.id} className="flex items-center gap-4 p-3 rounded-xl border border-[#eee]">
+                  <div className="flex-1">
+                    <p className="text-[13px] font-medium text-[#1a1a1a]">{c.naam}</p>
+                    <p className="text-[10px] text-[#aaa]">
+                      {c.duur_werkdagen === 0 ? 'Workshop (1 uur)' : `${c.duur_werkdagen} ${c.duur_werkdagen === 1 ? 'dag' : 'dagen'}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      max={24}
+                      step={0.5}
+                      value={editVal}
+                      onChange={e => setCursusEdits(prev => ({ ...prev, [c.id]: e.target.value }))}
+                      className="w-[80px] px-3 py-2 rounded-lg border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]"
+                    />
+                    <span className="text-[11px] text-[#888]">uur/dag</span>
+                  </div>
+                  {changed && (
+                    <button
+                      onClick={() => opslaanCursus(c.id)}
+                      disabled={cursusOpslaan === c.id}
+                      className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-[#0C0A07] text-white hover:bg-[#333] disabled:opacity-50"
+                    >
+                      {cursusOpslaan === c.id ? '...' : 'Opslaan'}
+                    </button>
+                  )}
+                  {msg && msg.text && (
+                    <span className={`text-[10px] ${msg.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>{msg.text}</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Uitleg */}
