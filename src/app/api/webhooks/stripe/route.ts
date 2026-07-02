@@ -381,6 +381,38 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   } catch (err) {
     console.error('Traject mail: fout bij verzenden (non-fatal):', err)
   }
+
+  // STAP 4 Richting 1: Blokkeer trajectdagen in cal.com (TRAJECT BLOK event type)
+  try {
+    const { syncTrajectBlokNaarCalCom } = await import('@/lib/traject-cal-sync')
+    const syncResult = await syncTrajectBlokNaarCalCom({
+      boekingId: insertedBoeking.id,
+      cursus_naam,
+      blok_dagen,
+      starttijd,
+      klant_naam,
+      klant_email,
+    }, supabase)
+
+    await supabase
+      .from('traject_boekingen')
+      .update({ cal_sync_status: syncResult.status })
+      .eq('id', insertedBoeking.id)
+
+    console.log(`Traject cal.com sync: ${syncResult.status}`, {
+      days_synced: syncResult.daysSynced,
+      days_failed: syncResult.daysFailed,
+      uids: syncResult.uids,
+    })
+  } catch (err) {
+    console.error('Traject cal.com sync: onverwachte fout (non-fatal):', err)
+    try {
+      await supabase
+        .from('traject_boekingen')
+        .update({ cal_sync_status: 'failed' })
+        .eq('id', insertedBoeking.id)
+    } catch {}
+  }
 }
 
 /**
