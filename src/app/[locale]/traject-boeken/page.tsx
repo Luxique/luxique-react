@@ -90,14 +90,14 @@ export default function TrajectBoekenContent() {
     if (selectedCursus.duur_werkdagen === 0) {
       setBlockDates([selectedDate])
     } else {
-      // Voor demo: simuleer werkdagen blok
+      // Bereken werkdagen blok
       const block: string[] = []
-      const cursor = new Date(selectedDate)
+      const cursor = new Date(selectedDate + 'T00:00:00')
       let remaining = selectedCursus.duur_werkdagen
 
       while (remaining > 0) {
         if (!isWeekend(cursor)) {
-          block.push(cursor.toISOString().split('T')[0])
+          block.push(toLocalIso(cursor))
           remaining--
         }
         cursor.setDate(cursor.getDate() + 1)
@@ -123,33 +123,52 @@ export default function TrajectBoekenContent() {
   const prijsIncl = Math.round((selectedCursus?.prijs_cents || 0) * 1.21)
   const aanbetaling = Math.round(prijsIncl / 2)
 
-  const getCalendarDays = () => {
+  // Local ISO date — NO toISOString() (voorkomt UTC timezone shift)
+  const toLocalIso = (date: Date): string => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
+  const getCalendarDays = (): (Date | null)[] => {
     const start = startOfMonth(currentMonth)
     const end = endOfMonth(currentMonth)
-    return eachDayOfInterval({ start, end })
+    const days = eachDayOfInterval({ start, end })
+
+    // Bereken offset: op welke weekdag-kolom valt de 1e van de maand?
+    // getDay(): 0=zo, 1=ma, ..., 6=za
+    // Grid header: Ma Di Wo Do Vr Za Zo (maandag=0)
+    const firstDayOfWeek = start.getDay() // 0=zo, 1=ma, ...
+    const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+
+    // Vul op met nullen voor de lege cellen
+    const padding: (Date | null)[] = Array(offset).fill(null)
+    return [...padding, ...days]
   }
 
   const isDateAvailable = (date: Date) => {
-    const isoDate = date.toISOString().split('T')[0]
+    const isoDate = toLocalIso(date)
     return availableDates.includes(isoDate)
   }
 
   const isDateInHorizon = (date: Date) => {
     if (!horizonInfo) return false
-    const start = new Date(horizonInfo.start)
-    const end = new Date(horizonInfo.einde)
-    return date >= start && date <= end
+    const start = new Date(horizonInfo.start + 'T00:00:00')
+    const end = new Date(horizonInfo.einde + 'T00:00:00')
+    const checkDate = new Date(toLocalIso(date) + 'T00:00:00')
+    return checkDate >= start && checkDate <= end
   }
 
   const isDateReturnedByAPI = (date: Date) => {
-    const isoDate = date.toISOString().split('T')[0]
+    const isoDate = toLocalIso(date)
     return allCalendarDates.includes(isoDate)
   }
 
   const handleDateClick = (date: Date) => {
     if (!isDateAvailable(date)) return
 
-    const isoDate = date.toISOString().split('T')[0]
+    const isoDate = toLocalIso(date)
     setSelectedDate(isoDate)
   }
 
@@ -283,8 +302,12 @@ export default function TrajectBoekenContent() {
 
                   {/* Calendar grid */}
                   <div className="grid grid-cols-7 gap-2">
-                    {getCalendarDays().map((date) => {
-                      const isoDate = date.toISOString().split('T')[0]
+                    {getCalendarDays().map((date, index) => {
+                      if (!date) {
+                        return <div key={`empty-${index}`} className="aspect-square" />
+                      }
+
+                      const isoDate = toLocalIso(date)
                       const isAvailable = isDateAvailable(date)
                       const isSelected = selectedDate === isoDate
                       const isWeekendDay = isWeekend(date)
