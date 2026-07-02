@@ -178,3 +178,100 @@ export async function checkTrajectBeschikbaarheid(
     bezetteDagen: check.bezetteDagen,
   }
 }
+
+// ---------------------------------------------------------------------------
+// STAP 3b — CURSUS MANAGEMENT
+// ---------------------------------------------------------------------------
+
+export interface TrajectCursus {
+  id: string
+  naam: string
+  duur_werkdagen: number
+  prijs_cents: number
+  prijs_ex_btw: number
+  actief: boolean
+}
+
+/**
+ * Haal alle actieve traject cursussen op.
+ */
+export async function getTrajectCursussen(): Promise<TrajectCursus[]> {
+  const { data, error } = await supabaseAdmin
+    .from('traject_cursussen')
+    .select('*')
+    .eq('actief', true)
+    .order('id')
+
+  if (error) {
+    throw new Error(`Fout bij ophalen traject cursussen: ${error.message}`)
+  }
+
+  return data || []
+}
+
+/**
+ * Haal specifieke cursus op via ID.
+ */
+export async function getTrajectCursusById(id: string): Promise<TrajectCursus | null> {
+  const { data, error } = await supabaseAdmin
+    .from('traject_cursussen')
+    .select('*')
+    .eq('id', id)
+    .eq('actief', true)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Fout bij ophalen traject cursus: ${error.message}`)
+  }
+
+  return data
+}
+
+// ---------------------------------------------------------------------------
+// STAP 3b — INSTELLINGEN
+// ---------------------------------------------------------------------------
+
+export interface TrajectInstellingen {
+  traject_voorsprong_weken: number
+  boekbare_horizon_weken: number
+  werktijd_ochtend_start: string  // '09:00'
+  werktijd_ochtend_eind: string    // '12:00'
+  werktijd_middag_start: string    // '13:00'
+  werktijd_middag_eind: string      // '17:00'
+}
+
+/**
+ * Haal traject instellingen op (singleton tabel).
+ */
+export async function getTrajectInstellingen(): Promise<TrajectInstellingen> {
+  const { data, error } = await supabaseAdmin
+    .from('traject_instellingen')
+    .select('*')
+    .single()
+
+  if (error) {
+    throw new Error(`Fout bij ophalen traject instellingen: ${error.message}`)
+  }
+
+  return data as TrajectInstellingen
+}
+
+/**
+ * Formateer prijs in cents naar Euro string.
+ */
+export function formatPrice(cents: number): string {
+  return `€${(cents / 100).toFixed(2).replace('.', ',')}`
+}
+
+/**
+ * Formateer duur in werkdagen naar menselijk leesbaar format.
+ */
+export function formatDuur(duurWerkdagen: number): string {
+  if (duurWerkdagen === 0) {
+    return '1 uur — workshop'
+  }
+  if (duurWerkdagen === 1) {
+    return '1 dag'
+  }
+  return `${duurWerkdagen} dagen`
+}
