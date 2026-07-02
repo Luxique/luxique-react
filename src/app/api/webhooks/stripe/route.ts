@@ -13,7 +13,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { syncTrajectBlokNaarCalCom } from '@/lib/traject-cal-sync'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -303,31 +302,8 @@ async function handleTrajectDeposit(session: any, stripe: any) {
     .limit(1)
 
   if (existing && existing.length > 0) {
-    // IDEMPOTENTIE: reeds verwerkt — maar check of cal.com sync nog nodig is
-    const bestaandeRij = existing[0] as { id: string; cal_sync_status?: string }
-    if (bestaandeRij.cal_sync_status === 'synced') {
-      console.log('Traject deposit: al verwerkt + synced, skip', stripe_session_id)
-      return
-    }
-    console.log('Traject deposit: boeking bestaat maar cal_sync_status =', bestaandeRij.cal_sync_status, '→ sync alleen', stripe_session_id)
-    // Resume sync voor bestaande boeking
-    try {
-      const syncResult = await syncTrajectBlokNaarCalCom({
-        boekingId: bestaandeRij.id,
-        cursus_naam,
-        blok_dagen,
-        starttijd,
-        klant_naam,
-        klant_email,
-      }, supabase)
-      await supabase
-        .from('traject_boekingen')
-        .update({ cal_sync_status: syncResult.status === 'skipped' ? 'synced' : syncResult.status })
-        .eq('id', bestaandeRij.id)
-      console.log('[traject-sync] retry sync voltooid:', syncResult.status)
-    } catch (err) {
-      console.error('[traject-sync] retry sync fout:', err)
-    }
+    // IDEMPOTENTIE: reeds verwerkt — cron pakt cal_sync_status op
+    console.log('Traject deposit: al verwerkt, skip (cron doet sync)', stripe_session_id)
     return
   }
 
@@ -408,46 +384,8 @@ async function handleTrajectDeposit(session: any, stripe: any) {
     console.error('Traject mail: fout bij verzenden (non-fatal):', err)
   }
 
-  // STAP 4 Richting 1: Blokkeer trajectdagen in cal.com (TRAJECT BLOK event type)
-  console.log('[traject-sync] START blokkade voor boeking', insertedBoeking.id, 'dagen:', blok_dagen)
-
-  let syncStatus: 'synced' | 'partial' | 'failed' = 'failed'
-  try {
-    const syncResult = await syncTrajectBlokNaarCalCom({
-      boekingId: insertedBoeking.id,
-      cursus_naam,
-      blok_dagen,
-      starttijd,
-      klant_naam,
-      klant_email,
-    }, supabase)
-
-    syncStatus = syncResult.status === 'skipped' ? 'synced' : syncResult.status
-    console.log('[traject-sync] RESULT', {
-      status: syncResult.status,
-      daysSynced: syncResult.daysSynced,
-      daysFailed: syncResult.daysFailed,
-      uids: syncResult.uids,
-    })
-  } catch (err) {
-    console.error('[traject-sync] CRASH:', err)
-    syncStatus = 'failed'
-  }
-
-  // ALTICAL status updaten — onafhankelijk van wat er boven gebeurde
-  try {
-    const { error: updateError } = await supabase
-      .from('traject_boekingen')
-      .update({ cal_sync_status: syncStatus })
-      .eq('id', insertedBoeking.id)
-    if (updateError) {
-      console.error('[traject-sync] DB update fout:', updateError.message)
-    } else {
-      console.log('[traject-sync] cal_sync_status gezet op:', syncStatus, 'voor boeking', insertedBoeking.id)
-    }
-  } catch (err) {
-    console.error('[traject-sync] DB update crash:', err)
-  }
+  // cal_sync_status blijft 'pending' — de cron /api/cron/traject-sync pakt het op.
+  // Dit houdt de webhook snel (<10s) binnen Vercel Hobby limiet.
 }
 
 /**
