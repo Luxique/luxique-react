@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { syncTrajectBlokNaarCalCom } from '@/lib/traject-cal-sync'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -297,12 +298,36 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   // IDEMPOTENCY: al verwerkt?
   const { data: existing } = await supabase
     .from('traject_boekingen')
-    .select('id')
+    .select('id, cal_sync_status')
     .eq('stripe_session_id', stripe_session_id)
     .limit(1)
 
   if (existing && existing.length > 0) {
-    console.log('Traject deposit: al verwerkt (idempotent), skip', stripe_session_id)
+    // IDEMPOTENTIE: reeds verwerkt — maar check of cal.com sync nog nodig is
+    const bestaandeRij = existing[0] as { id: string; cal_sync_status?: string }
+    if (bestaandeRij.cal_sync_status === 'synced') {
+      console.log('Traject deposit: al verwerkt + synced, skip', stripe_session_id)
+      return
+    }
+    console.log('Traject deposit: boeking bestaat maar cal_sync_status =', bestaandeRij.cal_sync_status, '→ sync alleen', stripe_session_id)
+    // Resume sync voor bestaande boeking
+    try {
+      const syncResult = await syncTrajectBlokNaarCalCom({
+        boekingId: bestaandeRij.id,
+        cursus_naam,
+        blok_dagen,
+        starttijd,
+        klant_naam,
+        klant_email,
+      }, supabase)
+      await supabase
+        .from('traject_boekingen')
+        .update({ cal_sync_status: syncResult.status === 'skipped' ? 'synced' : syncResult.status })
+        .eq('id', bestaandeRij.id)
+      console.log('[traject-sync] retry sync voltooid:', syncResult.status)
+    } catch (err) {
+      console.error('[traject-sync] retry sync fout:', err)
+    }
     return
   }
 
