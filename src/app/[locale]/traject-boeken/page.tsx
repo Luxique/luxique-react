@@ -314,12 +314,15 @@ export default function TrajectBoekenContent() {
                       const isPastDate = isPast(date) && !isToday(date)
                       const inHorizon = isDateInHorizon(date)
                       const isReturnedByAPI = isDateReturnedByAPI(date)
+                      const isInBlock = blockDates.includes(isoDate) && !isSelected
 
                       let className =
-                        'aspect-square flex items-center justify-center rounded-lg transition-colors '
+                        'aspect-square flex items-center justify-center rounded-lg transition-colors relative '
 
                       if (isSelected) {
-                        className += 'bg-[#C4A265] text-[#0C0A07] font-bold cursor-pointer'
+                        className += 'bg-[#C4A265] text-[#0C0A07] font-bold cursor-pointer ring-2 ring-[#C4A265] ring-offset-2 ring-offset-[#1a1614]'
+                      } else if (isInBlock) {
+                        className += 'bg-[#C4A265]/40 text-[#FBF8F2] cursor-pointer border border-[#C4A265]/50'
                       } else if (isWeekendDay) {
                         className += 'text-[#C4A265]/30 cursor-not-allowed'
                       } else if (!inHorizon || isPastDate) {
@@ -340,6 +343,9 @@ export default function TrajectBoekenContent() {
                           className={className}
                         >
                           {format(date, 'd')}
+                          {isSelected && (
+                            <span className="absolute -top-2 -right-1 text-[9px] bg-[#C4A265] text-[#0C0A07] px-1 rounded font-bold">START</span>
+                          )}
                         </button>
                       )
                     })}
