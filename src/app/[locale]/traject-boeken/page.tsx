@@ -454,8 +454,8 @@ export default function TrajectBoekenContent() {
                 </h3>
                 <p className="text-[#FBF8F2]/60 text-sm mb-6">
                   {isWorkshop
-                    ? `Workshop van ${selectedCursus.duur_uren_per_dag || 1} uur. Het pauzeuur (${instellingen.werktijd_ochtend_eind}–${instellingen.werktijd_middag_start}) is geblokkeerd.`
-                    : `Trajectdag van ${selectedCursus.duur_uren_per_dag || 8} uur${instellingen.pauze_inclusief ? ' (pauze inbegrepen)' : ` + ${instellingen.pauze_lengte_minuten} min pauze`}. De gekozen starttijd geldt voor alle trajectdagen.`}
+                    ? `Workshop van ${selectedCursus.duur_uren_per_dag || 1} uur.`
+                    : `Trajectdag van ${selectedCursus.duur_uren_per_dag || 8} uur. De gekozen starttijd geldt voor alle trajectdagen.`}
                 </p>
 
                 {starttijdOpties.length === 0 ? (
