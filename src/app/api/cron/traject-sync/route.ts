@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
     .in('cal_sync_status', ['pending', 'partial', 'failed'])
     .eq('aanbetaling_status', 'betaald')
     .limit(5)
-
   if (fetchError) {
     console.error('[traject-cron] DB fetch fout:', fetchError.message)
     return NextResponse.json({ error: 'DB fetch failed' }, { status: 500 })
@@ -81,6 +80,14 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      // Haal duur_werkdagen op uit traject_cursussen
+      const { data: cursus } = await supabase
+        .from('traject_cursussen')
+        .select('duur_werkdagen')
+        .eq('id', boeking.cursus_id)
+        .single()
+      const duurWerkdagen = cursus?.duur_werkdagen ?? 1
+
       const syncResult = await syncTrajectBlokNaarCalCom({
         boekingId: boeking.id,
         cursus_naam: boeking.cursus_naam,
@@ -88,6 +95,7 @@ export async function GET(request: NextRequest) {
         starttijd: boeking.starttijd,
         klant_naam: boeking.klant_naam,
         klant_email: boeking.klant_email,
+        duur_werkdagen: duurWerkdagen,
       }, supabase)
 
       const nieuweStatus = syncResult.status === 'skipped' ? 'synced' : syncResult.status

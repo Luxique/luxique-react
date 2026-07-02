@@ -1,23 +1,23 @@
 /**
  * STAP 4 Richting 1 — Traject blokkades aanmaken in cal.com
- * via het "TRAJECT BLOK" event type (eventTypeId = 6194679).
+ *
+ * TWEE vaste event types (Optie B — geen dynamisch PATCHen):
+ * - Lange trajecten (duur_werkdagen >= 1) → TRAJECT BLOK DAG (8u)
+ * - Workshop (duur_werkdagen = 0) → TRAJECT BLOK (1u)
  *
  * Per dag in blok_dagen wordt een aparte cal.com-boeking aangemaakt.
  * Cal.com sync deze naar Chiva's Google Calendar → dag is bezet voor behandelingen.
- *
- * DUUR: cal.com v2 staat geen variabele duur toe op een vast event type
- * ("Invalid event length" als start+end != event type length). Oplossing:
- * vóór elke boeking PATCH het event type naar de juiste length, dan POST.
  *
  * Idempotent: checkt cal_sync_status op de boeking vooraf.
  * Fouten zijn non-fatal — de boeking staat al in de DB.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from '@supabase/supabase-js'
 
-const TRAJECT_BLOK_EVENT_TYPE_ID = 6194679
+// Event type IDs in cal.com
+const TRAJECT_BLOK_WORKSHOP_ID = 6194679  // 60 min — voor workshops (1u)
+const TRAJECT_BLOK_DAG_ID = 6195439       // 480 min — voor lange trajecten (8u)
 const CAL_API_VERSION = '2024-09-10'
-const DEFAULT_EVENT_LENGTH = 60 // cal.com default, wordt restored na elke boeking
 
 export interface TrajectSyncInput {
   boekingId: string
@@ -26,6 +26,7 @@ export interface TrajectSyncInput {
   starttijd: string
   klant_naam: string
   klant_email: string
+  duur_werkdagen: number  // 0 = workshop, >=1 = lang traject
 }
 
 export interface TrajectSyncResult {
@@ -33,6 +34,7 @@ export interface TrajectSyncResult {
   daysSynced: number
   daysFailed: number
   uids: string[]
+  eventTypeId?: number
   error?: string
 }
 
@@ -55,52 +57,6 @@ async function calApi(
   return res
 }
 
-/** Zet het event type length tijdelijk naar de gewenste waarde. */
-async function patchEventTypeLength(
-  apiKey: string,
-  lengthMinutes: number,
-): Promise<boolean> {
-  try {
-    const res = await calApi('PATCH', `/event-types/${TRAJECT_BLOK_EVENT_TYPE_ID}`, apiKey, {
-      length: lengthMinutes,
-    })
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => '')
-      console.error(`[traject-sync] PATCH event type length ${lengthMinutes}m faalde: HTTP ${res.status} ${errBody.slice(0, 200)}`)
-      return false
-    }
-    return true
-  } catch (err) {
-    console.error(`[traject-sync] PATCH event type length crash:`, err)
-    return false
-  }
-}
-
-/** Bereken blok-duur in minuten op basis van werktijden.
- *  Limiet: cal.com schedule van LUXIQUE ACADEMY is 8u (09:00-17:00 UTC = 11:00-19:00 lokaal).
- *  Om 'no_available_users_found' te voorkomen, beperken we de duur tot max 480 min (8u).
- *  CJ kan de cal.com schedule verbreden als hij echte 10u-blokken wil.
- */
-function berekenBlokDuurMinuten(
-  starttijd: string,
-  instellingen: { werktijd_ochtend_start?: string; werktijd_middag_eind?: string } | null,
-): number {
-  const ochtendStart = instellingen?.werktijd_ochtend_start || '09:00'
-  const middagEind = instellingen?.werktijd_middag_eind || '19:00'
-
-  const [sh, sm] = starttijd.split(':').map(Number)
-  const [eh, em] = middagEind.split(':').map(Number)
-  const startMin = sh * 60 + sm
-  const eindMin = eh * 60 + em
-  const duur = eindMin - startMin
-  const rawDuur = duur > 0 ? duur : 600 // fallback 10 uur
-
-  // CAP: 8 uur (480 min) — cal.com schedule van LUXIQUE is 8u.
-  // Langere blokken → 'no_available_users_found' error.
-  // Zodra CJ cal.com schedule verbreedt, kan deze cap omhoog.
-  return Math.min(rawDuur, 480)
-}
-
 /**
  * Hooffunctie — sync alle trajectdagen naar cal.com als TRAJECT BLOK boekingen.
  */
@@ -108,7 +64,11 @@ export async function syncTrajectBlokNaarCalCom(
   opts: TrajectSyncInput,
   supabase: SupabaseClient,
 ): Promise<TrajectSyncResult> {
-  console.log('[traject-sync] FUNCTIE START', { boekingId: opts.boekingId, dagen: opts.blok_dagen.length })
+  console.log('[traject-sync] FUNCTIE START', {
+    boekingId: opts.boekingId,
+    dagen: opts.blok_dagen.length,
+    duur_werkdagen: opts.duur_werkdagen,
+  })
 
   // IDEMPOTENTIE: check cal_sync_status eerst
   const { data: existing } = await supabase
@@ -134,28 +94,12 @@ export async function syncTrajectBlokNaarCalCom(
     }
   }
 
-  // Haalt instellingen op voor start-/eindtijd
-  const { data: instellingen } = await supabase
-    .from('traject_instellingen')
-    .select('werktijd_ochtend_start, werktijd_middag_eind')
-    .limit(1)
-    .single()
+  // KIES EVENT TYPE op basis van cursus-type
+  const isLangeTraject = opts.duur_werkdagen >= 1
+  const eventTypeId = isLangeTraject ? TRAJECT_BLOK_DAG_ID : TRAJECT_BLOK_WORKSHOP_ID
+  const lengthLabel = isLangeTraject ? '8u (DAG)' : '1u (WORKSHOP)'
 
-  // Bereken blok-duur in minuten
-  const blokDuurMinuten = berekenBlokDuurMinuten(opts.starttijd, instellingen)
-  console.log(`[traject-sync] Blok-duur: ${blokDuurMinuten} minuten (${opts.starttijd} → ${instellingen?.werktijd_middag_eind || '19:00'})`)
-
-  // PATCH event type length naar gewenste duur vóór alle boekingen
-  const patchOk = await patchEventTypeLength(apiKey, blokDuurMinuten)
-  if (!patchOk) {
-    return {
-      status: 'failed',
-      daysSynced: 0,
-      daysFailed: opts.blok_dagen.length,
-      uids: [],
-      error: `Kon event type length niet op ${blokDuurMinuten}m zetten`,
-    }
-  }
+  console.log(`[traject-sync] Event type: ${eventTypeId} (${lengthLabel}) voor boeking ${opts.boekingId}`)
 
   const uids: string[] = []
   let daysSynced = 0
@@ -165,8 +109,9 @@ export async function syncTrajectBlokNaarCalCom(
   for (const dag of opts.blok_dagen) {
     const startIso = `${dag}T${opts.starttijd}:00+02:00`
 
+    // GEEN end-field — cal.com gebruikt de event type length (vast)
     const payload = {
-      eventTypeId: TRAJECT_BLOK_EVENT_TYPE_ID,
+      eventTypeId,
       start: startIso,
       timeZone: 'Europe/Amsterdam',
       language: 'nl',
@@ -175,6 +120,7 @@ export async function syncTrajectBlokNaarCalCom(
         boeking_id: opts.boekingId,
         cursus_naam: opts.cursus_naam,
         dag: dag,
+        blok_type: isLangeTraject ? 'dag' : 'workshop',
       },
       responses: {
         name: `TRAJECT: ${opts.cursus_naam}`,
@@ -198,7 +144,7 @@ export async function syncTrajectBlokNaarCalCom(
       const uid = data?.data?.uid
       if (uid) uids.push(uid)
       daysSynced++
-      console.log(`[traject-sync] ✅ ${dag} geblokkeerd (uid: ${uid}, ${blokDuurMinuten}m)`)
+      console.log(`[traject-sync] ✅ ${dag} geblokkeerd (uid: ${uid}, ${lengthLabel})`)
     } catch (err) {
       const errMsg = `Exception: ${String(err).slice(0, 300)}`
       console.error(`[traject-sync] ${errMsg} voor ${dag}`)
@@ -206,9 +152,6 @@ export async function syncTrajectBlokNaarCalCom(
       if (!lastError) lastError = errMsg
     }
   }
-
-  // Restore event type length naar default
-  await patchEventTypeLength(apiKey, DEFAULT_EVENT_LENGTH)
 
   let status: TrajectSyncResult['status']
   if (daysSynced === opts.blok_dagen.length) {
@@ -219,5 +162,5 @@ export async function syncTrajectBlokNaarCalCom(
     status = 'failed'
   }
 
-  return { status, daysSynced, daysFailed, uids, error: lastError }
+  return { status, daysSynced, daysFailed, uids, eventTypeId, error: lastError }
 }
