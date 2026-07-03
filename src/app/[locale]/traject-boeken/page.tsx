@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
@@ -39,7 +39,7 @@ const fmtTijd = (min: number): string => {
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, isToday, isPast } from 'date-fns'
 import { nl } from 'date-fns/locale'
 
-export default function TrajectBoekenContent() {
+function TrajectBoekenInner() {
   const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
 
@@ -911,5 +911,12 @@ export default function TrajectBoekenContent() {
         )}
       </div>
     </div>
+  )
+}
+export default function TrajectBoekenContent() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0C0A07] flex items-center justify-center"><div className="text-[#C4A265] text-xl">Laden...</div></div>}>
+      <TrajectBoekenInner />
+    </Suspense>
   )
 }
