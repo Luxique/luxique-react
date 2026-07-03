@@ -741,7 +741,9 @@
     "finalTitleEm": "fa per te?",
     "finalText": "Loenique, il nostro chatbot, ragiona con te — quale percorso corrisponde al tuo livello, o come combinarne più d'uno in un percorso su misura. Preferisci un contatto diretto? Scrivi a info@luxique.nl.",
     "finalAskLoenique": "Chiedi a Loenique",
-    "finalMail": "Scrivi a info@luxique.nl"
+    "finalMail": "Scrivi a info@luxique.nl",
+    "bookCta": "Prenota questo percorso",
+    "workshopBookCta": "Prenota questo workshop"
   },
   "Policies": {
     "disclaimer": "This English version is a translation provided for your convenience. The Dutch version of these terms and policies is legally binding; in the event of any discrepancy, the Dutch text prevails.",

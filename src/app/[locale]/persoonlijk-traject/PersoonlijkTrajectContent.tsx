@@ -1,12 +1,24 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import Navbar from '@/components/Navbar'
+
+// Cursus IDs uit traject_cursussen (actief)
+const CURSUS = {
+  beginner:      'ac16d676-cb17-43ea-a3a7-a1dce56c143a', // Beginner lash to artist (4d, €1.650)
+  wispy:         'b43062ef-2756-4d9f-90fe-962e2abd1548', // Wispy masterclass (1d, €500)
+  medusa:        'e33310cb-2c73-4f8e-a878-ecaf35c5a4c3', // Medusa masterclass (2d, €1.000)
+  techToArtist:  'af8adfc8-ae38-4869-bf8a-e3dd9381c231', // Lash tech to artist (3d, €1.200)
+  workshop:      '0fa8540d-1ccd-4c94-9541-55bf041226d0', // Beginner workshop (1u, €35)
+} as const
 
 export default function PersoonlijkTrajectContent() {
   const t = useTranslations('PersoonlijkTraject')
+  const locale = useLocale()
   const rootRef = useRef<HTMLDivElement>(null)
+
+  const boekUrl = (cursusId: string) => `/${locale}/traject-boeken?cursus=${cursusId}`
 
   useEffect(() => {
     const root = rootRef.current
@@ -397,7 +409,7 @@ export default function PersoonlijkTrajectContent() {
                 <div className="m"><span className="k">{t('workshopMetaLevelLabel')}</span><span className="v serif">{t('workshopMetaLevelValue')}</span></div>
               </div>
               <div className="start-btns">
-                <a href="mailto:info@luxique.nl?subject=Aanmelden%20kennismakingsworkshop" className="btn">{t('workshopCta')}</a>
+                <a href={boekUrl(CURSUS.workshop)} className="btn">{t('workshopBookCta')}</a>
                 <button className="btn ghost" data-loenique>{t('workshopAskLoenique')}</button>
               </div>
             </div>
@@ -663,7 +675,7 @@ export default function PersoonlijkTrajectContent() {
               </div>
             </div>
             <div className="btn-row">
-              <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">{t('dpRequestCta')}</a>
+              <a href={boekUrl(CURSUS.beginner)} className="btn">{t('bookCta')}</a>
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -743,7 +755,7 @@ export default function PersoonlijkTrajectContent() {
               </div>
             </div>
             <div className="btn-row">
-              <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">{t('dpRequestCta')}</a>
+              <a href={boekUrl(CURSUS.wispy)} className="btn">{t('bookCta')}</a>
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -841,7 +853,7 @@ export default function PersoonlijkTrajectContent() {
               </div>
             </div>
             <div className="btn-row">
-              <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">{t('dpRequestCta')}</a>
+              <a href={boekUrl(CURSUS.medusa)} className="btn">{t('bookCta')}</a>
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -944,7 +956,7 @@ export default function PersoonlijkTrajectContent() {
               </div>
             </div>
             <div className="btn-row">
-              <a href="mailto:info@luxique.nl?subject=Aanvraag%20traject" className="btn">{t('dpRequestCta')}</a>
+              <a href={boekUrl(CURSUS.techToArtist)} className="btn">{t('bookCta')}</a>
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>

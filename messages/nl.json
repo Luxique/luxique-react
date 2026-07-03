@@ -742,7 +742,9 @@
     "finalTitleEm": "suits you?",
     "finalText": "Loenique, our chatbot, thinks along with you — which programme matches your level, or how to combine several into one bespoke route. Prefer direct contact? Email info@luxique.nl.",
     "finalAskLoenique": "Ask Loenique",
-    "finalMail": "Email info@luxique.nl"
+    "finalMail": "Email info@luxique.nl",
+    "bookCta": "Boek dit traject",
+    "workshopBookCta": "Boek deze workshop"
   },
   "Policies": {
     "disclaimer": "Deze Engelse versie is een vertaling ten behoeve van uw gemak. De Nederlandse versie van deze voorwaarden en beleidsregels is juridisch bindend; in geval van een discrepantie prevaleert de Nederlandse tekst.",

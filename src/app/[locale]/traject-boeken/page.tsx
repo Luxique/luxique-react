@@ -97,7 +97,7 @@ function TrajectBoekenInner() {
         const data = await response.json()
         setCursussen(data.cursussen)
 
-        // Herstel selectie na login redirect
+        // Herstel selectie na login redirect (sessionStorage heeft prioriteit)
         const draft = (window as any).__trajectRestore
         if (draft) {
           const cursus = data.cursussen.find((c: TrajectCursus) => c.id === draft.cursusId)
@@ -110,6 +110,15 @@ function TrajectBoekenInner() {
           }
           delete (window as any).__trajectRestore
           // Niet wissen uit sessionStorage — pas na succesvolle checkout
+        } else {
+          // Geen sessionStorage herstel — check URL ?cursus=<id> voor pre-selectie
+          const urlCursusId = searchParams.get('cursus')
+          if (urlCursusId) {
+            const cursus = data.cursussen.find((c: TrajectCursus) => c.id === urlCursusId)
+            if (cursus) {
+              setSelectedCursus(cursus)
+            }
+          }
         }
       } catch (err) {
         setError('Kan cursussen niet laden')
@@ -120,7 +129,7 @@ function TrajectBoekenInner() {
     }
 
     loadCursussen()
-  }, [])
+  }, [searchParams])
 
   // Pre-fill klantgegevens als de gebruiker is ingelogd
   useEffect(() => {
