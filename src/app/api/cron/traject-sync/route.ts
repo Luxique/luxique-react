@@ -52,6 +52,12 @@ export async function GET(request: NextRequest) {
   // DEBUG: include raw count for diagnosis
   const _debugRawCount = boekingen?.length || 0
   const _debugIds = boekingen?.map(b => b.id.substring(0,8)) || []
+  const _debugEnvCheck = {
+    hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    keyPrefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) || 'MISSING',
+    hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'MISSING',
+  }
 
   if (!boekingen || boekingen.length === 0) {
     return NextResponse.json({ dryRun: DRY_RUN, processed: 0, message: 'Geen boekingen om te syncen', _debugRawCount, _debugIds })
@@ -152,6 +158,7 @@ export async function GET(request: NextRequest) {
     skipped: results.filter(r => r.nieuwe_status === 'skipped_dry_run').length,
     _debugRawCount,
     _debugIds,
+    _debugEnvCheck,
     results,
   }
 
