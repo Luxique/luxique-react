@@ -117,21 +117,32 @@ export async function PUT(req: NextRequest) {
       materiaalkosten_cents,
     } = body
 
-    // Validate integers
-    const vsp = Number(traject_voorsprong_weken)
-    const hor = Number(boekbare_horizon_weken)
-
-    if (!Number.isInteger(vsp) || vsp < 0 || vsp > 52) {
-      return NextResponse.json(
-        { error: `traject_voorsprong_weken moet een geheel getal 0-52 zijn` },
-        { status: 400, headers: NO_STORE_HEADERS },
-      )
+    // Build update payload — all fields optional for partial updates
+    let updatePayload: Record<string, unknown> = {
+      bijgewerkt_op: new Date().toISOString(),
     }
-    if (!Number.isInteger(hor) || hor < 1 || hor > 104) {
-      return NextResponse.json(
-        { error: `boekbare_horizon_weken moet een geheel getal 1-104 zijn` },
-        { status: 400, headers: NO_STORE_HEADERS },
-      )
+
+    // Validate integers (only if provided — allows partial updates)
+    if (traject_voorsprong_weken !== undefined) {
+      const vsp = Number(traject_voorsprong_weken)
+      if (!Number.isInteger(vsp) || vsp < 0 || vsp > 52) {
+        return NextResponse.json(
+          { error: `traject_voorsprong_weken moet een geheel getal 0-52 zijn` },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updatePayload.traject_voorsprong_weken = vsp
+    }
+
+    if (boekbare_horizon_weken !== undefined) {
+      const hor = Number(boekbare_horizon_weken)
+      if (!Number.isInteger(hor) || hor < 1 || hor > 104) {
+        return NextResponse.json(
+          { error: `boekbare_horizon_weken moet een geheel getal 1-104 zijn` },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updatePayload.boekbare_horizon_weken = hor
     }
 
     // Validate time fields only if they're all provided
@@ -141,11 +152,7 @@ export async function PUT(req: NextRequest) {
       typeof werktijd_middag_start === 'string' &&
       typeof werktijd_middag_eind === 'string'
 
-    let updatePayload: Record<string, unknown> = {
-      traject_voorsprong_weken: vsp,
-      boekbare_horizon_weken: hor,
-      bijgewerkt_op: new Date().toISOString(),
-    }
+    // ---- legacy: updatePayload wordt hieronder verder gevuld ----
 
     // Pauze lengte (optioneel, alleen als meegegeven)
     if (pauze_lengte_minuten !== undefined) {
