@@ -8,7 +8,9 @@
  * Per dag in blok_dagen wordt een aparte cal.com-boeking aangemaakt.
  * Cal.com sync deze naar Chiva's Google Calendar → dag is bezet voor behandelingen.
  *
- * Idempotent: checkt cal_sync_status op de boeking vooraf.
+ * Idempotent (per dag): checkt cal.com OF er al een TRAJECT BLOK bestaat
+ * voor die datum+eventTypeId voordat een nieuwe wordt aangemaakt.
+ * Dubbele aanmaak wordt voorkomen zelfs bij retries na partial sync.
  * Fouten zijn non-fatal — de boeking staat al in de DB.
  */
 
@@ -58,6 +60,80 @@ async function calApi(
 }
 
 /**
+ * Haal alle bestaande TRAJECT BLOK bookings op voor een eventTypeId.
+ * Retourneert een Set van datum strings (YYYY-MM-DD) die al een blok hebben.
+ *
+ * Dit maakt de sync per-dag idempotent: als een dag al een blok heeft
+ * (van een eerdere succesvolle sync die niet in de DB werd geregistreerd,
+ * of van een handmatige aanmaak), wordt geen nieuwe aangemaakt.
+ */
+async function fetchExistingTrajectBlokDagen(
+  eventTypeId: number,
+  apiKey: string,
+): Promise<Set<string>> {
+  const bezetteDagen = new Set<string>()
+  let cursor: string | null = null
+  let pages = 0
+  const MAX_PAGES = 10 // veiligheidslimiet
+
+  while (pages < MAX_PAGES) {
+    const params = new URLSearchParams({
+      eventTypeId: String(eventTypeId),
+      status: 'upcoming',
+      limit: '100',
+    })
+    if (cursor) params.set('cursor', cursor)
+
+    let res: Response
+    try {
+      res = await calApi('GET', `/bookings?${params.toString()}`, apiKey)
+    } catch {
+      console.warn(`[traject-sync] Kon bestaande bookings niet ophalen (netwerkfout) — idempotentie-check overgeslagen`)
+      return bezetteDagen
+    }
+
+    if (!res.ok) {
+      console.warn(`[traject-sync] Kan bestaande bookings niet ophalen (HTTP ${res.status}) — idempotentie-check overgeslagen`)
+      return bezetteDagen
+    }
+
+    const json = await res.json()
+    const bookings: Array<Record<string, unknown>> = json.data?.bookings || json.bookings || json.data || []
+
+    for (const b of bookings) {
+      const metadata = b.metadata as Record<string, string> | undefined
+      const responses = b.responses as Record<string, string> | undefined
+      const name = responses?.name || ''
+
+      // Herken TRAJECT BLOK bookings: metadata.type === 'traject_blok' OF naam begint met 'TRAJECT:'
+      const isTrajectBlok = metadata?.type === 'traject_blok' || name.startsWith('TRAJECT:')
+      if (!isTrajectBlok) continue
+
+      //Voor dag-blokken (8u): starttijd bevat de datum
+      const start = String(b.start || '')
+      const dag = start.slice(0, 10) // ISO datum gedeelte
+      if (dag && /^\d{4}-\d{2}-\d{2}$/.test(dag)) {
+        bezetteDagen.add(dag)
+      }
+
+      // Ook metadata.dag als backup
+      if (metadata?.dag) {
+        bezetteDagen.add(metadata.dag)
+      }
+    }
+
+    // Paginatie
+    const nextCursor = json.meta?.nextCursor ?? json.meta?.cursor?.next
+    if (!nextCursor || nextCursor === cursor) break
+    cursor = nextCursor
+    pages++
+  }
+
+  console.log(`[traject-sync] ${bezetteDagen.size} bestaande TRAJECT BLOK dag(en) gevonden voor eventTypeId ${eventTypeId}: ${Array.from(bezetteDagen).join(', ')}`)
+  return bezetteDagen
+}
+
+/**
  * Hooffunctie — sync alle trajectdagen naar cal.com als TRAJECT BLOK boekingen.
  */
 export async function syncTrajectBlokNaarCalCom(
@@ -101,12 +177,24 @@ export async function syncTrajectBlokNaarCalCom(
 
   console.log(`[traject-sync] Event type: ${eventTypeId} (${lengthLabel}) voor boeking ${opts.boekingId}`)
 
+  // === IDEMPOTENTIE-CHECK (per dag) ===
+  // Haal bestaande TRAJECT BLOK dagen op uit cal.com
+  const bestaandeBlokDagen = await fetchExistingTrajectBlokDagen(eventTypeId, apiKey)
+
   const uids: string[] = []
   let daysSynced = 0
   let daysFailed = 0
+  let daysSkipped = 0
   let lastError: string | undefined
 
   for (const dag of opts.blok_dagen) {
+    // Skip als er al een TRAJECT BLOK bestaat voor deze dag
+    if (bestaandeBlokDagen.has(dag)) {
+      console.log(`[traject-sync] ⏭️  ${dag} al geblokkeerd in cal.com — skip (idempotent)`)
+      daysSkipped++
+      continue
+    }
+
     const startIso = `${dag}T${opts.starttijd}:00+02:00`
 
     // GEEN end-field — cal.com gebruikt de event type length (vast)
@@ -153,13 +241,23 @@ export async function syncTrajectBlokNaarCalCom(
     }
   }
 
+  // Bepaal finale status:
+  // - Alle dagen zijn gesynced OF overgeslagen (al bestaand) → synced
+  // - Enkele dagen gesynced/overgeslagen, andere gefaald → partial
+  // - Niets gesynced en niets overgeslagen → failed
+  const totalSuccess = daysSynced + daysSkipped
+
   let status: TrajectSyncResult['status']
-  if (daysSynced === opts.blok_dagen.length) {
+  if (totalSuccess === opts.blok_dagen.length) {
     status = 'synced'
-  } else if (daysSynced > 0) {
+  } else if (totalSuccess > 0) {
     status = 'partial'
   } else {
     status = 'failed'
+  }
+
+  if (daysSkipped > 0) {
+    console.log(`[traject-sync] ${daysSkipped} dag(en) overgeslagen (al geblokkeerd in cal.com)`)
   }
 
   return { status, daysSynced, daysFailed, uids, eventTypeId, error: lastError }
