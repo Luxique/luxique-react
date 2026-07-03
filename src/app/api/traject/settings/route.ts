@@ -15,7 +15,7 @@ export const revalidate = 0
 export const fetchCache = 'force-no-store'
 
 const SELECT_FIELDS =
-  'id, traject_voorsprong_weken, boekbare_horizon_weken, werktijd_ochtend_start, werktijd_ochtend_eind, werktijd_middag_start, werktijd_middag_eind, pauze_lengte_minuten, pauze_inclusief, bijgewerkt_op'
+  'id, traject_voorsprong_weken, boekbare_horizon_weken, werktijd_ochtend_start, werktijd_ochtend_eind, werktijd_middag_start, werktijd_middag_eind, pauze_lengte_minuten, pauze_inclusief, annuleer_gratis_grens_dagen, annuleer_materiaal_grens_uren, materiaalkosten_cents, bijgewerkt_op'
 
 // ---------------------------------------------------------------------------
 // TIME VALIDATION
@@ -112,6 +112,9 @@ export async function PUT(req: NextRequest) {
       werktijd_middag_eind,
       pauze_lengte_minuten,
       pauze_inclusief,
+      annuleer_gratis_grens_dagen,
+      annuleer_materiaal_grens_uren,
+      materiaalkosten_cents,
     } = body
 
     // Validate integers
@@ -159,6 +162,44 @@ export async function PUT(req: NextRequest) {
     // Pauze inclusief toggle (optioneel)
     if (pauze_inclusief !== undefined) {
       updatePayload.pauze_inclusief = Boolean(pauze_inclusief)
+    }
+
+    // === STAP 5a — Annulerings-instellingen ===
+
+    // annuleer_gratis_grens_dagen (int, default 7)
+    if (annuleer_gratis_grens_dagen !== undefined) {
+      const aggd = Number(annuleer_gratis_grens_dagen)
+      if (!Number.isInteger(aggd) || aggd < 0 || aggd > 90) {
+        return NextResponse.json(
+          { error: 'annuleer_gratis_grens_dagen moet een geheel getal 0-90 zijn' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updatePayload.annuleer_gratis_grens_dagen = aggd
+    }
+
+    // annuleer_materiaal_grens_uren (int, default 72)
+    if (annuleer_materiaal_grens_uren !== undefined) {
+      const amgu = Number(annuleer_materiaal_grens_uren)
+      if (!Number.isInteger(amgu) || amgu < 0 || amgu > 720) {
+        return NextResponse.json(
+          { error: 'annuleer_materiaal_grens_uren moet een geheel getal 0-720 zijn' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updatePayload.annuleer_materiaal_grens_uren = amgu
+    }
+
+    // materiaalkosten_cents (int, default 15000 = €150)
+    if (materiaalkosten_cents !== undefined) {
+      const mkc = Number(materiaalkosten_cents)
+      if (!Number.isInteger(mkc) || mkc < 0 || mkc > 1000000) {
+        return NextResponse.json(
+          { error: 'materiaalkosten_cents moet een geheel getal 0-1000000 zijn' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updatePayload.materiaalkosten_cents = mkc
     }
 
     if (hasAllTimes) {

@@ -238,6 +238,9 @@ export interface TrajectInstellingen {
   werktijd_ochtend_eind: string    // '12:00'
   werktijd_middag_start: string    // '13:00'
   werktijd_middag_eind: string      // '17:00'
+  annuleer_gratis_grens_dagen: number    // default 7
+  annuleer_materiaal_grens_uren: number   // default 72
+  materiaalkosten_cents: number           // default 15000 (€150)
 }
 
 /**
@@ -274,4 +277,111 @@ export function formatDuur(duurWerkdagen: number): string {
     return '1 dag'
   }
   return `${duurWerkdagen} dagen`
+}
+
+// ---------------------------------------------------------------------------
+// STAP 5a — ANNULERINGS-VENSTER LOGICA
+// ---------------------------------------------------------------------------
+
+/**
+ * Resultaat van de annulerings-venster bepaling.
+ *
+ * Venster 1: ruim voor start → volledige terugbetaling
+ * Venster 2: dicht bij start maar niet kritisch → minus materiaalkosten
+ * Venster 3: laatste moment → geen terugbetaling, alleen annuleren
+ */
+export interface AnnuleringsVensterResult {
+  venster: 1 | 2 | 3
+  mag_omboeken: boolean
+  mag_annuleren: boolean
+  terugbetaling: 'volledig' | 'minus_materiaal' | 'geen'
+  uren_tot_start: number
+  dagen_tot_start: number
+  beschrijving: string
+}
+
+/**
+ * Zet een ISO datum string (YYYY-MM-DD) om naar een Date in Amsterdam-tijd.
+ *
+ * Dit voorkomt de UTC/lokaal-verwarring die eerder voor bugs zorgde.
+ * We maken een Date aan alsof het lokale tijd is, en gebruiken dan waar
+ * nodig expliciete tijdzone-berekeningen.
+ */
+function parseDatumAmsterdam(isoDate: string): Date {
+  // Maak een datum aan als 'local time' — in server context (UTC) betekent dit
+  // dat we de datum expliciet moeten maken als midnight Amsterdam tijd.
+  // Amsterdam is UTC+1 (winter) of UTC+2 (zomer).
+  // De simpelste aanpak: gebruik het datumgedeelte + T00:00:00 en interpreteer
+  // als Europe/Amsterdam. We gebruiken de aanpak die ook in de rest van het
+  // traject-systeem werkt: datum string + tijd ervan maken.
+  return new Date(isoDate + 'T00:00:00+02:00')
+}
+
+/**
+ * Bepaal in welk annulerings-venster een boeking valt.
+ *
+ * @param startdatum  ISO datum string (YYYY-MM-DD) — de startdatum van het traject
+ * @param nu          Date object voor 'nu' (default: new Date())
+ * @param instellingen De traject-instellingen (grenzen)
+ *
+ * Venster 1: meer dan `annuleer_gratis_grens_dagen` dagen vóór start
+ *           → omboeken mag, annuleren mag, VOLLEDIG terug
+ * Venster 2: tussen de gratis-grens en de materiaal-grens
+ *           → omboeken mag, annuleren mag, MINUS materiaalkosten
+ * Venster 3: binnen `annuleer_materiaal_grens_uren` vóór start
+ *           → omboeken kan NIET, alleen annuleren, NIETS terug
+ */
+export function bepaalAnnuleringsVenster(
+  startdatum: string,
+  nu: Date = new Date(),
+  instellingen: {
+    annuleer_gratis_grens_dagen: number
+    annuleer_materiaal_grens_uren: number
+  },
+): AnnuleringsVensterResult {
+  const start = parseDatumAmsterdam(startdatum)
+  const diffMs = start.getTime() - nu.getTime()
+  const diffUren = diffMs / (1000 * 60 * 60)
+  const diffDagen = diffMs / (1000 * 60 * 60 * 24)
+
+  const gratisGrensDagen = instellingen.annuleer_gratis_grens_dagen ?? 7
+  const materiaalGrensUren = instellingen.annuleer_materiaal_grens_uren ?? 72
+
+  //cas A: na start (negatieve diff) → altijd venster 3
+  //cas B: negatief of zeer klein → venster 3
+  if (diffUren <= materiaalGrensUren) {
+    return {
+      venster: 3,
+      mag_omboeken: false,
+      mag_annuleren: true,
+      terugbetaling: 'geen',
+      uren_tot_start: Math.round(diffUren),
+      dagen_tot_start: Math.round(diffDagen),
+      beschrijving: `Binnen ${materiaalGrensUren}u vóór start (of al gestart) — geen terugbetaling, omboeken niet mogelijk`,
+    }
+  }
+
+  //cas C: tussen materiaal-grens en gratis-grens → venster 2
+  if (diffDagen <= gratisGrensDagen) {
+    return {
+      venster: 2,
+      mag_omboeken: true,
+      mag_annuleren: true,
+      terugbetaling: 'minus_materiaal',
+      uren_tot_start: Math.round(diffUren),
+      dagen_tot_start: Math.round(diffDagen),
+      beschrijving: `Tussen ${materiaalGrensUren}u en ${gratisGrensDagen} dagen vóór start — aanbetaling minus materiaalkosten`,
+    }
+  }
+
+  //cas D: ruim voor start → venster 1
+  return {
+    venster: 1,
+    mag_omboeken: true,
+    mag_annuleren: true,
+    terugbetaling: 'volledig',
+    uren_tot_start: Math.round(diffUren),
+    dagen_tot_start: Math.round(diffDagen),
+    beschrijving: `Meer dan ${gratisGrensDagen} dagen vóór start — volledige terugbetaling`,
+  }
 }

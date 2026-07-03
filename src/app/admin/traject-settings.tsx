@@ -23,6 +23,9 @@ interface TrajectSettings {
   werktijd_middag_eind: string
   pauze_lengte_minuten: number
   pauze_inclusief: boolean
+  annuleer_gratis_grens_dagen: number
+  annuleer_materiaal_grens_uren: number
+  materiaalkosten_cents: number
   bijgewerkt_op: string | null
 }
 
@@ -42,6 +45,9 @@ const DEFAULTS = {
   werktijd_ochtend_eind: '12:00',
   werktijd_middag_start: '13:00',
   werktijd_middag_eind: '19:00',
+  annuleer_gratis_grens_dagen: '7',
+  annuleer_materiaal_grens_uren: '72',
+  materiaalkosten_cents: '15000',
 }
 
 export default function TrajectInstellingenPaneel() {
@@ -54,6 +60,9 @@ export default function TrajectInstellingenPaneel() {
   const [middagEind, setMiddagEind] = useState(DEFAULTS.werktijd_middag_eind)
   const [pauzeLengte, setPauzeLengte] = useState('60')
   const [pauzeInclusief, setPauzeInclusief] = useState(false)
+  const [annuleerGratisGrens, setAnnuleerGratisGrens] = useState(DEFAULTS.annuleer_gratis_grens_dagen)
+  const [annuleerMateriaalGrens, setAnnuleerMateriaalGrens] = useState(DEFAULTS.annuleer_materiaal_grens_uren)
+  const [materiaalkostenCents, setMateriaalkostenCents] = useState(DEFAULTS.materiaalkosten_cents)
 
   const [cursussen, setCursussen] = useState<TrajectCursus[]>([])
   const [cursusEdits, setCursusEdits] = useState<Record<string, string>>({})
@@ -82,6 +91,9 @@ export default function TrajectInstellingenPaneel() {
       setMiddagEind(data.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind)
       setPauzeLengte(String(data.pauze_lengte_minuten ?? 60))
       setPauzeInclusief(data.pauze_inclusief ?? false)
+      setAnnuleerGratisGrens(String(data.annuleer_gratis_grens_dagen ?? 7))
+      setAnnuleerMateriaalGrens(String(data.annuleer_materiaal_grens_uren ?? 72))
+      setMateriaalkostenCents(String(data.materiaalkosten_cents ?? 15000))
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       setBericht({ type: 'error', text: `Laden mislukt: ${msg}` })
@@ -114,6 +126,9 @@ export default function TrajectInstellingenPaneel() {
     setMiddagEind(settings.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind)
     setPauzeLengte(String(settings.pauze_lengte_minuten ?? 60))
     setPauzeInclusief(settings.pauze_inclusief ?? false)
+    setAnnuleerGratisGrens(String(settings.annuleer_gratis_grens_dagen ?? 7))
+    setAnnuleerMateriaalGrens(String(settings.annuleer_materiaal_grens_uren ?? 72))
+    setMateriaalkostenCents(String(settings.materiaalkosten_cents ?? 15000))
     setBericht(null)
   }
 
@@ -133,6 +148,9 @@ export default function TrajectInstellingenPaneel() {
           werktijd_middag_eind: middagEind,
           pauze_lengte_minuten: parseInt(pauzeLengte, 10),
           pauze_inclusief: pauzeInclusief,
+          annuleer_gratis_grens_dagen: parseInt(annuleerGratisGrens, 10),
+          annuleer_materiaal_grens_uren: parseInt(annuleerMateriaalGrens, 10),
+          materiaalkosten_cents: parseInt(materiaalkostenCents, 10),
         }),
       })
       if (!res.ok) {
@@ -149,6 +167,9 @@ export default function TrajectInstellingenPaneel() {
       setMiddagEind(data.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind)
       setPauzeLengte(String(data.pauze_lengte_minuten ?? 60))
       setPauzeInclusief(data.pauze_inclusief ?? false)
+      setAnnuleerGratisGrens(String(data.annuleer_gratis_grens_dagen ?? 7))
+      setAnnuleerMateriaalGrens(String(data.annuleer_materiaal_grens_uren ?? 72))
+      setMateriaalkostenCents(String(data.materiaalkosten_cents ?? 15000))
       setBericht({ type: 'success', text: 'Opgeslagen ✓' })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -197,7 +218,10 @@ export default function TrajectInstellingenPaneel() {
       middagStart !== (settings.werktijd_middag_start || DEFAULTS.werktijd_middag_start) ||
       middagEind !== (settings.werktijd_middag_eind || DEFAULTS.werktijd_middag_eind) ||
       pauzeLengte !== String(settings.pauze_lengte_minuten ?? 60) ||
-      pauzeInclusief !== (settings.pauze_inclusief ?? false))
+      pauzeInclusief !== (settings.pauze_inclusief ?? false) ||
+      annuleerGratisGrens !== String(settings.annuleer_gratis_grens_dagen ?? 7) ||
+      annuleerMateriaalGrens !== String(settings.annuleer_materiaal_grens_uren ?? 72) ||
+      materiaalkostenCents !== String(settings.materiaalkosten_cents ?? 15000))
 
   if (laden) {
     return (
@@ -447,6 +471,122 @@ export default function TrajectInstellingenPaneel() {
               <strong>Uit:</strong> pauze komt erbovenop. Cursus 8u les, start 09:00 → 8u + 1u pauze = eind 18:00.
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ═══ ANNULERINGS-INSTELLINGEN ═══ */}
+      <div className="bg-white rounded-2xl border border-[#eee] p-6 space-y-6">
+        <h4 className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#C4A265]">
+          🚫 Annuleringsvoorwaarden
+        </h4>
+
+        <div className="grid grid-cols-3 gap-4">
+          {/* Venster visualisatie */}
+          <div className="col-span-3 p-4 rounded-xl bg-[#f9f9f9] space-y-2">
+            <p className="text-[11px] font-semibold text-[#1a1a1a] uppercase tracking-wider">De 3 vensters:</p>
+            <div className="grid grid-cols-3 gap-3 text-[11px]">
+              <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
+                <p className="font-bold text-green-700">Venster 1</p>
+                <p className="text-[#888] mt-1">Ruim vóór start</p>
+                <p className="text-green-600 font-medium mt-1">✓ Volledig terug</p>
+                <p className="text-[#888]">✓ Omboeken & annuleren</p>
+              </div>
+              <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
+                <p className="font-bold text-amber-600">Venster 2</p>
+                <p className="text-[#888] mt-1">Dicht bij start</p>
+                <p className="text-amber-600 font-medium mt-1">⚠ Minus materiaal</p>
+                <p className="text-[#888]">✓ Omboeken & annuleren</p>
+              </div>
+              <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
+                <p className="font-bold text-red-600">Venster 3</p>
+                <p className="text-[#888] mt-1">Laatste moment</p>
+                <p className="text-red-600 font-medium mt-1">✗ Geen terugbetaling</p>
+                <p className="text-[#888]">✗ Alleen annuleren</p>
+              </div>
+            </div>
+          </div>
+
+          {/* annuleer_gratis_grens_dagen */}
+          <div>
+            <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
+              Gratis-grens (dagen)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={90}
+              value={annuleerGratisGrens}
+              onChange={e => setAnnuleerGratisGrens(e.target.value)}
+              className="w-[120px] px-4 py-2.5 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265] transition"
+            />
+            <p className="text-[10px] text-[#888] mt-1.5">
+              Grens venster 1→2
+            </p>
+          </div>
+
+          {/* annuleer_materiaal_grens_uren */}
+          <div>
+            <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
+              Materiaal-grens (uren)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={720}
+              value={annuleerMateriaalGrens}
+              onChange={e => setAnnuleerMateriaalGrens(e.target.value)}
+              className="w-[120px] px-4 py-2.5 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265] transition"
+            />
+            <p className="text-[10px] text-[#888] mt-1.5">
+              Grens venster 2→3
+            </p>
+          </div>
+
+          {/* materiaalkosten_cents */}
+          <div>
+            <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
+              Materiaalkosten (€)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={10000}
+              step={0.01}
+              value={(parseInt(materiaalkostenCents, 10) / 100).toFixed(2)}
+              onChange={e => {
+                const euros = parseFloat(e.target.value)
+                if (!isNaN(euros)) {
+                  setMateriaalkostenCents(String(Math.round(euros * 100)))
+                }
+              }}
+              className="w-[120px] px-4 py-2.5 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265] transition"
+            />
+            <p className="text-[10px] text-[#888] mt-1.5">
+              Ingehouden in venster 2
+            </p>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-[#888] leading-relaxed">
+          <strong>Voorbeeld:</strong> Bij grenzen 7 dagen / 72u en materiaalkosten €150:
+          <br />
+          • Klant annuleert 10 dagen vóór start → <strong>venster 1</strong>, volledige aanbetaling terug.
+          <br />
+          • Klant annuleert 4 dagen vóór start → <strong>venster 2</strong>, aanbetaling minus €150 materiaalkosten.
+          <br />
+          • Klant annuleert 1 dag vóór start → <strong>venster 3</strong>, geen terugbetaling.
+        </p>
+
+        <div className="text-[11px] text-[#666]">
+          Test de venster-logica:{' '}
+          <a
+            href="/api/traject/test-venster?startdatum=2026-07-20"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#C4A265] underline"
+          >
+            /api/traject/test-venster
+          </a>
         </div>
       </div>
 
