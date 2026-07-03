@@ -274,6 +274,7 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   const starttijd = md.starttijd
   const klant_naam = md.klant_naam
   const klant_email = md.klant_email
+  const user_id = md.user_id || null  // STAP 5b: klant-account koppeling
   const aanbetaling_cents = Number(md.aanbetaling_cents || 0)
   const restbedrag_cents = Number(md.restbedrag_cents || 0)
 
@@ -346,6 +347,7 @@ async function handleTrajectDeposit(session: any, stripe: any) {
     blok_dagen,
     klant_naam,
     klant_email,
+    user_id: user_id || null,  // STAP 5b: koppeling aan auth.users
     aanbetaling_status: 'betaald',
     restbedrag_status: 'open',
     cal_sync_status: 'pending',

@@ -31,6 +31,21 @@ export async function POST(req: NextRequest) {
       prijs_cents, // volledige prijs in cents (ex BTW)
     } = body
 
+    // === AUTH: haal user_id op uit JWT (verplicht voor koppeling) ===
+    const authHeader = req.headers.get('authorization')
+    let userId: string | null = null
+
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+      if (!userError && user) {
+        userId = user.id
+      }
+    }
+
+    // Note: userId mag null zijn voor backwards compat, maar nieuwe boekingen
+    // zouden altijd een userId moeten hebben (enforced in UI via auth gate)
+
     // Validatie
     if (!cursus_id || !startdatum || !starttijd || !klant_naam || !klant_email) {
       return NextResponse.json(
@@ -130,6 +145,7 @@ export async function POST(req: NextRequest) {
         blok_dagen: JSON.stringify(blok_dagen),
         klant_naam,
         klant_email,
+        user_id: userId || '', // <-- STAP 5b: koppeling aan klant-account
         prijs_cents_volledig: String(prijs_cents),
         aanbetaling_cents: String(aanbetaling),
         restbedrag_cents: String(prijsInclBtw - aanbetaling),
