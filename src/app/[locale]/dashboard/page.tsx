@@ -14,6 +14,19 @@ type PendingBooking = {
   cancelled_within_24h?: boolean
 }
 
+type MyTraject = {
+  id: string
+  cursus_naam: string
+  startdatum: string
+  starttijd: string
+  blok_dagen: string[]
+  aanbetaling_status: string
+  restbedrag_status: string
+  aanbetaling_cents: number
+  restbedrag_cents: number
+  cal_sync_status: string
+}
+
 // Available time slots for rescheduling (LUXIQUE schedule — will be updated)
 const RESCHEDULE_SLOTS = ['09:00', '12:00']
 type LessonRow = { id: string; title: string; slug: string; sort_order: number; lesson_type: string; course_id: string }
@@ -55,6 +68,7 @@ export default function DashboardPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [pendingBookings, setPendingBookings] = useState<PendingBooking[]>([])
+  const [myTrajecten, setMyTrajecten] = useState<MyTraject[]>([])
   const [selectedBooking, setSelectedBooking] = useState<PendingBooking | null>(null)
   const [cancelMode, setCancelMode] = useState(false)
   const [cancelAgreed, setCancelAgreed] = useState(false)
@@ -210,6 +224,21 @@ export default function DashboardPage() {
         })
         .then(data => setPendingBookings(data?.bookings || []))
         .catch(err => console.error('[dashboard] my-bookings fetch failed:', err))
+    })
+  }, [user])
+
+  // Fetch my trajecten (traject_boekingen)
+  useEffect(() => {
+    if (!user) return
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session?.access_token) return
+      fetch('/api/traject/my-trajecten', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
+        .then(res => {
+          if (!res.ok) return []
+          return res.json()
+        })
+        .then(data => setMyTrajecten(data?.trajecten || []))
+        .catch(err => console.error('[dashboard] my-trajecten fetch failed:', err))
     })
   }, [user])
 
@@ -660,7 +689,112 @@ export default function DashboardPage() {
         {/* ==================== ACADEMY TAB ==================== */}
         {activeTab === 'academy' && (
           <div>
-            <h2 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814', marginBottom:24 }}>Mijn Cursussen</h2>
+            {/* === TRAJECTEN (fysieke opleidingsdagen) === */}
+            <h2 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814', marginBottom:8 }}>Mijn Trajecten</h2>
+            <p style={{ fontSize:'.85rem', color:'#888', marginBottom:20 }}>Jouw geboekte opleidingen en trainingen bij Chiva</p>
+
+            {myTrajecten.length > 0 ? (
+              <div className="space-y-3 mb-12">
+                {myTrajecten.map(tr => {
+                  const blok = tr.blok_dagen || []
+                  const isMultiDay = blok.length > 1
+                  const firstDay = blok[0] ? new Date(blok[0] + 'T00:00:00') : null
+                  const lastDay = blok[blok.length - 1] ? new Date(blok[blok.length - 1] + 'T00:00:00') : null
+                  const isPast = firstDay ? firstDay < new Date(Date.now() - 86400000) : false
+
+                  // Format date range
+                  let dateLabel = ''
+                  if (isMultiDay && firstDay && lastDay) {
+                    const opts: Intl.DateTimeFormatOptions = { weekday:'short', day:'numeric', month:'short' }
+                    const startStr = firstDay.toLocaleDateString('nl-NL', opts)
+                    const endOpts: Intl.DateTimeFormatOptions = firstDay.getMonth() === lastDay.getMonth()
+                      ? { day:'numeric', month:'short' }
+                      : { weekday:'short', day:'numeric', month:'short' }
+                    const endStr = lastDay.toLocaleDateString('nl-NL', endOpts)
+                    dateLabel = `${startStr} t/m ${endStr}`
+                  } else if (firstDay) {
+                    dateLabel = firstDay.toLocaleDateString('nl-NL', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+                  }
+
+                  return (
+                    <div key={tr.id} style={{
+                      display:'flex', alignItems:'center', gap:20,
+                      background:'#FBF8F2', borderRadius:16, padding:20,
+                      border:'1px solid rgba(28,24,20,.13)',
+                      opacity: isPast ? 0.65 : 1,
+                    }}>
+                      {/* Date chip */}
+                      <div style={{
+                        textAlign:'center', border:'1px solid rgba(28,24,20,.13)',
+                        borderRadius:13, padding:'10px 0', background:'#F3EFE7',
+                        minWidth:64, flexShrink:0,
+                      }}>
+                        <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.6rem', fontWeight:600, lineHeight:1, color:'#1C1814' }}>
+                          {firstDay?.getDate() || '?'}
+                        </div>
+                        <div style={{ fontSize:'.64rem', textTransform:'uppercase', letterSpacing:'.14em', color:'#888', marginTop:3 }}>
+                          {firstDay?.toLocaleDateString('nl-NL',{month:'short'})}
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <h3 style={{ fontWeight:600, fontSize:'1.1rem', color:'#1C1814', marginBottom:4 }}>
+                          {tr.cursus_naam}
+                        </h3>
+                        <p style={{ fontSize:'.82rem', color:'#888', marginTop:2 }}>
+                          {dateLabel}{tr.starttijd ? ` · ${tr.starttijd} uur` : ''} · Lashed by Chiva, Arnhem
+                        </p>
+                        {/* Payment status badges */}
+                        <div style={{ display:'flex', gap:8, marginTop:8, flexWrap:'wrap' }}>
+                          <span style={{
+                            display:'inline-block', fontSize:'.68rem', letterSpacing:'.05em',
+                            padding:'4px 11px', borderRadius:100, fontWeight:500,
+                            background: tr.aanbetaling_status === 'betaald' ? 'rgba(176,141,79,.14)' : 'rgba(229,85,85,.08)',
+                            color: tr.aanbetaling_status === 'betaald' ? '#B08D4F' : '#c44',
+                            border: `1px solid ${tr.aanbetaling_status === 'betaald' ? 'rgba(176,141,79,.3)' : 'rgba(229,85,85,.2)'}`,
+                          }}>
+                            {tr.aanbetaling_status === 'betaald' ? '✓ Aanbetaling voldaan' : '⚠ Aanbetaling open'}
+                          </span>
+                          {tr.restbedrag_status === 'open' && (
+                            <span style={{
+                              display:'inline-block', fontSize:'.68rem', letterSpacing:'.05em',
+                              padding:'4px 11px', borderRadius:100, fontWeight:500,
+                              background:'rgba(28,24,20,.07)', color:'#888',
+                              border:'1px solid rgba(28,24,20,.13)',
+                            }}>
+                              Restbedrag te betalen bij Chiva
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Price */}
+                      <div style={{ textAlign:'right', flexShrink:0 }}>
+                        <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.2rem', fontWeight:600, color:'#1C1814' }}>
+                          €{((tr.aanbetaling_cents + tr.restbedrag_cents) / 100).toFixed(0)}
+                        </div>
+                        <div style={{ fontSize:'.68rem', color:'#aaa', marginTop:2 }}>
+                          {isPast ? 'Voltooid' : 'Aanbetaling'} €{(tr.aanbetaling_cents / 100).toFixed(0)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div style={{ background:'#FBF8F2', borderRadius:20, padding:'36px 32px', border:'1px solid rgba(28,24,20,.13)', textAlign:'center', marginBottom:48 }}>
+                <div style={{ fontSize:32, marginBottom:12 }}>📚</div>
+                <p style={{ fontSize:'1rem', color:'#1C1814', fontWeight:500, marginBottom:4 }}>Nog geen trajecten geboekt</p>
+                <p style={{ fontSize:'.88rem', color:'#888', marginBottom:20 }}>Ontdek de opleidingen en start jouw lash-carrière.</p>
+                <a href={lpath('/persoonlijk-traject')} style={{ display:'inline-block', padding:'12px 28px', borderRadius:100, background:'#B08D4F', color:'#1C1814', fontWeight:500, fontSize:'.9rem', textDecoration:'none' }}>
+                  Bekijk trajecten
+                </a>
+              </div>
+            )}
+
+            {/* === CURSUSSEN (online enrollments) === */}
+            <h2 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814', marginBottom:24, marginTop: myTrajecten.length > 0 ? 16 : 0 }}>Mijn Cursussen</h2>
             {courseProgress.length > 0 ? (
               <div className="space-y-3">
                 {courseProgress.map(cp => (
