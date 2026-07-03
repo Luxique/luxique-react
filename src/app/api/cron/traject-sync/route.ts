@@ -59,6 +59,20 @@ export async function GET(request: NextRequest) {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'MISSING',
   }
 
+  // DEBUG 2: count ALL rows without filters to see total visibility
+  const { count: _debugTotalCount } = await supabase
+    .from('traject_boekingen')
+    .select('*', { count: 'exact', head: true })
+  const _debugFailedCount = await supabase
+    .from('traject_boekingen')
+    .select('*', { count: 'exact', head: true })
+    .eq('cal_sync_status', 'failed')
+  const _debugFailedBetaaldCount = await supabase
+    .from('traject_boekingen')
+    .select('*', { count: 'exact', head: true })
+    .eq('cal_sync_status', 'failed')
+    .eq('aanbetaling_status', 'betaald')
+
   if (!boekingen || boekingen.length === 0) {
     return NextResponse.json({ dryRun: DRY_RUN, processed: 0, message: 'Geen boekingen om te syncen', _debugRawCount, _debugIds })
   }
@@ -159,6 +173,10 @@ export async function GET(request: NextRequest) {
     _debugRawCount,
     _debugIds,
     _debugEnvCheck,
+    _debugTotalCount: _debugTotalCount,
+    _debugFailedCount: _debugFailedCount.count,
+    _debugFailedBetaaldCount: _debugFailedBetaaldCount.count,
+    _debugFetchError: fetchError ? String(fetchError.message || fetchError) : null,
     results,
   }
 
