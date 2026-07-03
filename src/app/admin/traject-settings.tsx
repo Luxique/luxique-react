@@ -577,6 +577,40 @@ export default function TrajectInstellingenPaneel() {
           • Klant annuleert 1 dag vóór start → <strong>venster 3</strong>, geen terugbetaling.
         </p>
 
+        {/* Save + reset — zelfde opslaanSettings handler (stuurt alle velden mee) */}
+        <div className="flex items-center gap-4 pt-2 border-t border-[#f5f5f5]">
+          <button
+            onClick={opslaanSettings}
+            disabled={!gewijzigd || opslaan}
+            className={`px-6 py-2.5 rounded-full text-[13px] font-semibold transition ${
+              gewijzigd && !opslaan
+                ? 'bg-[#0C0A07] text-white hover:bg-[#333]'
+                : 'bg-[#f5f5f5] text-[#aaa] cursor-not-allowed'
+            }`}
+          >
+            {opslaan ? 'Opslaan...' : 'Opslaan'}
+          </button>
+
+          {gewijzigd && !opslaan && (
+            <button
+              onClick={reset}
+              className="text-[12px] text-[#888] hover:text-[#1a1a1a] transition"
+            >
+              Annuleren
+            </button>
+          )}
+
+          {bericht && (
+            <span
+              className={`text-[12px] font-medium ${
+                bericht.type === 'success' ? 'text-green-600' : 'text-red-500'
+              }`}
+            >
+              {bericht.text}
+            </span>
+          )}
+        </div>
+
         <div className="text-[11px] text-[#666]">
           Test de venster-logica:{' '}
           <a
