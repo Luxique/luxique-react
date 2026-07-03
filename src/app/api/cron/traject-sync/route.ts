@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
     _debugTotalCount: _debugTotalCount,
     _debugFailedCount: _debugFailedCount.count,
     _debugFailedBetaaldCount: _debugFailedBetaaldCount.count,
-    _debugFetchError: fetchError ? String(fetchError.message || fetchError) : null,
+    _debugFetchError: fetchError ? String((fetchError as any).message || fetchError) : null,
     results,
   }
 
