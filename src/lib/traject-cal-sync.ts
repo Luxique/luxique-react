@@ -109,8 +109,8 @@ async function fetchExistingTrajectBlokDagen(
       const isTrajectBlok = metadata?.type === 'traject_blok' || name.startsWith('TRAJECT:')
       if (!isTrajectBlok) continue
 
-      //Voor dag-blokken (8u): starttijd bevat de datum
-      const start = String(b.start || '')
+      //Voor dag-blokken (8u): startTime bevat de datum (cal.com v2 field)
+      const start = String(b.startTime || b.start || '')
       const dag = start.slice(0, 10) // ISO datum gedeelte
       if (dag && /^\d{4}-\d{2}-\d{2}$/.test(dag)) {
         bezetteDagen.add(dag)
