@@ -49,8 +49,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'DB fetch failed' }, { status: 500 })
   }
 
+  // DEBUG: include raw count for diagnosis
+  const _debugRawCount = boekingen?.length || 0
+  const _debugIds = boekingen?.map(b => b.id.substring(0,8)) || []
+
   if (!boekingen || boekingen.length === 0) {
-    return NextResponse.json({ dryRun: DRY_RUN, processed: 0, message: 'Geen boekingen om te syncen' })
+    return NextResponse.json({ dryRun: DRY_RUN, processed: 0, message: 'Geen boekingen om te syncen', _debugRawCount, _debugIds })
   }
 
   console.log(`[traject-cron] ${boekingen.length} boeking(en) te syncen (dry-run: ${DRY_RUN})`)
@@ -146,6 +150,8 @@ export async function GET(request: NextRequest) {
     partial: results.filter(r => r.nieuwe_status === 'partial').length,
     failed: results.filter(r => r.nieuwe_status === 'failed').length,
     skipped: results.filter(r => r.nieuwe_status === 'skipped_dry_run').length,
+    _debugRawCount,
+    _debugIds,
     results,
   }
 
