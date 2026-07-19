@@ -274,7 +274,7 @@ export default function PersoonlijkTrajectContent() {
           background:rgba(176,141,79,.16);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B08D4F' stroke-width='3'%3E%3Cpath d='M5 12l4 4L19 7'/%3E%3C/svg%3E");background-size:8px;background-repeat:no-repeat;background-position:center}
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:13px 18px;border-radius:100px;
           background:var(--ink);color:var(--panel);font-size:.86rem;font-weight:500;letter-spacing:.02em;text-decoration:none;
-          border:0;cursor:pointer;transition:background .3s,transform .3s}
+          border:0;cursor:pointer;transition:background .3s,transform .3s;position:relative;overflow:hidden}
         .btn:hover{transform:translateY(-2px)}
         .track.feat .btn{background:var(--gold);color:var(--dark2)}
         .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
@@ -295,6 +295,13 @@ export default function PersoonlijkTrajectContent() {
         .req svg{flex-shrink:0;width:20px;height:20px;margin-top:2px}
         .req .rt{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-bright);font-weight:600;margin-bottom:4px}
         .req p{color:var(--on-dark-soft);font-size:.9rem;margin:0}
+        /* Model disclaimer */
+        .model-note{display:flex;gap:12px;align-items:flex-start;background:rgba(155,91,71,.10);border:1px solid rgba(155,91,71,.28);
+          border-radius:14px;padding:16px 20px;margin-bottom:42px;max-width:760px}
+        .model-note svg{flex-shrink:0;width:20px;height:20px;margin-top:2px;color:#D8B97A}
+        .model-note .rt{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:#D8B97A;font-weight:600;margin-bottom:4px}
+        .model-note p{color:var(--on-dark-soft);font-size:.9rem;margin:0}
+        .model-note a{color:var(--gold-bright);text-decoration:underline}
         .days{display:flex;flex-direction:column;gap:18px;margin-bottom:46px}
         .day{background:rgba(246,241,231,.04);border:1px solid rgba(246,241,231,.1);border-radius:18px;padding:28px 30px;
           transition:border-color .4s,background .4s}
@@ -360,6 +367,7 @@ export default function PersoonlijkTrajectContent() {
         .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
         .btn.ghost-light{background:transparent;color:var(--on-dark);border:1px solid rgba(246,241,231,.32);width:auto;padding:16px 32px}
         [data-loenique]{cursor:pointer}
+        .loenique-ic{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;object-fit:cover;pointer-events:none;box-shadow:0 0 0 1px rgba(216,185,122,.3)}
 
         @media(max-width:1080px){
           .tracks-grid.four{grid-template-columns:repeat(2,1fr);gap:20px;max-width:680px;margin:0 auto}
@@ -410,7 +418,7 @@ export default function PersoonlijkTrajectContent() {
               </div>
               <div className="start-btns">
                 <a href={boekUrl(CURSUS.workshop)} className="btn">{t('workshopBookCta')}</a>
-                <button className="btn ghost" data-loenique>{t('workshopAskLoenique')}</button>
+                <button className="btn ghost" data-loenique>{t('workshopAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
               </div>
             </div>
             <div className="start-r">
@@ -477,7 +485,7 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card1ForLabel')}</span>je <b>{t('card1ForEm')}</b>{t('card1ForPost')}</span>
+                  <span><span className="lab">{t('card1ForLabel')}</span> <b>{t('card1ForEm')}</b>{t('card1ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
@@ -505,7 +513,7 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card2ForLabel')}</span>je <b>{t('card2ForEm')}</b>{t('card2ForPost')}</span>
+                  <span><span className="lab">{t('card2ForLabel')}</span> <b>{t('card2ForEm')}</b>{t('card2ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
@@ -533,7 +541,7 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card3ForLabel')}</span>je <b>{t('card3ForEm')}</b>{t('card3ForMid')}<b>{t('card3ForEm2')}</b>{t('card3ForPost')}</span>
+                  <span><span className="lab">{t('card3ForLabel')}</span> <b>{t('card3ForEm')}</b>{t('card3ForMid')}<b>{t('card3ForEm2')}</b>{t('card3ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
@@ -562,7 +570,7 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card4ForLabel')}</span>je <b>{t('card4ForEm')}</b>{t('card4ForPost')}</span>
+                  <span><span className="lab">{t('card4ForLabel')}</span> <b>{t('card4ForEm')}</b>{t('card4ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
@@ -593,7 +601,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
             <div className="combo-r">
               <a href="mailto:info@luxique.nl?subject=Traject%20op%20maat" className="btn">{t('comboContact')}</a>
-              <button className="btn ghost" data-loenique>{t('comboAskLoenique')}</button>
+              <button className="btn ghost" data-loenique>{t('comboAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
           </div>
         </div>
@@ -655,6 +663,14 @@ export default function PersoonlijkTrajectContent() {
                 </ul></div></div>
               </div>
             </div>
+            {/* Model disclaimer */}
+            <div className="model-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              <div>
+                <div className="rt">Let op — model vereist</div>
+                <p>Je regelt zelf een model voor de praktijkdagen. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+              </div>
+            </div>
             <div className="incl-block">
               <div>
                 <h4 className="serif">{t('dp1InclTitle')}</h4>
@@ -676,7 +692,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
             <div className="btn-row">
               <a href={boekUrl(CURSUS.beginner)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
+              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
             <button className="close-d" data-close>{t('dpClose')}</button>
@@ -756,7 +772,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
             <div className="btn-row">
               <a href={boekUrl(CURSUS.wispy)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
+              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
             <button className="close-d" data-close>{t('dpClose')}</button>
@@ -831,6 +847,14 @@ export default function PersoonlijkTrajectContent() {
                 </ul></div></div>
               </div>
             </div>
+            {/* Model disclaimer */}
+            <div className="model-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              <div>
+                <div className="rt">Let op — model vereist</div>
+                <p>Je regelt zelf een model voor de modeldag (dag 2). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+              </div>
+            </div>
             <div className="incl-block">
               <div>
                 <h4 className="serif">{t('dp3InclTitle')}</h4>
@@ -854,7 +878,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
             <div className="btn-row">
               <a href={boekUrl(CURSUS.medusa)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
+              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
             <button className="close-d" data-close>{t('dpClose')}</button>
@@ -935,6 +959,14 @@ export default function PersoonlijkTrajectContent() {
                 </div>
               </div>
             </div>
+            {/* Model disclaimer */}
+            <div className="model-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              <div>
+                <div className="rt">Let op — model vereist</div>
+                <p>Je regelt zelf een model voor beide modeldagen (dag 1 en dag 3). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+              </div>
+            </div>
             <div className="incl-block">
               <div>
                 <h4 className="serif">{t('dp4InclTitle')}</h4>
@@ -957,7 +989,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
             <div className="btn-row">
               <a href={boekUrl(CURSUS.techToArtist)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}</button>
+              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
             <button className="close-d" data-close>{t('dpClose')}</button>
@@ -976,7 +1008,7 @@ export default function PersoonlijkTrajectContent() {
             <p>{t('closingPara4')}</p>
             <div className="cta-btns" style={{marginTop:'24px'}}>
               <a href="mailto:info@luxique.nl?subject=Vraag%20over%20niveau%20en%20trajecten" className="btn" style={{width:'auto',padding:'14px 28px'}}>{t('closingContact')}</a>
-              <button className="btn ghost" data-loenique style={{width:'auto',padding:'14px 28px'}}>{t('closingAskLoenique')}</button>
+              <button className="btn ghost" data-loenique style={{width:'auto',padding:'14px 28px'}}>{t('closingAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
           </div>
         </div>
@@ -988,7 +1020,7 @@ export default function PersoonlijkTrajectContent() {
           <h2 className="serif reveal">{t('finalTitlePlain')}<br /><em>{t('finalTitleEm')}</em></h2>
           <p className="reveal">{t('finalText')}</p>
           <div className="cta-btns reveal">
-            <button className="btn" data-loenique>{t('finalAskLoenique')}</button>
+            <button className="btn" data-loenique>{t('finalAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             <a href="mailto:info@luxique.nl?subject=Vraag%20over%20trajecten" className="btn ghost-light">{t('finalMail')}</a>
           </div>
         </div>

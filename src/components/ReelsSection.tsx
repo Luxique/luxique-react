@@ -20,7 +20,7 @@ const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/imag
 
 const contentItems: ContentItem[] = [
   { type: 'reel', title: 'Certificaat behaald 🎓', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp?width=900&quality=75&resize=contain` },
-  { type: 'image', title: 'Medusa ✨', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp?width=900&quality=75&resize=contain` },
+  { type: 'image', title: 'Certificaat behaald ✨', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp?width=900&quality=75&resize=contain` },
   { type: 'reel', title: 'Group workshop 👥', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4`, posterUrl: `${CDN_IMG}/reel-poster-3.webp?width=900&quality=75&resize=contain` },
   { type: 'reel', title: 'Client intake 📋', views: '15.2K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-4.mp4`, posterUrl: `${CDN_IMG}/reel-poster-4.webp?width=900&quality=75&resize=contain` },
   { type: 'image', title: 'Certified lash artist 💫', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp?width=900&quality=75&resize=contain` },

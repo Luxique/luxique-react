@@ -9,23 +9,10 @@ export default function AcademyHomeSection() {
   const secRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
+    // Reveal animation disabled per request — section visible immediately
     const sec = secRef.current
     if (!sec) return
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduce) {
-      sec.classList.add('revealed')
-      return
-    }
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) {
-          sec.classList.add('revealed')
-          io.unobserve(e.target)
-        }
-      })
-    }, { threshold: 0.15 })
-    io.observe(sec)
-    return () => io.disconnect()
+    sec.classList.add('revealed')
   }, [])
 
   return (
@@ -264,17 +251,11 @@ export default function AcademyHomeSection() {
         }
         .acad-bar .acad-cta:hover { background: rgba(224,192,120,.10); }
 
-        /* Reveal */
+        /* Reveal — disabled per request (homepage load-in animation off) */
         .acad-r {
-          opacity: 0;
-          transform: translateY(26px);
-          transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+          opacity: 1;
+          transform: none;
         }
-        .acad-section.revealed .acad-r { opacity: 1; transform: translateY(0); }
-        .acad-section.revealed .acad-rh { transition-delay: .02s; }
-        .acad-section.revealed .acad-c1 { transition-delay: .12s; }
-        .acad-section.revealed .acad-c2 { transition-delay: .22s; }
-        .acad-section.revealed .acad-rb { transition-delay: .32s; }
 
         @media (max-width: 840px) {
           .acad-pillars { grid-template-columns: 1fr; gap: 18px; }

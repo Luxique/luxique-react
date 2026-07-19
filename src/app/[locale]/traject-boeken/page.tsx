@@ -440,6 +440,7 @@ function TrajectBoekenInner() {
   }
 
   const isWorkshop = selectedCursus?.duur_werkdagen === 0
+  const needsModel = selectedCursus ? selectedCursus.duur_werkdagen > 1 : false
 
   // —— STARTTIJD-OPTIES BEREKENING ——
   // AFHANKELIJK van cursus-type (lange trajecten vs 1-uur workshop)
@@ -760,6 +761,17 @@ function TrajectBoekenInner() {
                     </span>
                   </div>
                 </div>
+
+                {/* Model disclaimer */}
+                {needsModel && (
+                  <div className="mt-6 flex gap-3 items-start bg-[rgba(155,91,71,0.10)] border border-[rgba(155,91,71,0.30)] rounded-lg p-4">
+                    <svg className="shrink-0 mt-0.5 text-[#C4A265]" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    <div>
+                      <div className="text-[11px] tracking-[0.14em] uppercase font-semibold text-[#C4A265] mb-1">Let op — model vereist</div>
+                      <p className="text-[13px] text-[#FBF8F2]/80 leading-[1.55] mb-0">Je regelt zelf een model voor de praktijkdagen. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Klantgegevens + checkout */}
                 {selectedStartTijd && (

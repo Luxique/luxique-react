@@ -157,10 +157,10 @@ export default function Hero() {
       {/* ═══════════════════════════════════════════
           MOBILE HERO (<768px) — Original layout, pixel-identical
           ═══════════════════════════════════════════ */}
-      <div className="md:hidden w-full h-full pt-[30px] px-[10px] pb-[10px]">
-        <div className="w-full h-full grid grid-cols-1 gap-[8px] overflow-hidden grid-rows-[auto_1fr]">
+      <div className="md:hidden w-full min-h-full pt-[30px] px-[10px] pb-[16px]">
+        <div className="w-full grid grid-cols-1 gap-[8px] grid-rows-[auto_auto]">
           {/* LEFT/TOP PANEL */}
-          <div className="bg-[#FFFFFF] rounded-[22px] pt-[22px] px-[20px] pb-[26px] shrink-0 flex-none flex flex-col overflow-hidden relative">
+          <div className="bg-[#FFFFFF] rounded-[22px] pt-[22px] px-[20px] pb-[28px] shrink-0 flex-none flex flex-col overflow-visible relative">
             <div className="absolute -top-[50px] -right-[50px] w-[180px] h-[180px] rounded-full bg-[radial-gradient(circle,rgba(196,162,101,0.14)_0%,transparent_70%)] pointer-events-none" />
 
             <div>
