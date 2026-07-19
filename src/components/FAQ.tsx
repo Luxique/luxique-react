@@ -141,6 +141,12 @@ export default function FAQ() {
           padding:0 28px 26px 76px;color:rgba(246,241,231,.6);
           font-size:.99rem;line-height:1.75;max-width:64ch;
         }
+        .faq-item .a-inner p{margin:0 0 12px}
+        .faq-item .a-inner p:last-child{margin-bottom:0}
+        .faq-item .a-inner strong{color:rgba(246,241,231,.92);font-weight:600;display:block;margin-bottom:4px;letter-spacing:.01em}
+        .faq-item .a-inner em{color:rgba(216,185,122,.85);font-style:italic}
+        .faq-item .a-inner a{color:#D8B97A;text-decoration:underline;text-underline-offset:2px;text-decoration-color:rgba(216,185,122,.4);transition:text-decoration-color .3s}
+        .faq-item .a-inner a:hover{text-decoration-color:#D8B97A}
 
         @media(max-width:860px){
           .faq-dark{padding:70px 0 84px}
@@ -166,7 +172,7 @@ export default function FAQ() {
                   <span className="ic" />
                 </button>
                 <div className="a">
-                  <div className="a-inner">{f.a}</div>
+                  <div className="a-inner" dangerouslySetInnerHTML={{ __html: f.a }} />
                 </div>
               </div>
             ))}
