@@ -95,7 +95,7 @@ export default function AboutPage() {
           .about-page .hero .sub{margin-top:26px;max-width:46ch;font-size:1.15rem;color:var(--ink-soft)}
           .about-page .ghost{position:absolute;right:-4vw;bottom:-2vh;font-family:'Cormorant Garamond';font-weight:600;font-size:22vw;color:rgba(176,141,79,.07);pointer-events:none;letter-spacing:.02em;z-index:0}
           .about-page .hero .wrap{position:relative;z-index:1}
-          .about-page .scrollcue{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-soft);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;z-index:2}
+          .about-page .scrollcue{position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-soft);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;z-index:2}
           .about-page .scrollcue .bar{width:1px;height:42px;background:linear-gradient(var(--gold),transparent);animation:cue 2s ease-in-out infinite}
           @keyframes cue{0%,100%{transform:scaleY(.4);transform-origin:top;opacity:.4}50%{transform:scaleY(1);opacity:1}}
 
