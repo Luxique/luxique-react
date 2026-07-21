@@ -366,7 +366,7 @@ export default function PersoonlijkTrajectContent() {
         .cta .btn{background:var(--gold);color:var(--dark2);width:auto;display:inline-flex;padding:16px 38px}
         .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
         .btn.ghost-light{background:transparent;color:var(--on-dark);border:1px solid rgba(246,241,231,.32);width:auto;padding:16px 32px}
-        [data-loenique]{cursor:pointer}
+        [data-loenique]{cursor:pointer;padding-right:42px !important}
         .loenique-ic{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;object-fit:cover;pointer-events:none;box-shadow:0 0 0 1px rgba(216,185,122,.3)}
 
         @media(max-width:1080px){
@@ -749,6 +749,14 @@ export default function PersoonlijkTrajectContent() {
                     <li>{t('dp2Group3Item8')}</li>
                   </ul></div>
                 </div>
+              </div>
+            </div>
+            {/* Model disclaimer */}
+            <div className="model-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+              <div>
+                <div className="rt">Let op — model vereist</div>
+                <p>Je regelt zelf een model voor de praktijk. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
               </div>
             </div>
             <p className="not-incl">{t('dp2Note')}</p>
