@@ -107,7 +107,7 @@ export default function ChatWidget() {
           overflow: 'hidden',
         }}
       >
-        {open ? '✕' : <img src="/lxq-chat-icon.png" alt="LUXIQUE" style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover' }} />}
+        {open ? '✕' : <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=100&quality=80&resize=contain" alt="Loenique" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover' }} />}
       </button>)}
 
       {/* Chat window */}
