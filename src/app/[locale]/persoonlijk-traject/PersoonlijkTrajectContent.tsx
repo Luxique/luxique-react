@@ -24,10 +24,10 @@ export default function PersoonlijkTrajectContent() {
     const root = rootRef.current
     if (!root) return
 
-    // reveal on scroll
+    // reveal on scroll — low threshold + bottom rootMargin so content appears just before fully in view
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
-    }), { threshold: 0.14 })
+    }), { threshold: 0.01, rootMargin: '0px 0px -8% 0px' })
     root.querySelectorAll('.reveal').forEach(el => io.observe(el))
 
     // Loenique chat buttons
@@ -140,6 +140,9 @@ export default function PersoonlijkTrajectContent() {
 
         .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
         .reveal.in{opacity:1;transform:none}
+        /* Reserve space for reveal sections to prevent white void during scroll */
+        .tracks-grid{min-height:200px}
+        .journey{min-height:54px}
         @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
 
         /* ===== HERO ===== */
