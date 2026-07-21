@@ -485,7 +485,7 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card1ForLabel')}</span> <b>{t('card1ForEm')}</b>{t('card1ForPost')}</span>
+                  <span><span className="lab">{t('card1ForLabel')}</span> <b>{t('card1ForEm')}</b> {t('card1ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
@@ -513,11 +513,11 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card2ForLabel')}</span> <b>{t('card2ForEm')}</b>{t('card2ForPost')}</span>
+                  <span><span className="lab">{t('card2ForLabel')}</span> <b>{t('card2ForEm')}</b> {t('card2ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
-                  <span><span className="lab">{t('card2NotForLabel')}</span>{t('card2NotForPre')}<b>{t('card2NotForEm')}</b>{t('card2NotForPost')}</span>
+                  <span><span className="lab">{t('card2NotForLabel')}</span>{t('card2NotForPre')}<b>{t('card2NotForEm')}</b> {t('card2NotForPost')}</span>
                 </div>
               </div>
               <ul className="incl">
@@ -541,11 +541,11 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card3ForLabel')}</span> <b>{t('card3ForEm')}</b>{t('card3ForMid')}<b>{t('card3ForEm2')}</b>{t('card3ForPost')}</span>
+                  <span><span className="lab">{t('card3ForLabel')}</span> <b>{t('card3ForEm')}</b> {t('card3ForMid')} <b>{t('card3ForEm2')}</b> {t('card3ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
-                  <span><span className="lab">{t('card3NotForLabel')}</span>{t('card3NotForPre')}<b>{t('card3NotForEm')}</b>{t('card3NotForPost')}</span>
+                  <span><span className="lab">{t('card3NotForLabel')}</span>{t('card3NotForPre')}<b>{t('card3NotForEm')}</b> {t('card3NotForPost')}</span>
                 </div>
               </div>
               <ul className="incl">
@@ -570,11 +570,11 @@ export default function PersoonlijkTrajectContent() {
               <div className="fitbox">
                 <div className="fit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#5C6B4E" strokeWidth="3.2"><path d="M5 12l4 4L19 7"/></svg></span>
-                  <span><span className="lab">{t('card4ForLabel')}</span> <b>{t('card4ForEm')}</b>{t('card4ForPost')}</span>
+                  <span><span className="lab">{t('card4ForLabel')}</span> <b>{t('card4ForEm')}</b> {t('card4ForPost')}</span>
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
-                  <span><span className="lab">{t('card4NotForLabel')}</span>{t('card4NotForPre')}<b>{t('card4NotForEm')}</b>{t('card4NotForPost')}</span>
+                  <span><span className="lab">{t('card4NotForLabel')}</span>{t('card4NotForPre')}<b>{t('card4NotForEm')}</b> {t('card4NotForPost')}</span>
                 </div>
               </div>
               <ul className="incl">
