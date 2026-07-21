@@ -452,7 +452,7 @@ export default function PersoonlijkTrajectContent() {
       <section className="level">
         <div className="wrap">
           {/* Journey timeline */}
-          <div className="journey reveal" aria-hidden="true">
+          <div className="journey" aria-hidden="true">
             <div className="journey-track">
               <svg className="journey-svg" viewBox="0 0 1000 54" preserveAspectRatio="none">
                 <defs>
@@ -478,7 +478,7 @@ export default function PersoonlijkTrajectContent() {
 
           <div className="tracks-grid four">
             {/* BEGINNER LASH ARTIST */}
-            <div className="track reveal">
+            <div className="track">
               <span className="lvl-tag l1"><span className="dot"><i></i><i></i><i></i></span>{t('card1Level')}</span>
               <div className="t-dur">{t('card1Meta')}</div>
               <div className="t-name serif">{t('card1Name')}</div>
@@ -506,7 +506,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
 
             {/* WISPY MASTERCLASS */}
-            <div className="track reveal">
+            <div className="track">
               <span className="lvl-tag l2"><span className="dot"><i></i><i></i><i></i></span>{t('card2Level')}</span>
               <div className="t-dur">{t('card2Meta')}</div>
               <div className="t-name serif">{t('card2Name')}</div>
@@ -534,7 +534,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
 
             {/* MEDUSA MASTERCLASS */}
-            <div className="track reveal">
+            <div className="track">
               <span className="lvl-tag l2"><span className="dot"><i></i><i></i><i></i></span>{t('card3Level')}</span>
               <div className="t-dur">{t('card3Meta')}</div>
               <div className="t-name serif">{t('card3Name')}</div>
@@ -562,7 +562,7 @@ export default function PersoonlijkTrajectContent() {
             </div>
 
             {/* LASH TECH TO ARTIST (featured) */}
-            <div className="track feat reveal">
+            <div className="track feat">
               <span className="badge">{t('card4Badge')}</span>
               <span className="lvl-tag l3"><span className="dot"><i></i><i></i><i></i></span>{t('card4Level')}</span>
               <div className="t-dur">{t('card4Meta')}</div>
