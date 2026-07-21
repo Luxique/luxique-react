@@ -1369,6 +1369,67 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             </div>
           </div>
 
+          {/* IS DIT IETS VOOR JOU Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">IS DIT IETS VOOR JOU</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">✓ Voor jou als…</label>
+                {(course?.forYouItems || []).map((item, i) => (
+                  <div key={i} className="flex gap-1 mb-1">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const arr = [...(course?.forYouItems || [])]
+                        arr[i] = e.target.value
+                        updateCourseField('forYouItems', arr)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('forYouItems', (course?.forYouItems || []).filter((_, idx) => idx !== i))}
+                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('forYouItems', [...(course?.forYouItems || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
+                >+ Toevoegen</button>
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">✕ Niet voor jou als…</label>
+                {(course?.notForYouItems || []).map((item, i) => (
+                  <div key={i} className="flex gap-1 mb-1">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const arr = [...(course?.notForYouItems || [])]
+                        arr[i] = e.target.value
+                        updateCourseField('notForYouItems', arr)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('notForYouItems', (course?.notForYouItems || []).filter((_, idx) => idx !== i))}
+                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('notForYouItems', [...(course?.notForYouItems || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
+                >+ Toevoegen</button>
+              </div>
+            </div>
+          </div>
+
           {/* CURRICULUM Section Card */}
           <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
             <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
@@ -1400,6 +1461,84 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               </div>
               <div className="bg-[#F3EEE6] rounded-lg p-3 border border-[rgba(196,162,101,0.2)]">
                 <p className="text-[11px] text-[#7A6340] italic">De lessenlijst komt automatisch uit de lessen die je links toevoegt.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* COMPARISON TABLE Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">COMPARISON TABLE</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel — deel 1 (gewoon)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonTitlePre || ''}
+                  onChange={(e) => updateCourseField('comparisonTitlePre', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Niet elke opleiding is hetzelfde."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel — accent (goud, italic)</label>
+                <input
+                  type="text"
+                  value={course?.comparisonTitleAccent || ''}
+                  onChange={(e) => updateCourseField('comparisonTitleAccent', e.target.value)}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                  placeholder="bijv. Dit is het verschil."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Intro-tekst</label>
+                <textarea
+                  value={course?.comparisonIntroText || ''}
+                  onChange={(e) => updateCourseField('comparisonIntroText', e.target.value)}
+                  rows={3}
+                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
+                  placeholder="bijv. De meeste cursussen leren je een set kunstjes..."
+                />
+              </div>
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Features</label>
+                {(course?.comparisonFeatures || []).map((item, i) => (
+                  <div key={i} className="flex gap-1 mb-1">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const arr = [...(course?.comparisonFeatures || [])]
+                        arr[i] = e.target.value
+                        updateCourseField('comparisonFeatures', arr)
+                      }}
+                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
+                    />
+                    <button
+                      onClick={() => updateCourseField('comparisonFeatures', (course?.comparisonFeatures || []).filter((_, idx) => idx !== i))}
+                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
+                    >✕</button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('comparisonFeatures', [...(course?.comparisonFeatures || []), ''])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
+                >+ Toevoegen</button>
+              </div>
+              {/* Closing text */}
+              <div className="mt-3 pt-3 border-t border-[rgba(26,24,21,0.08)]">
+                <label className="text-[10px] font-medium text-[#8B7355] mb-1 block">Afsluitende tekst</label>
+                <textarea
+                  value={course?.comparisonFooterText || ''}
+                  onChange={(e) => updateCourseField('comparisonFooterText', e.target.value)}
+                  rows={3}
+                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded resize-none"
+                  placeholder="Bij Luxique Academy studeer je niet af als iemand die weet hoe het moet, maar als iemand die begrijpt waarom — en dat is precies wat klanten laat terugkomen."
+                />
+                <p className="text-[9px] text-[#A89B8E] mt-1">Tip: gebruik &lt;em&gt;tekst&lt;/em&gt; voor goud/italic accent</p>
               </div>
             </div>
           </div>
@@ -1517,6 +1656,62 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             </div>
           </div>
 
+          {/* FAQ Section Card */}
+          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">FAQ</span>
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
+              <div>
+                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Vragen & Antwoorden</label>
+                {(course?.faqItems || []).map((item, i) => (
+                  <div key={i} className="bg-white border border-[rgba(26,24,21,0.09)] rounded-lg p-3 mb-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-medium text-[#7A6340]">Vraag {i + 1}</span>
+                      <button
+                        onClick={() => {
+                          const updated = (course?.faqItems || []).filter((_, j) => j !== i)
+                          updateCourseField('faqItems', updated)
+                        }}
+                        className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
+                      >✕</button>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={item.question}
+                        onChange={(e) => {
+                          const updated = [...(course?.faqItems || [])]
+                          updated[i] = { ...updated[i], question: e.target.value }
+                          updateCourseField('faqItems', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
+                        placeholder="Vraag"
+                      />
+                      <textarea
+                        value={item.answer}
+                        onChange={(e) => {
+                          const updated = [...(course?.faqItems || [])]
+                          updated[i] = { ...updated[i], answer: e.target.value }
+                          updateCourseField('faqItems', updated)
+                        }}
+                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none min-h-[60px] resize-y"
+                        placeholder="Antwoord"
+                        rows={2}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={() => updateCourseField('faqItems', [...(course?.faqItems || []), { question: '', answer: '' }])}
+                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] transition mt-1"
+                >+ Vraag toevoegen</button>
+              </div>
+            </div>
+          </div>
+
           {/* FINAL CTA Section Card */}
           <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
             <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
@@ -1575,201 +1770,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
                   placeholder="bijv. Inschrijven"
                 />
-              </div>
-            </div>
-          </div>
-
-          {/* IS DIT IETS VOOR JOU Section Card */}
-          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">IS DIT IETS VOOR JOU</span>
-              </div>
-            </div>
-            <div className="p-3 space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">✓ Voor jou als…</label>
-                {(course?.forYouItems || []).map((item, i) => (
-                  <div key={i} className="flex gap-1 mb-1">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => {
-                        const arr = [...(course?.forYouItems || [])]
-                        arr[i] = e.target.value
-                        updateCourseField('forYouItems', arr)
-                      }}
-                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                    />
-                    <button
-                      onClick={() => updateCourseField('forYouItems', (course?.forYouItems || []).filter((_, idx) => idx !== i))}
-                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
-                    >✕</button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => updateCourseField('forYouItems', [...(course?.forYouItems || []), ''])}
-                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
-                >+ Toevoegen</button>
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">✕ Niet voor jou als…</label>
-                {(course?.notForYouItems || []).map((item, i) => (
-                  <div key={i} className="flex gap-1 mb-1">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => {
-                        const arr = [...(course?.notForYouItems || [])]
-                        arr[i] = e.target.value
-                        updateCourseField('notForYouItems', arr)
-                      }}
-                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                    />
-                    <button
-                      onClick={() => updateCourseField('notForYouItems', (course?.notForYouItems || []).filter((_, idx) => idx !== i))}
-                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
-                    >✕</button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => updateCourseField('notForYouItems', [...(course?.notForYouItems || []), ''])}
-                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
-                >+ Toevoegen</button>
-              </div>
-            </div>
-          </div>
-
-          {/* COMPARISON TABLE Section Card */}
-          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">COMPARISON TABLE</span>
-              </div>
-            </div>
-            <div className="p-3 space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel — deel 1 (gewoon)</label>
-                <input
-                  type="text"
-                  value={course?.comparisonTitlePre || ''}
-                  onChange={(e) => updateCourseField('comparisonTitlePre', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Niet elke opleiding is hetzelfde."
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Titel — accent (goud, italic)</label>
-                <input
-                  type="text"
-                  value={course?.comparisonTitleAccent || ''}
-                  onChange={(e) => updateCourseField('comparisonTitleAccent', e.target.value)}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                  placeholder="bijv. Dit is het verschil."
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Intro-tekst</label>
-                <textarea
-                  value={course?.comparisonIntroText || ''}
-                  onChange={(e) => updateCourseField('comparisonIntroText', e.target.value)}
-                  rows={3}
-                  className="w-full bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)] resize-none"
-                  placeholder="bijv. De meeste cursussen leren je een set kunstjes..."
-                />
-              </div>
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Features</label>
-                {(course?.comparisonFeatures || []).map((item, i) => (
-                  <div key={i} className="flex gap-1 mb-1">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => {
-                        const arr = [...(course?.comparisonFeatures || [])]
-                        arr[i] = e.target.value
-                        updateCourseField('comparisonFeatures', arr)
-                      }}
-                      className="flex-1 bg-white border border-[rgba(26,24,21,0.09)] rounded-[7px] p-[6px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                    />
-                    <button
-                      onClick={() => updateCourseField('comparisonFeatures', (course?.comparisonFeatures || []).filter((_, idx) => idx !== i))}
-                      className="text-[rgba(200,60,60,0.5)] hover:text-[rgba(200,60,60,0.8)] px-2 text-[14px]"
-                    >✕</button>
-                  </div>
-                ))}
-                <button
-                  onClick={() => updateCourseField('comparisonFeatures', [...(course?.comparisonFeatures || []), ''])}
-                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] mt-1"
-                >+ Toevoegen</button>
-              </div>
-              {/* Closing text */}
-              <div className="mt-3 pt-3 border-t border-[rgba(26,24,21,0.08)]">
-                <label className="text-[10px] font-medium text-[#8B7355] mb-1 block">Afsluitende tekst</label>
-                <textarea
-                  value={course?.comparisonFooterText || ''}
-                  onChange={(e) => updateCourseField('comparisonFooterText', e.target.value)}
-                  rows={3}
-                  className="w-full text-[12px] p-2 border border-[rgba(26,24,21,0.15)] rounded resize-none"
-                  placeholder="Bij Luxique Academy studeer je niet af als iemand die weet hoe het moet, maar als iemand die begrijpt waarom — en dat is precies wat klanten laat terugkomen."
-                />
-                <p className="text-[9px] text-[#A89B8E] mt-1">Tip: gebruik &lt;em&gt;tekst&lt;/em&gt; voor goud/italic accent</p>
-              </div>
-            </div>
-          </div>
-
-          {/* FAQ Section Card */}
-          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">FAQ</span>
-              </div>
-            </div>
-            <div className="p-3 space-y-3">
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Vragen & Antwoorden</label>
-                {(course?.faqItems || []).map((item, i) => (
-                  <div key={i} className="bg-white border border-[rgba(26,24,21,0.09)] rounded-lg p-3 mb-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-medium text-[#7A6340]">Vraag {i + 1}</span>
-                      <button
-                        onClick={() => {
-                          const updated = (course?.faqItems || []).filter((_, j) => j !== i)
-                          updateCourseField('faqItems', updated)
-                        }}
-                        className="text-[rgba(26,24,21,0.25)] hover:text-[rgba(200,60,60,0.6)] p-1"
-                      >✕</button>
-                    </div>
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={item.question}
-                        onChange={(e) => {
-                          const updated = [...(course?.faqItems || [])]
-                          updated[i] = { ...updated[i], question: e.target.value }
-                          updateCourseField('faqItems', updated)
-                        }}
-                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none"
-                        placeholder="Vraag"
-                      />
-                      <textarea
-                        value={item.answer}
-                        onChange={(e) => {
-                          const updated = [...(course?.faqItems || [])]
-                          updated[i] = { ...updated[i], answer: e.target.value }
-                          updateCourseField('faqItems', updated)
-                        }}
-                        className="w-full bg-white border border-[rgba(26,24,21,0.09]] rounded-[7px] p-[6px_10px] text-[12px] outline-none min-h-[60px] resize-y"
-                        placeholder="Antwoord"
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                ))}
-                <button
-                  onClick={() => updateCourseField('faqItems', [...(course?.faqItems || []), { question: '', answer: '' }])}
-                  className="text-[11px] text-[#C4A265] hover:text-[#A8884A] transition mt-1"
-                >+ Vraag toevoegen</button>
               </div>
             </div>
           </div>
