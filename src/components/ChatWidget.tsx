@@ -104,9 +104,10 @@ export default function ChatWidget() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.3s',
+          overflow: 'hidden',
         }}
       >
-        {open ? '✕' : '💬'}
+        {open ? '✕' : <img src="/lxq-chat-icon.png" alt="LUXIQUE" style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover' }} />}
       </button>)}
 
       {/* Chat window */}
