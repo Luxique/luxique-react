@@ -115,7 +115,7 @@ export default function ChatWidget() {
         <div
           className="luxique-chat-window"
           style={{
-            position: 'fixed', bottom: 96, right: 24, zIndex: 9999,
+          position: 'fixed', bottom: 80, right: 24, zIndex: 9999,
             width: 380, maxHeight: 520,
             background: '#14110C',
             border: '1px solid rgba(196,162,101,0.18)',
