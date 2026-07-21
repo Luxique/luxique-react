@@ -367,7 +367,7 @@ function BetalenContent() {
             <div className="row"><span className="k">Behandeling</span><span className="v">{booking.event_type}</span></div>
             <div className="row"><span className="k">Datum</span><span className="v">{formatDate(booking.slot_start)}</span></div>
             <div className="row"><span className="k">Tijd</span><span className="v">{formatTime(booking.slot_start)}</span></div>
-            <div className="row"><span className="k">Locatie</span><span className="v">Venlosingel 166, Arnhem</span></div>
+            <div className="row"><span className="k">Locatie</span><span className="v">De Overmaat 26, Arnhem</span></div>
           </div>
 
           <div className="breakdown">

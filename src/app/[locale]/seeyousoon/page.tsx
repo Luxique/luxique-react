@@ -202,7 +202,7 @@ function SeeYouSoonContent() {
                     className="text-[14px] leading-[1.6] font-['Jost']"
                     style={{ color: 'rgba(250,248,244,0.7)' }}
                   >
-                    Venlosingel 166, 6845 JD Arnhem.
+                    De Overmaat 26, 6831 AH Arnhem.
                   </p>
                 </div>
               </div>

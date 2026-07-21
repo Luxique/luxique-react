@@ -40,8 +40,8 @@ NL: "Dat weet ik niet zeker — stuur even een mailtje naar info@luxique.nl, dan
 LUXIQUE is een lash studio en online academy van Chiva, lash artist & educator, gevestigd in Arnhem. Filosofie: "Eerst begrijpen, dan doen." Elk oog is anders en verdient een eigen, op maat ontworpen set. Niet zomaar een standaard set — alles wordt afgestemd op jouw oogvorm, uitstraling en natuurlijke wimpers.
 
 ### Behandelingen
-- **Nieuwe set:** €130. Volledig op maat, elke gewenste stijl/vorm mogelijk, afgestemd op jouw ogen. Reservering ± 3 uur.
-- **Opvullen (refill):** €90, ongeacht of je na 1, 2 of 3 weken komt. Na 3 weken wordt een nieuwe set geplaatst (€130). Duur ± 2 uur.
+- **Nieuwe set:** €150 bij de oprichter/docent (Chiva). Volledig op maat, elke gewenste stijl/vorm mogelijk, afgestemd op jouw ogen. Reservering ± 3 uur. Studenten en andere collega's kunnen goedkoper zijn.
+- **Opvullen (refill):** €110 bij Chiva, ongeacht of je na 1, 2 of 3 weken komt. Na 3 weken wordt een nieuwe set geplaatst (€150). Duur ± 2 uur.
 - Aanbevolen opvulritme: elke 2-3 weken.
 - De behandeling is pijnloos.
 - **Aanbetaling:** Bij het boeken van een behandeling betaal je 50% van de prijs als aanbetaling online (via iDEAL, creditcard, Apple Pay of Klarna). De resterende 50% voldoe je in de studio, direct na je behandeling.
@@ -80,12 +80,12 @@ Boek vooraf een workshop van 1 uur. Daarin maak je kennis met de materialen, lee
 ### Boeken & contact
 - Afspraak of cursus: via de knoppen op de website ("Boek" / Academy).
 - Persoonlijke vragen, klachten, privacyverzoeken: info@luxique.nl.
-- Locatie: Venlosingel 166, 6845 JD Arnhem.
+- Locatie: De Overmaat 26, 6831 AH Arnhem.
 
 ### Annulering & herroeping (uit de Algemene Voorwaarden)
 - **Behandelingen:** Kosteloos annuleren of verplaatsen tot uiterlijk 24 uur vóór aanvang. Binnen 24 uur vervalt de aanbetaling. Meer dan 20 minuten te laat → afspraak en aanbetaling vervallen. Zie /voorwaarden#art-6-annuleren.
 - **Online cursussen:** Geen restitutie. Je doet bij aankoop afstand van het herroepingsrecht (art. 6:230p sub g BW). Zie /voorwaarden#art-5-herroeping.
-- **Persoonlijke trajecten:** Tot 7 dagen vóór start: volledige terugbetaling minus €130 materiaalkosten. Tussen 7 en 3 dagen: eenmalig verplaatsen (geen terugbetaling). Binnen 3 dagen: geen restitutie en geen verplaatsing. Zie /voorwaarden#annulering-trajecten.
+- **Persoonlijke trajecten:** Tot 7 dagen vóór start: volledige terugbetaling minus €150 materiaalkosten. Tussen 7 en 3 dagen: eenmalig verplaatsen (geen terugbetaling). Binnen 3 dagen: geen restitutie en geen verplaatsing. Zie /voorwaarden#annulering-trajecten.
 - Bij ziekte binnen 24u vervalt de aanbetaling (zelfde als annulering). Bij ziekte tijdens meerdaags traject: geen restitutie of verplaatsing.
 
 ### Garantie & uitval

@@ -91,13 +91,13 @@ function BevestigdContent() {
               <div className="row"><span className="k">Behandeling</span><span className="v">{booking.event_type}</span></div>
               <div className="row"><span className="k">Datum</span><span className="v">{formatDate(booking.slot_start)}</span></div>
               <div className="row"><span className="k">Tijd</span><span className="v">{formatTime(booking.slot_start)} uur</span></div>
-              <div className="row"><span className="k">Locatie</span><span className="v">Venlosingel 166, Arnhem</span></div>
+              <div className="row"><span className="k">Locatie</span><span className="v">De Overmaat 26, Arnhem</span></div>
             </div>
             <div className="payment-info">
               <p>Aanbetaling van <strong>€{deposit}</strong> ontvangen ✅<br/>Resterend in de studio: <strong>€{remainder}</strong> — direct na je behandeling.</p>
             </div>
-            <a className="map-link" href="https://maps.google.com/?q=Venlosingel+166,+6845+JD+Arnhem" target="_blank" rel="noopener">
-              <img src="https://maps.googleapis.com/maps/api/staticmap?center=Venlosingel+166,Arnhem&zoom=15&size=500x200&markers=red:Venlosingel+166,Arnhem&key=AIzaSyBFb6wY4H8M2qNl7K5L1qY8m2p3r4s5t6" alt="Kaart - Venlosingel 166, Arnhem" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+            <a className="map-link" href="https://maps.google.com/?q=De+Overmaat+26,+6831+AH+Arnhem" target="_blank" rel="noopener">
+              <img src="https://maps.googleapis.com/maps/api/staticmap?center=De+Overmaat+26,Arnhem&zoom=15&size=500x200&markers=red:De+Overmaat+26,Arnhem&key=AIzaSyBFb6wY4H8M2qNl7K5L1qY8m2p3r4s5t6" alt="Kaart - De Overmaat 26, Arnhem" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </a>
             <a className="cta" href="/dashboard">Mijn boekingen</a>
             <div className="prep">

@@ -6,8 +6,8 @@ import crypto from 'crypto'
 export const dynamic = 'force-dynamic'
 
 const PAID_EVENTS: Record<number, { name: string; priceCents: number }> = {
-  5492038: { name: 'Nieuwe Lash Set', priceCents: 13000 },
-  5492037: { name: 'Lash Set opvullen', priceCents: 9000 },
+  5492038: { name: 'Nieuwe Lash Set', priceCents: 15000 },
+  5492037: { name: 'Lash Set opvullen', priceCents: 11000 },
 }
 
 function verifySignature(payload: string, signature: string | null): boolean {

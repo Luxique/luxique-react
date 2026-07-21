@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
-const STUDIO_ADDRESS = 'Venlosingel 166, 6845 JD Arnhem'
+const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 
 function formatDateEN(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', {

@@ -9,8 +9,8 @@ import CalEmbed from '@/components/CalEmbed'
 
 /* ─── Config (single source of truth for pricing) ─── */
 const PRICING = {
-  newSet: { price: 130 },
-  refill: { price: 90 },
+  newSet: { price: 150 },
+  refill: { price: 110 },
 }
 
 const HERO_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/cta-behandelingen.webp?width=1400&quality=75&resize=contain'
