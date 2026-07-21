@@ -264,7 +264,7 @@ export default function AboutPage() {
               <h2 className="serif rv">{t('ctaTitlePlain')} <em>{t('ctaTitleEm')}</em></h2>
               <div className="btns rv d1">
                 <a href="/courses" className="btn btn-gold">{t('ctaAcademy')}</a>
-                <a href="/#behandelingen" className="btn btn-ghost">{t('ctaBook')}</a>
+                <a href="/behandelingen" className="btn btn-ghost">{t('ctaBook')}</a>
               </div>
             </div>
           </section>
