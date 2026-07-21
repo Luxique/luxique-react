@@ -217,13 +217,13 @@ export default function Navbar() {
             <hr className="border-[rgba(196,162,101,0.1)] my-2" />
             {/* Mobile language switcher */}
             <div className="flex gap-2 px-3 py-2 flex-wrap">
-              {[['nl','🇳🇱'],['en','🇬🇧'],['es','🇪🇸'],['fr','🇫🇷'],['de','🇩🇪'],['it','🇮🇹']].map(([code, flag]) => {
+              {[['nl','https://flagcdn.com/24x18/nl.png'],['en','https://flagcdn.com/24x18/gb.png'],['es','https://flagcdn.com/24x18/es.png'],['fr','https://flagcdn.com/24x18/fr.png'],['de','https://flagcdn.com/24x18/de.png'],['it','https://flagcdn.com/24x18/it.png']].map(([code, flag]) => {
                 const isActive = currentLocale === code
                 return (
                   <a key={code} href={`/${code}${pathname.replace(/^\/(nl|en|es|fr|de|it)/, '')}`}
-                    className={`text-[18px] px-2 py-1 rounded-lg transition ${isActive ? 'bg-[rgba(196,162,101,0.15)] ring-1 ring-[rgba(196,162,101,0.3)]' : 'opacity-50 hover:opacity-100'}`}
+                    className={`px-2 py-1 rounded-lg transition ${isActive ? 'bg-[rgba(196,162,101,0.15)] ring-1 ring-[rgba(196,162,101,0.3)]' : 'opacity-50 hover:opacity-100'}`}
                     onClick={() => setMobileOpen(false)}>
-                    {flag}
+                    <img src={flag} alt={code} width={20} height={15} className="rounded-[2px]" />
                   </a>
                 )
               })}

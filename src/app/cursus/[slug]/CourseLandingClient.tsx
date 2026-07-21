@@ -600,7 +600,7 @@ function PricingSection({ course, onJoin, user, lessons, enrolled, courseSlug }:
   ]
 
   return (
-    <section className="section" id="pricing">
+    <section className="section" id="pricing" style={{ paddingBottom: '60px' }}>
       <div className="container">
         <div className="sec-head">
           <span className="eyebrow">— Investering —</span>
@@ -702,7 +702,7 @@ function FAQSection({ items: itemsProp }: { items?: Array<{ question: string; an
   const [openIndex, setOpenIndex] = useState(0)
 
   return (
-    <section className="section">
+    <section className="section" id="faq" style={{ paddingTop: '60px' }}>
       <div className="container">
         <div className="sec-head">
           <span className="eyebrow">— Veelgestelde vragen —</span>

@@ -85,7 +85,7 @@ export default function CookieBanner() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap');
-        .ck-banner{position:fixed;left:24px;bottom:24px;z-index:60;width:min(440px,calc(100vw - 48px));background:radial-gradient(120% 130% at 0% 0%,rgba(176,141,79,.1),transparent 55%),#FBF8F2;border:1px solid rgba(28,24,20,.14);border-radius:18px;box-shadow:0 30px 70px -24px rgba(28,24,20,.4),0 0 0 1px rgba(176,141,79,.08);padding:24px 24px 20px;transform:translateY(140%);opacity:0;transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .5s;font-family:'Jost',system-ui,sans-serif}
+        .ck-banner{position:fixed;left:24px;top:24px;z-index:60;width:min(440px,calc(100vw - 48px));background:radial-gradient(120% 130% at 0% 0%,rgba(176,141,79,.1),transparent 55%),#FBF8F2;border:1px solid rgba(28,24,20,.14);border-radius:18px;box-shadow:0 30px 70px -24px rgba(28,24,20,.4),0 0 0 1px rgba(176,141,79,.08);padding:24px 24px 20px;transform:translateY(-140%);opacity:0;transition:transform .5s cubic-bezier(.16,1,.3,1),opacity .5s;font-family:'Jost',system-ui,sans-serif}
         .ck-banner.show{transform:translateY(0);opacity:1}
         .ck-eyebrow{font-weight:600;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:#B08D4F;margin-bottom:.5rem}
         .ck-banner h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:1.5rem;margin-bottom:.5rem;color:#1C1814}
@@ -126,11 +126,11 @@ export default function CookieBanner() {
         .tog input:disabled+.track::after{transform:translateX(20px)}
         .ck-modal-foot{padding:20px 30px 26px;display:flex;gap:.6rem;flex-wrap:wrap;border-top:1px solid rgba(28,24,20,.14);background:#F4EFE4;border-radius:0 0 20px 20px}
         .ck-modal-foot .ck-btn{flex:1 1 auto}
-        .ck-reopen{position:fixed;left:20px;bottom:20px;z-index:55;font-family:'Jost',sans-serif;font-weight:500;font-size:.78rem;letter-spacing:.03em;background:#FBF8F2;color:#4A433B;border:1px solid rgba(28,24,20,.14);border-radius:999px;padding:.6em 1.1em;cursor:pointer;display:none;align-items:center;gap:.5rem;box-shadow:0 10px 30px -14px rgba(28,24,20,.5)}
+        .ck-reopen{position:fixed;left:20px;top:20px;z-index:55;font-family:'Jost',sans-serif;font-weight:500;font-size:.78rem;letter-spacing:.03em;background:#FBF8F2;color:#4A433B;border:1px solid rgba(28,24,20,.14);border-radius:999px;padding:.6em 1.1em;cursor:pointer;display:none;align-items:center;gap:.5rem;box-shadow:0 10px 30px -14px rgba(28,24,20,.5)}
         .ck-reopen.show{display:inline-flex}
         .ck-reopen:hover{background:#F4EFE4;color:#1C1814}
         .ck-reopen .dot{width:7px;height:7px;border-radius:50%;background:#B08D4F}
-        @media(max-width:480px){.ck-banner{left:12px;right:12px;bottom:12px;width:auto;padding:20px}.ck-actions{flex-direction:column}.ck-btn{flex:1 1 100%;order:0!important}}
+        @media(max-width:480px){.ck-banner{left:12px;right:12px;top:12px;bottom:auto;width:auto;padding:20px}.ck-actions{flex-direction:column}.ck-btn{flex:1 1 100%;order:0!important}}
       `}</style>
 
       {/* BANNER */}

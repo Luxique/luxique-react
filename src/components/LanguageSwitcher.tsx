@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 
 const LANGUAGES = [
-  { code: 'nl', flag: '🇳🇱', name: 'Nederlands' },
-  { code: 'en', flag: '🇬🇧', name: 'English' },
-  { code: 'es', flag: '🇪🇸', name: 'Español' },
-  { code: 'fr', flag: '🇫🇷', name: 'Français' },
-  { code: 'de', flag: '🇩🇪', name: 'Deutsch' },
-  { code: 'it', flag: '🇮🇹', name: 'Italiano' },
+  { code: 'nl', flag: 'https://flagcdn.com/24x18/nl.png', name: 'Nederlands' },
+  { code: 'en', flag: 'https://flagcdn.com/24x18/gb.png', name: 'English' },
+  { code: 'es', flag: 'https://flagcdn.com/24x18/es.png', name: 'Español' },
+  { code: 'fr', flag: 'https://flagcdn.com/24x18/fr.png', name: 'Français' },
+  { code: 'de', flag: 'https://flagcdn.com/24x18/de.png', name: 'Deutsch' },
+  { code: 'it', flag: 'https://flagcdn.com/24x18/it.png', name: 'Italiano' },
 ] as const
 
 // Cache for prefetched message files — survives across components/renders
@@ -84,7 +84,7 @@ export default function LanguageSwitcher({ compact = false, flipUp = false }: { 
         style={compact ? { width: '48px' } : { padding: '0 16px', gap: '6px' }}
         title={current.name}
       >
-        <span className="text-[18px] leading-none" aria-hidden="true">{current.flag}</span>
+        <img src={current.flag} alt="" width={20} height={15} className="rounded-[2px]" aria-hidden="true" />
         {!compact && (
           <span className="text-[12px] font-medium text-[#3d382f] hidden md:inline">{current.code.toUpperCase()}</span>
         )}
@@ -103,7 +103,7 @@ export default function LanguageSwitcher({ compact = false, flipUp = false }: { 
                 lang.code === currentLocale ? 'bg-[rgba(196,162,101,0.06)]' : ''
               }`}
             >
-              <span className="text-[18px] leading-none">{lang.flag}</span>
+              <img src={lang.flag} alt="" width={20} height={15} className="rounded-[2px]" />
               <span className={`text-[13px] ${lang.code === currentLocale ? 'text-[#C4A265] font-medium' : 'text-[#3d382f]'}`}>
                 {lang.name}
               </span>
