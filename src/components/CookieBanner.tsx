@@ -126,7 +126,7 @@ export default function CookieBanner() {
         .tog input:disabled+.track::after{transform:translateX(20px)}
         .ck-modal-foot{padding:20px 30px 26px;display:flex;gap:.6rem;flex-wrap:wrap;border-top:1px solid rgba(28,24,20,.14);background:#F4EFE4;border-radius:0 0 20px 20px}
         .ck-modal-foot .ck-btn{flex:1 1 auto}
-        .ck-reopen{position:fixed;left:20px;top:16px;z-index:9998;font-family:'Jost',sans-serif;font-weight:500;font-size:.78rem;letter-spacing:.03em;background:#FBF8F2;color:#4A433B;border:1px solid rgba(28,24,20,.14);border-radius:999px;padding:.6em 1.1em;cursor:pointer;display:none;align-items:center;gap:.5rem;box-shadow:0 10px 30px -14px rgba(28,24,20,.5)}
+        .ck-reopen{position:fixed;left:20px;top:120px;z-index:9998;font-family:'Jost',sans-serif;font-weight:500;font-size:.78rem;letter-spacing:.03em;background:#FBF8F2;color:#4A433B;border:1px solid rgba(28,24,20,.14);border-radius:999px;padding:.6em 1.1em;cursor:pointer;display:none;align-items:center;gap:.5rem;box-shadow:0 10px 30px -14px rgba(28,24,20,.5)}
         .ck-reopen.show{display:inline-flex}
         .ck-reopen:hover{background:#F4EFE4;color:#1C1814}
         .ck-reopen .dot{width:7px;height:7px;border-radius:50%;background:#B08D4F}
