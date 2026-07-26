@@ -269,7 +269,7 @@ export async function cancelKlasBlokkades(
   for (const uid of uids) {
     try {
       const res = await calApi('POST', `/bookings/${uid}/cancel`, apiKey, {
-        reason: 'Klas verwijderd/geannuleerd door admin',
+        cancellationReason: 'Klas verwijderd/geannuleerd door admin',
         allRemainingBookings: true,
       })
 

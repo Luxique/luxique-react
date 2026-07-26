@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        reason: 'Cancelled by customer via dashboard',
+        cancellationReason: 'Cancelled by customer via dashboard',
         allRemainingBookings: true,
       }),
     })
