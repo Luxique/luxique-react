@@ -270,11 +270,12 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   const md = session.metadata || {}
   const cursus_id = md.cursus_id
   const cursus_naam = md.cursus_naam
+  const klas_id = md.klas_id || null  // FASE 2: klas-gebaseerd
   const startdatum = md.startdatum
   const starttijd = md.starttijd
   const klant_naam = md.klant_naam
   const klant_email = md.klant_email
-  const user_id = md.user_id || null  // STAP 5b: klant-account koppeling
+  const user_id = md.user_id || null
   const aanbetaling_cents = Number(md.aanbetaling_cents || 0)
   const restbedrag_cents = Number(md.restbedrag_cents || 0)
 
@@ -308,46 +309,62 @@ async function handleTrajectDeposit(session: any, stripe: any) {
     return
   }
 
-  // ANTI-DUBBELBOEKING: check opnieuw of blok vrij is
-  const { data: alleBoekingen } = await supabase
-    .from('traject_boekingen')
-    .select('blok_dagen')
+  // === CAPACITEIT RACE-CONDITION CHECK ===
+  // Hercheck of er nog een plek is in de klas NA betaling.
+  // Race: 2 mensen betalen tegelijk voor de laatste plek.
+  // Oplossing: tel betaalde boekingen voor deze klas. Als vol → auto-refund.
+  if (klas_id) {
+    const { data: klasData } = await supabase
+      .from('traject_klassen')
+      .select('max_deelnemers, status')
+      .eq('id', klas_id)
+      .single()
 
-  const gevraagdSet = new Set(blok_dagen)
-  for (const rij of alleBoekingen ?? []) {
-    const existingDays: string[] = rij.blok_dagen ?? []
-    if (existingDays.some((d: string) => gevraagdSet.has(d))) {
-      // RACE CONDITION: blok is net geboekt door iemand anders
-      console.error('CRITICAL: Traject race-condition — blok al geboekt NA betaling.', {
-        cursus_id, startdatum, klant_email, stripe_session_id,
+    if (klasData?.status === 'geannuleerd') {
+      console.error('CRITICAL: Traject klas geannuleerd NA betaling.', {
+        klas_id, klant_email, stripe_session_id,
       })
-
-      // Auto-refund
       if (payment_intent_id) {
         try {
-          await stripe.refunds.create({
-            payment_intent: payment_intent_id,
-            reason: 'duplicate',
-          })
-          console.error(`AUTO-REFUND: ${payment_intent_id} (${klant_email}) — blok al geboekt door ander.`)
-        } catch (err) {
-          console.error('CRITICAL: Auto-refund FAALT:', err)
-        }
+          await stripe.refunds.create({ payment_intent: payment_intent_id, reason: 'duplicate' })
+          console.error(`AUTO-REFUND: ${payment_intent_id} (${klant_email}) — klas geannuleerd.`)
+        } catch (err) { console.error('CRITICAL: Auto-refund FAALT:', err) }
+      }
+      return
+    }
+
+    const { count: betaaldCount } = await supabase
+      .from('traject_boekingen')
+      .select('id', { count: 'exact', head: true })
+      .eq('klas_id', klas_id)
+      .eq('aanbetaling_status', 'betaald')
+
+    if ((betaaldCount ?? 0) >= (klasData?.max_deelnemers ?? 0)) {
+      // RACE CONDITION: klas is vol door andere betaling
+      console.error('CRITICAL: Traject race-condition — klas vol NA betaling.', {
+        klas_id, klant_email, stripe_session_id, betaald: betaaldCount, max: klasData?.max_deelnemers,
+      })
+      if (payment_intent_id) {
+        try {
+          await stripe.refunds.create({ payment_intent: payment_intent_id, reason: 'duplicate' })
+          console.error(`AUTO-REFUND: ${payment_intent_id} (${klant_email}) — klas vol (race condition).`)
+        } catch (err) { console.error('CRITICAL: Auto-refund FAALT:', err) }
       }
       return
     }
   }
 
-  // Save booking
+  // Save booking — met klas_id koppeling
   const { data: insertedBoeking, error } = await supabase.from('traject_boekingen').insert({
     cursus_id,
     cursus_naam,
+    klas_id,
     startdatum,
     starttijd,
     blok_dagen,
     klant_naam,
     klant_email,
-    user_id: user_id || null,  // STAP 5b: koppeling aan auth.users
+    user_id: user_id || null,
     aanbetaling_status: 'betaald',
     restbedrag_status: 'open',
     cal_sync_status: 'pending',
@@ -363,8 +380,32 @@ async function handleTrajectDeposit(session: any, stripe: any) {
   }
 
   console.log('✅ Traject boeking opgeslagen:', {
-    cursus_naam, startdatum, klant_email, id: insertedBoeking.id,
+    cursus_naam, startdatum, klant_email, id: insertedBoeking.id, klas_id,
   })
+
+  // === MARK KLAS 'VOL' ALS VOLLE ===
+  if (klas_id) {
+    try {
+      const { count: nuBetaald } = await supabase
+        .from('traject_boekingen')
+        .select('id', { count: 'exact', head: true })
+        .eq('klas_id', klas_id)
+        .eq('aanbetaling_status', 'betaald')
+
+      const { data: k } = await supabase
+        .from('traject_klassen')
+        .select('max_deelnemers')
+        .eq('id', klas_id)
+        .single()
+
+      if ((nuBetaald ?? 0) >= (k?.max_deelnemers ?? 999)) {
+        await supabase.from('traject_klassen').update({ status: 'vol' }).eq('id', klas_id)
+        console.log(`📦 Klas ${klas_id} gemarkeerd als 'vol' (${nuBetaald}/${k?.max_deelnemers})`)
+      }
+    } catch (e) {
+      console.error('Kon klas status niet updaten (non-fatal):', e)
+    }
+  }
 
   // Stuur bevestigingsmail + Chiva-notificatie (fouten zijn non-fatal)
   try {

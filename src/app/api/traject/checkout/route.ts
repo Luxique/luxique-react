@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { berekenWerkdagenBlok } from '@/lib/traject'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -16,12 +15,13 @@ const NO_STORE_HEADERS = {
  * POST /api/traject/checkout
  *
  * Maakt een Stripe Checkout sessie voor de 50% aanbetaling.
- * Stuurt alle boekingsgegevens mee als metadata.
+ * KLAS-gebaseerd: boekt een plek in een klas (klas_id), niet een losse datum.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
+      klas_id,
       cursus_id,
       cursus_naam,
       startdatum,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       prijs_cents, // volledige prijs in cents (ex BTW)
     } = body
 
-    // === AUTH: haal user_id op uit JWT (verplicht voor koppeling) ===
+    // === AUTH: haal user_id op uit JWT ===
     const authHeader = req.headers.get('authorization')
     let userId: string | null = null
 
@@ -43,13 +43,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Note: userId mag null zijn voor backwards compat, maar nieuwe boekingen
-    // zouden altijd een userId moeten hebben (enforced in UI via auth gate)
-
-    // Validatie
-    if (!cursus_id || !startdatum || !starttijd || !klant_naam || !klant_email) {
+    // Validatie — klas_id verplicht
+    if (!klas_id || !cursus_id || !startdatum || !starttijd || !klant_naam || !klant_email) {
       return NextResponse.json(
-        { error: 'Ontbrekende velden' },
+        { error: 'Ontbrekende velden (klas_id verplicht)' },
         { status: 400, headers: NO_STORE_HEADERS },
       )
     }
@@ -68,7 +65,49 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Haal cursus op om duur_werkdagen te bepalen
+    // === CAPACITEIT PRE-CHECK ===
+    const { data: klas, error: klasError } = await supabaseAdmin
+      .from('traject_klassen')
+      .select('id, cursus_id, startdatum, starttijd, blok_dagen, max_deelnemers, status')
+      .eq('id', klas_id)
+      .single()
+
+    if (klasError || !klas) {
+      return NextResponse.json(
+        { error: 'Klas niet gevonden' },
+        { status: 404, headers: NO_STORE_HEADERS },
+      )
+    }
+
+    if (klas.status === 'geannuleerd') {
+      return NextResponse.json(
+        { error: 'Deze klas is geannuleerd.' },
+        { status: 409, headers: NO_STORE_HEADERS },
+      )
+    }
+
+    const { count: betaaldCount, error: countError } = await supabaseAdmin
+      .from('traject_boekingen')
+      .select('id', { count: 'exact', head: true })
+      .eq('klas_id', klas_id)
+      .eq('aanbetaling_status', 'betaald')
+
+    if (countError) {
+      return NextResponse.json(
+        { error: 'DB-fout bij capaciteitscheck' },
+        { status: 500, headers: NO_STORE_HEADERS },
+      )
+    }
+
+    const plekkenOver = klas.max_deelnemers - (betaaldCount ?? 0)
+    if (plekkenOver <= 0) {
+      return NextResponse.json(
+        { error: 'Deze klas is helaas volgeboekt.' },
+        { status: 409, headers: NO_STORE_HEADERS },
+      )
+    }
+
+    // Haal cursus op voor naam + prijs
     const { data: cursus, error: cursusError } = await supabaseAdmin
       .from('traject_cursussen')
       .select('id, naam, duur_werkdagen, prijs_cents')
@@ -82,31 +121,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Bereken blok
-    const blok_dagen = berekenWerkdagenBlok(startdatum, cursus.duur_werkdagen)
-
-    // Anti-dubbelboeking PRE-CHECK (voor Stripe)
-    const { data: bestaandeBoekingen, error: boekingError } = await supabaseAdmin
-      .from('traject_boekingen')
-      .select('blok_dagen')
-
-    if (boekingError) {
-      return NextResponse.json(
-        { error: 'DB-fout bij beschikbaarheidscheck' },
-        { status: 500, headers: NO_STORE_HEADERS },
-      )
-    }
-
-    const gevraagdSet = new Set(blok_dagen)
-    for (const rij of bestaandeBoekingen ?? []) {
-      const existing: string[] = rij.blok_dagen ?? []
-      if (existing.some(d => gevraagdSet.has(d))) {
-        return NextResponse.json(
-          { error: 'Dit traject is helaas net geboekt. Kies een andere startdatum.' },
-          { status: 409, headers: NO_STORE_HEADERS },
-        )
-      }
-    }
+    // Blok_dagen van de klas gebruiken (altijd actueel)
+    const blok_dagen = klas.blok_dagen
 
     // Prijs berekening: prijs_cents is EX BTW. Eerst BTW toevoegen, dan 50%.
     const prijsInclBtw = Math.round(prijs_cents * 1.21)
@@ -140,18 +156,19 @@ export async function POST(req: NextRequest) {
         type: 'traject_deposit',
         cursus_id,
         cursus_naam: cursus.naam,
+        klas_id,
         startdatum,
         starttijd,
         blok_dagen: JSON.stringify(blok_dagen),
         klant_naam,
         klant_email,
-        user_id: userId || '', // <-- STAP 5b: koppeling aan klant-account
+        user_id: userId || '',
         prijs_cents_volledig: String(prijs_cents),
         aanbetaling_cents: String(aanbetaling),
         restbedrag_cents: String(prijsInclBtw - aanbetaling),
       },
     }, {
-      idempotencyKey: `traject-${cursus_id}-${startdatum}-${starttijd}`,
+      idempotencyKey: `traject-klas-${klas_id}-${klant_email}`,
     })
 
     return NextResponse.json({
