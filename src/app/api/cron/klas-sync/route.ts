@@ -25,8 +25,14 @@ export async function GET(request: NextRequest) {
   const expectedSecret = process.env.CRON_SECRET
   const isVercelCron = userAgent.includes('vercel-cron')
 
+  const NO_STORE = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  }
+
   if (!isVercelCron && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: NO_STORE })
   }
 
   const supabase = createClient(
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
 
   if (syncFetchError) {
     console.error('[klas-cron] DB fetch fout:', syncFetchError.message)
-    return NextResponse.json({ error: 'DB fetch failed' }, { status: 500 })
+    return NextResponse.json({ error: 'DB fetch failed' }, { status: 500, headers: NO_STORE })
   }
 
   for (const klas of klassenToSync ?? []) {
@@ -147,8 +153,14 @@ export async function GET(request: NextRequest) {
   const processed = (klassenToSync?.length ?? 0) + (klassenToCancel?.length ?? 0)
   console.log(`[klas-cron] processed=${processed}, synced=${results.synced}, cancelled=${results.cancelled}`)
 
+  const NO_STORE = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  }
+
   return NextResponse.json({
     processed,
     ...results,
-  })
+  }, { headers: NO_STORE })
 }
