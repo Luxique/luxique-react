@@ -35,9 +35,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: NO_STORE })
   }
 
+  // Vercel Data Cache bypass — supabase-js uses fetch() which Vercel auto-caches.
+  // Force no-store on every fetch to prevent stale PostgREST responses.
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      global: {
+        fetch: (url: RequestInfo | URL, init?: RequestInit) =>
+          fetch(url, { ...init, cache: 'no-store' } as RequestInit),
+      },
+    },
   )
 
   const results: {

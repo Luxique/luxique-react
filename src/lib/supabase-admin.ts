@@ -18,6 +18,11 @@ export const supabaseAdmin = new Proxy({} as SupabaseClient, {
     if (!_admin) {
       _admin = createClient(getUrl(), getServiceKey(), {
         auth: { autoRefreshToken: false, persistSession: false },
+        global: {
+          // Vercel Data Cache bypass — force no-store on every fetch
+          fetch: (url: RequestInfo | URL, init?: RequestInit) =>
+            fetch(url, { ...init, cache: 'no-store' } as RequestInit),
+        },
       })
     }
     return Reflect.get(_admin, prop)
