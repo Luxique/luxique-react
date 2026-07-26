@@ -153,12 +153,6 @@ export async function GET(request: NextRequest) {
   const processed = (klassenToSync?.length ?? 0) + (klassenToCancel?.length ?? 0)
   console.log(`[klas-cron] processed=${processed}, synced=${results.synced}, cancelled=${results.cancelled}`)
 
-  const NO_STORE = {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-    'Pragma': 'no-cache',
-    'Expires': '0',
-  }
-
   return NextResponse.json({
     processed,
     ...results,
