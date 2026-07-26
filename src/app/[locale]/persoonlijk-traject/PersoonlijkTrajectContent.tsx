@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Navbar from '@/components/Navbar'
 
@@ -17,6 +17,7 @@ export default function PersoonlijkTrajectContent() {
   const t = useTranslations('PersoonlijkTraject')
   const locale = useLocale()
   const rootRef = useRef<HTMLDivElement>(null)
+  const [openDetail, setOpenDetail] = useState<string | null>(null)
 
   const boekUrl = (cursusId: string) => `/${locale}/traject-boeken?cursus=${cursusId}`
 
@@ -30,92 +31,30 @@ export default function PersoonlijkTrajectContent() {
     }), { threshold: 0.01, rootMargin: '0px 0px -8% 0px' })
     root.querySelectorAll('.reveal').forEach(el => io.observe(el))
 
-    // Loenique chat buttons
-    const luxBtns = root.querySelectorAll('[data-loenique]')
-    luxBtns.forEach(btn => {
-      btn.addEventListener('click', () => window.dispatchEvent(new Event('open-loenique-chat')))
-    })
-
-    // === DAGPROGRAMMA OPEN/CLOSE WITH MOBILE REPOSITIONING ===
-    const MOBILE = () => window.matchMedia('(max-width:900px)').matches
-
-    // Remember original position of each detail block
-    const detailHome = new Map<string, { parent: Node; next: Node | null }>()
-    root.querySelectorAll<HTMLElement>('.detail').forEach(d => {
-      detailHome.set(d.id, { parent: d.parentNode!, next: d.nextSibling })
-    })
-
-    function restoreHome(d: HTMLElement) {
-      const h = detailHome.get(d.id)
-      if (h && d.parentNode !== h.parent) {
-        h.parent.insertBefore(d, h.next)
-      }
+    // Loenique chat — event delegation (handles modal-rendered buttons too)
+    const loeniqueHandler = (e: Event) => {
+      const target = (e.target as HTMLElement).closest('[data-loenique]')
+      if (target) window.dispatchEvent(new Event('open-loenique-chat'))
     }
-
-    function closeAll() {
-      root!.querySelectorAll('.detail').forEach((d: Element) => {
-        d.classList.remove('open')
-        restoreHome(d as HTMLElement)
-      })
-    }
-
-    const openBtns = root.querySelectorAll('[data-open]')
-    openBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = 'd-' + (btn as HTMLElement).dataset.open
-        const target = root.querySelector<HTMLElement>('#' + id)
-        if (!target) return
-        const wasOpen = target.classList.contains('open')
-        closeAll()
-        if (!wasOpen) {
-          if (MOBILE()) {
-            // Move detail block directly after the clicked card
-            const card = (btn as HTMLElement).closest('.track')
-            if (card) card.insertAdjacentElement('afterend', target)
-          }
-          target.classList.add('open')
-          setTimeout(() => {
-            const block = MOBILE() ? 'nearest' : 'start'
-            const scrollTarget = MOBILE() ? (btn as HTMLElement).closest('.track') : target
-            scrollTarget?.scrollIntoView({ behavior: 'smooth', block: block as ScrollIntoViewOptions['block'] })
-          }, 140)
-        }
-      })
-    })
-
-    const closeBtns = root.querySelectorAll('[data-close]')
-    closeBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const d = (btn as HTMLElement).closest('.detail') as HTMLElement
-        if (!d) return
-        d.classList.remove('open')
-        const wasMobile = d.parentNode && (d.parentNode as HTMLElement).classList && (d.parentNode as HTMLElement).classList.contains('track')
-        let anchor: Element | null = null
-        if (wasMobile) {
-          anchor = d.previousElementSibling
-        }
-        restoreHome(d)
-        if (anchor) {
-          anchor.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        } else {
-          root.querySelector('.levels-intro')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      })
-    })
-
-    // Resize handler: close all and restore positions
-    let rt: ReturnType<typeof setTimeout>
-    const resizeHandler = () => {
-      clearTimeout(rt)
-      rt = setTimeout(closeAll, 200)
-    }
-    window.addEventListener('resize', resizeHandler)
+    root.addEventListener('click', loeniqueHandler)
 
     return () => {
       io.disconnect()
-      window.removeEventListener('resize', resizeHandler)
+      root.removeEventListener('click', loeniqueHandler)
     }
   }, [])
+
+  // Modal: Escape to close + body scroll lock
+  useEffect(() => {
+    if (!openDetail) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenDetail(null) }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [openDetail])
 
   return (
     <div ref={rootRef}>
@@ -285,10 +224,14 @@ export default function PersoonlijkTrajectContent() {
         .start-btns .btn{width:auto}
         .start-btns .btn.ghost{color:var(--on-dark);border-color:rgba(246,241,231,.3)}
 
-        /* ===== DAGPROGRAMMA ===== */
-        .detail{background:var(--dark2);color:var(--on-dark);overflow:hidden;display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s cubic-bezier(.16,1,.3,1)}
-        .detail.open{grid-template-rows:1fr}
-        .detail-inner{padding:80px 0 90px;position:relative;overflow:hidden;
+        /* ===== DAGPROGRAMMA MODAL ===== */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px}
+        .modal-panel{position:relative;background:var(--dark2);color:var(--on-dark);border-radius:20px;width:100%;max-width:600px;margin:auto;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(216,185,122,.3);box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
+        .modal-x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(246,241,231,.1);border:1px solid rgba(246,241,231,.2);color:var(--on-dark);font-size:22px;line-height:1;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:background .2s;font-family:'Jost',sans-serif}
+        .modal-x:hover{background:rgba(246,241,231,.22)}
+        .modal-scroll{overflow-y:auto;max-height:85vh;-webkit-overflow-scrolling:touch}
+        .detail{background:var(--dark2);color:var(--on-dark);overflow:hidden}
+        .detail-inner{padding:36px 0 40px;position:relative;overflow:hidden;
           background:radial-gradient(110% 70% at 50% 0%, rgba(176,141,79,.12), transparent 55%)}
         .detail .eyebrow{color:var(--gold-bright)}
         .detail h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2.2rem,4.5vw,3.4rem);line-height:1;margin:14px 0 10px}
@@ -502,7 +445,7 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card1Feature4')}</li>
                 <li>{t('card1Feature5')}</li>
               </ul>
-              <button className="btn ghost" data-open="beginner">{t('cardViewProgram')}</button>
+              <button className="btn ghost" onClick={() => setOpenDetail('beginner')}>{t('cardViewProgram')}</button>
             </div>
 
             {/* WISPY MASTERCLASS */}
@@ -530,7 +473,7 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card2Feature4')}</li>
                 <li>{t('card2Feature5')}</li>
               </ul>
-              <button className="btn ghost" data-open="wispy">{t('cardViewProgram')}</button>
+              <button className="btn ghost" onClick={() => setOpenDetail('wispy')}>{t('cardViewProgram')}</button>
             </div>
 
             {/* MEDUSA MASTERCLASS */}
@@ -558,7 +501,7 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card3Feature4')}</li>
                 <li>{t('card3Feature5')}</li>
               </ul>
-              <button className="btn ghost" data-open="medusa">{t('cardViewProgram')}</button>
+              <button className="btn ghost" onClick={() => setOpenDetail('medusa')}>{t('cardViewProgram')}</button>
             </div>
 
             {/* LASH TECH TO ARTIST (featured) */}
@@ -587,7 +530,7 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card4Feature4')}</li>
                 <li>{t('card4Feature5')}</li>
               </ul>
-              <button className="btn ghost" data-open="tech">{t('cardViewProgram')}</button>
+              <button className="btn ghost" onClick={() => setOpenDetail('tech')}>{t('cardViewProgram')}</button>
             </div>
           </div>
         </div>
@@ -610,8 +553,14 @@ export default function PersoonlijkTrajectContent() {
         </div>
       </section>
 
-      {/* ===== DETAIL: BEGINNER ===== */}
-      <div className="detail" id="d-beginner">
+      {/* ===== DAGPROGRAMMA MODAL ===== */}
+      {openDetail && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setOpenDetail(null) }}>
+          <div className="modal-panel" role="dialog" aria-modal="true">
+            <button className="modal-x" aria-label="Sluiten" onClick={() => setOpenDetail(null)}>×</button>
+            <div className="modal-scroll">
+              {openDetail === 'beginner' && (
+                <div className="detail" id="d-beginner">
         <div className="detail-inner">
           <div className="wrap">
             <span className="eyebrow">{t('dp1Meta')}</span>
@@ -698,13 +647,14 @@ export default function PersoonlijkTrajectContent() {
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" data-close>{t('dpClose')}</button>
+            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
           </div>
         </div>
       </div>
+              )}
 
-      {/* ===== DETAIL: WISPY ===== */}
-      <div className="detail" id="d-wispy">
+              {openDetail === 'wispy' && (
+                <div className="detail" id="d-wispy">
         <div className="detail-inner">
           <div className="wrap">
             <span className="eyebrow">{t('dp2Meta')}</span>
@@ -786,13 +736,14 @@ export default function PersoonlijkTrajectContent() {
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" data-close>{t('dpClose')}</button>
+            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
           </div>
         </div>
       </div>
+              )}
 
-      {/* ===== DETAIL: MEDUSA ===== */}
-      <div className="detail" id="d-medusa">
+              {openDetail === 'medusa' && (
+                <div className="detail" id="d-medusa">
         <div className="detail-inner">
           <div className="wrap">
             <span className="eyebrow">{t('dp3Meta')}</span>
@@ -892,13 +843,14 @@ export default function PersoonlijkTrajectContent() {
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" data-close>{t('dpClose')}</button>
+            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
           </div>
         </div>
       </div>
+              )}
 
-      {/* ===== DETAIL: TECH TO ARTIST ===== */}
-      <div className="detail" id="d-tech">
+              {openDetail === 'tech' && (
+                <div className="detail" id="d-tech">
         <div className="detail-inner">
           <div className="wrap">
             <span className="eyebrow">{t('dp4Meta')}</span>
@@ -1003,10 +955,15 @@ export default function PersoonlijkTrajectContent() {
               <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
             </div>
             <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" data-close>{t('dpClose')}</button>
+            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
           </div>
         </div>
       </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== DISCLAIMER ===== */}
       <section className="disclaimer">
