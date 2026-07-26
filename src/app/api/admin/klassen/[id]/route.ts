@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
+import { cancelKlasBlokkades } from '@/lib/klas-cal-sync'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -183,6 +184,20 @@ export async function DELETE(
       )
     }
 
+    // Ruim cal.com blokkades op voordat we de klas verwijderen
+    // (anders zijn de UIDs weg en kunnen we ze niet meer cancelen)
+    let calCancelled = 0
+    let calFailed = 0
+    try {
+      const cancelResult = await cancelKlasBlokkades(id, supabaseAdmin)
+      calCancelled = cancelResult.cancelled.length
+      calFailed = cancelResult.failed.length
+      console.log(`DELETE klas ${id}: cal.com cancel ${calCancelled} ok, ${calFailed} failed`)
+    } catch (err) {
+      console.error(`DELETE klas ${id}: cal.com cancel exception:`, err)
+      calFailed = -1
+    }
+
     // Verwijder de klas
     const { error: delError } = await supabaseAdmin
       .from('traject_klassen')
@@ -198,7 +213,12 @@ export async function DELETE(
     }
 
     return NextResponse.json(
-      { success: true, message: 'Klas verwijderd (pending boekingen opgeruimd)' },
+      {
+        success: true,
+        message: 'Klas verwijderd (pending boekingen opgeruimd)',
+        calCancelled,
+        calFailed,
+      },
       { status: 200, headers: NO_STORE_HEADERS },
     )
   } catch (e: unknown) {
