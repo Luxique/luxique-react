@@ -164,5 +164,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     processed,
     ...results,
+    _version: 'cache-fix-v2',
   }, { headers: NO_STORE })
 }
