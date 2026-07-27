@@ -179,6 +179,66 @@ export async function checkTrajectBeschikbaarheid(
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// FUNCTIE C — checkKlassenOverlap
+// ---------------------------------------------------------------------------
+
+export interface KlassenOverlapResult {
+  /** true = veilig, geen overlap met bestaande klassen */
+  ok: boolean
+  /** Botst met deze klassen (bevat cursus_naam + begane dagen) */
+  conflicts: Array<{ klas_id: string; cursus_naam: string | null; startdatum: string; overlappende_dagen: string[] }>
+}
+
+/**
+ * Check of een blok_dagen-array overlapt met een bestaande klas.
+ * Alleen klassen met status 'open' of 'vol' tellen mee — geannuleerde niet.
+ *
+ * @param blokDagen  — de voorgestelde blok-dagen voor de nieuwe/gewijzigde klas
+ * @param excludeKlasId — bij PATCH: id van de klas die gewijzigd wordt (zichzelf niet meetellen)
+ */
+export async function checkKlassenOverlap(
+  blokDagen: string[],
+  excludeKlasId?: string,
+): Promise<KlassenOverlapResult> {
+  if (!blokDagen || blokDagen.length === 0) {
+    return { ok: true, conflicts: [] }
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('traject_klassen')
+    .select('id, startdatum, blok_dagen, status, traject_cursussen (naam)')
+    .in('status', ['open', 'vol'])
+
+  if (error) {
+    throw new Error('DB-fout bij overlap-check: ' + error.message)
+  }
+
+  const gevraagdSet = new Set(blokDagen)
+  const conflicts: KlassenOverlapResult['conflicts'] = []
+
+  for (const rij of data ?? []) {
+    if (excludeKlasId && rij.id === excludeKlasId) continue
+    const existing: string[] = rij.blok_dagen ?? []
+    const overlap = existing.filter((d: string) => gevraagdSet.has(d))
+    if (overlap.length > 0) {
+      const cursusNaam = (rij as { traject_cursussen?: Array<{ naam: string }> }).traject_cursussen?.[0]?.naam ?? null
+      conflicts.push({
+        klas_id: rij.id,
+        cursus_naam: cursusNaam,
+        startdatum: rij.startdatum,
+        overlappende_dagen: overlap,
+      })
+    }
+  }
+
+  return {
+    ok: conflicts.length === 0,
+    conflicts,
+  }
+}
+
 // ---------------------------------------------------------------------------
 // STAP 3b — CURSUS MANAGEMENT
 // ---------------------------------------------------------------------------

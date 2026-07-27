@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
 import { cancelKlasBlokkades } from '@/lib/klas-cal-sync'
+import { berekenWerkdagenBlok, checkKlassenOverlap } from '@/lib/traject'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -47,6 +48,40 @@ export async function PATCH(
         )
       }
       updates.starttijd = body.starttijd
+    }
+    if (body.startdatum !== undefined) {
+      // Valideer format
+      const parsed = new Date(body.startdatum + 'T00:00:00')
+      if (Number.isNaN(parsed.getTime())) {
+        return NextResponse.json(
+          { error: 'Ongeldige startdatum (gebruik YYYY-MM-DD)' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      // Herbereken blok_dagen o.b.v. nieuwe startdatum + bestaande cursus
+      const { data: existing } = await supabaseAdmin
+        .from('traject_klassen')
+        .select('cursus_id, traject_cursussen (duur_werkdagen)')
+        .eq('id', id)
+        .single()
+      const duur = (existing as { traject_cursussen?: Array<{ duur_werkdagen: number }> })?.traject_cursussen?.[0]?.duur_werkdagen ?? 1
+      const nieuwBlok = berekenWerkdagenBlok(body.startdatum, duur)
+
+      // ── OVERLAP-CHECK (exclusief de klas zelf) ──
+      const overlap = await checkKlassenOverlap(nieuwBlok, id)
+      if (!overlap.ok) {
+        const conflict = overlap.conflicts[0]
+        const cursusNaam = conflict?.cursus_naam ?? 'onbekende cursus'
+        const dagenStr = conflict?.overlappende_dagen.join(', ') ?? ''
+        const msg = `Deze dagen overlappen met een bestaande klas (${cursusNaam}, ${dagenStr}). Kies een andere startdatum.`
+        return NextResponse.json(
+          { error: msg, conflicts: overlap.conflicts },
+          { status: 409, headers: NO_STORE_HEADERS },
+        )
+      }
+
+      updates.startdatum = body.startdatum
+      updates.blok_dagen = nieuwBlok
     }
     if (body.max_deelnemers !== undefined) {
       const max = Number(body.max_deelnemers)

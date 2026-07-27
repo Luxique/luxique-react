@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/admin-auth'
-import { berekenWerkdagenBlok } from '@/lib/traject'
+import { berekenWerkdagenBlok, checkKlassenOverlap } from '@/lib/traject'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -91,6 +91,20 @@ export async function POST(req: NextRequest) {
 
     // Bereken blok_dagen
     const blok_dagen = berekenWerkdagenBlok(startdatum, cursus.duur_werkdagen)
+
+    // ── OVERLAP-CHECK ──
+    // Weiger als één van de dagen al in een andere open/vol-klas zit.
+    const overlap = await checkKlassenOverlap(blok_dagen)
+    if (!overlap.ok) {
+      const conflict = overlap.conflicts[0]
+      const cursusNaam = conflict?.cursus_naam ?? 'onbekende cursus'
+      const dagenStr = conflict?.overlappende_dagen.join(', ') ?? ''
+      const msg = `Deze dagen overlappen met een bestaande klas (${cursusNaam}, ${dagenStr}). Kies een andere startdatum.`
+      return NextResponse.json(
+        { error: msg, conflicts: overlap.conflicts },
+        { status: 409, headers: NO_STORE_HEADERS },
+      )
+    }
 
     // Insert klas
     const { data: klas, error: insertError } = await supabaseAdmin
