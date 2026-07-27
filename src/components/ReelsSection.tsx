@@ -19,14 +19,14 @@ const CDN_VID = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/object/publ
 const CDN_IMG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images'
 
 const contentItems: ContentItem[] = [
-  { type: 'reel', title: 'Certificaat behaald 🎓', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'Your sign to become ✨', views: '12.4K', duration: '0:12', videoUrl: `${CDN_VID}/lash-reel-1.mp4`, posterUrl: `${CDN_IMG}/reel-poster-1.webp?width=900&quality=75&resize=contain` },
   { type: 'image', title: 'Certificaat behaald ✨', views: '8.1K', imageUrl: `${CDN_IMG}/reel-photo-1.webp?width=900&quality=75&resize=contain` },
   { type: 'reel', title: 'Group workshop 👥', views: '8.9K', duration: '0:02', videoUrl: `${CDN_VID}/lash-reel-3.mp4`, posterUrl: `${CDN_IMG}/reel-poster-3.webp?width=900&quality=75&resize=contain` },
   { type: 'reel', title: 'Client intake 📋', views: '15.2K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-4.mp4`, posterUrl: `${CDN_IMG}/reel-poster-4.webp?width=900&quality=75&resize=contain` },
   { type: 'image', title: 'Certified lash artist 💫', views: '6.3K', imageUrl: `${CDN_IMG}/reel-photo-2.webp?width=900&quality=75&resize=contain` },
   { type: 'reel', title: 'Your sign to become a lash artist 🔥', views: '6.7K', duration: '0:08', videoUrl: `${CDN_VID}/lash-reel-2.mp4`, posterUrl: `${CDN_IMG}/reel-poster-2.webp?width=900&quality=75&resize=contain` },
-  { type: 'image', title: 'Our students at work 🎨', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp?width=900&quality=75&resize=contain` },
-  { type: 'reel', title: 'LUXIQUE Academy graduate 🏆', views: '10.1K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-5.mp4`, posterUrl: `${CDN_IMG}/reel-poster-5.webp?width=900&quality=75&resize=contain` },
+  { type: 'image', title: 'Certificaat behaald 🎓', views: '5.7K', imageUrl: `${CDN_IMG}/reel-photo-3.webp?width=900&quality=75&resize=contain` },
+  { type: 'reel', title: 'Our students at work 🎨', views: '10.1K', duration: '0:11', videoUrl: `${CDN_VID}/lash-reel-5.mp4`, posterUrl: `${CDN_IMG}/reel-poster-5.webp?width=900&quality=75&resize=contain` },
   { type: 'image', title: 'Certificaat behaald 🎓', views: '4.9K', imageUrl: `${CDN_IMG}/reel-photo-4.webp?width=900&quality=75&resize=contain` },
   { type: 'reel', title: 'Medusa 💫', views: '1M', duration: '0:22', videoUrl: `${CDN_VID}/viral-russian-volume.mp4`, isViral: true, viralStats: '59.4K likes · 1M weergaven' },
 ]

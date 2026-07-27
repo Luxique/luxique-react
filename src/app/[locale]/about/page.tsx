@@ -138,6 +138,7 @@ export default function AboutPage() {
           .about-page .duo-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
           .about-page .ph2{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:3/4;box-shadow:0 30px 70px -40px rgba(28,24,20,.5)}
           .about-page .ph2:nth-child(2){margin-top:14vh}
+          .about-page .duo .wrap{display:flex;justify-content:center}
           .about-page .ph2 .img{position:absolute;inset:-8% 0;background-size:cover;background-position:center;will-change:transform}
           .about-page .ph2 .cap{position:absolute;left:16px;bottom:16px;z-index:2;color:#fff;font-family:'Cormorant Garamond';font-style:italic;font-size:1.2rem;text-shadow:0 2px 20px rgba(0,0,0,.5)}
 
@@ -239,11 +240,10 @@ export default function AboutPage() {
             </div>
           </section>
 
-          {/* DUO PHOTO */}
+          {/* SINGLE PHOTO (was DUO — studio photo removed per request) */}
           <section className="duo">
-            <div className="wrap duo-grid">
-              <div className="ph2"><div className="img" data-speed="0.08" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/about-duo-studio.webp?width=800&quality=75&resize=contain)' }}></div><span className="cap serif">{t('philosophyCaption1')}</span></div>
-              <div className="ph2"><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/about-duo-academy.webp?width=800&quality=75&resize=contain)' }}></div><span className="cap serif">{t('philosophyCaption2')}</span></div>
+            <div className="wrap" style={{ display:'flex', justifyContent:'center' }}>
+              <div className="ph2" style={{ maxWidth:'560px', width:'100%' }}><div className="img" data-speed="0.14" style={{ backgroundImage:'url(https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/about-duo-academy.webp?width=800&quality=75&resize=contain)' }}></div><span className="cap serif">{t('philosophyCaption2')}</span></div>
             </div>
           </section>
 
