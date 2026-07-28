@@ -13,25 +13,80 @@ const CURSUS = {
   workshop:      '0fa8540d-1ccd-4c94-9541-55bf041226d0', // Beginner workshop (1u, €35)
 } as const
 
+interface KlasInfo {
+  id: string
+  cursus_id: string
+  cursus_naam: string | null
+  prijs_cents: number | null
+  duur_werkdagen: number | null
+  startdatum: string
+  starttijd: string
+  blok_dagen: string[]
+  max_deelnemers: number
+  plekken_over: number
+  vol: boolean
+  status: 'open' | 'vol'
+  weergave_titel: string | null
+  weergave_beschrijving: string | null
+}
+
+const NL_DAYS = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za']
+const NL_MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+
+function formatDateRange(klas: KlasInfo): string {
+  const days = klas.blok_dagen?.length ? klas.blok_dagen : [klas.startdatum]
+  if (days.length === 1) {
+    const d = new Date(days[0] + 'T00:00:00')
+    return `${NL_DAYS[d.getDay()]} ${d.getDate()} ${NL_MONTHS[d.getMonth()]}`
+  }
+  const first = new Date(days[0] + 'T00:00:00')
+  const last = new Date(days[days.length - 1] + 'T00:00:00')
+  if (first.getMonth() === last.getMonth()) {
+    return `${NL_DAYS[first.getDay()]} ${first.getDate()} t/m ${NL_DAYS[last.getDay()]} ${last.getDate()} ${NL_MONTHS[last.getMonth()]}`
+  }
+  return `${NL_DAYS[first.getDay()]} ${first.getDate()} ${NL_MONTHS[first.getMonth()]} t/m ${NL_DAYS[last.getDay()]} ${last.getDate()} ${NL_MONTHS[last.getMonth()]}`
+}
+
 export default function PersoonlijkTrajectContent() {
   const t = useTranslations('PersoonlijkTraject')
   const locale = useLocale()
   const rootRef = useRef<HTMLDivElement>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
   const [openDetail, setOpenDetail] = useState<string | null>(null)
+  const [klassen, setKlassen] = useState<KlasInfo[]>([])
 
-  const boekUrl = (cursusId: string) => `/${locale}/traject-boeken?cursus=${cursusId}`
+  const openKlasFor = (cursusId: string) => klassen.find(k => k.cursus_id === cursusId && !k.vol && k.plekken_over > 0)
+  const customKlassen = klassen.filter(k => k.weergave_titel)
 
+  const beginnerKlas = openKlasFor(CURSUS.beginner)
+  const wispyKlas = openKlasFor(CURSUS.wispy)
+  const medusaKlas = openKlasFor(CURSUS.medusa)
+  const techKlas = openKlasFor(CURSUS.techToArtist)
+  const workshopKlas = openKlasFor(CURSUS.workshop)
+
+  const boekUrl = (cursusId: string, klasId?: string) =>
+    klasId
+      ? `/${locale}/traject-boeken?klas=${klasId}`
+      : `/${locale}/traject-boeken?cursus=${cursusId}`
+
+  // Fetch klassen on mount
+  useEffect(() => {
+    fetch('/api/traject/klassen')
+      .then(r => r.json())
+      .then(data => setKlassen(data.klassen || []))
+      .catch(() => {})
+  }, [])
+
+  // Reveal on scroll + loenique handler
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
-    // reveal on scroll — low threshold + bottom rootMargin so content appears just before fully in view
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
     }), { threshold: 0.01, rootMargin: '0px 0px -8% 0px' })
     root.querySelectorAll('.reveal').forEach(el => io.observe(el))
 
-    // Loenique chat — event delegation (handles modal-rendered buttons too)
     const loeniqueHandler = (e: Event) => {
       const target = (e.target as HTMLElement).closest('[data-loenique]')
       if (target) window.dispatchEvent(new Event('open-loenique-chat'))
@@ -42,19 +97,24 @@ export default function PersoonlijkTrajectContent() {
       io.disconnect()
       root.removeEventListener('click', loeniqueHandler)
     }
-  }, [])
+  }, [klassen])
 
-  // Modal: Escape to close + body scroll lock
+  // Scroll detail into view when opened
   useEffect(() => {
-    if (!openDetail) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenDetail(null) }
-    document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = ''
-      window.removeEventListener('keydown', onKey)
+    if (openDetail && detailRef.current) {
+      requestAnimationFrame(() => {
+        detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
     }
   }, [openDetail])
+
+  const handleCloseDetail = () => {
+    const card = document.querySelector(`[data-cursus="${openDetail}"]`)
+    setOpenDetail(null)
+    if (card) {
+      requestAnimationFrame(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    }
+  }
 
   return (
     <div ref={rootRef}>
@@ -79,7 +139,6 @@ export default function PersoonlijkTrajectContent() {
 
         .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
         .reveal.in{opacity:1;transform:none}
-        /* Reserve space for reveal sections to prevent white void during scroll */
         .tracks-grid{min-height:200px}
         .journey{min-height:54px}
         @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
@@ -214,23 +273,38 @@ export default function PersoonlijkTrajectContent() {
         .incl li{position:relative;padding-left:22px;font-size:.82rem;color:var(--ink-soft);line-height:1.4}
         .incl li::before{content:"";position:absolute;left:0;top:6px;width:13px;height:13px;border-radius:50%;
           background:rgba(176,141,79,.16);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B08D4F' stroke-width='3'%3E%3Cpath d='M5 12l4 4L19 7'/%3E%3C/svg%3E");background-size:8px;background-repeat:no-repeat;background-position:center}
+
+        /* ===== KLAS-INFO (on cards) ===== */
+        .klas-info{margin-bottom:18px}
+        .klas-open{display:flex;flex-direction:column;gap:12px}
+        .klas-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .klas-datum{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--gold);font-weight:500}
+        .track.feat .klas-datum{color:var(--gold-bright)}
+        .klas-plekken{font-size:.72rem;letter-spacing:.04em;background:rgba(176,141,79,.14);color:var(--gold);padding:4px 10px;border-radius:100px;font-weight:500;white-space:nowrap}
+        .track.feat .klas-plekken{background:rgba(216,185,122,.16);color:var(--gold-bright)}
+        .klas-geen{display:flex;flex-direction:column;gap:10px}
+        .klas-geen p{font-size:.86rem;color:var(--ink-soft);font-style:italic}
+        .track.feat .klas-geen p{color:var(--on-dark-soft)}
+        .klas-geen a{color:var(--gold);text-decoration:underline}
+        .track.feat .klas-geen a{color:var(--gold-bright)}
+        .btn-stack{display:flex;flex-direction:column;gap:8px}
+
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:13px 18px;border-radius:100px;
           background:var(--ink);color:var(--panel);font-size:.86rem;font-weight:500;letter-spacing:.02em;text-decoration:none;
           border:0;cursor:pointer;transition:background .3s,transform .3s;position:relative;overflow:hidden}
         .btn:hover{transform:translateY(-2px)}
+        .btn.boek{background:var(--gold);color:#fff}
+        .track.feat .btn.boek{background:var(--gold-bright);color:var(--dark2)}
         .track.feat .btn{background:var(--gold);color:var(--dark2)}
         .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
         .track.feat .btn.ghost{color:var(--on-dark);border-color:rgba(246,241,231,.3)}
         .start-btns .btn{width:auto}
         .start-btns .btn.ghost{color:var(--on-dark);border-color:rgba(246,241,231,.3)}
 
-        /* ===== DAGPROGRAMMA MODAL ===== */
-        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px}
-        .modal-panel{position:relative;background:var(--dark2);color:var(--on-dark);border-radius:20px;width:100%;max-width:600px;margin:auto;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(216,185,122,.3);box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
-        .modal-x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(246,241,231,.1);border:1px solid rgba(246,241,231,.2);color:var(--on-dark);font-size:22px;line-height:1;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;transition:background .2s;font-family:'Jost',sans-serif}
-        .modal-x:hover{background:rgba(246,241,231,.22)}
-        .modal-scroll{overflow-y:auto;max-height:85vh;-webkit-overflow-scrolling:touch}
-        .detail{background:var(--dark2);color:var(--on-dark);overflow:hidden}
+        /* ===== INLINE DETAIL ===== */
+        .detail{background:var(--dark2);color:var(--on-dark);overflow:hidden;max-height:0;transition:max-height .6s cubic-bezier(.16,1,.3,1)}
+        .tracks-grid > .detail{grid-column:1 / -1 !important;width:100%;border-radius:20px;margin:4px 0 8px}
+        .detail.open{max-height:7000px}
         .detail-inner{padding:36px 0 40px;position:relative;overflow:hidden;
           background:radial-gradient(110% 70% at 50% 0%, rgba(176,141,79,.12), transparent 55%)}
         .detail .eyebrow{color:var(--gold-bright)}
@@ -295,6 +369,26 @@ export default function PersoonlijkTrajectContent() {
         .combo-r{position:relative;display:flex;flex-direction:column;gap:10px;flex-shrink:0}
         .combo-r .btn{width:auto;padding:14px 28px;white-space:nowrap}
 
+        /* ===== CUSTOM TRAJECTEN ===== */
+        .custom-sec{padding:60px 0 30px}
+        .custom-head{text-align:center;margin-bottom:36px}
+        .custom-head h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(1.9rem,3.6vw,2.8rem);line-height:1.1;margin:10px 0 14px}
+        .custom-head h2 em{color:var(--gold)}
+        .custom-head p{max-width:60ch;margin:0 auto;color:var(--ink-soft)}
+        .custom-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:860px;margin:0 auto}
+        .custom-grid.single{grid-template-columns:1fr;max-width:460px}
+        .custom-card{position:relative;background:linear-gradient(180deg,#221d16,var(--dark2));border:1px solid rgba(216,185,122,.3);border-radius:20px;padding:32px 28px;color:var(--on-dark);overflow:hidden}
+        .custom-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(50% 30% at 50% 0%,rgba(216,185,122,.12),transparent 70%)}
+        .cc-badge{display:inline-block;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-bright);background:rgba(216,185,122,.12);padding:5px 12px;border-radius:100px;margin-bottom:16px;font-weight:600}
+        .cc-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;margin-bottom:8px;color:var(--on-dark)}
+        .cc-desc{color:var(--on-dark-soft);font-size:.9rem;line-height:1.5;margin-bottom:20px}
+        .cc-meta{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+        .cc-row{display:flex;justify-content:space-between;align-items:center;font-size:.86rem}
+        .cc-row .lab{color:var(--on-dark-soft)}
+        .cc-row .val{color:var(--on-dark);font-weight:500}
+        .cc-price{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--gold-bright)}
+        .custom-card .btn{margin-top:4px}
+
         /* ===== DISCLAIMER ===== */
         .disclaimer{padding:70px 0 20px}
         .disc-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:40px 44px;max-width:900px;margin:0 auto}
@@ -331,6 +425,7 @@ export default function PersoonlijkTrajectContent() {
           .combo-l{max-width:100%}
           .combo-r{width:100%}
           .combo-r .btn{width:100%}
+          .custom-grid{grid-template-columns:1fr}
         }
         @media(max-width:620px){
           .tracks-grid.four{max-width:420px}
@@ -363,7 +458,7 @@ export default function PersoonlijkTrajectContent() {
                 <div className="m"><span className="k">{t('workshopMetaLevelLabel')}</span><span className="v serif">{t('workshopMetaLevelValue')}</span></div>
               </div>
               <div className="start-btns">
-                <a href={boekUrl(CURSUS.workshop)} className="btn">{t('workshopBookCta')}</a>
+                <a href={boekUrl(CURSUS.workshop, workshopKlas?.id)} className="btn">{t('workshopBookCta')}</a>
                 <button className="btn ghost" data-loenique>{t('workshopAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
               </div>
             </div>
@@ -421,7 +516,7 @@ export default function PersoonlijkTrajectContent() {
 
           <div className="tracks-grid four">
             {/* BEGINNER LASH ARTIST */}
-            <div className="track">
+            <div className="track" data-cursus="beginner">
               <span className="lvl-tag l1"><span className="dot"><i></i><i></i><i></i></span>{t('card1Level')}</span>
               <div className="t-dur">{t('card1Meta')}</div>
               <div className="t-name serif">{t('card1Name')}</div>
@@ -445,11 +540,119 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card1Feature4')}</li>
                 <li>{t('card1Feature5')}</li>
               </ul>
-              <button className="btn ghost" onClick={() => setOpenDetail('beginner')}>{t('cardViewProgram')}</button>
+              {beginnerKlas ? (
+                <div className="klas-info klas-open">
+                  <div className="klas-row">
+                    <span className="klas-datum">{formatDateRange(beginnerKlas)}</span>
+                    <span className="klas-plekken">Nog {beginnerKlas.plekken_over} {beginnerKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                  </div>
+                  <div className="btn-stack">
+                    <a className="btn boek" href={boekUrl(CURSUS.beginner, beginnerKlas.id)}>{t('bookCta')}</a>
+                    <button className="btn ghost" onClick={() => setOpenDetail('beginner')}>{t('cardViewProgram')}</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="klas-info klas-geen">
+                  <p>Nog geen datum gepland — <a href="mailto:info@luxique.nl">neem contact op</a></p>
+                  <button className="btn ghost" onClick={() => setOpenDetail('beginner')}>{t('cardViewProgram')}</button>
+                </div>
+              )}
             </div>
+            {openDetail === 'beginner' && (
+              <div className="detail open" id="d-beginner" style={{gridColumn:'1 / -1'}} ref={detailRef}>
+                <div className="detail-inner">
+                  <div className="wrap">
+                    <span className="eyebrow">{t('dp1Meta')}</span>
+                    <h3 className="serif">{t('dp1Name')}</h3>
+                    <p className="dlead">{t('dp1Intro')}</p>
+                    <div className="days">
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp1Day1Label')}</span><span className="day-t serif">{t('dp1Day1Title')}</span></div>
+                        <div className="day-d">{t('dp1Day1Desc')}</div>
+                        <div className="day-cols one"><div className="col"><ul>
+                          <li>{t('dp1Day1Item1')}</li>
+                          <li>{t('dp1Day1Item2')}</li>
+                          <li>{t('dp1Day1Item3')}</li>
+                          <li>{t('dp1Day1Item4')}</li>
+                          <li>{t('dp1Day1Item5')}</li>
+                          <li>{t('dp1Day1Item6')}</li>
+                          <li>{t('dp1Day1Item7')}</li>
+                          <li>{t('dp1Day1Item8')}</li>
+                        </ul></div></div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp1Day2Label')}</span><span className="day-t serif">{t('dp1Day2Title')}</span></div>
+                        <div className="day-d">{t('dp1Day2Desc')}</div>
+                        <div className="day-cols one"><div className="col"><ul>
+                          <li>{t('dp1Day2Item1')}</li>
+                          <li>{t('dp1Day2Item2')}</li>
+                          <li>{t('dp1Day2Item3')}</li>
+                          <li>{t('dp1Day2Item4')}</li>
+                          <li>{t('dp1Day2Item5')}</li>
+                        </ul></div></div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp1Day3Label')}</span><span className="day-t serif">{t('dp1Day3Title')}</span></div>
+                        <div className="day-d">{t('dp1Day3Desc')}</div>
+                        <div className="day-cols one"><div className="col"><ul>
+                          <li>{t('dp1Day3Item1')}</li>
+                          <li>{t('dp1Day3Item2')}</li>
+                          <li>{t('dp1Day3Item3')}</li>
+                          <li>{t('dp1Day3Item4')}</li>
+                          <li>{t('dp1Day3Item5')}</li>
+                          <li>{t('dp1Day3Item6')}</li>
+                        </ul></div></div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp1Day4Label')}</span><span className="day-t serif">{t('dp1Day4Title')}</span></div>
+                        <div className="day-d">{t('dp1Day4Desc')}</div>
+                        <div className="day-cols one"><div className="col"><ul>
+                          <li>{t('dp1Day4Item1')}</li>
+                          <li>{t('dp1Day4Item2')}</li>
+                          <li>{t('dp1Day4Item3')}</li>
+                          <li>{t('dp1Day4Item4')}</li>
+                        </ul></div></div>
+                      </div>
+                    </div>
+                    <div className="model-note">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                      <div>
+                        <div className="rt">Let op — model vereist</div>
+                        <p>Je regelt zelf een model voor de praktijkdagen. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                      </div>
+                    </div>
+                    <div className="incl-block">
+                      <div>
+                        <h4 className="serif">{t('dp1InclTitle')}</h4>
+                        <ul className="incl-grid">
+                          <li>{t('dp1Incl1')}</li>
+                          <li>{t('dp1Incl2')}</li>
+                          <li>{t('dp1Incl3')}</li>
+                          <li>{t('dp1Incl4')}</li>
+                          <li>{t('dp1Incl5')}</li>
+                          <li>{t('dp1Incl6')}</li>
+                        </ul>
+                      </div>
+                      <div className="invest">
+                        <div className="lab">{t('dp1InvestTitle')}</div>
+                        <div className="amt serif">{t('dp1InvestPrice')}</div>
+                        <div className="vat">{t('dp1InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
+                      </div>
+                    </div>
+                    <div className="btn-row">
+                      <a href={boekUrl(CURSUS.beginner, beginnerKlas?.id)} className="btn">{t('bookCta')}</a>
+                      <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
+                    </div>
+                    <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
+                    <button className="close-d" onClick={handleCloseDetail}>{t('dpClose')}</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* WISPY MASTERCLASS */}
-            <div className="track">
+            <div className="track" data-cursus="wispy">
               <span className="lvl-tag l2"><span className="dot"><i></i><i></i><i></i></span>{t('card2Level')}</span>
               <div className="t-dur">{t('card2Meta')}</div>
               <div className="t-name serif">{t('card2Name')}</div>
@@ -473,11 +676,114 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card2Feature4')}</li>
                 <li>{t('card2Feature5')}</li>
               </ul>
-              <button className="btn ghost" onClick={() => setOpenDetail('wispy')}>{t('cardViewProgram')}</button>
+              {wispyKlas ? (
+                <div className="klas-info klas-open">
+                  <div className="klas-row">
+                    <span className="klas-datum">{formatDateRange(wispyKlas)}</span>
+                    <span className="klas-plekken">Nog {wispyKlas.plekken_over} {wispyKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                  </div>
+                  <div className="btn-stack">
+                    <a className="btn boek" href={boekUrl(CURSUS.wispy, wispyKlas.id)}>{t('bookCta')}</a>
+                    <button className="btn ghost" onClick={() => setOpenDetail('wispy')}>{t('cardViewProgram')}</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="klas-info klas-geen">
+                  <p>Nog geen datum gepland — <a href="mailto:info@luxique.nl">neem contact op</a></p>
+                  <button className="btn ghost" onClick={() => setOpenDetail('wispy')}>{t('cardViewProgram')}</button>
+                </div>
+              )}
             </div>
+            {openDetail === 'wispy' && (
+              <div className="detail open" id="d-wispy" style={{gridColumn:'1 / -1'}} ref={detailRef}>
+                <div className="detail-inner">
+                  <div className="wrap">
+                    <span className="eyebrow">{t('dp2Meta')}</span>
+                    <h3 className="serif">{t('dp2Name')}</h3>
+                    <p className="dlead">{t('dp2Intro')}</p>
+                    <div className="req">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#D8B97A" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+                      <div>
+                        <div className="rt">{t('dp2PrereqTitle')}</div>
+                        <p>{t('dp2PrereqText')}</p>
+                      </div>
+                    </div>
+                    <div className="days">
+                      <div className="day">
+                        <div className="day-h"><span className="day-t serif">{t('dp2LearnTitle')}</span></div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp2Group1Title')}</div><ul>
+                            <li>{t('dp2Group1Item1')}</li>
+                            <li>{t('dp2Group1Item2')}</li>
+                            <li>{t('dp2Group1Item3')}</li>
+                            <li>{t('dp2Group1Item4')}</li>
+                            <li>{t('dp2Group1Item5')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp2Group2Title')}</div><ul>
+                            <li>{t('dp2Group2Item1')}</li>
+                            <li>{t('dp2Group2Item2')}</li>
+                            <li>{t('dp2Group2Item3')}</li>
+                            <li>{t('dp2Group2Item4')}</li>
+                            <li>{t('dp2Group2Item5')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-t serif">{t('dp2Group3Title')}</span></div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp2Group1Item1')}</div><ul>
+                            <li>{t('dp2Group3Item1')}</li>
+                            <li>{t('dp2Group3Item2')}</li>
+                            <li>{t('dp2Group3Item3')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp2Group3Item4')}</div><ul>
+                            <li>{t('dp2Group3Item5')}</li>
+                            <li>{t('dp2Group3Item6')}</li>
+                            <li>{t('dp2Group3Item7')}</li>
+                            <li>{t('dp2Group3Item8')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="model-note">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                      <div>
+                        <div className="rt">Let op — model vereist</div>
+                        <p>Je regelt zelf een model voor de praktijk. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                      </div>
+                    </div>
+                    <p className="not-incl">{t('dp2Note')}</p>
+                    <div className="incl-block">
+                      <div>
+                        <h4 className="serif">{t('dp2InclTitle')}</h4>
+                        <ul className="incl-grid">
+                          <li>{t('dp2Incl1')}</li>
+                          <li>{t('dp2Incl2')}</li>
+                          <li>{t('dp2Incl3')}</li>
+                          <li>{t('dp2Incl4')}</li>
+                          <li>{t('dp2Incl5')}</li>
+                        </ul>
+                      </div>
+                      <div className="invest">
+                        <div className="lab">{t('dp2InvestTitle')}</div>
+                        <div className="amt serif">{t('dp2InvestPrice')}</div>
+                        <div className="vat">{t('dp2InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp2Outro')}</div>
+                      </div>
+                    </div>
+                    <div className="btn-row">
+                      <a href={boekUrl(CURSUS.wispy, wispyKlas?.id)} className="btn">{t('bookCta')}</a>
+                      <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
+                    </div>
+                    <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
+                    <button className="close-d" onClick={handleCloseDetail}>{t('dpClose')}</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* MEDUSA MASTERCLASS */}
-            <div className="track">
+            <div className="track" data-cursus="medusa">
               <span className="lvl-tag l2"><span className="dot"><i></i><i></i><i></i></span>{t('card3Level')}</span>
               <div className="t-dur">{t('card3Meta')}</div>
               <div className="t-name serif">{t('card3Name')}</div>
@@ -501,11 +807,132 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card3Feature4')}</li>
                 <li>{t('card3Feature5')}</li>
               </ul>
-              <button className="btn ghost" onClick={() => setOpenDetail('medusa')}>{t('cardViewProgram')}</button>
+              {medusaKlas ? (
+                <div className="klas-info klas-open">
+                  <div className="klas-row">
+                    <span className="klas-datum">{formatDateRange(medusaKlas)}</span>
+                    <span className="klas-plekken">Nog {medusaKlas.plekken_over} {medusaKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                  </div>
+                  <div className="btn-stack">
+                    <a className="btn boek" href={boekUrl(CURSUS.medusa, medusaKlas.id)}>{t('bookCta')}</a>
+                    <button className="btn ghost" onClick={() => setOpenDetail('medusa')}>{t('cardViewProgram')}</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="klas-info klas-geen">
+                  <p>Nog geen datum gepland — <a href="mailto:info@luxique.nl">neem contact op</a></p>
+                  <button className="btn ghost" onClick={() => setOpenDetail('medusa')}>{t('cardViewProgram')}</button>
+                </div>
+              )}
             </div>
+            {openDetail === 'medusa' && (
+              <div className="detail open" id="d-medusa" style={{gridColumn:'1 / -1'}} ref={detailRef}>
+                <div className="detail-inner">
+                  <div className="wrap">
+                    <span className="eyebrow">{t('dp3Meta')}</span>
+                    <h3 className="serif">{t('dp3Name')}</h3>
+                    <p className="dlead">{t('dp3Intro')}</p>
+                    <div className="req">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#D8B97A" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+                      <div>
+                        <div className="rt">{t('dp3PrereqTitle')}</div>
+                        <p>{t('dp3PrereqText')}</p>
+                      </div>
+                    </div>
+                    <div className="days">
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp3Day1Label')}</span><span className="day-t serif">{t('dp3Day1Title')}</span></div>
+                        <div className="day-d">{t('dp3Day1Desc')}</div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp3Day1Group1Title')}</div><ul>
+                            <li>{t('dp3Day1Group1Item1')}</li>
+                            <li>{t('dp3Day1Group1Item2')}</li>
+                            <li>{t('dp3Day1Group1Item3')}</li>
+                            <li>{t('dp3Day1Group1Item4')}</li>
+                            <li>{t('dp3Day1Group1Item5')}</li>
+                            <li>{t('dp3Day1Group1Item6')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp3Day1Group2Title')}</div><ul>
+                            <li>{t('dp3Day1Group2Item1')}</li>
+                            <li>{t('dp3Day1Group2Item2')}</li>
+                            <li>{t('dp3Day1Group2Item3')}</li>
+                            <li>{t('dp3Day1Group2Item4')}</li>
+                            <li>{t('dp3Day1Group2Item5')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp3Day1bLabel')}</span><span className="day-t serif">{t('dp3Day1bTitle')}</span></div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp3Day1bGroup1Item1')}</div><ul>
+                            <li>{t('dp3Day1bGroup1Item2')}</li>
+                            <li>{t('dp3Day1bGroup1Item3')}</li>
+                            <li>{t('dp3Day1bGroup1Item4')}</li>
+                            <li>{t('dp3Day1bGroup1Item5')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp3Day1bGroup2Title')}</div><ul>
+                            <li>{t('dp3Day1bGroup2Item1')}</li>
+                            <li>{t('dp3Day1bGroup2Item2')}</li>
+                            <li>{t('dp3Day1bGroup2Item3')}</li>
+                            <li>{t('dp3Day1bGroup2Item4')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp3Day2Label')}</span><span className="day-t serif">{t('dp3Day2Title')}</span></div>
+                        <div className="day-d">{t('dp3Day2Desc')}</div>
+                        <div className="day-cols one"><div className="col"><ul>
+                          <li>{t('dp3Day2Item1')}</li>
+                          <li>{t('dp3Day2Item2')}</li>
+                          <li>{t('dp3Day2Item3')}</li>
+                          <li>{t('dp3Day2Item4')}</li>
+                          <li>{t('dp3Day2Item5')}</li>
+                          <li>{t('dp3Day2Item6')}</li>
+                          <li>{t('dp3Day2Item7')}</li>
+                        </ul></div></div>
+                      </div>
+                    </div>
+                    <div className="model-note">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                      <div>
+                        <div className="rt">Let op — model vereist</div>
+                        <p>Je regelt zelf een model voor de modeldag (dag 2). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                      </div>
+                    </div>
+                    <div className="incl-block">
+                      <div>
+                        <h4 className="serif">{t('dp3InclTitle')}</h4>
+                        <ul className="incl-grid">
+                          <li>{t('dp3Incl1')}</li>
+                          <li>{t('dp3Incl2')}</li>
+                          <li>{t('dp3Incl3')}</li>
+                          <li>{t('dp3Incl4')}</li>
+                          <li>{t('dp3Incl5')}</li>
+                          <li>{t('dp3Incl6')}</li>
+                          <li>{t('dp3Incl7')}</li>
+                          <li>{t('dp3Incl8')}</li>
+                        </ul>
+                      </div>
+                      <div className="invest">
+                        <div className="lab">{t('dp3InvestTitle')}</div>
+                        <div className="amt serif">{t('dp3InvestPrice')}</div>
+                        <div className="vat">{t('dp3InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp3Outro')}</div>
+                      </div>
+                    </div>
+                    <div className="btn-row">
+                      <a href={boekUrl(CURSUS.medusa, medusaKlas?.id)} className="btn">{t('bookCta')}</a>
+                      <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
+                    </div>
+                    <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
+                    <button className="close-d" onClick={handleCloseDetail}>{t('dpClose')}</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* LASH TECH TO ARTIST (featured) */}
-            <div className="track feat">
+            <div className="track feat" data-cursus="tech">
               <span className="badge">{t('card4Badge')}</span>
               <span className="lvl-tag l3"><span className="dot"><i></i><i></i><i></i></span>{t('card4Level')}</span>
               <div className="t-dur">{t('card4Meta')}</div>
@@ -530,8 +957,134 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card4Feature4')}</li>
                 <li>{t('card4Feature5')}</li>
               </ul>
-              <button className="btn ghost" onClick={() => setOpenDetail('tech')}>{t('cardViewProgram')}</button>
+              {techKlas ? (
+                <div className="klas-info klas-open">
+                  <div className="klas-row">
+                    <span className="klas-datum">{formatDateRange(techKlas)}</span>
+                    <span className="klas-plekken">Nog {techKlas.plekken_over} {techKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                  </div>
+                  <div className="btn-stack">
+                    <a className="btn boek" href={boekUrl(CURSUS.techToArtist, techKlas.id)}>{t('bookCta')}</a>
+                    <button className="btn ghost" onClick={() => setOpenDetail('tech')}>{t('cardViewProgram')}</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="klas-info klas-geen">
+                  <p>Nog geen datum gepland — <a href="mailto:info@luxique.nl">neem contact op</a></p>
+                  <button className="btn ghost" onClick={() => setOpenDetail('tech')}>{t('cardViewProgram')}</button>
+                </div>
+              )}
             </div>
+            {openDetail === 'tech' && (
+              <div className="detail open" id="d-tech" style={{gridColumn:'1 / -1'}} ref={detailRef}>
+                <div className="detail-inner">
+                  <div className="wrap">
+                    <span className="eyebrow">{t('dp4Meta')}</span>
+                    <h3 className="serif">{t('dp4Name')}</h3>
+                    <p className="dlead">{t('dp4Intro')}</p>
+                    <div className="req">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#D8B97A" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+                      <div>
+                        <div className="rt">{t('dp4PrereqTitle')}</div>
+                        <p>{t('dp4PrereqText')}</p>
+                      </div>
+                    </div>
+                    <div className="days">
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp4Day1Label')}</span><span className="day-t serif">{t('dp4Day1Title')}</span></div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp4Day1Group1Title')}</div><ul>
+                            <li>{t('dp4Day1Group1Item1')}</li>
+                            <li>{t('dp4Day1Group1Item2')}</li>
+                            <li>{t('dp4Day1Group1Item3')}</li>
+                            <li>{t('dp4Day1Group1Item4')}</li>
+                            <li>{t('dp4Day1Group1Item5')}</li>
+                            <li>{t('dp4Day1Group1Item6')}</li>
+                            <li>{t('dp4Day1Group1Item7')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp4Day1Group2Title')}</div><ul>
+                            <li>{t('dp4Day1Group2Item1')}</li>
+                            <li>{t('dp4Day1Group2Item2')}</li>
+                            <li>{t('dp4Day1Group2Item3')}</li>
+                            <li>{t('dp4Day1Group2Item4')}</li>
+                            <li>{t('dp4Day1Group2Item5')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp4Day2Label')}</span><span className="day-t serif">{t('dp4Day2Title')}</span></div>
+                        <div className="day-d">{t('dp4Day2Desc')}</div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp4Day2Group1Title')}</div><ul>
+                            <li>{t('dp4Day2Group1Item1')}</li>
+                            <li>{t('dp4Day2Group1Item2')}</li>
+                            <li>{t('dp4Day2Group1Item3')}</li>
+                            <li>{t('dp4Day2Group1Item4')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp4Day2Group2Title')}</div><ul>
+                            <li>{t('dp4Day2Group2Item1')}</li>
+                            <li>{t('dp4Day2Group2Item2')}</li>
+                            <li>{t('dp4Day2Group2Item3')}</li>
+                            <li>{t('dp4Day2Group2Item4')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                      <div className="day">
+                        <div className="day-h"><span className="day-num">{t('dp4Day3Label')}</span><span className="day-t serif">{t('dp4Day3Title')}</span></div>
+                        <div className="day-d">{t('dp4Day3Desc')}</div>
+                        <div className="day-cols">
+                          <div className="col"><div className="col-h">{t('dp4Day3Group1Title')}</div><ul>
+                            <li>{t('dp4Day3Group1Item1')}</li>
+                            <li>{t('dp4Day3Group1Item2')}</li>
+                            <li>{t('dp4Day3Group1Item3')}</li>
+                            <li>{t('dp4Day3Group1Item4')}</li>
+                          </ul></div>
+                          <div className="col"><div className="col-h">{t('dp4Day3Group2Title')}</div><ul>
+                            <li>{t('dp4Day3Group2Item1')}</li>
+                            <li>{t('dp4Day3Group2Item2')}</li>
+                            <li>{t('dp4Day3Group2Item3')}</li>
+                            <li>{t('dp4Day3Group2Item4')}</li>
+                          </ul></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="model-note">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                      <div>
+                        <div className="rt">Let op — model vereist</div>
+                        <p>Je regelt zelf een model voor beide modeldagen (dag 1 en dag 3). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                      </div>
+                    </div>
+                    <div className="incl-block">
+                      <div>
+                        <h4 className="serif">{t('dp4InclTitle')}</h4>
+                        <ul className="incl-grid">
+                          <li>{t('dp4Incl1')}</li>
+                          <li>{t('dp4Incl2')}</li>
+                          <li>{t('dp4Incl3')}</li>
+                          <li>{t('dp4Incl4')}</li>
+                          <li>{t('dp4Incl5')}</li>
+                          <li>{t('dp4Incl6')}</li>
+                          <li>{t('dp4Incl7')}</li>
+                        </ul>
+                      </div>
+                      <div className="invest">
+                        <div className="lab">{t('dp4InvestTitle')}</div>
+                        <div className="amt serif">{t('dp4InvestPrice')}</div>
+                        <div className="vat">{t('dp4InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp4Outro')}</div>
+                      </div>
+                    </div>
+                    <div className="btn-row">
+                      <a href={boekUrl(CURSUS.techToArtist, techKlas?.id)} className="btn">{t('bookCta')}</a>
+                      <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
+                    </div>
+                    <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
+                    <button className="close-d" onClick={handleCloseDetail}>{t('dpClose')}</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -553,416 +1106,43 @@ export default function PersoonlijkTrajectContent() {
         </div>
       </section>
 
-      {/* ===== DAGPROGRAMMA MODAL ===== */}
-      {openDetail && (
-        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setOpenDetail(null) }}>
-          <div className="modal-panel" role="dialog" aria-modal="true">
-            <button className="modal-x" aria-label="Sluiten" onClick={() => setOpenDetail(null)}>×</button>
-            <div className="modal-scroll">
-              {openDetail === 'beginner' && (
-                <div className="detail" id="d-beginner">
-        <div className="detail-inner">
+      {/* ===== CUSTOM TRAJECTEN ===== */}
+      {customKlassen.length > 0 && (
+        <section className="custom-sec" id="custom-trajecten">
           <div className="wrap">
-            <span className="eyebrow">{t('dp1Meta')}</span>
-            <h3 className="serif">{t('dp1Name')}</h3>
-            <p className="dlead">{t('dp1Intro')}</p>
-            <div className="days">
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp1Day1Label')}</span><span className="day-t serif">{t('dp1Day1Title')}</span></div>
-                <div className="day-d">{t('dp1Day1Desc')}</div>
-                <div className="day-cols one"><div className="col"><ul>
-                  <li>{t('dp1Day1Item1')}</li>
-                  <li>{t('dp1Day1Item2')}</li>
-                  <li>{t('dp1Day1Item3')}</li>
-                  <li>{t('dp1Day1Item4')}</li>
-                  <li>{t('dp1Day1Item5')}</li>
-                  <li>{t('dp1Day1Item6')}</li>
-                  <li>{t('dp1Day1Item7')}</li>
-                  <li>{t('dp1Day1Item8')}</li>
-                </ul></div></div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp1Day2Label')}</span><span className="day-t serif">{t('dp1Day2Title')}</span></div>
-                <div className="day-d">{t('dp1Day2Desc')}</div>
-                <div className="day-cols one"><div className="col"><ul>
-                  <li>{t('dp1Day2Item1')}</li>
-                  <li>{t('dp1Day2Item2')}</li>
-                  <li>{t('dp1Day2Item3')}</li>
-                  <li>{t('dp1Day2Item4')}</li>
-                  <li>{t('dp1Day2Item5')}</li>
-                </ul></div></div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp1Day3Label')}</span><span className="day-t serif">{t('dp1Day3Title')}</span></div>
-                <div className="day-d">{t('dp1Day3Desc')}</div>
-                <div className="day-cols one"><div className="col"><ul>
-                  <li>{t('dp1Day3Item1')}</li>
-                  <li>{t('dp1Day3Item2')}</li>
-                  <li>{t('dp1Day3Item3')}</li>
-                  <li>{t('dp1Day3Item4')}</li>
-                  <li>{t('dp1Day3Item5')}</li>
-                  <li>{t('dp1Day3Item6')}</li>
-                </ul></div></div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp1Day4Label')}</span><span className="day-t serif">{t('dp1Day4Title')}</span></div>
-                <div className="day-d">{t('dp1Day4Desc')}</div>
-                <div className="day-cols one"><div className="col"><ul>
-                  <li>{t('dp1Day4Item1')}</li>
-                  <li>{t('dp1Day4Item2')}</li>
-                  <li>{t('dp1Day4Item3')}</li>
-                  <li>{t('dp1Day4Item4')}</li>
-                </ul></div></div>
-              </div>
+            <div className="custom-head reveal">
+              <span className="eyebrow">Op maat samengesteld</span>
+              <h2 className="serif">Persoonlijke trajecten <em>op maat</em></h2>
+              <p>Speciaal samengesteld in overleg met Chiva — unieke trajecten die niet in het standaard aanbod passen.</p>
             </div>
-            {/* Model disclaimer */}
-            <div className="model-note">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-              <div>
-                <div className="rt">Let op — model vereist</div>
-                <p>Je regelt zelf een model voor de praktijkdagen. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
-              </div>
-            </div>
-            <div className="incl-block">
-              <div>
-                <h4 className="serif">{t('dp1InclTitle')}</h4>
-                <ul className="incl-grid">
-                  <li>{t('dp1Incl1')}</li>
-                  <li>{t('dp1Incl2')}</li>
-                  <li>{t('dp1Incl3')}</li>
-                  <li>{t('dp1Incl4')}</li>
-                  <li>{t('dp1Incl5')}</li>
-                  <li>{t('dp1Incl6')}</li>
-                </ul>
-              </div>
-              <div className="invest">
-                <div className="lab">{t('dp1InvestTitle')}</div>
-                <div className="amt serif">{t('dp1InvestPrice')}</div>
-                <div className="vat">{t('dp1InvestPriceLabel')}</div>
-                <div className="pay">{t('dp1InvestNote')}</div>
-              </div>
-            </div>
-            <div className="btn-row">
-              <a href={boekUrl(CURSUS.beginner)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
-            </div>
-            <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
-          </div>
-        </div>
-      </div>
-              )}
-
-              {openDetail === 'wispy' && (
-                <div className="detail" id="d-wispy">
-        <div className="detail-inner">
-          <div className="wrap">
-            <span className="eyebrow">{t('dp2Meta')}</span>
-            <h3 className="serif">{t('dp2Name')}</h3>
-            <p className="dlead">{t('dp2Intro')}</p>
-            <div className="req">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#D8B97A" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
-              <div>
-                <div className="rt">{t('dp2PrereqTitle')}</div>
-                <p>{t('dp2PrereqText')}</p>
-              </div>
-            </div>
-            <div className="days">
-              <div className="day">
-                <div className="day-h"><span className="day-t serif">{t('dp2LearnTitle')}</span></div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp2Group1Title')}</div><ul>
-                    <li>{t('dp2Group1Item1')}</li>
-                    <li>{t('dp2Group1Item2')}</li>
-                    <li>{t('dp2Group1Item3')}</li>
-                    <li>{t('dp2Group1Item4')}</li>
-                    <li>{t('dp2Group1Item5')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp2Group2Title')}</div><ul>
-                    <li>{t('dp2Group2Item1')}</li>
-                    <li>{t('dp2Group2Item2')}</li>
-                    <li>{t('dp2Group2Item3')}</li>
-                    <li>{t('dp2Group2Item4')}</li>
-                    <li>{t('dp2Group2Item5')}</li>
-                  </ul></div>
+            <div className={`custom-grid ${customKlassen.length === 1 ? 'single' : ''} reveal`}>
+              {customKlassen.map(klas => (
+                <div className="custom-card" key={klas.id}>
+                  <span className="cc-badge">✦ Persoonlijk · {klas.plekken_over === 1 ? '1 plek' : `${klas.plekken_over} plekken`}</span>
+                  <div className="cc-title serif">{klas.weergave_titel}</div>
+                  {klas.weergave_beschrijving && <div className="cc-desc">{klas.weergave_beschrijving}</div>}
+                  <div className="cc-meta">
+                    <div className="cc-row">
+                      <span className="lab">Datum</span>
+                      <span className="val">{formatDateRange(klas)}</span>
+                    </div>
+                    <div className="cc-row">
+                      <span className="lab">Starttijd</span>
+                      <span className="val">{klas.starttijd}</span>
+                    </div>
+                    {klas.prijs_cents != null && (
+                      <div className="cc-row">
+                        <span className="lab">Prijs</span>
+                        <span className="cc-price">€{(klas.prijs_cents / 100).toFixed(2).replace('.', ',')}</span>
+                      </div>
+                    )}
+                  </div>
+                  <a className="btn" href={`/${locale}/traject-boeken?klas=${klas.id}`}>Reserveer deze plek</a>
                 </div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-t serif">{t('dp2Group3Title')}</span></div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp2Group1Item1')}</div><ul>
-                    <li>{t('dp2Group3Item1')}</li>
-                    <li>{t('dp2Group3Item2')}</li>
-                    <li>{t('dp2Group3Item3')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp2Group3Item4')}</div><ul>
-                    <li>{t('dp2Group3Item5')}</li>
-                    <li>{t('dp2Group3Item6')}</li>
-                    <li>{t('dp2Group3Item7')}</li>
-                    <li>{t('dp2Group3Item8')}</li>
-                  </ul></div>
-                </div>
-              </div>
-            </div>
-            {/* Model disclaimer */}
-            <div className="model-note">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-              <div>
-                <div className="rt">Let op — model vereist</div>
-                <p>Je regelt zelf een model voor de praktijk. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
-              </div>
-            </div>
-            <p className="not-incl">{t('dp2Note')}</p>
-            <div className="incl-block">
-              <div>
-                <h4 className="serif">{t('dp2InclTitle')}</h4>
-                <ul className="incl-grid">
-                  <li>{t('dp2Incl1')}</li>
-                  <li>{t('dp2Incl2')}</li>
-                  <li>{t('dp2Incl3')}</li>
-                  <li>{t('dp2Incl4')}</li>
-                  <li>{t('dp2Incl5')}</li>
-                </ul>
-              </div>
-              <div className="invest">
-                <div className="lab">{t('dp2InvestTitle')}</div>
-                <div className="amt serif">{t('dp2InvestPrice')}</div>
-                <div className="vat">{t('dp2InvestPriceLabel')}</div>
-                <div className="pay">{t('dp2Outro')}</div>
-              </div>
-            </div>
-            <div className="btn-row">
-              <a href={boekUrl(CURSUS.wispy)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
-            </div>
-            <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
-          </div>
-        </div>
-      </div>
-              )}
-
-              {openDetail === 'medusa' && (
-                <div className="detail" id="d-medusa">
-        <div className="detail-inner">
-          <div className="wrap">
-            <span className="eyebrow">{t('dp3Meta')}</span>
-            <h3 className="serif">{t('dp3Name')}</h3>
-            <p className="dlead">{t('dp3Intro')}</p>
-            <div className="req">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#D8B97A" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
-              <div>
-                <div className="rt">{t('dp3PrereqTitle')}</div>
-                <p>{t('dp3PrereqText')}</p>
-              </div>
-            </div>
-            <div className="days">
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp3Day1Label')}</span><span className="day-t serif">{t('dp3Day1Title')}</span></div>
-                <div className="day-d">{t('dp3Day1Desc')}</div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp3Day1Group1Title')}</div><ul>
-                    <li>{t('dp3Day1Group1Item1')}</li>
-                    <li>{t('dp3Day1Group1Item2')}</li>
-                    <li>{t('dp3Day1Group1Item3')}</li>
-                    <li>{t('dp3Day1Group1Item4')}</li>
-                    <li>{t('dp3Day1Group1Item5')}</li>
-                    <li>{t('dp3Day1Group1Item6')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp3Day1Group2Title')}</div><ul>
-                    <li>{t('dp3Day1Group2Item1')}</li>
-                    <li>{t('dp3Day1Group2Item2')}</li>
-                    <li>{t('dp3Day1Group2Item3')}</li>
-                    <li>{t('dp3Day1Group2Item4')}</li>
-                    <li>{t('dp3Day1Group2Item5')}</li>
-                  </ul></div>
-                </div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp3Day1bLabel')}</span><span className="day-t serif">{t('dp3Day1bTitle')}</span></div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp3Day1bGroup1Item1')}</div><ul>
-                    <li>{t('dp3Day1bGroup1Item2')}</li>
-                    <li>{t('dp3Day1bGroup1Item3')}</li>
-                    <li>{t('dp3Day1bGroup1Item4')}</li>
-                    <li>{t('dp3Day1bGroup1Item5')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp3Day1bGroup2Title')}</div><ul>
-                    <li>{t('dp3Day1bGroup2Item1')}</li>
-                    <li>{t('dp3Day1bGroup2Item2')}</li>
-                    <li>{t('dp3Day1bGroup2Item3')}</li>
-                    <li>{t('dp3Day1bGroup2Item4')}</li>
-                  </ul></div>
-                </div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp3Day2Label')}</span><span className="day-t serif">{t('dp3Day2Title')}</span></div>
-                <div className="day-d">{t('dp3Day2Desc')}</div>
-                <div className="day-cols one"><div className="col"><ul>
-                  <li>{t('dp3Day2Item1')}</li>
-                  <li>{t('dp3Day2Item2')}</li>
-                  <li>{t('dp3Day2Item3')}</li>
-                  <li>{t('dp3Day2Item4')}</li>
-                  <li>{t('dp3Day2Item5')}</li>
-                  <li>{t('dp3Day2Item6')}</li>
-                  <li>{t('dp3Day2Item7')}</li>
-                </ul></div></div>
-              </div>
-            </div>
-            {/* Model disclaimer */}
-            <div className="model-note">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-              <div>
-                <div className="rt">Let op — model vereist</div>
-                <p>Je regelt zelf een model voor de modeldag (dag 2). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
-              </div>
-            </div>
-            <div className="incl-block">
-              <div>
-                <h4 className="serif">{t('dp3InclTitle')}</h4>
-                <ul className="incl-grid">
-                  <li>{t('dp3Incl1')}</li>
-                  <li>{t('dp3Incl2')}</li>
-                  <li>{t('dp3Incl3')}</li>
-                  <li>{t('dp3Incl4')}</li>
-                  <li>{t('dp3Incl5')}</li>
-                  <li>{t('dp3Incl6')}</li>
-                  <li>{t('dp3Incl7')}</li>
-                  <li>{t('dp3Incl8')}</li>
-                </ul>
-              </div>
-              <div className="invest">
-                <div className="lab">{t('dp3InvestTitle')}</div>
-                <div className="amt serif">{t('dp3InvestPrice')}</div>
-                <div className="vat">{t('dp3InvestPriceLabel')}</div>
-                <div className="pay">{t('dp3Outro')}</div>
-              </div>
-            </div>
-            <div className="btn-row">
-              <a href={boekUrl(CURSUS.medusa)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
-            </div>
-            <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
-          </div>
-        </div>
-      </div>
-              )}
-
-              {openDetail === 'tech' && (
-                <div className="detail" id="d-tech">
-        <div className="detail-inner">
-          <div className="wrap">
-            <span className="eyebrow">{t('dp4Meta')}</span>
-            <h3 className="serif">{t('dp4Name')}</h3>
-            <p className="dlead">{t('dp4Intro')}</p>
-            <div className="req">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#D8B97A" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
-              <div>
-                <div className="rt">{t('dp4PrereqTitle')}</div>
-                <p>{t('dp4PrereqText')}</p>
-              </div>
-            </div>
-            <div className="days">
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp4Day1Label')}</span><span className="day-t serif">{t('dp4Day1Title')}</span></div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp4Day1Group1Title')}</div><ul>
-                    <li>{t('dp4Day1Group1Item1')}</li>
-                    <li>{t('dp4Day1Group1Item2')}</li>
-                    <li>{t('dp4Day1Group1Item3')}</li>
-                    <li>{t('dp4Day1Group1Item4')}</li>
-                    <li>{t('dp4Day1Group1Item5')}</li>
-                    <li>{t('dp4Day1Group1Item6')}</li>
-                    <li>{t('dp4Day1Group1Item7')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp4Day1Group2Title')}</div><ul>
-                    <li>{t('dp4Day1Group2Item1')}</li>
-                    <li>{t('dp4Day1Group2Item2')}</li>
-                    <li>{t('dp4Day1Group2Item3')}</li>
-                    <li>{t('dp4Day1Group2Item4')}</li>
-                    <li>{t('dp4Day1Group2Item5')}</li>
-                  </ul></div>
-                </div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp4Day2Label')}</span><span className="day-t serif">{t('dp4Day2Title')}</span></div>
-                <div className="day-d">{t('dp4Day2Desc')}</div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp4Day2Group1Title')}</div><ul>
-                    <li>{t('dp4Day2Group1Item1')}</li>
-                    <li>{t('dp4Day2Group1Item2')}</li>
-                    <li>{t('dp4Day2Group1Item3')}</li>
-                    <li>{t('dp4Day2Group1Item4')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp4Day2Group2Title')}</div><ul>
-                    <li>{t('dp4Day2Group2Item1')}</li>
-                    <li>{t('dp4Day2Group2Item2')}</li>
-                    <li>{t('dp4Day2Group2Item3')}</li>
-                    <li>{t('dp4Day2Group2Item4')}</li>
-                  </ul></div>
-                </div>
-              </div>
-              <div className="day">
-                <div className="day-h"><span className="day-num">{t('dp4Day3Label')}</span><span className="day-t serif">{t('dp4Day3Title')}</span></div>
-                <div className="day-d">{t('dp4Day3Desc')}</div>
-                <div className="day-cols">
-                  <div className="col"><div className="col-h">{t('dp4Day3Group1Title')}</div><ul>
-                    <li>{t('dp4Day3Group1Item1')}</li>
-                    <li>{t('dp4Day3Group1Item2')}</li>
-                    <li>{t('dp4Day3Group1Item3')}</li>
-                    <li>{t('dp4Day3Group1Item4')}</li>
-                  </ul></div>
-                  <div className="col"><div className="col-h">{t('dp4Day3Group2Title')}</div><ul>
-                    <li>{t('dp4Day3Group2Item1')}</li>
-                    <li>{t('dp4Day3Group2Item2')}</li>
-                    <li>{t('dp4Day3Group2Item3')}</li>
-                    <li>{t('dp4Day3Group2Item4')}</li>
-                  </ul></div>
-                </div>
-              </div>
-            </div>
-            {/* Model disclaimer */}
-            <div className="model-note">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-              <div>
-                <div className="rt">Let op — model vereist</div>
-                <p>Je regelt zelf een model voor beide modeldagen (dag 1 en dag 3). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
-              </div>
-            </div>
-            <div className="incl-block">
-              <div>
-                <h4 className="serif">{t('dp4InclTitle')}</h4>
-                <ul className="incl-grid">
-                  <li>{t('dp4Incl1')}</li>
-                  <li>{t('dp4Incl2')}</li>
-                  <li>{t('dp4Incl3')}</li>
-                  <li>{t('dp4Incl4')}</li>
-                  <li>{t('dp4Incl5')}</li>
-                  <li>{t('dp4Incl6')}</li>
-                  <li>{t('dp4Incl7')}</li>
-                </ul>
-              </div>
-              <div className="invest">
-                <div className="lab">{t('dp4InvestTitle')}</div>
-                <div className="amt serif">{t('dp4InvestPrice')}</div>
-                <div className="vat">{t('dp4InvestPriceLabel')}</div>
-                <div className="pay">{t('dp4Outro')}</div>
-              </div>
-            </div>
-            <div className="btn-row">
-              <a href={boekUrl(CURSUS.techToArtist)} className="btn">{t('bookCta')}</a>
-              <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
-            </div>
-            <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
-            <button className="close-d" onClick={() => setOpenDetail(null)}>{t('dpClose')}</button>
-          </div>
-        </div>
-      </div>
-              )}
+              ))}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
       {/* ===== DISCLAIMER ===== */}
