@@ -119,6 +119,25 @@ export async function PATCH(
     }
     if (body.weergave_titel !== undefined) updates.weergave_titel = body.weergave_titel
     if (body.weergave_beschrijving !== undefined) updates.weergave_beschrijving = body.weergave_beschrijving
+    if (body.eindtijd !== undefined) {
+      if (body.eindtijd && !/^\d{2}:\d{2}$/.test(body.eindtijd)) {
+        return NextResponse.json(
+          { error: 'Ongeldige eindtijd (gebruik HH:MM)' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updates.eindtijd = body.eindtijd || null
+    }
+    if (body.prijs_override_cents !== undefined) {
+      const override = Number(body.prijs_override_cents)
+      if (!Number.isInteger(override) || override < 0 || override > 10000000) {
+        return NextResponse.json(
+          { error: 'prijs_override_cents moet een geheel getal tussen 0 en 10000000 zijn' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      updates.prijs_override_cents = override || null
+    }
     if (body.status !== undefined) {
       if (!['open', 'vol', 'geannuleerd'].includes(body.status)) {
         return NextResponse.json(

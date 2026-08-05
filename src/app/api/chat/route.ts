@@ -64,7 +64,7 @@ LUXIQUE is een lash studio en online academy van Chiva, lash artist & educator, 
 - Cursus: **Medusa Lash Basics** — beginnerscursus, de Medusa techniek van fundament tot eigen stijl.
 
 ### Persoonlijk traject
-- Intensieve begeleiding in kleine groepen van maximaal 2 personen.
+- Intensieve begeleiding in kleine groepen (tot maximaal 3 personen).
 - Volledig één-op-één is mogelijk tegen meerprijs.
 - Bij elk persoonlijk traject zit een compleet starterspakket inbegrepen.
 - Prijs op aanvraag.

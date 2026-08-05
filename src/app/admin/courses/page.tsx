@@ -236,6 +236,61 @@ export default function CoursesOverviewPage() {
     }
   }
 
+  // ── Delete course (item 4) ──
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleteCheck, setDeleteCheck] = useState<{ lessons: number; enrollments: number } | null>(null)
+
+  const openDeleteModal = async (course: Course) => {
+    setDeleteTarget(course)
+    setDeleteError(null)
+    setDeleteCheck(null)
+    try {
+      // Check for lessons and enrollments before allowing delete
+      const { count: lessonsCount } = await supabase
+        .from('lessons')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', course.id)
+      const { count: enrollmentsCount } = await supabase
+        .from('enrollments')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', course.id)
+      setDeleteCheck({
+        lessons: lessonsCount ?? 0,
+        enrollments: enrollmentsCount ?? 0,
+      })
+    } catch {
+      setDeleteCheck({ lessons: -1, enrollments: -1 })
+    }
+  }
+
+  const handleDeleteCourse = async () => {
+    if (!deleteTarget) return
+    setDeleteLoading(true)
+    setDeleteError(null)
+    try {
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', deleteTarget.id)
+      if (error) {
+        // Handle FK constraint violations gracefully
+        if (error.message.includes('foreign key') || error.code === '23503') {
+          throw new Error('Deze cursus kan niet verwijderd worden omdat er nog lessen of inschrijvingen aan gekoppeld zijn. Verwijder eerst alle lessen en inschrijvingen.')
+        }
+        throw error
+      }
+      setDeleteTarget(null)
+      setDeleteCheck(null)
+      fetchCourses()
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Onbekende fout bij verwijderen')
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
   const handleCreateCourse = async () => {
     if (!newCourse.title.trim()) {
       alert('Vul een cursusnaam in')
@@ -694,6 +749,15 @@ export default function CoursesOverviewPage() {
                           <path d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-.375c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v.375c0 .621.504 1.125 1.125 1.125z"/>
                         </svg>
                       </button>
+                      <button
+                        onClick={() => openDeleteModal(course)}
+                        className="flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border border-[#eee] bg-transparent text-[#888] hover:bg-[rgba(224,90,78,0.12)] hover:border-[rgba(224,90,78,0.4)] hover:text-red-600 transition"
+                        title="Verwijderen"
+                      >
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -877,6 +941,62 @@ export default function CoursesOverviewPage() {
             <div className="flex gap-2">
               <button onClick={() => setEditingCourseId(null)} className="flex-1 text-[13px] font-normal py-2.5 rounded-full border border-[#eee] bg-transparent cursor-pointer text-[#888] hover:text-[#1a1a1a] hover:border-[rgba(30,26,20,0.22)] transition">Annuleren</button>
               <button onClick={handleAcademyCardSave} className="flex-[2] text-[13px] font-semibold py-2.5 rounded-full bg-[#C4A265] text-white border-none cursor-pointer hover:bg-[#DFC08A] hover:shadow-[0_4px_14px_rgba(196,162,101,0.28)] transition">Opslaan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Course Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-[rgba(12,10,7,0.45)] backdrop-blur-sm z-[200] flex items-center justify-center" onClick={() => !deleteLoading && setDeleteTarget(null)}>
+          <div className="bg-white rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]" onClick={e => e.stopPropagation()}>
+            <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1a1a1a] mb-1.5">
+              Cursus verwijderen
+            </p>
+            <p className="text-[12.5px] text-[#888] font-light mb-4 leading-relaxed">
+              Je staat op het punt <b>“{deleteTarget.title}”</b> permanent te verwijderen. Dit kan niet ongedaan worden gemaakt.
+            </p>
+
+            {/* Pre-delete check results */}
+            {deleteCheck == null ? (
+              <p className="text-[12px] text-[#888] mb-4">Controleren op lessen en inschrijvingen…</p>
+            ) : deleteCheck.lessons > 0 || deleteCheck.enrollments > 0 ? (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[12px] text-red-700 mb-4">
+                <p className="font-semibold mb-1">⚠️ Verwijderen geblokkeerd</p>
+                <p>Deze cursus heeft nog:</p>
+                <ul className="ml-4 mt-1 list-disc">
+                  {deleteCheck.lessons > 0 && <li>{deleteCheck.lessons} les(sen)</li>}
+                  {deleteCheck.enrollments > 0 && <li>{deleteCheck.enrollments} inschrijving(en)</li>}
+                </ul>
+                <p className="mt-2">Verwijder eerst alle lessen en inschrijvingen voordat je de cursus kunt verwijderen.</p>
+              </div>
+            ) : deleteCheck.lessons === 0 && deleteCheck.enrollments === 0 ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-[12px] text-green-700 mb-4">
+                ✓ Geen lessen of inschrijvingen — veilig om te verwijderen.
+              </div>
+            ) : null}
+
+            {deleteError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[12px] text-red-700 mb-4">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteCheck(null); setDeleteError(null) }}
+                disabled={deleteLoading}
+                className="flex-1 text-[13px] font-normal py-2.5 rounded-full border border-[#eee] bg-transparent cursor-pointer text-[#888] hover:text-[#1a1a1a] hover:border-[rgba(30,26,20,0.22)] transition disabled:opacity-50"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleDeleteCourse}
+                disabled={deleteLoading || (deleteCheck != null && (deleteCheck.lessons > 0 || deleteCheck.enrollments > 0))}
+                className="flex-[2] text-[13px] font-semibold py-2.5 rounded-full bg-red-600 text-white border-none cursor-pointer hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleteLoading ? 'Verwijderen…' : 'Definitief verwijderen'}
+              </button>
             </div>
           </div>
         </div>

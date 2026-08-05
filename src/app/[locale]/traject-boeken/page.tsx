@@ -27,6 +27,7 @@ interface KlasInfo {
   duur_werkdagen: number | null
   startdatum: string
   starttijd: string
+  eindtijd?: string | null
   blok_dagen: string[]
   max_deelnemers: number
   plekken_over: number
@@ -389,8 +390,8 @@ function TrajectBoekenInner() {
               </div>
 
               <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
-                <span className="text-lg text-[#C4A265]">Starttijd</span>
-                <span className="text-lg font-semibold">{klas.starttijd}</span>
+                <span className="text-lg text-[#C4A265]">Tijden</span>
+                <span className="text-lg font-semibold">{klas.starttijd}{klas.eindtijd ? ` – ${klas.eindtijd}` : ' – 16:00'}</span>
               </div>
 
               {klas.duur_werkdagen != null && (
@@ -400,9 +401,9 @@ function TrajectBoekenInner() {
                 </div>
               )}
 
-              <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
-                <span className="text-lg text-[#C4A265]">Beschikbaarheid</span>
-                <span className={`text-lg font-semibold ${klasVol ? 'text-red-400' : 'text-green-400'}`}>
+              <div className="flex justify-between items-start pb-4 border-b border-[#C4A265]/20">
+                <span className="text-lg text-[#C4A265] shrink-0">Beschikbaarheid</span>
+                <span className={`text-lg font-semibold text-right ${klasVol ? 'text-red-400' : 'text-green-400'}`}>
                   {klasVol
                     ? 'Vol — alleen inschrijving wachtlijst'
                     : `Nog ${klas.plekken_over} ${klas.plekken_over === 1 ? 'plek' : 'plekken'} beschikbaar`}

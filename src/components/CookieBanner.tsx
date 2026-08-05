@@ -42,7 +42,8 @@ export default function CookieBanner() {
     if (existing) {
       setStats(existing.stats)
       setMkt(existing.mkt)
-      setShowPill(true)
+      // Pill stays hidden after consent — footer link is the permanent access point
+      setShowPill(false)
     } else {
       setTimeout(() => setShowBanner(true), 800)
     }
@@ -61,7 +62,7 @@ export default function CookieBanner() {
     saveConsent(true, true)
     setShowBanner(false)
     setShowModal(false)
-    setShowPill(true)
+    setShowPill(false)
   }
 
   function handleReject() {
@@ -70,13 +71,13 @@ export default function CookieBanner() {
     saveConsent(false, false)
     setShowBanner(false)
     setShowModal(false)
-    setShowPill(true)
+    setShowPill(false)
   }
 
   function handleSave() {
     saveConsent(stats, mkt)
     setShowModal(false)
-    setShowPill(true)
+    setShowPill(false)
   }
 
   if (!mounted) return null

@@ -7,6 +7,7 @@ interface BoekingDetails {
   cursus_naam: string
   startdatum: string
   starttijd: string
+  eindtijd?: string | null
   blok_dagen: string[]
   klant_naam: string
   aanbetaling_cents: number
@@ -131,8 +132,8 @@ function TrajectBevestigdContent() {
           )}
 
           <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
-            <span className="text-[#FBF8F2]/60">Starttijd per dag</span>
-            <span className="text-[#FBF8F2] font-semibold">{boeking.starttijd}</span>
+            <span className="text-[#FBF8F2]/60">Tijden per dag</span>
+            <span className="text-[#FBF8F2] font-semibold">{boeking.starttijd}{boeking.eindtijd ? ` – ${boeking.eindtijd}` : ' – 16:00'}</span>
           </div>
 
           <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">

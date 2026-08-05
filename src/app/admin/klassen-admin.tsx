@@ -34,9 +34,11 @@ type Klas = {
   cursus_id: string
   cursus_naam: string | null
   prijs_cents: number | null
+  prijs_override_cents?: number | null
   duur_werkdagen: number | null
   startdatum: string
   starttijd: string
+  eindtijd?: string | null
   blok_dagen: string[]
   max_deelnemers: number
   plekken_over: number
@@ -295,8 +297,8 @@ function Overzicht({
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">{klas.starttijd}</p>
-                  <p className="text-[11px] text-[#aaa]">{fmtPrice(klas.prijs_cents)}</p>
+                  <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">{klas.starttijd}{klas.eindtijd ? ` – ${klas.eindtijd}` : ' – 16:00'}</p>
+                  <p className="text-[11px] text-[#aaa]">{fmtPrice(klas.prijs_override_cents ?? klas.prijs_cents)}</p>
                 </div>
               </div>
 
@@ -433,7 +435,9 @@ function NieuweKlasForm({
   const [cursusId, setCursusId] = useState('')
   const [startdatum, setStartdatum] = useState('')
   const [starttijd, setStarttijd] = useState('08:30')
+  const [eindtijd, setEindtijd] = useState('16:00')
   const [maxDeelnemers, setMaxDeelnemers] = useState(3)
+  const [prijsOverride, setPrijsOverride] = useState('') // empty = use cursus price
   const [weergaveTitel, setWeergaveTitel] = useState('')
   const [weergaveBeschrijving, setWeergaveBeschrijving] = useState('')
   const [saving, setSaving] = useState(false)
@@ -461,7 +465,13 @@ function NieuweKlasForm({
         cursus_id: cursusId,
         startdatum,
         starttijd,
+        eindtijd,
         max_deelnemers: maxDeelnemers,
+      }
+      // Add prijs_override_cents only if filled in (empty = use cursus price)
+      if (prijsOverride.trim()) {
+        const euros = parseFloat(prijsOverride.replace(',', '.')) || 0
+        body.prijs_override_cents = Math.round(euros * 100)
       }
       if (isPersoonlijk) {
         body.weergave_titel = weergaveTitel.trim()
@@ -480,7 +490,9 @@ function NieuweKlasForm({
       setCursusId('')
       setStartdatum('')
       setStarttijd('08:30')
+      setEindtijd('16:00')
       setMaxDeelnemers(3)
+      setPrijsOverride('')
       setWeergaveTitel('')
       setWeergaveBeschrijving('')
       onCreated()
@@ -527,7 +539,7 @@ function NieuweKlasForm({
         </div>
 
         {/* Datum + tijd + max */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <div>
             <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Startdatum</label>
             <input
@@ -547,8 +559,17 @@ function NieuweKlasForm({
             />
           </div>
           <div>
+            <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Eindtijd</label>
+            <input
+              type="time"
+              value={eindtijd}
+              onChange={e => setEindtijd(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265]"
+            />
+          </div>
+          <div>
             <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">
-              {isPersoonlijk ? 'Plekten' : 'Max deelnemers'}
+              {isPersoonlijk ? 'Plekten' : 'Max'}
             </label>
             <div className="flex items-center gap-1">
               <button
@@ -571,6 +592,21 @@ function NieuweKlasForm({
               >+</button>
             </div>
           </div>
+        </div>
+
+        {/* Prijs override (optional) */}
+        <div>
+          <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">
+            Prijs per klas (optioneel) — leeg = cursusprijs
+          </label>
+          <input
+            type="text"
+            value={prijsOverride}
+            onChange={e => setPrijsOverride(e.target.value)}
+            placeholder={geselecteerdeCursus ? `Standaard: €${(geselecteerdeCursus.prijs_cents / 100).toFixed(2).replace('.', ',')}` : 'bijv. 1450,00'}
+            className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265]"
+          />
+          <p className="text-[10px] text-[#aaa] mt-1">Vul alleen een prijs in als deze klas een afwijkende prijs moet hebben.</p>
         </div>
 
         {/* Weekend waarschuwing */}

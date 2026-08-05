@@ -25,18 +25,11 @@ export async function GET() {
     const vandaag = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
 
     // Haal alle klassen in de toekomst (open of vol) + cursus info
+    // Use select * so new columns (eindtijd, prijs_override_cents) are picked up automatically
     const { data: klassen, error: klassenError } = await supabaseAdmin
       .from('traject_klassen')
       .select(`
-        id,
-        cursus_id,
-        startdatum,
-        starttijd,
-        blok_dagen,
-        max_deelnemers,
-        status,
-        weergave_titel,
-        weergave_beschrijving,
+        *,
         traject_cursussen (
           naam,
           prijs_cents,
@@ -89,14 +82,19 @@ export async function GET() {
     const result = klassen.map((k: any) => {
       const betaald = countMap.get(k.id) ?? 0
       const plekken_over = Math.max(0, k.max_deelnemers - betaald)
+      // Use prijs_override_cents if set on the klas, otherwise fall back to cursus prijs
+      const overridePrijs = k.prijs_override_cents ?? null
+      const cursusPrijs = k.traject_cursussen?.prijs_cents ?? null
       return {
         id: k.id,
         cursus_id: k.cursus_id,
         cursus_naam: k.traject_cursussen?.naam ?? null,
-        prijs_cents: k.traject_cursussen?.prijs_cents ?? null,
+        prijs_cents: overridePrijs ?? cursusPrijs,
+        prijs_override_cents: overridePrijs,
         duur_werkdagen: k.traject_cursussen?.duur_werkdagen ?? null,
         startdatum: k.startdatum,
         starttijd: k.starttijd,
+        eindtijd: k.eindtijd ?? null,
         blok_dagen: k.blok_dagen,
         max_deelnemers: k.max_deelnemers,
         plekken_over,

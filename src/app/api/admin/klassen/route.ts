@@ -36,9 +36,11 @@ export async function POST(req: NextRequest) {
       cursus_id,
       startdatum,   // YYYY-MM-DD
       starttijd,    // HH:MM
+      eindtijd,     // HH:MM (optional, default '16:00')
       max_deelnemers = 3,
       weergave_titel = null,
       weergave_beschrijving = null,
+      prijs_override_cents = null,
     } = body
 
     // Validatie
@@ -107,19 +109,41 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert klas
+    const insertPayload: Record<string, unknown> = {
+      cursus_id,
+      startdatum,
+      starttijd,
+      blok_dagen,
+      max_deelnemers: max,
+      status: 'open',
+      cal_sync_status: 'pending',
+      weergave_titel,
+      weergave_beschrijving,
+    }
+    // Add eindtijd if provided or default to '16:00'
+    if (eindtijd) {
+      if (!/^\d{2}:\d{2}$/.test(eindtijd)) {
+        return NextResponse.json(
+          { error: 'Ongeldige eindtijd (gebruik HH:MM)' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      insertPayload.eindtijd = eindtijd
+    }
+    // Add prijs_override_cents if provided (null = use cursus price)
+    if (prijs_override_cents != null) {
+      const override = Number(prijs_override_cents)
+      if (!Number.isInteger(override) || override < 0 || override > 10000000) {
+        return NextResponse.json(
+          { error: 'prijs_override_cents moet een geheel getal tussen 0 en 10000000 zijn' },
+          { status: 400, headers: NO_STORE_HEADERS },
+        )
+      }
+      insertPayload.prijs_override_cents = override
+    }
     const { data: klas, error: insertError } = await supabaseAdmin
       .from('traject_klassen')
-      .insert({
-        cursus_id,
-        startdatum,
-        starttijd,
-        blok_dagen,
-        max_deelnemers: max,
-        status: 'open',
-        cal_sync_status: 'pending',
-        weergave_titel,
-        weergave_beschrijving,
-      })
+      .insert(insertPayload)
       .select('id, cursus_id, startdatum, starttijd, blok_dagen, max_deelnemers, status, cal_sync_status, weergave_titel, weergave_beschrijving, aangemaakt_op')
       .single()
 

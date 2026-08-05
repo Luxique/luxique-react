@@ -21,6 +21,8 @@ interface KlasInfo {
   duur_werkdagen: number | null
   startdatum: string
   starttijd: string
+  eindtijd?: string | null
+  prijs_override_cents?: number | null
   blok_dagen: string[]
   max_deelnemers: number
   plekken_over: number
@@ -55,14 +57,21 @@ export default function PersoonlijkTrajectContent() {
   const [openDetail, setOpenDetail] = useState<string | null>(null)
   const [klassen, setKlassen] = useState<KlasInfo[]>([])
 
-  const openKlasFor = (cursusId: string) => klassen.find(k => k.cursus_id === cursusId && !k.vol && k.plekken_over > 0)
+  const openKlassenFor = (cursusId: string) => klassen.filter(k => k.cursus_id === cursusId && !k.vol && k.plekken_over > 0)
   const customKlassen = klassen.filter(k => k.weergave_titel)
 
-  const beginnerKlas = openKlasFor(CURSUS.beginner)
-  const wispyKlas = openKlasFor(CURSUS.wispy)
-  const medusaKlas = openKlasFor(CURSUS.medusa)
-  const techKlas = openKlasFor(CURSUS.techToArtist)
-  const workshopKlas = openKlasFor(CURSUS.workshop)
+  const beginnerKlassen = openKlassenFor(CURSUS.beginner)
+  const wispyKlassen = openKlassenFor(CURSUS.wispy)
+  const medusaKlassen = openKlassenFor(CURSUS.medusa)
+  const techKlassen = openKlassenFor(CURSUS.techToArtist)
+  const workshopKlassen = openKlassenFor(CURSUS.workshop)
+
+  // Backward-compat: first available klas per cursus (for detail panels & workshop link)
+  const beginnerKlas = beginnerKlassen[0]
+  const wispyKlas = wispyKlassen[0]
+  const medusaKlas = medusaKlassen[0]
+  const techKlas = techKlassen[0]
+  const workshopKlas = workshopKlassen[0]
 
   const boekUrl = (cursusId: string, klasId?: string) =>
     klasId
@@ -277,7 +286,10 @@ export default function PersoonlijkTrajectContent() {
         /* ===== KLAS-INFO (on cards) ===== */
         .klas-info{margin-bottom:18px}
         .klas-open{display:flex;flex-direction:column;gap:12px}
-        .klas-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+        .klas-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+        .klas-row.multi{padding:10px 0;border-bottom:1px solid var(--line-soft)}
+        .klas-row.multi:last-child{border-bottom:0}
+        .klas-row.multi .btn.boek{width:auto;padding:8px 18px;font-size:.8rem}
         .klas-datum{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--gold);font-weight:500}
         .track.feat .klas-datum{color:var(--gold-bright)}
         .klas-plekken{font-size:.72rem;letter-spacing:.04em;background:rgba(176,141,79,.14);color:var(--gold);padding:4px 10px;border-radius:100px;font-weight:500;white-space:nowrap}
@@ -540,16 +552,16 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card1Feature4')}</li>
                 <li>{t('card1Feature5')}</li>
               </ul>
-              {beginnerKlas ? (
+              {beginnerKlassen.length > 0 ? (
                 <div className="klas-info klas-open">
-                  <div className="klas-row">
-                    <span className="klas-datum">{formatDateRange(beginnerKlas)}</span>
-                    <span className="klas-plekken">Nog {beginnerKlas.plekken_over} {beginnerKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
-                  </div>
-                  <div className="btn-stack">
-                    <a className="btn boek" href={boekUrl(CURSUS.beginner, beginnerKlas.id)}>{t('bookCta')}</a>
-                    <button className="btn ghost" onClick={() => setOpenDetail('beginner')}>{t('cardViewProgram')}</button>
-                  </div>
+                  {beginnerKlassen.map(klas => (
+                    <div key={klas.id} className="klas-row multi">
+                      <span className="klas-datum">{formatDateRange(klas)}</span>
+                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <a className="btn boek" href={boekUrl(CURSUS.beginner, klas.id)}>{t('bookCta')}</a>
+                    </div>
+                  ))}
+                  <button className="btn ghost" onClick={() => setOpenDetail('beginner')}>{t('cardViewProgram')}</button>
                 </div>
               ) : (
                 <div className="klas-info klas-geen">
@@ -666,7 +678,7 @@ export default function PersoonlijkTrajectContent() {
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
-                  <span><span className="lab">{t('card2NotForLabel')}</span>{t('card2NotForPre')}<b>{t('card2NotForEm')}</b> {t('card2NotForPost')}</span>
+                  <span><span className="lab">{t('card2NotForLabel')}</span>{t('card2NotForPre')}<b>{t('card2NotForEm')}</b>{t('card2NotForPost')}</span>
                 </div>
               </div>
               <ul className="incl">
@@ -676,16 +688,16 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card2Feature4')}</li>
                 <li>{t('card2Feature5')}</li>
               </ul>
-              {wispyKlas ? (
+              {wispyKlassen.length > 0 ? (
                 <div className="klas-info klas-open">
-                  <div className="klas-row">
-                    <span className="klas-datum">{formatDateRange(wispyKlas)}</span>
-                    <span className="klas-plekken">Nog {wispyKlas.plekken_over} {wispyKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
-                  </div>
-                  <div className="btn-stack">
-                    <a className="btn boek" href={boekUrl(CURSUS.wispy, wispyKlas.id)}>{t('bookCta')}</a>
-                    <button className="btn ghost" onClick={() => setOpenDetail('wispy')}>{t('cardViewProgram')}</button>
-                  </div>
+                  {wispyKlassen.map(klas => (
+                    <div key={klas.id} className="klas-row multi">
+                      <span className="klas-datum">{formatDateRange(klas)}</span>
+                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <a className="btn boek" href={boekUrl(CURSUS.wispy, klas.id)}>{t('bookCta')}</a>
+                    </div>
+                  ))}
+                  <button className="btn ghost" onClick={() => setOpenDetail('wispy')}>{t('cardViewProgram')}</button>
                 </div>
               ) : (
                 <div className="klas-info klas-geen">
@@ -807,16 +819,16 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card3Feature4')}</li>
                 <li>{t('card3Feature5')}</li>
               </ul>
-              {medusaKlas ? (
+              {medusaKlassen.length > 0 ? (
                 <div className="klas-info klas-open">
-                  <div className="klas-row">
-                    <span className="klas-datum">{formatDateRange(medusaKlas)}</span>
-                    <span className="klas-plekken">Nog {medusaKlas.plekken_over} {medusaKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
-                  </div>
-                  <div className="btn-stack">
-                    <a className="btn boek" href={boekUrl(CURSUS.medusa, medusaKlas.id)}>{t('bookCta')}</a>
-                    <button className="btn ghost" onClick={() => setOpenDetail('medusa')}>{t('cardViewProgram')}</button>
-                  </div>
+                  {medusaKlassen.map(klas => (
+                    <div key={klas.id} className="klas-row multi">
+                      <span className="klas-datum">{formatDateRange(klas)}</span>
+                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <a className="btn boek" href={boekUrl(CURSUS.medusa, klas.id)}>{t('bookCta')}</a>
+                    </div>
+                  ))}
+                  <button className="btn ghost" onClick={() => setOpenDetail('medusa')}>{t('cardViewProgram')}</button>
                 </div>
               ) : (
                 <div className="klas-info klas-geen">
@@ -947,7 +959,7 @@ export default function PersoonlijkTrajectContent() {
                 </div>
                 <div className="nofit">
                   <span className="fit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#9B5B47" strokeWidth="3.2"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
-                  <span><span className="lab">{t('card4NotForLabel')}</span>{t('card4NotForPre')}<b>{t('card4NotForEm')}</b> {t('card4NotForPost')}</span>
+                  <span><span className="lab">{t('card4NotForLabel')}</span>{t('card4NotForPre')}<b>{t('card4NotForEm')}</b>{t('card4NotForPost')}</span>
                 </div>
               </div>
               <ul className="incl">
@@ -957,16 +969,16 @@ export default function PersoonlijkTrajectContent() {
                 <li>{t('card4Feature4')}</li>
                 <li>{t('card4Feature5')}</li>
               </ul>
-              {techKlas ? (
+              {techKlassen.length > 0 ? (
                 <div className="klas-info klas-open">
-                  <div className="klas-row">
-                    <span className="klas-datum">{formatDateRange(techKlas)}</span>
-                    <span className="klas-plekken">Nog {techKlas.plekken_over} {techKlas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
-                  </div>
-                  <div className="btn-stack">
-                    <a className="btn boek" href={boekUrl(CURSUS.techToArtist, techKlas.id)}>{t('bookCta')}</a>
-                    <button className="btn ghost" onClick={() => setOpenDetail('tech')}>{t('cardViewProgram')}</button>
-                  </div>
+                  {techKlassen.map(klas => (
+                    <div key={klas.id} className="klas-row multi">
+                      <span className="klas-datum">{formatDateRange(klas)}</span>
+                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <a className="btn boek" href={boekUrl(CURSUS.techToArtist, klas.id)}>{t('bookCta')}</a>
+                    </div>
+                  ))}
+                  <button className="btn ghost" onClick={() => setOpenDetail('tech')}>{t('cardViewProgram')}</button>
                 </div>
               ) : (
                 <div className="klas-info klas-geen">
@@ -1128,7 +1140,7 @@ export default function PersoonlijkTrajectContent() {
                     </div>
                     <div className="cc-row">
                       <span className="lab">Starttijd</span>
-                      <span className="val">{klas.starttijd}</span>
+                      <span className="val">{klas.starttijd}{klas.eindtijd ? ` – ${klas.eindtijd}` : ' – 16:00'}</span>
                     </div>
                     {klas.prijs_cents != null && (
                       <div className="cc-row">
