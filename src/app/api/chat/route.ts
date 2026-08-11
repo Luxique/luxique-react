@@ -118,6 +118,75 @@ Boek vooraf een workshop van 1 uur. Daarin maak je kennis met de materialen, lee
 let cachedKnowledge: { content: string; fetchedAt: number } | null = null
 const CACHE_TTL = 60_000 // 60 seconds
 
+// Cache course data from DB (5 min TTL)
+let cachedCourses: { data: CourseInfo[]; fetchedAt: number } | null = null
+const COURSE_CACHE_TTL = 300_000 // 5 minutes
+
+interface CourseInfo {
+  naam: string
+  beschrijving: string | null
+  duur_werkdagen: number | null
+  prijs_cents: number | null
+  actief: boolean
+}
+
+async function getCourseContext(): Promise<string> {
+  if (cachedCourses && Date.now() - cachedCourses.fetchedAt < COURSE_CACHE_TTL) {
+    return formatCourses(cachedCourses.data)
+  }
+
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data, error } = await supabase
+      .from('traject_cursussen')
+      .select('naam, beschrijving, duur_werkdagen, prijs_cents, actief')
+      .eq('actief', true)
+      .order('created_at', { ascending: true })
+
+    if (error || !data) {
+      console.error('[chat] Course data load failed:', error?.message)
+      return ''
+    }
+
+    cachedCourses = { data, fetchedAt: Date.now() }
+    return formatCourses(data)
+  } catch (err) {
+    console.error('[chat] Course data fetch error:', err)
+    return ''
+  }
+}
+
+function formatCourses(courses: CourseInfo[]): string {
+  if (!courses.length) return ''
+  const lines = courses.map(c => {
+    const prijs = c.prijs_cents ? `€${(c.prijs_cents / 100).toFixed(2).replace('.', ',')} excl. BTW` : 'prijs op aanvraag'
+    const duur = c.duur_werkdagen ? `${c.duur_werkdagen} dag(en)` : 'duur varierend'
+    return `- ${c.naam}: ${duur}, ${prijs}${c.beschrijving ? `. ${c.beschrijving.slice(0, 150)}` : ''}`
+  })
+  return `\n### Actuele cursussen (live uit database)\n${lines.join('\n')}`
+}
+
+function getPageHint(pageContext?: string): string {
+  if (!pageContext) return ''
+  if (pageContext.includes('/persoonlijk-traject')) {
+    return '\n## Huidige pagina context\nDe bezoeker bekijkt de persoonlijk traject pagina. Ze zijn waarschijnlijk geïnteresseerd in welke opleiding bij ze past, prijzen, data, of het niveau dat nodig is. Help ze gericht met het kiezen van het juiste traject.'
+  }
+  if (pageContext.includes('/courses') || pageContext.includes('/academy')) {
+    return '\n## Huidige pagina context\nDe bezoeker bekijkt de online cursussen / academy pagina. Ze zijn waarschijnlijk geïnteresseerd in online cursussen, toegang, certificaten, of materialen.'
+  }
+  if (pageContext.includes('/behandelingen')) {
+    return '\n## Huidige pagina context\nDe bezoeker bekijkt de behandelingen pagina. Ze zijn waarschijnlijk geïnteresseerd in het boeken van een afspraak, prijzen, of soorten behandelingen.'
+  }
+  if (pageContext.includes('/faq')) {
+    return '\n## Huidige pagina context\nDe bezoeker bekijkt de FAQ pagina. Ze zoeken antwoorden op veelgestelde vragen.'
+  }
+  return ''
+}
+
 async function getSystemPrompt(): Promise<string> {
   // Check cache first
   if (cachedKnowledge && Date.now() - cachedKnowledge.fetchedAt < CACHE_TTL) {
@@ -177,7 +246,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { messages } = await req.json()
+    const { messages, pageContext } = await req.json()
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'Ongeldig bericht.' }, { status: 400 })
@@ -190,10 +259,15 @@ export async function POST(req: NextRequest) {
 
     const client = new Anthropic({ apiKey })
 
+    const systemPrompt = await getSystemPrompt()
+    const courseContext = await getCourseContext()
+    const pageHint = getPageHint(pageContext)
+    const fullSystemPrompt = systemPrompt + courseContext + pageHint
+
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 400,
-      system: await getSystemPrompt(),
+      system: fullSystemPrompt,
       messages: messages.filter((m: { role: string; content: string }) =>
         m.role === 'user' || m.role === 'assistant'
       ).map((m: { role: string; content: string }) => ({

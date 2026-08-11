@@ -9,7 +9,37 @@ interface Message {
   content: string
 }
 
-const QUICK_REPLIES = [
+// Page-aware quick replies
+function getQuickReplies(pathname: string | null): string[] {
+  if (!pathname) return DEFAULT_QUICK_REPLIES
+  if (pathname.includes('/persoonlijk-traject')) return [
+    'Welk traject past bij mij?',
+    'Wat kost een persoonlijk traject?',
+    'Welke voorkennis heb ik nodig?',
+    'Wat als ik het level niet haal?',
+  ]
+  if (pathname.includes('/courses') || pathname.includes('/academy')) return [
+    'Welke online cursussen zijn er?',
+    'Hoe lang heb ik toegang?',
+    'Krijg ik een certificaat?',
+    'Welke materialen heb ik nodig?',
+  ]
+  if (pathname.includes('/behandelingen')) return [
+    'Wat kost een nieuwe set?',
+    'Hoe vaak moet ik opvullen?',
+    'Hoe lang duurt een behandeling?',
+    'Hoe boek ik een afspraak?',
+  ]
+  if (pathname.includes('/faq')) return [
+    'Wat is het annuleringsbeleid?',
+    'Wat als ik te laat kom?',
+    'Is het pijnloos?',
+    'Hoe lang gaan ze mee?',
+  ]
+  return DEFAULT_QUICK_REPLIES
+}
+
+const DEFAULT_QUICK_REPLIES = [
   'Wat kost een behandeling?',
   'Hoe lang duurt het?',
   'Waar zijn jullie gevestigd?',
@@ -55,7 +85,7 @@ export default function ChatWidget() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ messages: newMessages, pageContext: pathname }),
       })
       const data = await res.json()
       setMessages(prev => [...prev, { role: 'assistant', content: data.content || data.error || errorMessage }])
@@ -179,7 +209,7 @@ export default function ChatWidget() {
           {/* Quick replies */}
           {messages.length <= 2 && !loading && (
             <div style={{ padding: '0 22px 12px', display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {QUICK_REPLIES.map((q, i) => (
+              {getQuickReplies(pathname).map((q, i) => (
                 <button key={i} onClick={() => send(q)} style={{
                   background: 'rgba(196,162,101,0.08)', border: '1px solid rgba(196,162,101,0.2)',
                   color: '#C4A265', padding: '6px 12px', borderRadius: 999, fontSize: 12,
