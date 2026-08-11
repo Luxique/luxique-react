@@ -74,6 +74,7 @@ function TrajectBoekenInner() {
 
   const [klantNaam, setKlantNaam] = useState('')
   const [klantEmail, setKlantEmail] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [checkoutFout, setCheckoutFout] = useState<string | null>(null)
   const [checkoutLaden, setCheckoutLaden] = useState(false)
   const [authMode, setAuthMode] = useState<'none' | 'login' | 'register'>('none')
@@ -174,6 +175,10 @@ function TrajectBoekenInner() {
     }
     if (!klantEmail.includes('@') || klantEmail.length < 5) {
       setCheckoutFout('Vul een geldig e-mailadres in')
+      return
+    }
+    if (!termsAccepted) {
+      setCheckoutFout('Je moet akkoord gaan met de voorwaarden om door te gaan')
       return
     }
 
@@ -557,13 +562,29 @@ function TrajectBoekenInner() {
                     <p className="text-red-400 text-sm mb-4">⚠️ {checkoutFout}</p>
                   )}
 
+                  <label className="flex items-start gap-3 mb-5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={e => setTermsAccepted(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-[#C4A265] cursor-pointer shrink-0"
+                    />
+                    <span className="text-sm text-[#FBF8F2]/70 leading-relaxed">
+                      Ik ga akkoord met de{' '}
+                      <a href="/voorwaarden#annulering" target="_blank" className="text-[#C4A265] underline hover:text-[#C4A265]/80">
+                        algemene voorwaarden en het annuleringsbeleid
+                      </a>{' '}
+                      en begrijp dat de aanbetaling niet restitueerbaar is.
+                    </span>
+                  </label>
+
                   <button
                     className={`w-full font-bold py-4 px-6 rounded-lg transition-colors ${
                       checkoutLaden
                         ? 'bg-[#C4A265]/50 text-[#0C0A07] cursor-wait'
                         : 'bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07]'
                     }`}
-                    disabled={checkoutLaden || authLoading}
+                    disabled={checkoutLaden || authLoading || (user ? !termsAccepted : false)}
                     onClick={startCheckout}
                   >
                     {checkoutLaden
