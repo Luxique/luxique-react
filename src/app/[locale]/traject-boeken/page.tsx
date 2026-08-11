@@ -52,6 +52,13 @@ function formatDateDisplay(klas: KlasInfo): string {
   return `${format(first, 'd MMMM', { locale: nl })} t/m ${format(last, 'd MMMM yyyy', { locale: nl })}`
 }
 
+function fmtTime(t?: string | null): string {
+  if (!t) return ''
+  // Strip seconds: "08:30:00" → "08:30", "16:00" → "16:00"
+  const parts = t.split(':')
+  return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : t
+}
+
 function TrajectBoekenInner() {
   const searchParams = useSearchParams()
   const { user, loading: authLoading } = useAuth()
@@ -384,14 +391,14 @@ function TrajectBoekenInner() {
             <div className="space-y-4 text-[#FBF8F2]/90">
               <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
                 <span className="text-lg text-[#C4A265]">Datum</span>
-                <span className="text-lg font-semibold capitalize">
+                <span className="text-lg font-semibold capitalize text-right">
                   {formatDateDisplay(klas)}
                 </span>
               </div>
 
               <div className="flex justify-between items-center pb-4 border-b border-[#C4A265]/20">
                 <span className="text-lg text-[#C4A265]">Tijden</span>
-                <span className="text-lg font-semibold">{klas.starttijd}{klas.eindtijd ? ` – ${klas.eindtijd}` : ' – 16:00'}</span>
+                <span className="text-lg font-semibold">{fmtTime(klas.starttijd)}{klas.eindtijd ? ` – ${fmtTime(klas.eindtijd)}` : ' – 16:00'}</span>
               </div>
 
               {klas.duur_werkdagen != null && (
