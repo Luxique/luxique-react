@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import PasswordInput from '@/components/PasswordInput'
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState('')
@@ -89,8 +90,7 @@ function ResetPasswordForm() {
                 <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">
                   Nieuw wachtwoord
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
@@ -104,8 +104,7 @@ function ResetPasswordForm() {
                 <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">
                   Herhaal wachtwoord
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
                   required

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import PasswordInput from '@/components/PasswordInput'
 
 interface AuthModalProps {
   open: boolean
@@ -162,8 +163,8 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           </label>
           <label className="auth-label">
             Wachtwoord
-            <input
-              type="password"
+            <PasswordInput
+              variant="dark"
               className="auth-input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -182,8 +183,8 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           {tab === 'register' && (
             <label className="auth-label">
               Wachtwoord bevestigen
-              <input
-                type="password"
+              <PasswordInput
+                variant="dark"
                 className={`auth-input ${confirmPassword && confirmPassword !== password ? 'input-error' : ''}`}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

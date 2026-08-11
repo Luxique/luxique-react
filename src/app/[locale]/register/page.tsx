@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import PasswordInput from '@/components/PasswordInput'
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('')
@@ -114,12 +115,12 @@ export default function RegisterPage() {
 
                 <div>
                   <label className={labelClass}>Wachtwoord</label>
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} className={inputClass} placeholder="Minimaal 8 tekens" />
+                  <PasswordInput value={password} onChange={e => setPassword(e.target.value)} required minLength={8} className={inputClass} placeholder="Minimaal 8 tekens" />
                 </div>
 
                 <div>
                   <label className={labelClass}>Bevestig wachtwoord</label>
-                  <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={8} className={inputClass} placeholder="Herhaal wachtwoord" />
+                  <PasswordInput value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={8} className={inputClass} placeholder="Herhaal wachtwoord" />
                 </div>
 
                 <button type="submit" disabled={loading} className="w-full py-3 rounded-full bg-[#D4AF37] text-white font-semibold text-[14px] hover:bg-[#C5A028] transition disabled:opacity-50">

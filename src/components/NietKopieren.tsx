@@ -121,6 +121,9 @@ export default function NietKopieren() {
           width: 100%; height: 100%;
           object-fit: cover; display: block;
         }
+        .nkc-pphoto.right img {
+          transform: scaleX(-1);
+        }
         .nkc-pphoto::after {
           content: "";
           position: absolute; inset: 0;

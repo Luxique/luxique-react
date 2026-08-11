@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { useSearchParams } from 'next/navigation'
+import PasswordInput from '@/components/PasswordInput'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -65,8 +66,7 @@ function LoginForm() {
               <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">
                 Wachtwoord
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
