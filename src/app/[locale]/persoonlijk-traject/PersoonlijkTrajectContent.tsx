@@ -35,6 +35,12 @@ interface KlasInfo {
 const NL_DAYS = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za']
 const NL_MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
 
+function fmtTime(t?: string | null): string {
+  if (!t) return ''
+  const parts = t.split(':')
+  return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : t
+}
+
 function formatDateRange(klas: KlasInfo): string {
   const days = klas.blok_dagen?.length ? klas.blok_dagen : [klas.startdatum]
   if (days.length === 1) {
@@ -397,7 +403,7 @@ export default function PersoonlijkTrajectContent() {
         .cc-meta{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
         .cc-row{display:flex;justify-content:space-between;align-items:center;font-size:.86rem}
         .cc-row .lab{color:var(--on-dark-soft)}
-        .cc-row .val{color:var(--on-dark);font-weight:500}
+        .cc-row .val{color:var(--on-dark);font-weight:500;text-align:right}
         .cc-price{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--gold-bright)}
         .custom-card .btn{margin-top:4px}
 
@@ -1143,7 +1149,7 @@ export default function PersoonlijkTrajectContent() {
                     </div>
                     <div className="cc-row">
                       <span className="lab">Starttijd</span>
-                      <span className="val">{klas.starttijd}{klas.eindtijd ? ` – ${klas.eindtijd}` : ' – 16:00'}</span>
+                      <span className="val">{fmtTime(klas.starttijd)}{klas.eindtijd ? ` – ${fmtTime(klas.eindtijd)}` : ' – 16:00'}</span>
                     </div>
                     {klas.prijs_cents != null && (
                       <div className="cc-row">
