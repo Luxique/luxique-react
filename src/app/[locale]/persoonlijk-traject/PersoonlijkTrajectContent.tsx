@@ -153,15 +153,15 @@ export default function PersoonlijkTrajectContent() {
         @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
 
         /* ===== HERO ===== */
-        .hero{position:relative;padding:140px 0 70px;text-align:center;overflow:hidden;
+        .hero{position:relative;padding:110px 0 40px;text-align:center;overflow:hidden;
           background:radial-gradient(120% 80% at 50% 0%, rgba(176,141,79,.1), transparent 55%)}
-        .hero .eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px}
+        .hero .eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:16px}
         .hero .eyebrow::before,.hero .eyebrow::after{content:"";width:30px;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
         .hero .eyebrow::after{background:linear-gradient(90deg,var(--gold),transparent)}
-        .hero h1{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(3rem,7vw,5.6rem);line-height:.98;letter-spacing:.01em;margin-bottom:24px}
+        .hero h1{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2.6rem,6.5vw,5.2rem);line-height:.98;letter-spacing:.01em;margin-bottom:18px}
         .hero h1 em{color:var(--gold)}
-        .hero p{max-width:62ch;margin:0 auto;color:var(--ink-soft);font-size:1.1rem}
-        .hero .scroll-cue{margin-top:46px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.8}
+        .hero p{max-width:62ch;margin:0 auto;color:var(--ink-soft);font-size:1.05rem}
+        .hero .scroll-cue{margin-top:24px;font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.8}
 
         /* ===== WORKSHOP ===== */
         .start{padding:40px 0 20px}
@@ -432,7 +432,10 @@ export default function PersoonlijkTrajectContent() {
           .day-cols{grid-template-columns:1fr;gap:20px}
           .incl-block{grid-template-columns:1fr;gap:20px}
           .incl-grid{grid-template-columns:1fr}
-          .hero{padding:110px 0 60px}
+          .hero{padding:80px 0 30px}
+          .hero h1{font-size:clamp(2.2rem,9vw,3.2rem);margin-bottom:14px}
+          .hero p{font-size:1rem}
+          .hero .scroll-cue{margin-top:18px}
           .combo-card{flex-direction:column;align-items:flex-start;padding:30px 26px}
           .combo-l{max-width:100%}
           .combo-r{width:100%}
