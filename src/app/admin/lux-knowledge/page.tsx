@@ -13,6 +13,7 @@ export default function LuxKnowledgePage() {
   const [updatedAt, setUpdatedAt] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [toast, setToast] = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false })
   const [error, setError] = useState('')
   const [loadingData, setLoadingData] = useState(true)
 
@@ -95,6 +96,8 @@ export default function LuxKnowledgePage() {
         setUpdatedAt(insertData.updated_at)
       }
       setSaved(true)
+      setToast({ msg: '✓ Opgeslagen! Lux gebruikt de nieuwe kennis binnen 60 seconden.', visible: true })
+      setTimeout(() => setToast(t => ({ ...t, visible: false })), 4000)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
       setError(`Onverwachte fout bij opslaan: ${err}`)
@@ -128,6 +131,34 @@ export default function LuxKnowledgePage() {
   return (
     <>
       <Navbar />
+      {/* Toast notification */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 'calc(env(safe-area-inset-top) + 70px)',
+          right: 24,
+          zIndex: 9999,
+          background: 'linear-gradient(135deg, #1a1a1a, #2c2722)',
+          color: '#D8B97A',
+          padding: '16px 28px',
+          borderRadius: 14,
+          border: '1px solid rgba(216,185,122,.5)',
+          boxShadow: '0 20px 50px -12px rgba(0,0,0,.4), 0 0 30px -8px rgba(216,185,122,.2)',
+          fontSize: '.92rem',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          opacity: toast.visible ? 1 : 0,
+          transform: toast.visible ? 'translateX(0)' : 'translateX(120%)',
+          transition: 'opacity .4s cubic-bezier(.16,1,.3,1), transform .4s cubic-bezier(.16,1,.3,1)',
+          pointerEvents: toast.visible ? 'auto' : 'none',
+          maxWidth: 380,
+        }}
+      >
+        <span style={{ fontSize: '1.3rem' }}>✓</span>
+        <span>{toast.msg}</span>
+      </div>
       <div className="min-h-screen bg-[#F3EFE7]" style={{ paddingTop: 'var(--content-pad-top)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
           <div style={{ marginBottom: 32 }}>
@@ -166,19 +197,7 @@ export default function LuxKnowledgePage() {
                 </div>
               )}
 
-              {saved && (
-                <div style={{
-                  background: 'rgba(34,139,34,.08)',
-                  border: '1px solid rgba(34,139,34,.3)',
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 20,
-                  color: '#2a8c2a',
-                  fontSize: '.9rem',
-                }}>
-                  ✓ Opgeslagen! Lux gebruikt de nieuwe kennis binnen 60 seconden.
-                </div>
-              )}
+              {saved && null}
 
               <textarea
                 id="lux-knowledge-textarea"
