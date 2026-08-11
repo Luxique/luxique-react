@@ -561,6 +561,12 @@ function formatDateNL(iso: string): string {
   })
 }
 
+function fmtTime(t?: string | null): string {
+  if (!t) return ''
+  const parts = t.split(':')
+  return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : t
+}
+
 function formatBedrag(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace('.', ',')}`
 }
@@ -639,7 +645,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(data.startdatum)}</td></tr>
               ${heeftMeerdereDagen ? trajectDagenHtml : ''}
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Starttijd per dag</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.starttijd}</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${fmtTime(data.starttijd)}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Locatie</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${STUDIO_ADDRESS}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Aanbetaling (betaald)</td></tr>
@@ -683,7 +689,7 @@ export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) 
     const { error } = await resend.emails.send({
       from: FROM,
       to: CHIVA_EMAIL,
-      subject: `Nieuwe traject-boeking: ${data.cursus_naam}`,
+      subject: `You've sold a course! ${data.cursus_naam} — ${formatDateNL(data.startdatum)}`,
       html: `<!DOCTYPE html>
 <html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -702,8 +708,8 @@ export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) 
       </td></tr>
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Nieuwe boeking</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Traject geboekt</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">You've sold a course!</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${data.cursus_naam}</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -716,7 +722,7 @@ export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) 
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Datums</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${datumsLijst}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Starttijd</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.starttijd}</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${fmtTime(data.starttijd)}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Aanbetaling (betaald)</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatBedrag(data.aanbetaling_cents)}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Openstaand restbedrag</td></tr>
