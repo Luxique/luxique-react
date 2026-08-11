@@ -14,6 +14,7 @@ export default function LuxKnowledgePage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [toast, setToast] = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false })
+  const [prevContent, setPrevContent] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loadingData, setLoadingData] = useState(true)
 
@@ -244,10 +245,41 @@ export default function LuxKnowledgePage() {
                     📋 Alles selecteren
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm('Weet je zeker dat je alle tekst wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
-                        setContent('')
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(content)
+                        setToast({ msg: '📋 Kennisbank gekopieerd naar klembord!', visible: true })
+                        setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
+                      } catch {
+                        // Fallback for older browsers
+                        const ta = document.getElementById('lux-knowledge-textarea') as HTMLTextAreaElement
+                        if (ta) { ta.select(); document.execCommand('copy'); }
+                        setToast({ msg: '📋 Kennisbank gekopieerd!', visible: true })
+                        setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
                       }
+                    }}
+                    disabled={!content.trim()}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 100,
+                      border: '1px solid rgba(28,24,20,.13)',
+                      color: '#888',
+                      fontWeight: 500,
+                      fontSize: '.82rem',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      opacity: !content.trim() ? .3 : 1,
+                    }}
+                  >
+                    📄 Kopiëren
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!content.trim()) return
+                      setPrevContent(content)
+                      setContent('')
+                      setToast({ msg: '🗑 Tekst gewist. Klik ↩️ Ongedaan maken om terug te halen.', visible: true })
+                      setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000)
                     }}
                     disabled={!content.trim()}
                     style={{
@@ -264,6 +296,28 @@ export default function LuxKnowledgePage() {
                   >
                     🗑 Wissen
                   </button>
+                  {prevContent !== null && (
+                    <button
+                      onClick={() => {
+                        setContent(prevContent)
+                        setPrevContent(null)
+                        setToast({ msg: '↩️ Tekst hersteld!', visible: true })
+                        setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 100,
+                        border: '1px solid rgba(34,139,34,.3)',
+                        color: '#2a8c2a',
+                        fontWeight: 500,
+                        fontSize: '.82rem',
+                        background: 'rgba(34,139,34,.05)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ↩️ Ongedaan maken
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={fetchKnowledge}
