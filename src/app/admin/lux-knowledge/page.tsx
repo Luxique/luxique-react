@@ -181,6 +181,7 @@ export default function LuxKnowledgePage() {
               )}
 
               <textarea
+                id="lux-knowledge-textarea"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 style={{
@@ -200,7 +201,51 @@ export default function LuxKnowledgePage() {
                 placeholder="Voer hier de kennisbank tekst in die Lux gebruikt..."
               />
 
-              <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ marginRight: 'auto', display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => {
+                      const ta = document.getElementById('lux-knowledge-textarea') as HTMLTextAreaElement
+                      if (!ta) return
+                      ta.focus()
+                      ta.select()
+                      document.execCommand('selectAll')
+                    }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 100,
+                      border: '1px solid rgba(28,24,20,.13)',
+                      color: '#888',
+                      fontWeight: 500,
+                      fontSize: '.82rem',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    📋 Alles selecteren
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm('Weet je zeker dat je alle tekst wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
+                        setContent('')
+                      }
+                    }}
+                    disabled={!content.trim()}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 100,
+                      border: '1px solid rgba(229,85,85,.3)',
+                      color: '#c44',
+                      fontWeight: 500,
+                      fontSize: '.82rem',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      opacity: !content.trim() ? .3 : 1,
+                    }}
+                  >
+                    🗑 Wissen
+                  </button>
+                </div>
                 <button
                   onClick={fetchKnowledge}
                   style={{
