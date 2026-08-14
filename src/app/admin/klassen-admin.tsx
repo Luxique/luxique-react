@@ -377,7 +377,7 @@ function Overzicht({
           onClick={() => setConfirmDelete(null)}
         >
           <div
-            className="bg-white rounded-2xl p-8 w-[440px] shadow-2xl border border-[#eee]"
+            className="bg-white rounded-2xl p-5 sm:p-8 w-full sm:w-[440px] sm:max-w-[92vw] shadow-2xl border border-[#eee] mx-4 sm:mx-0 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="font-['Cormorant_Garamond'] text-[24px] mb-3">Klas verwijderen?</h3>
@@ -539,7 +539,7 @@ function NieuweKlasForm({
         </div>
 
         {/* Datum + tijd + max */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Startdatum</label>
             <input

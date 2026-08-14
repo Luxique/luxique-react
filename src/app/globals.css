@@ -1243,3 +1243,27 @@ mux-player *:focus-visible {
   .ond-desktop-only { display: none !important; }
 }
 
+
+/* ── Admin dashboard: mobile helpers ── */
+.admin-no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.admin-no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Admin tables: readable card-style rows on phones, normal table ≥ lg */
+@media (max-width: 1023px) {
+  .admin-table { display: block; }
+  .admin-table thead { display: none; }
+  .admin-table tbody { display: block; }
+  .admin-table tr {
+    display: block;
+    border-bottom: 1px solid #f0efec;
+    padding: 14px 4px;
+  }
+  .admin-table td {
+    display: block;
+    border: 0;
+    padding: 2px 4px;
+    text-align: left;
+  }
+  /* First cell acts as row heading */
+  .admin-table td:first-child { font-weight: 600; }
+}

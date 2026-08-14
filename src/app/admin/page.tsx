@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import TrajectInstellingenPaneel from './traject-settings'
 import KlassenAdmin from './klassen-admin'
+import AdminMobileNav from '@/components/AdminMobileNav'
 
 /* ── types ── */
 type Profile = { id: string; email: string; full_name: string; role: string; created_at: string }
@@ -118,24 +119,38 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
       {/* Top bar */}
-      <div className="bg-white border-b border-[#eee] px-6 py-4 sticky top-[50px] z-30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase">LXQ Admin</span>
-            <h1 className="font-['Cormorant_Garamond'] text-[24px] text-[#1a1a1a]">
+      <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
+            <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">
               {tabs.find(t => t.key === tab)?.label || 'Dashboard'}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">← Website</a>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee] hidden sm:inline-block">← Website</a>
             <button onClick={signOut} className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">Uitloggen</button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6 flex gap-6">
-        {/* ── Sidebar nav ── */}
-        <div className="w-[220px] shrink-0">
+      {/* Mobile nav (horizontal pills) */}
+      <AdminMobileNav
+        items={[
+          { label: 'Overzicht', onClick: () => setTab('overview'), active: tab === 'overview', icon: '📊' },
+          { label: 'Klanten', href: '/admin/customers', icon: '👥' },
+          { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
+          { label: 'Agenda', onClick: () => setTab('calendar'), active: tab === 'calendar', icon: '📅' },
+          { label: 'Financiën', onClick: () => setTab('finance'), active: tab === 'finance', icon: '💶' },
+          { label: 'Trajecten', onClick: () => setTab('traject'), active: tab === 'traject', icon: '🗓️' },
+          { label: 'Klassen', onClick: () => setTab('klassen'), active: tab === 'klassen', icon: '🎓' },
+          { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
+        ]}
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col lg:flex-row gap-4 lg:gap-6">
+        {/* ── Sidebar nav (desktop only) ── */}
+        <div className="w-[220px] shrink-0 hidden lg:block">
           <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">
             {tabs.map(t => (
               t.key === 'customers' ? (
@@ -176,7 +191,7 @@ export default function AdminPage() {
           {tab === 'overview' && (
             <div className="space-y-5">
               {/* Stat cards */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
                   { label: 'Inkomen deze maand', value: `€${monthlyRevenue.toLocaleString('nl-NL')}`, sub: `${thisMonth.length} betalingen`, accent: true },
                   { label: 'Totaal inkomen', value: `€${totalRevenue.toLocaleString('nl-NL')}`, sub: `${enrollments.length} inschrijvingen` },
@@ -191,9 +206,9 @@ export default function AdminPage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-[1fr_340px] gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
                 {/* Recent enrollments */}
-                <div className="bg-white rounded-2xl border border-[#eee] p-5">
+                <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente inschrijvingen</h3>
                   {enrollments.length > 0 ? (
                     <div className="space-y-3">
@@ -214,7 +229,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Upcoming bookings / mini calendar */}
-                <div className="bg-white rounded-2xl border border-[#eee] p-5">
+                <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Aankomende afspraken</h3>
                   {upcomingBookings.length > 0 ? (
                     <div className="space-y-3">
@@ -236,7 +251,7 @@ export default function AdminPage() {
               </div>
 
               {/* Quick actions */}
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <a href="/admin/courses" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0C0A07] text-white text-[13px] font-medium hover:bg-[#333] transition">
                   📚 Cursus Builder
                 </a>
@@ -251,7 +266,7 @@ export default function AdminPage() {
           {tab === 'customers' && (
             <div className="space-y-4">
               <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
-                <table className="w-full text-left">
+                <table className="w-full text-left admin-table">
                   <thead>
                     <tr className="border-b border-[#eee]">
                       <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Naam</th>
@@ -284,7 +299,7 @@ export default function AdminPage() {
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Alle inschrijvingen</h3>
                   <span className="text-[11px] bg-[#f5f5f5] text-[#888] px-2.5 py-1 rounded-full">{enrollments.length}</span>
                 </div>
-                <table className="w-full text-left">
+                <table className="w-full text-left admin-table">
                   <thead>
                     <tr className="border-b border-[#eee]">
                       <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Cursist</th>
@@ -317,7 +332,7 @@ export default function AdminPage() {
                 <div className="px-5 py-4 border-b border-[#eee] flex items-center justify-between">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Cursusbeheer</h3>
                 </div>
-                <table className="w-full text-left">
+                <table className="w-full text-left admin-table">
                   <thead>
                     <tr className="border-b border-[#eee]">
                       <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Cursus</th>
@@ -355,7 +370,7 @@ export default function AdminPage() {
           {tab === 'finance' && (
             <div className="space-y-5">
               {/* Revenue cards */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                   <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">Totaal omzet</p>
                   <p className="text-[36px] font-['Cormorant_Garamond'] text-[#1a1a1a]">€{totalRevenue.toLocaleString('nl-NL')}</p>
@@ -375,7 +390,7 @@ export default function AdminPage() {
               {/* Payment breakdown */}
               <div className="bg-white rounded-2xl border border-[#eee] p-6">
                 <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Betalingsoverzicht</h3>
-                <table className="w-full text-left">
+                <table className="w-full text-left admin-table">
                   <thead>
                     <tr className="border-b border-[#eee]">
                       <th className="pb-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Methode</th>
@@ -404,7 +419,7 @@ export default function AdminPage() {
                 <div className="px-5 py-4 border-b border-[#eee]">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Alle transacties</h3>
                 </div>
-                <table className="w-full text-left">
+                <table className="w-full text-left admin-table">
                   <thead>
                     <tr className="border-b border-[#eee]">
                       <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Datum</th>
@@ -444,7 +459,7 @@ export default function AdminPage() {
       {/* Grant modal */}
       {showGrant && (
         <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setShowGrant(false)}>
-          <div className="bg-white rounded-2xl p-8 w-[400px] shadow-2xl border border-[#eee]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full sm:w-[400px] sm:max-w-[92vw] shadow-2xl border border-[#eee] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="font-['Cormorant_Garamond'] text-[24px] mb-6">Cursus toewijzen</h3>
             <div className="space-y-4">
               <div>

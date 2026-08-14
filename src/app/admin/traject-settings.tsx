@@ -329,7 +329,7 @@ export default function TrajectInstellingenPaneel() {
         </div>
 
         {/* Ochtendblok */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
               Ochtend start
@@ -364,7 +364,7 @@ export default function TrajectInstellingenPaneel() {
         </div>
 
         {/* Middagblok */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
               Middag start
@@ -480,11 +480,11 @@ export default function TrajectInstellingenPaneel() {
           🚫 Annuleringsvoorwaarden
         </h4>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Venster visualisatie */}
           <div className="col-span-3 p-4 rounded-xl bg-[#f9f9f9] space-y-2">
             <p className="text-[11px] font-semibold text-[#1a1a1a] uppercase tracking-wider">De 3 vensters:</p>
-            <div className="grid grid-cols-3 gap-3 text-[11px]">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 text-[11px]">
               <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
                 <p className="font-bold text-green-700">Venster 1</p>
                 <p className="text-[#888] mt-1">Ruim vóór start</p>

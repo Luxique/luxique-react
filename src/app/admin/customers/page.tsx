@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, JSX } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import AdminMobileNav from '@/components/AdminMobileNav'
 
 /* ── types ── */
 type Profile = {
@@ -129,22 +130,31 @@ export default function AdminCustomersPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
       {/* Top bar — same as /admin */}
-      <div className="bg-white border-b border-[#eee] px-6 py-4 sticky top-[50px] z-30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase">LXQ Admin</span>
-            <h1 className="font-['Cormorant_Garamond'] text-[24px] text-[#1a1a1a]">Klanten</h1>
+      <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
+            <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">Klanten</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">← Website</a>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee] hidden sm:inline-block">← Website</a>
             <button onClick={signOut} className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">Uitloggen</button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6 flex gap-6">
-        {/* ── Sidebar — same as /admin ── */}
-        <div className="w-[220px] shrink-0">
+      <AdminMobileNav
+        items={[
+          { label: 'Overzicht', href: '/admin', icon: '📊' },
+          { label: 'Klanten', href: '/admin/customers', active: true, icon: '👥' },
+          { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
+          { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
+        ]}
+      />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col lg:flex-row gap-4 lg:gap-6">
+        {/* ── Sidebar — same as /admin (desktop only) ── */}
+        <div className="w-[220px] shrink-0 hidden lg:block">
           <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">
             {navItems.map(t => (
               <a key={t.key} href={t.href}
@@ -217,7 +227,7 @@ export default function AdminCustomersPage() {
                 {/* Contact */}
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Contactgegevens</h3>
-                  <div className="grid grid-cols-2 gap-y-3 gap-x-6">
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-4 sm:gap-x-6">
                     {[
                       ['Email', selected.email],
                       ['Telefoon', selected.phone],
@@ -237,7 +247,7 @@ export default function AdminCustomersPage() {
                 {(selected.company_name || selected.vat_number || selected.kvk_number) && (
                   <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                     <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Bedrijfsgegevens</h3>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {[
                         ['Bedrijfsnaam', selected.company_name],
                         ['BTW-nummer', selected.vat_number],

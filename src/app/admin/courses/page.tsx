@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import AdminMobileNav from '@/components/AdminMobileNav'
 
 /* ── Types ── */
 interface Course {
@@ -395,22 +396,31 @@ export default function CoursesOverviewPage() {
 
       <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
         {/* Admin topbar */}
-        <div className="bg-white border-b border-[#eee] px-6 py-4 sticky top-[50px] z-30">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase">LXQ Admin</span>
-              <h1 className="font-['Cormorant_Garamond'] text-[24px] text-[#1a1a1a]">Cursussen</h1>
+        <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
+              <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">Cursussen</h1>
             </div>
-            <div className="flex items-center gap-3">
-              <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">← Website</a>
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee] hidden sm:inline-block">← Website</a>
               <button onClick={() => setShowModal(true)} className="text-[12px] text-white px-3 py-1.5 rounded-full bg-[#0C0A07] hover:bg-[#333] transition">+ Nieuwe cursus</button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-6 flex gap-6">
-          {/* Admin sidebar */}
-          <div className="w-[220px] shrink-0">
+        <AdminMobileNav
+          items={[
+            { label: 'Overzicht', href: '/admin', icon: '📊' },
+            { label: 'Klanten', href: '/admin/customers', icon: '👥' },
+            { label: 'Cursussen', href: '/admin/courses', active: true, icon: '📚' },
+            { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
+          ]}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col lg:flex-row gap-4 lg:gap-6">
+          {/* Admin sidebar (desktop only) */}
+          <div className="w-[220px] shrink-0 hidden lg:block">
             <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-[120px]">
               <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">📊 Overzicht</a>
               <a href="/admin/customers" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">👥 Klanten</a>
@@ -425,7 +435,7 @@ export default function CoursesOverviewPage() {
           <div className="flex-1 min-w-0">
 
           {/* Stats Strip — 3 tegels (voltooiingsrate verwijderd) */}
-          <div className="grid grid-cols-3 gap-2.5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-6">
             <div className="bg-white border border-[#eee] rounded-[14px] p-4 px-5">
               <div className="font-['Cormorant_Garamond',serif] text-[32px] font-light text-[#1a1a1a] leading-none tracking-[-0.02em] mb-0.5">
                 {courses.filter(c => c.status === 'published').length}
@@ -793,7 +803,7 @@ export default function CoursesOverviewPage() {
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]"
+            className="bg-white rounded-[18px] p-5 sm:p-7 w-full sm:w-[480px] sm:max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-[0_24px_64px_rgba(12,10,7,0.2)] mx-4 sm:mx-0"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1a1a1a] mb-1.5">
@@ -866,7 +876,7 @@ export default function CoursesOverviewPage() {
       {/* Academy Card Edit Modal */}
       {editingCourseId && (
         <div className="fixed inset-0 bg-[rgba(12,10,7,0.45)] backdrop-blur-sm z-[200] flex items-center justify-center" onClick={() => setEditingCourseId(null)}>
-          <div className="bg-white rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-[18px] p-5 sm:p-7 w-full sm:w-[480px] sm:max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-[0_24px_64px_rgba(12,10,7,0.2)] mx-4 sm:mx-0" onClick={(e) => e.stopPropagation()}>
             <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1a1a1a] mb-1.5">
               Academy card bewerken
             </p>
@@ -949,7 +959,7 @@ export default function CoursesOverviewPage() {
       {/* Delete Course Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-[rgba(12,10,7,0.45)] backdrop-blur-sm z-[200] flex items-center justify-center" onClick={() => !deleteLoading && setDeleteTarget(null)}>
-          <div className="bg-white rounded-[18px] p-7 w-[480px] max-w-[90vw] shadow-[0_24px_64px_rgba(12,10,7,0.2)]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-[18px] p-5 sm:p-7 w-full sm:w-[480px] sm:max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-[0_24px_64px_rgba(12,10,7,0.2)] mx-4 sm:mx-0" onClick={e => e.stopPropagation()}>
             <p className="font-['Cormorant_Garamond',serif] text-[22px] font-normal text-[#1a1a1a] mb-1.5">
               Cursus verwijderen
             </p>
