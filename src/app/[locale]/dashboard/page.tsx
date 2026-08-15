@@ -479,7 +479,7 @@ export default function DashboardPage() {
                   ) : (
                     <p style={{ color:'#46403A', fontSize:'.95rem' }}>Alle lessen voltooid 🎉</p>
                   )}
-                  {resumeCourse.nextLesson && (
+                  {resumeCourse.nextLesson ? (
                     <a href={lpath(`/academy/${resumeCourse.course.slug}/${resumeCourse.nextLesson.id}`)} style={{
                       display:'inline-flex', alignItems:'center', gap:10, marginTop:20,
                       background:'#B08D4F', color:'#1C1814', textDecoration:'none',
@@ -489,6 +489,17 @@ export default function DashboardPage() {
                     onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 14px 30px -12px rgba(176,141,79,.4)' }}
                     onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='' }}>
                       Verder met les {resumeCourse.nextLessonNumber} →
+                    </a>
+                  ) : (
+                    <a href={lpath(`/academy/${resumeCourse.course.slug}`)} style={{
+                      display:'inline-flex', alignItems:'center', gap:10, marginTop:20,
+                      background:'#B08D4F', color:'#1C1814', textDecoration:'none',
+                      fontWeight:500, fontSize:'.95rem', padding:'13px 26px', borderRadius:100,
+                      transition:'transform .25s, box-shadow .25s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 14px 30px -12px rgba(176,141,79,.4)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='' }}>
+                      Cursus bekijken →
                     </a>
                   )}
                 </div>
@@ -599,6 +610,16 @@ export default function DashboardPage() {
                             {certError && downloadingCert === null && (
                               <div style={{ fontSize:'.78rem', color:'#ef4444', marginTop:6, width:'100%' }}>{certError}</div>
                             )}
+                            <a href={lpath(`/academy/${cp.course.slug}`)} style={{
+                              display:'inline-flex', alignItems:'center', gap:8, textDecoration:'none',
+                              color:'#46403A', fontWeight:500, fontSize:'.88rem',
+                              border:'1px solid rgba(28,24,20,.25)', borderRadius:100, padding:'10px 22px',
+                              transition:'border-color .25s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#1C1814' }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(28,24,20,.25)' }}>
+                              Cursus bekijken →
+                            </a>
                             </>
                           ) : cp.isDone && cp.hasExam ? (
                             <a href={lpath(`/academy/${cp.course.slug}`)} style={{
@@ -620,7 +641,7 @@ export default function DashboardPage() {
                             }}
                             onMouseEnter={e => { e.currentTarget.style.background = cp.isDone ? '#B08D4F' : '#1C1814'; e.currentTarget.style.color = '#FBF8F2' }}
                             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = cp.isDone ? '#B08D4F' : '#1C1814' }}>
-                              {cp.isDone ? 'Certificaat bekijken →' : 'Verder leren →'}
+                              {cp.isDone ? 'Cursus herbekijken →' : 'Verder leren →'}
                             </a>
                           )}
                         </div>
