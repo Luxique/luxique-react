@@ -10,6 +10,7 @@ import './course-interior.css'
 interface Lesson {
   id: string; title: string; slug: string; sort_order: number
   lesson_type: 'content' | 'quiz' | 'exam'; duration_seconds?: number; is_free?: boolean
+  parent_lesson_id?: string | null
 }
 interface Course { id: string; title: string; slug: string; lessons?: Lesson[] }
 interface ProgressRecord { lesson_id: string; completed: boolean; last_position_seconds?: number }
@@ -32,10 +33,17 @@ export default function CourseInteriorPage() {
       try {
         const { data, error } = await supabase.from('courses').select('id, title, slug').eq('slug', slug).single()
         if (error || !data) { setLoading(false); return }
-        const { data: lessons } = await supabase.from('lessons')
-          .select('id, title, slug, sort_order, lesson_type, duration_seconds, is_free')
+        const { data: lessons, error: lessonsErr } = await supabase.from('lessons')
+          .select('id, title, slug, sort_order, lesson_type, duration_seconds, is_free, parent_lesson_id')
           .eq('course_id', data.id).order('sort_order')
-        setCourse({ ...data, lessons: lessons || [] })
+        let lessonRows = lessons
+        if (lessonsErr && (lessonsErr.code === '42703' || (lessonsErr.message || '').includes('does not exist'))) {
+          const { data: fallback } = await supabase.from('lessons')
+            .select('id, title, slug, sort_order, lesson_type, duration_seconds, is_free')
+            .eq('course_id', data.id).order('sort_order')
+          lessonRows = (fallback as typeof lessons) || null
+        }
+        setCourse({ ...data, lessons: lessonRows || [] })
       } finally { setLoading(false) }
     }
     fetchCourse()
@@ -83,6 +91,7 @@ export default function CourseInteriorPage() {
   const fmtDur = (s?: number) => { if (!s) return ''; const m = Math.round(s / 60); return m > 0 ? `${m} min` : '' }
   const lessonDisplays = getLessonDisplays(lessons)
   const getLabel = (l: Lesson) => lessonDisplays.get(l.id)?.shortLabel || l.title
+  const isSubLesson = (l: Lesson) => !!(l.parent_lesson_id && lessons.some(x => x.id === l.parent_lesson_id))
 
   if (loading || checkingEnrollment) return <div className="ci-loader"><div>Cursus wordt geladen...</div></div>
   if (!course) return <div className="ci-loader"><div>Cursus niet gevonden</div><a href="/academy" className="ci-link">← Terug naar academie</a></div>
@@ -145,7 +154,7 @@ export default function CourseInteriorPage() {
 
           return (
             <div key={lesson.id}
-              className={`ci-lesson ${isCurrent ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''}`}
+              className={`ci-lesson ${isCurrent ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''} ${isSubLesson(lesson) ? 'is-sub' : ''}`}
               onClick={() => { if (!locked) router.push(`/academy/${slug}/${lesson.id}`) }}
               style={{ cursor: locked ? 'default' : 'pointer' }}
             >

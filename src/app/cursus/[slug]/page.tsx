@@ -15,12 +15,22 @@ async function getCourse(slug: string) {
 }
 
 async function getLessons(courseId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('lessons')
-    .select('id, title, sort_order, is_free, duration_seconds, what_you_learn_text, lesson_type')
+    .select('id, title, sort_order, is_free, duration_seconds, what_you_learn_text, lesson_type, parent_lesson_id')
     .eq('course_id', courseId)
     .order('sort_order')
-  return data || []
+  if (!error) return data || []
+  // Pre-migratie fallback: zonder parent_lesson_id-kolom
+  if (error.code === '42703' || (error.message || '').includes('does not exist')) {
+    const { data: fallback } = await supabase
+      .from('lessons')
+      .select('id, title, sort_order, is_free, duration_seconds, what_you_learn_text, lesson_type')
+      .eq('course_id', courseId)
+      .order('sort_order')
+    return fallback || []
+  }
+  return []
 }
 
 export default async function CourseLandingPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -16,6 +16,7 @@ interface Course {
   price?: number
   price_cents?: number
   status: 'draft' | 'published' | 'archived'
+  is_ghost?: boolean
   thumbnail_url?: string
   intro_video_mux_id?: string
   thumbnail_time?: number
@@ -243,6 +244,34 @@ export default function CoursesOverviewPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [deleteCheck, setDeleteCheck] = useState<{ lessons: number; enrollments: number } | null>(null)
 
+  // ── Ghost toggle (👻) — cursus verbergen voor het publiek, toegang alleen via link/toewijzen ──
+  const [ghostUpdating, setGhostUpdating] = useState<string | null>(null)
+
+  const handleGhostToggle = async (course: Course) => {
+    if (course.status !== 'published') {
+      alert('Zet de cursus eerst op Live voordat je de spookstand kunt gebruiken.')
+      return
+    }
+    setGhostUpdating(course.id)
+    try {
+      const next = !course.is_ghost
+      const { error } = await supabase
+        .from('courses')
+        .update({ is_ghost: next })
+        .eq('id', course.id)
+      if (error && (error.code === '42703' || (error.message || '').includes('does not exist'))) {
+        alert('De spook-functie staat nog niet aan in de database.\n\nVoer supabase/migrations/20260817_ghost_en_sublessen.sql uit in de Supabase SQL editor (2 regels) en probeer opnieuw.')
+        return
+      }
+      if (error) throw error
+      fetchCourses()
+    } catch (err) {
+      alert('Ghost-status wijzigen mislukt: ' + (err instanceof Error ? err.message : 'onbekende fout'))
+    } finally {
+      setGhostUpdating(null)
+    }
+  }
+
   const openDeleteModal = async (course: Course) => {
     setDeleteTarget(course)
     setDeleteError(null)
@@ -271,15 +300,31 @@ export default function CoursesOverviewPage() {
     setDeleteLoading(true)
     setDeleteError(null)
     try {
+      const courseId = deleteTarget.id
+
+      // Alles onder de cursus opruimen, dan pas de cursus zelf.
+      // (volgorde: voortgang → inschrijvingen → blokken → lessen → cursus)
+      const { data: courseLessons } = await supabase
+        .from('lessons')
+        .select('id')
+        .eq('course_id', courseId)
+      const lessonIds = (courseLessons || []).map(l => l.id)
+
+      if (lessonIds.length > 0) {
+        await supabase.from('lesson_progress').delete().in('lesson_id', lessonIds)
+      }
+      await supabase.from('lesson_progress').delete().eq('course_id', courseId)
+      await supabase.from('enrollments').delete().eq('course_id', courseId)
+      await supabase.from('blocks').delete().eq('course_id', courseId)
+      if (lessonIds.length > 0) {
+        await supabase.from('lessons').delete().in('id', lessonIds)
+      }
+
       const { error } = await supabase
         .from('courses')
         .delete()
-        .eq('id', deleteTarget.id)
+        .eq('id', courseId)
       if (error) {
-        // Handle FK constraint violations gracefully
-        if (error.message.includes('foreign key') || error.code === '23503') {
-          throw new Error('Deze cursus kan niet verwijderd worden omdat er nog lessen of inschrijvingen aan gekoppeld zijn. Verwijder eerst alle lessen en inschrijvingen.')
-        }
         throw error
       }
       setDeleteTarget(null)
@@ -601,6 +646,14 @@ export default function CoursesOverviewPage() {
                     }`}>
                       {course.status === 'archived' ? 'GEARCHIVEERD' : course.status === 'published' ? 'LIVE' : 'CONCEPT'}
                     </span>
+                    {course.is_ghost && course.status === 'published' && (
+                      <span
+                        className="absolute top-10 left-2.5 text-[8.5px] font-bold tracking-[0.14em] uppercase px-2.5 py-1 rounded-full bg-[#2b2b3a] text-[#cfcfe6] border border-[rgba(207,207,230,0.35)]"
+                        title="Spook-cursus: verborgen op de site — alleen zichtbaar voor wie de directe link heeft of toegang is toegekend"
+                      >
+                        👻 Spook
+                      </span>
+                    )}
                     <span className="absolute top-2.5 right-2.5 text-[8.5px] font-semibold tracking-[0.12em] uppercase px-2 py-1 rounded-full bg-[rgba(12,10,7,0.6)] backdrop-blur-md text-[rgba(250,248,244,0.6)] border border-[rgba(255,255,255,0.08)]">
                       {course.level}
                     </span>
@@ -750,6 +803,20 @@ export default function CoursesOverviewPage() {
                           Preview
                         </button>
                       )}
+                      <button
+                        onClick={() => handleGhostToggle(course)}
+                        disabled={ghostUpdating === course.id}
+                        className={`flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border transition ${
+                          course.is_ghost
+                            ? 'border-[#2b2b3a]/40 bg-[#2b2b3a]/10 text-[#2b2b3a]'
+                            : 'border-[#eee] bg-transparent text-[#888] hover:bg-[rgba(43,43,58,0.06)] hover:border-[rgba(43,43,58,0.3)]'
+                        }`}
+                        title={course.is_ghost
+                          ? '👻 Spook aan — cursus is verborgen op de site. Klik om weer publiek te maken.'
+                          : '👻 Spook uit — zet aan om deze cursus te verbergen op de site (alleen directe link / toegekende toegang)'}
+                      >
+                        {ghostUpdating === course.id ? '…' : '👻'}
+                      </button>
                       <button
                         onClick={() => handleArchiveCourse(course.id, course.status)}
                         className="flex-0 flex-shrink-0 text-[12px] font-medium py-2 px-2.5 rounded-lg border border-[#eee] bg-transparent text-[#888] hover:bg-[rgba(224,90,78,0.08)] hover:border-[rgba(224,90,78,0.3)] hover:text-[#E05A4E] transition"
@@ -970,15 +1037,15 @@ export default function CoursesOverviewPage() {
             {/* Pre-delete check results */}
             {deleteCheck == null ? (
               <p className="text-[12px] text-[#888] mb-4">Controleren op lessen en inschrijvingen…</p>
-            ) : deleteCheck.lessons > 0 || deleteCheck.enrollments > 0 ? (
-              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[12px] text-red-700 mb-4">
-                <p className="font-semibold mb-1">⚠️ Verwijderen geblokkeerd</p>
+            ) : (deleteCheck.lessons > 0 || deleteCheck.enrollments > 0) ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-[12px] text-amber-800 mb-4">
+                <p className="font-semibold mb-1">⚠️ Let op — alles wordt mee verwijderd</p>
                 <p>Deze cursus heeft nog:</p>
                 <ul className="ml-4 mt-1 list-disc">
-                  {deleteCheck.lessons > 0 && <li>{deleteCheck.lessons} les(sen)</li>}
-                  {deleteCheck.enrollments > 0 && <li>{deleteCheck.enrollments} inschrijving(en)</li>}
+                  {deleteCheck.lessons > 0 && <li>{deleteCheck.lessons} les(sen) incl. video's, quizzen en blokken</li>}
+                  {deleteCheck.enrollments > 0 && <li>{deleteCheck.enrollments} inschrijving(en) en voortgang van cursisten</li>}
                 </ul>
-                <p className="mt-2">Verwijder eerst alle lessen en inschrijvingen voordat je de cursus kunt verwijderen.</p>
+                <p className="mt-2">Bij het verwijderen worden de lessen, blokken, inschrijvingen en voortgang <strong>definitief</strong> meegewist.</p>
               </div>
             ) : deleteCheck.lessons === 0 && deleteCheck.enrollments === 0 ? (
               <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-[12px] text-green-700 mb-4">
@@ -1002,7 +1069,7 @@ export default function CoursesOverviewPage() {
               </button>
               <button
                 onClick={handleDeleteCourse}
-                disabled={deleteLoading || (deleteCheck != null && (deleteCheck.lessons > 0 || deleteCheck.enrollments > 0))}
+                disabled={deleteLoading}
                 className="flex-[2] text-[13px] font-semibold py-2.5 rounded-full bg-red-600 text-white border-none cursor-pointer hover:bg-red-700 transition disabled:opacity-50"
               >
                 {deleteLoading ? 'Verwijderen…' : 'Definitief verwijderen'}

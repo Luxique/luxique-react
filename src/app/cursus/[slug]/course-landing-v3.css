@@ -642,6 +642,10 @@
   }
   .lesson-acc:last-child { border-bottom: none; }
   .lesson-acc.open { background: rgba(196, 162, 101, 0.04); }
+  /* Sublessen (1.1, 1.2 …) — ingesprongen onder de hoofdles */
+  .lesson-acc.is-sub .lesson-acc-head { padding-left: 64px; }
+  .lesson-acc.is-sub .lesson-num { font-size: 17px; width: 44px; opacity: 0.85; }
+  .lesson-acc.is-sub .lesson-info h4 { font-size: 14px; opacity: 0.92; }
   .lesson-acc-head {
     display: flex;
     align-items: center;

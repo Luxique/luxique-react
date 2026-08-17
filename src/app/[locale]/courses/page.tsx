@@ -30,12 +30,29 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Ghost-cursussen (👻) niet in het publieke overzicht.
+    // Fallback: als de is_ghost-kolom nog niet bestaat (migratie niet uitgevoerd),
+    // dan zonder dat filter door — zo breekt de pagina niet.
     supabase
       .from('courses')
       .select('id, title, short_description, description, slug, level, price, price_cents, status, is_first_lesson_free, intro_video_mux_id, hero_mux_playback_id, thumbnail_time, thumbnail_url, duration_text, what_you_learn, access_duration_text')
       .eq('status', 'published')
+      .or('is_ghost.is.null,is_ghost.eq.false')
       .order('created_at', { ascending: true })
       .then(({ data, error }) => {
+        if (error && (error.code === 'PGRST204' || error.code === '42703' || (error.message || '').includes('does not exist'))) {
+          return supabase
+            .from('courses')
+            .select('id, title, short_description, description, slug, level, price, price_cents, status, is_first_lesson_free, intro_video_mux_id, hero_mux_playback_id, thumbnail_time, thumbnail_url, duration_text, what_you_learn, access_duration_text')
+            .eq('status', 'published')
+            .order('created_at', { ascending: true })
+            .then(({ data: d2, error: e2 }) => {
+              if (e2) console.error('Courses fetch error:', e2)
+              const mapped = (d2 ?? []).map(c => ({ ...c, subtitle: c.short_description }))
+              setCourses(mapped)
+              setLoading(false)
+            })
+        }
         if (error) console.error('Courses fetch error:', error)
         const mapped = (data ?? []).map(c => ({ ...c, subtitle: c.short_description }))
         setCourses(mapped)

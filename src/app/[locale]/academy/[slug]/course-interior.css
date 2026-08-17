@@ -196,6 +196,11 @@
   text-decoration: none;
   color: inherit;
 }
+/* Subles (1.1, 1.2 …) — iets kleiner en ingesprongen */
+.ci-lesson.is-sub { margin-left: 26px; padding: 14px 20px; }
+.ci-lesson.is-sub .info .num { font-size: 0.8rem; opacity: 0.92; }
+.ci-lesson.is-sub .info .name { font-size: 0.92rem; }
+.ci-lesson.is-sub .status .n { font-size: 0.66rem; }
 .ci-lesson:hover {
   border-color: rgba(196,162,101,.45);
   transform: translateX(2px);

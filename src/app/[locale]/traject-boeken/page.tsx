@@ -162,7 +162,7 @@ function TrajectBoekenInner() {
   const selectedCursus = klas ? cursussen.find(c => c.id === klas.cursus_id) : null
   const prijsExcl = klas?.prijs_cents ?? selectedCursus?.prijs_cents ?? 0
   const prijsIncl = Math.round(prijsExcl * 1.21)
-  const aanbetaling = Math.round(prijsIncl / 2)
+  const aanbetaling = Math.round(prijsIncl * 0.2) // 20% — niet-restitueerbaar
 
   const isWorkshop = (klas?.duur_werkdagen === 0) || (selectedCursus?.duur_werkdagen === 0)
   const needsModel = klas ? (klas.duur_werkdagen ?? selectedCursus?.duur_werkdagen ?? 0) > 1 : false
@@ -428,7 +428,7 @@ function TrajectBoekenInner() {
               </div>
 
               <div className="flex justify-between items-center pt-4">
-                <span className="text-xl font-semibold text-[#C4A265]">Aanbetaling (50%)</span>
+                <span className="text-xl font-semibold text-[#C4A265]">Aanbetaling (20%)</span>
                 <span className="text-xl font-bold text-[#C4A265]">
                   {formatPrice(aanbetaling)}
                 </span>
@@ -562,6 +562,12 @@ function TrajectBoekenInner() {
                     <p className="text-red-400 text-sm mb-4">⚠️ {checkoutFout}</p>
                   )}
 
+                  <div className="mb-5 rounded-lg border border-[rgba(196,162,101,0.35)] bg-[rgba(196,162,101,0.08)] px-4 py-3">
+                    <p className="text-[13px] leading-relaxed text-[#FBF8F2]/85">
+                      <strong className="text-[#C4A265]">Let op:</strong> de aanbetaling (20% van het totaalbedrag incl. btw) is <strong>niet restitueerbaar</strong> — onder geen enkele omstandigheid, ook niet bij annuleren of verplaatsen.
+                    </p>
+                  </div>
+
                   <label className="flex items-start gap-3 mb-5 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -574,7 +580,7 @@ function TrajectBoekenInner() {
                       <a href="/voorwaarden#annulering" target="_blank" className="text-[#C4A265] underline hover:text-[#C4A265]/80">
                         algemene voorwaarden en het annuleringsbeleid
                       </a>{' '}
-                      en begrijp dat de aanbetaling niet restitueerbaar is.
+                      en begrijp dat de aanbetaling (20%) <strong>onder geen enkele omstandigheid restitueerbaar</strong> is.
                     </span>
                   </label>
 
@@ -596,7 +602,7 @@ function TrajectBoekenInner() {
 
                   <p className="text-[#FBF8F2]/40 text-xs text-center mt-4">
                     {user
-                      ? 'Je betaalt nu 50% aanbetaling via Stripe. Het restbedrag betaal je bij Chiva op de startdag.'
+                      ? 'Je betaalt nu 20% aanbetaling via Stripe (niet-restitueerbaar). Het restbedrag betaal je bij Chiva op de startdag.'
                       : 'Je hebt een account nodig om dit traject te boeken. Je gegevens worden bewaard.'}
                   </p>
                 </>

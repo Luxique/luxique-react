@@ -67,6 +67,7 @@ interface Lesson {
   duration_seconds: number
   what_you_learn_text?: string
   lesson_type?: 'content' | 'quiz' | 'exam'
+  parent_lesson_id?: string | null
 }
 
 interface LandingBlock {
@@ -486,7 +487,8 @@ function CurriculumSection({
     return null
   }
 
-  const lessonDisplays = getLessonDisplays(lessons.map(l => ({ ...l, lesson_type: l.lesson_type || 'content' })))
+  const lessonDisplays = getLessonDisplays(lessons.map(l => ({ ...l, lesson_type: l.lesson_type || 'content', parent_lesson_id: l.parent_lesson_id || null })))
+  const isSubLesson = (lesson: Lesson) => !!(lesson.parent_lesson_id && lessons.some(l => l.id === lesson.parent_lesson_id))
 
   return (
     <section className="section" id="curriculum">
@@ -501,6 +503,23 @@ function CurriculumSection({
           )}
         </div>
         
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 12,
+          margin: '0 auto 28px',
+          maxWidth: 640,
+          padding: '14px 18px',
+          border: '1px solid rgba(196,162,101,0.28)',
+          borderRadius: 12,
+          background: 'rgba(196,162,101,0.06)',
+        }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>💻</span>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: 'rgba(246,241,231,0.82)' }}>
+            <strong style={{ color: '#C4A265' }}>Tip:</strong> bekijk deze cursus op een <strong>laptop of tablet</strong>. Op de video&apos;s moet je de wimpers goed kunnen zien — daarom wordt een groter scherm aangeraden boven een telefoon.
+          </p>
+        </div>
+        
         <div className="curriculum-wrap" style={{
           position: 'relative',
           maxHeight: lessons.length > 5 ? '520px' : 'none',
@@ -511,18 +530,18 @@ function CurriculumSection({
           {lessons.map((lesson, index) => (
             <div 
               key={lesson.id}
-              className={`lesson-acc ${index === openLessonIndex ? 'open' : ''}`}
+              className={`lesson-acc ${index === openLessonIndex ? 'open' : ''} ${isSubLesson(lesson) ? 'is-sub' : ''}`}
               onClick={() => {
                 setOpenLessonIndex(index === openLessonIndex ? -1 : index)
                 onLessonClick?.(lesson)
               }}
             >
               <div className="lesson-acc-head">
-                <div className="lesson-num">
-                  {lesson.lesson_type === 'content' ? String(lessonDisplays.get(lesson.id)?.number || '').padStart(2, '0') : '✦'}
+                <div className={`lesson-num ${isSubLesson(lesson) ? 'sub' : ''}`}>
+                  {lesson.lesson_type === 'content' ? (lessonDisplays.get(lesson.id)?.number || '') : '✦'}
                 </div>
                 <div className="lesson-info">
-                  <h4>{lessonDisplays.get(lesson.id)?.label || lesson.title}</h4>
+                  <h4 className={isSubLesson(lesson) ? 'sub-title' : ''}>{lessonDisplays.get(lesson.id)?.label || lesson.title}</h4>
                   <div className="meta">
                     {lesson.lesson_type === 'quiz' ? 'Quiz' : lesson.lesson_type === 'exam' ? 'Eindtoets' : lesson.duration_seconds > 0 ? `${Math.round(lesson.duration_seconds / 60)} min · Video` : 'Video'}
                   </div>

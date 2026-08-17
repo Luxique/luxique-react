@@ -10,7 +10,7 @@ import AdminMobileNav from '@/components/AdminMobileNav'
 
 /* ── types ── */
 type Profile = { id: string; email: string; full_name: string; role: string; created_at: string }
-type Course = { id: string; title: string; slug: string; is_published: boolean; price: number | null; sort_order: number }
+type Course = { id: string; title: string; slug: string; is_published: boolean; price: number | null; sort_order: number; status?: string; is_ghost?: boolean }
 type Enrollment = {
   id: string; user_id: string; course_id: string; status: string;
   payment_method: string | null; payment_amount: number | null; paid_at: string | null;
@@ -41,6 +41,8 @@ export default function AdminPage() {
   const [grantUserId, setGrantUserId] = useState('')
   const [grantCourseId, setGrantCourseId] = useState('')
   const [granting, setGranting] = useState(false)
+  const [grantSearch, setGrantSearch] = useState('')
+  const [grantSearchFocused, setGrantSearchFocused] = useState(false)
 
   // Auth guard
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -255,7 +257,7 @@ export default function AdminPage() {
                 <a href="/admin/courses" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0C0A07] text-white text-[13px] font-medium hover:bg-[#333] transition">
                   📚 Cursus Builder
                 </a>
-                <button onClick={() => setShowGrant(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#ddd] text-[#888] text-[13px] font-medium hover:border-[#C4A265] hover:text-[#C4A265] transition">
+                <button onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#ddd] text-[#888] text-[13px] font-medium hover:border-[#C4A265] hover:text-[#C4A265] transition">
                   <IconPlus /> Cursus toewijzen
                 </button>
               </div>
@@ -463,17 +465,51 @@ export default function AdminPage() {
             <h3 className="font-['Cormorant_Garamond'] text-[24px] mb-6">Cursus toewijzen</h3>
             <div className="space-y-4">
               <div>
-                <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Cursist</label>
-                <select value={grantUserId} onChange={e => setGrantUserId(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265]">
-                  <option value="">Selecteer...</option>
-                  {profiles.map(p => <option key={p.id} value={p.id}>{p.full_name || p.email}</option>)}
-                </select>
+                <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Cursist — typ een naam of e-mail</label>
+                <input
+                  type="text"
+                  value={grantUserId ? (profiles.find(p => p.id === grantUserId)?.full_name || profiles.find(p => p.id === grantUserId)?.email || grantSearch) : grantSearch}
+                  onChange={e => { setGrantSearch(e.target.value); setGrantUserId(''); setGrantSearchFocused(true) }}
+                  onFocus={() => setGrantSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setGrantSearchFocused(false), 180)}
+                  placeholder="Zoek op naam of e-mail…"
+                  className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265]"
+                  autoComplete="off"
+                />
+                {grantSearchFocused && (
+                  <div className="mt-1 max-h-52 overflow-y-auto border border-[#eee] rounded-xl bg-white shadow-sm">
+                    {profiles
+                      .filter(p => {
+                        if (grantUserId) return false
+                        if (!grantSearch.trim()) return true
+                        const q = grantSearch.trim().toLowerCase()
+                        return (p.full_name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q)
+                      })
+                      .slice(0, 50)
+                      .map(p => (
+                        <button key={p.id} type="button"
+                          onClick={() => { setGrantUserId(p.id); setGrantSearch(p.full_name || p.email || ''); setGrantSearchFocused(false) }}
+                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#C4A265]/10 transition border-b border-[#f5f5f5] last:border-0"
+                        >
+                          <span className="font-medium">{p.full_name || '—'}</span>
+                          <span className="text-[#888] block text-[11.5px]">{p.email}</span>
+                        </button>
+                      ))}
+                    {grantUserId === '' && profiles.filter(p => {
+                      if (!grantSearch.trim()) return true
+                      const q = grantSearch.trim().toLowerCase()
+                      return (p.full_name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q)
+                    }).length === 0 && (
+                      <div className="px-4 py-3 text-[12.5px] text-[#888]">Geen cursisten gevonden</div>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Cursus</label>
                 <select value={grantCourseId} onChange={e => setGrantCourseId(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265]">
                   <option value="">Selecteer...</option>
-                  {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                  {courses.map(c => <option key={c.id} value={c.id}>{c.is_ghost ? '👻 ' : ''}{c.title}{c.status && c.status !== 'published' ? ` (${c.status === 'draft' ? 'concept' : c.status})` : ''}</option>)}
                 </select>
               </div>
               <div className="flex gap-3 pt-2">

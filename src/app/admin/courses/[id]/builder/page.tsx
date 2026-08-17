@@ -90,6 +90,7 @@ interface Lesson {
   duration?: number // Store as total minutes
   reflectionQuestions?: string[]
   blocks?: Block[]
+  parentId?: string // subles: id van de bovenliggende les (parent_lesson_id)
 }
 
 interface Quiz {
@@ -415,9 +416,32 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
     console.log('[saveCourse] Course upsert OK')
 
-    // 2. Sla ALLE lessen op
+    // 2. Sla ALLE lessen op (met subles-relatie) — en verwijder lessen die uit de builder zijn gehaald
+    const keptLessonIds = new Set((courseToSave.lessons || []).map(l => l.id))
+
+    // 2a. Verwijder lessen die in de DB staan maar niet meer in de builder
+    const { data: existingLessons } = await supabase
+      .from('lessons')
+      .select('id')
+      .eq('course_id', courseToSave.id)
+    const staleLessonIds = (existingLessons || []).map(l => l.id).filter(id => !keptLessonIds.has(id))
+    if (staleLessonIds.length > 0) {
+      console.log(`[saveCourse] Deleting ${staleLessonIds.length} removed lessons`)
+      // Voortgang van verwijderde lessen opruimen (best effort — RLS kan blokkeren)
+      await supabase.from('lesson_progress').delete().in('lesson_id', staleLessonIds)
+      const { error: lessonDeleteError } = await supabase.from('lessons').delete().in('id', staleLessonIds)
+      if (lessonDeleteError) {
+        console.error('[saveCourse] Lesson delete FAILED:', lessonDeleteError)
+        alert(`Fout bij verwijderen lessen: ${lessonDeleteError.message}`)
+        return
+      }
+    }
+
     for (const lesson of (courseToSave.lessons || [])) {
-      const { error: lessonError } = await supabase.from('lessons').upsert({
+      let lessonError: { message: string; code?: string } | null = null
+      // Stap 1: met parent_lesson_id (sublessen). Pre-migratie (kolom bestaat nog niet)
+      // valt dit terug op een upsert zonder dat veld, zodat opslaan nooit breekt.
+      const basePayload = {
         id: lesson.id,
         course_id: courseToSave.id,
         title: lesson.name,
@@ -426,7 +450,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         sort_order: lesson.num - 1,
         duration_seconds: (lesson.duration || 0) * 60,
         lesson_type: lesson.lesson_type || 'content',
-      })
+      }
+      const up1 = await supabase.from('lessons').upsert({ ...basePayload, parent_lesson_id: lesson.parentId || null })
+      lessonError = up1.error
+      if (up1.error && (up1.error.code === '42703' || (up1.error.message || '').includes('does not exist'))) {
+        const up2 = await supabase.from('lessons').upsert(basePayload)
+        lessonError = up2.error
+      }
       if (lessonError) {
         console.error(`[saveCourse] Lesson "${lesson.name}" upsert FAILED:`, lessonError)
         alert(`Fout bij opslaan les "${lesson.name}": ${lessonError.message}`)
@@ -613,6 +643,21 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             is_free: lesson.free || false,
             sort_order: lesson.num || 0,
             lesson_type: lesson.lesson_type || 'content',
+            parent_lesson_id: lesson.parentId || null,
+          }).then(async r => {
+            if (r.error && (r.error.code === '42703' || (r.error.message || '').includes('does not exist'))) {
+              // Pre-migratie fallback: zonder subles-veld
+              return supabase.from('lessons').upsert({
+                id: lesson.id,
+                title: lesson.name,
+                slug: toSlug(lesson.name),
+                course_id: courseToSave.id,
+                is_free: lesson.free || false,
+                sort_order: lesson.num || 0,
+                lesson_type: lesson.lesson_type || 'content',
+              })
+            }
+            return r
           })
           if (lessonError) console.error('Lesson upsert failed:', lessonError)
 
@@ -823,6 +868,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       }
       
       // Fetch lessons for this course
+      // (select(*) werkt ook pre-migratie: zonder parent_lesson_id-kolom zijn er gewoon geen sublessen)
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select('*')
@@ -830,14 +876,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         .order('sort_order')
         
       if (lessonsData) {
-        parsedCourse.lessons = lessonsData.map(lesson => ({
+        parsedCourse.lessons = lessonsData.map((lesson: { id: string; sort_order: number; title: string; is_free: boolean; lesson_type?: string; duration_seconds?: number | null; parent_lesson_id?: string | null }) => ({
           id: lesson.id,
           num: lesson.sort_order + 1,
           name: lesson.title,
           free: lesson.is_free,
-          lesson_type: lesson.lesson_type || 'content',
+          lesson_type: (lesson.lesson_type || 'content') as Lesson['lesson_type'],
           duration: lesson.duration_seconds ? Math.floor(lesson.duration_seconds / 60) : undefined,
           reflectionQuestions: [],
+          parentId: lesson.parent_lesson_id || undefined,
           blocks: [] // Will be loaded separately
         }))
       }
@@ -954,7 +1001,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   }
 
   const isQuizLesson = currentLesson?.lesson_type === 'quiz' || currentLesson?.lesson_type === 'exam'
-  const builderLessonDisplays = getLessonDisplays((course?.lessons || []).map(l => ({ id: l.id, title: l.name, lesson_type: l.lesson_type || 'content' })))
+  const builderLessonDisplays = getLessonDisplays((course?.lessons || []).map(l => ({ id: l.id, title: l.name, lesson_type: l.lesson_type || 'content', parent_lesson_id: l.parentId || null })))
 
   const contentBlockTypes: BlockType[] = ['video', 'text', 'image', 'callout', 'download', 'divider']
   const quizBlockTypes: BlockType[] = ['quiz']
@@ -1005,7 +1052,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
   }, [blocks, currentLesson])
 
-  const addLesson = (type: 'content' | 'quiz' | 'exam' = 'content') => {
+  // Herindexeer lessen: num = volgorde in de array (doorlopend, inclusief sublessen)
+  const reindexLessons = (lessons: Lesson[]): Lesson[] =>
+    lessons.map((l, i) => ({ ...l, num: i + 1 }))
+
+  const addLesson = (type: 'content' | 'quiz' | 'exam' = 'content', parentId?: string) => {
     if (!course) return
     const defaultBlocks: Block[] = type === 'content'
       ? [
@@ -1015,22 +1066,77 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         ]
       : [] // quiz/exam get no default blocks — questions built in later step
     
-    const prefix = type === 'quiz' ? 'Quiz' : type === 'exam' ? 'Eindtoets' : `Les ${lessonNumber}`
+    const isSub = !!parentId
+    const prefix = isSub
+      ? 'Subles'
+      : type === 'quiz' ? 'Quiz' : type === 'exam' ? 'Eindtoets' : `Les ${lessonNumber}`
     const newLesson: Lesson = {
       id: uid(),
       num: lessonNumber,
       name: prefix,
       free: false,
       lesson_type: type,
+      parentId,
       reflectionQuestions: [],
       blocks: defaultBlocks
     }
+
+    setCourse(prev => {
+      if (!prev) return prev
+      const lessons = [...(prev.lessons || [])]
+      if (isSub && parentId) {
+        // Direct na de parent (en eventuele bestaende sublessen) invoegen
+        let insertAt = lessons.findIndex(l => l.id === parentId)
+        if (insertAt === -1) insertAt = lessons.length - 1
+        while (insertAt + 1 < lessons.length && lessons[insertAt + 1].parentId === parentId) {
+          insertAt++
+        }
+        lessons.splice(insertAt + 1, 0, newLesson)
+      } else {
+        lessons.push(newLesson)
+      }
+      return { ...prev, lessons: reindexLessons(lessons) }
+    })
+
     setLessonNumber(lessonNumber + 1)
     setShowLessonTypeMenu(false)
-    setCourse({
-      ...course,
-      lessons: [...(course.lessons || []), newLesson]
+  }
+
+  // Les verwijderen — direct (DB + state). Sublessen gaan mee weg.
+  const deleteLesson = async (lesson: Lesson) => {
+    if (!course) return
+    const children = (course.lessons || []).filter(l => l.parentId === lesson.id)
+    const msg = children.length > 0
+      ? `"${lesson.name}" verwijderen? ${children.length} subles${children.length > 1 ? 'sen' : ''} word${children.length > 1 ? 'en' : 't'} ook verwijderd.`
+      : `"${lesson.name}" verwijderen?`
+    if (!window.confirm(msg + '\n\nDeze wijziging is definitief.')) return
+
+    const idsToRemove = [lesson.id, ...children.map(c => c.id)]
+
+    // DB: voortgang opruimen (best effort), dan lessen (blokken gaan automatisch mee via cascade)
+    await supabase.from('lesson_progress').delete().in('lesson_id', idsToRemove)
+    const { error: delError } = await supabase.from('lessons').delete().in('id', idsToRemove)
+    if (delError) {
+      alert(`Verwijderen mislukt: ${delError.message}`)
+      return
+    }
+
+    // State bijwerken
+    setCourse(prev => {
+      if (!prev) return prev
+      const lessons = (prev.lessons || []).filter(l => !idsToRemove.includes(l.id))
+      return { ...prev, lessons: reindexLessons(lessons) }
     })
+    setBlocksCache(prev => {
+      const next = { ...prev }
+      idsToRemove.forEach(id => delete next[id])
+      return next
+    })
+    if (idsToRemove.includes(currentLesson?.id || '')) {
+      setCurrentLesson(null)
+      setCurrentContext('global')
+      setBlocks([])
+    }
   }
 
   const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | Array<{question: string; answer: string}> | undefined) => {
@@ -2210,19 +2316,37 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 </div>
               </button>
 
-              {course?.lessons?.map((lesson) => (
+              {(() => {
+                // Boom-weergave: sublessen (parentId) direct onder hun bovenliggende les
+                const allLessons = course?.lessons || []
+                const ordered: Array<{ lesson: Lesson; isSub: boolean }> = []
+                for (const l of allLessons) {
+                  if (l.parentId) continue // subles komt onder de parent
+                  ordered.push({ lesson: l, isSub: false })
+                  for (const child of allLessons.filter(c => c.parentId === l.id)) {
+                    ordered.push({ lesson: child, isSub: true })
+                  }
+                }
+                // Wees-sublessen (parent verwijderd maar child bestaat nog) — als top-niveau tonen
+                for (const l of allLessons) {
+                  if (l.parentId && !allLessons.some(p => p.id === l.parentId)) {
+                    ordered.push({ lesson: l, isSub: false })
+                  }
+                }
+                return ordered.map(({ lesson, isSub }) => (
                 <button
                   key={lesson.id}
                   onClick={() => {
                     switchContext('lesson', lesson)
-                    // Handle async without blocking
                   }}
-                  className={`flex items-center gap-2 p-1.5 px-2 rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)]'}`}
+                  className={`group/les flex items-center gap-2 p-1.5 ${isSub ? 'pl-6 ml-3 border-l border-[rgba(196,162,101,0.25)]' : 'px-2'} rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)] border border-transparent'}`}
                 >
-                  <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
-                    </svg>
+                  <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 text-[9px] font-semibold ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
+                    {isSub ? '↳' : (
+                      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+                      </svg>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <span className={`text-[12px] font-medium block leading-tight ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'text-[#7A6340]' : 'text-[#1E1A14]'}`}>
@@ -2235,8 +2359,19 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                       Gratis
                     </span>
                   )}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title="Les verwijderen"
+                    onClick={(e) => { e.stopPropagation(); deleteLesson(lesson) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); deleteLesson(lesson) } }}
+                    className="opacity-0 group-hover/les:opacity-100 transition text-[#b0483f] hover:text-[#8f352e] p-1 rounded flex-shrink-0 cursor-pointer"
+                  >
+                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/></svg>
+                  </span>
                 </button>
-              ))}
+                ))
+              })()}
 
               {course?.quizzes?.map((quiz) => (
                 <button
@@ -2280,6 +2415,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   <button onClick={() => addLesson('content')} className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer">
                     <span className="w-2 h-2 rounded-full bg-[rgba(80,190,120,0.6)]"></span>
                     Les
+                  </button>
+                  <button
+                    onClick={() => currentLesson && addLesson('content', currentLesson.id)}
+                    disabled={!currentLesson || currentLesson.lesson_type !== 'content'}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={!currentLesson ? 'Selecteer eerst een les' : 'Voegt een subles (1.1, 1.2 …) toe onder de geselecteerde les'}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[rgba(196,162,101,0.6)]"></span>
+                    Subles onder geselecteerde les
                   </button>
                   <button onClick={() => addLesson('quiz')} className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer">
                     <span className="w-2 h-2 rounded-full bg-[rgba(100,140,220,0.6)]"></span>

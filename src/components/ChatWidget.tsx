@@ -52,7 +52,8 @@ export default function ChatWidget() {
   const t = useTranslations('chat')
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-  const hideOnAcademy = pathname?.startsWith('/academy') ?? false
+  // Chatbot verborgen op academy- en cursuspagina's (verkoop- en lesweergave)
+  const hideOnAcademy = (pathname?.startsWith('/academy') || pathname?.startsWith('/cursus')) ?? false
 
   const welcomeMessage = t('chatWelcome')
   const errorMessage = t('chatError')

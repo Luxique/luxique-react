@@ -13,6 +13,7 @@ import './lesson-page.css'
 interface Lesson {
   id: string; title: string; lesson_type: 'content' | 'quiz' | 'exam'
   duration_seconds?: number; is_free?: boolean; course_id: string
+  parent_lesson_id?: string | null
 }
 interface Block {
   id: string; type: string; title?: string
@@ -89,8 +90,13 @@ export default function LessonPage() {
         setLesson(ld)
         const { data: cd } = await supabase.from('courses').select('title').eq('id', ld.course_id).single()
         if (cd) setCourseTitle(cd.title)
-        const { data: als } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id').eq('course_id', ld.course_id).order('sort_order')
-        setAllLessons(als || [])
+        const { data: als, error: alsErr } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id,parent_lesson_id').eq('course_id', ld.course_id).order('sort_order')
+        let allRows = als
+        if (alsErr && (alsErr.code === '42703' || (alsErr.message || '').includes('does not exist'))) {
+          const { data: fallback } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id').eq('course_id', ld.course_id).order('sort_order')
+          allRows = (fallback as typeof als) || null
+        }
+        setAllLessons(allRows || [])
         const { data: bdata } = await supabase.from('blocks').select('*').eq('lesson_id', lessonId).order('sort_order')
         setBlocks(bdata || [])
       } finally { setLoading(false) }
@@ -320,7 +326,7 @@ export default function LessonPage() {
   if (isFreeLesson && authLoading) return <div className="lp-loader"><div>Controleren...</div></div>
   if (isFreeLesson && !user) return <div className="lp-loader"><div>Doorverwijzen naar login...</div></div>
 
-  const lessonDisplays = getLessonDisplays(allLessons.map(l => ({ id: l.id, title: l.title, lesson_type: l.lesson_type })))
+  const lessonDisplays = getLessonDisplays(allLessons.map(l => ({ id: l.id, title: l.title, lesson_type: l.lesson_type, parent_lesson_id: l.parent_lesson_id || null })))
 
   /* ── Rail ─────────────────────────────────────── */
   const railItems = allLessons.map((l, i) => {
@@ -332,6 +338,7 @@ export default function LessonPage() {
     const isLinearLocked = role !== 'admin' && !isLockedPay && !prevDone && status !== 'done'
     const isClickLocked = isLockedPay || isLinearLocked
     const isQuizItem = l.lesson_type === 'quiz' || l.lesson_type === 'exam'
+    const isSubItem = !!(l.parent_lesson_id && allLessons.some(x => x.id === l.parent_lesson_id))
     let sqCls = 'available'
     if (status === 'done') sqCls = 'done'
     else if (isActive) sqCls = 'current'
@@ -339,7 +346,7 @@ export default function LessonPage() {
     else if (isLinearLocked) sqCls = 'locked-linear'
 
     return (
-      <a key={l.id} className={`ri ${isActive ? 'active' : ''} ${isClickLocked ? 'is-grey' : ''}`}
+      <a key={l.id} className={`ri ${isActive ? 'active' : ''} ${isClickLocked ? 'is-grey' : ''} ${isSubItem ? 'is-sub' : ''}`}
         onClick={() => { if (!isClickLocked) router.push(`/academy/${slug}/${l.id}`); setRailMobileOpen(false) }}>
         <span className={`sq ${sqCls}`}>
           {status === 'done' ? <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
@@ -396,6 +403,7 @@ export default function LessonPage() {
           <div className="crumb">{lessonDisplays.get(lessonId)?.label || `Les ${currentIdx + 1} van ${totalCount}`}</div>
           <h1 className="lesson-title">{lesson.title}</h1>
           {lesson.duration_seconds ? <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8 }}>Video · {fmtDur(lesson.duration_seconds)}</div> : null}
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, opacity: 0.85 }}>💻 Tip: bekijk de lessen op een laptop of tablet — zo zie je de wimpers op de video&apos;s het beste.</div>
 
           {isLocked ? (
             <div className="lp-paywall">

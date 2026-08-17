@@ -346,9 +346,15 @@ export function formatDuur(duurWerkdagen: number): string {
 /**
  * Resultaat van de annulerings-venster bepaling.
  *
- * Venster 1: ruim voor start → volledige terugbetaling
- * Venster 2: dicht bij start maar niet kritisch → minus materiaalkosten
- * Venster 3: laatste moment → geen terugbetaling, alleen annuleren
+ * BELEID SINDS AUG 2026: de aanbetaling (20%) is onder geen enkele
+ * omstandigheid restitueerbaar. Alleen het recht op eenmalig verplaatsen
+ * vervalt dicht bij de start.
+ *
+ * Venster 1: ruim voor start → GEEN terugbetaling van de aanbetaling,
+ *           eenmalig omboeken mogelijk
+ * Venster 2: dicht bij start maar niet kritisch → zelfde als venster 1
+ *           (aanbetaling blijft, omboeken nog mogelijk)
+ * Venster 3: laatste moment → geen terugbetaling, geen omboeken
  */
 export interface AnnuleringsVensterResult {
   venster: 1 | 2 | 3
@@ -385,9 +391,10 @@ function parseDatumAmsterdam(isoDate: string): Date {
  * @param instellingen De traject-instellingen (grenzen)
  *
  * Venster 1: meer dan `annuleer_gratis_grens_dagen` dagen vóór start
- *           → omboeken mag, annuleren mag, VOLLEDIG terug
+ *           → omboeken mag, annuleren mag, GEEN terugbetaling
+ *             (de 20% aanbetaling is nooit restitueerbaar)
  * Venster 2: tussen de gratis-grens en de materiaal-grens
- *           → omboeken mag, annuleren mag, MINUS materiaalkosten
+ *           → omboeken mag, annuleren mag, GEEN terugbetaling
  * Venster 3: binnen `annuleer_materiaal_grens_uren` vóór start
  *           → omboeken kan NIET, alleen annuleren, NIETS terug
  */
@@ -404,7 +411,7 @@ export function bepaalAnnuleringsVenster(
   const diffUren = diffMs / (1000 * 60 * 60)
   const diffDagen = diffMs / (1000 * 60 * 60 * 24)
 
-  const gratisGrensDagen = instellingen.annuleer_gratis_grens_dagen ?? 7
+  const gratisGrensDagen = instellingen.annuleer_gratis_grens_dagen ?? 5
   const materiaalGrensUren = instellingen.annuleer_materiaal_grens_uren ?? 72
 
   //cas A: na start (negatieve diff) → altijd venster 3
@@ -427,10 +434,10 @@ export function bepaalAnnuleringsVenster(
       venster: 2,
       mag_omboeken: true,
       mag_annuleren: true,
-      terugbetaling: 'minus_materiaal',
+      terugbetaling: 'geen',
       uren_tot_start: Math.round(diffUren),
       dagen_tot_start: Math.round(diffDagen),
-      beschrijving: `Tussen ${materiaalGrensUren}u en ${gratisGrensDagen} dagen vóór start — aanbetaling minus materiaalkosten`,
+      beschrijving: `Tussen ${materiaalGrensUren}u en ${gratisGrensDagen} dagen vóór start — aanbetaling (20%) wordt niet terugbetaald, eenmalig verplaatsen mogelijk`,
     }
   }
 
@@ -439,9 +446,9 @@ export function bepaalAnnuleringsVenster(
     venster: 1,
     mag_omboeken: true,
     mag_annuleren: true,
-    terugbetaling: 'volledig',
+    terugbetaling: 'geen',
     uren_tot_start: Math.round(diffUren),
     dagen_tot_start: Math.round(diffDagen),
-    beschrijving: `Meer dan ${gratisGrensDagen} dagen vóór start — volledige terugbetaling`,
+    beschrijving: `Meer dan ${gratisGrensDagen} dagen vóór start — aanbetaling (20%) wordt niet terugbetaald, eenmalig verplaatsen mogelijk`,
   }
 }

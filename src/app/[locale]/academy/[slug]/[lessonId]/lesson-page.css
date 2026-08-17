@@ -82,6 +82,10 @@
   display: flex; align-items: center; justify-content: center;
   padding: 7px 0; cursor: pointer; text-decoration: none; color: inherit;
 }
+/* Subles (1.1, 1.2 …) — ingesprongen in de rail */
+.lp-rail.expanded .ri.is-sub { margin-left: 18px; }
+.lp-rail.expanded .ri.is-sub .sq { flex-basis: 30px; width: 30px; height: 30px; font-size: 0.66rem; }
+.lp-rail.expanded .ri.is-sub .nm { font-size: 0.8rem; opacity: .9; }
 .lp-rail.expanded .ri { justify-content: flex-start; gap: 13px; padding: 11px 13px; border-radius: 11px; width: 100%; }
 .lp-rail.expanded .ri:hover { background: var(--cream); }
 .lp-rail.expanded .ri.active { background: rgba(196,162,101,.1); }

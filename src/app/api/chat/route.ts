@@ -92,7 +92,7 @@ Boek vooraf een workshop van 1 uur. Daarin maak je kennis met de materialen, lee
 ### Annulering & herroeping (uit de Algemene Voorwaarden)
 - **Behandelingen:** Kosteloos annuleren of verplaatsen tot uiterlijk 24 uur vóór aanvang. Binnen 24 uur vervalt de aanbetaling. Meer dan 20 minuten te laat → afspraak en aanbetaling vervallen. Zie /voorwaarden#art-6-annuleren.
 - **Online cursussen:** Geen restitutie. Je doet bij aankoop afstand van het herroepingsrecht (art. 6:230p sub g BW). Zie /voorwaarden#art-5-herroeping.
-- **Persoonlijke trajecten:** Tot 7 dagen vóór start: volledige terugbetaling minus €150 materiaalkosten. Tussen 7 en 3 dagen: eenmalig verplaatsen (geen terugbetaling). Binnen 3 dagen: geen restitutie en geen verplaatsing. Zie /voorwaarden#annulering-trajecten.
+- **Persoonlijke trajecten / cursussen (in de studio):** Je betaalt 20% aanbetaling bij het boeken. Deze aanbetaling is onder geen enkele omstandigheid restitueerbaar. Tot 5 dagen vóór start kun je eenmalig kosteloos verplaatsen naar andere data (geen terugbetaling). Binnen 5 dagen vóór start: geen restitutie en geen verplaatsing. Zie /voorwaarden#annulering-trajecten.
 - Bij ziekte binnen 24u vervalt de aanbetaling (zelfde als annulering). Bij ziekte tijdens meerdaags traject: geen restitutie of verplaatsing.
 
 ### Garantie & uitval

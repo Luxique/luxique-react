@@ -483,18 +483,18 @@ export default function TrajectInstellingenPaneel() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Venster visualisatie */}
           <div className="col-span-3 p-4 rounded-xl bg-[#f9f9f9] space-y-2">
-            <p className="text-[11px] font-semibold text-[#1a1a1a] uppercase tracking-wider">De 3 vensters:</p>
+            <p className="text-[11px] font-semibold text-[#1a1a1a] uppercase tracking-wider">De 3 vensters <span className="text-[#C4A265] normal-case">(aanbetaling 20% is nóóit restitueerbaar)</span>:</p>
             <div className="grid grid-cols-3 gap-2 sm:gap-3 text-[11px]">
               <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
                 <p className="font-bold text-green-700">Venster 1</p>
                 <p className="text-[#888] mt-1">Ruim vóór start</p>
-                <p className="text-green-600 font-medium mt-1">✓ Volledig terug</p>
+                <p className="text-green-600 font-medium mt-1">Aanbetaling blijft</p>
                 <p className="text-[#888]">✓ Omboeken & annuleren</p>
               </div>
               <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
                 <p className="font-bold text-amber-600">Venster 2</p>
                 <p className="text-[#888] mt-1">Dicht bij start</p>
-                <p className="text-amber-600 font-medium mt-1">⚠ Minus materiaal</p>
+                <p className="text-amber-600 font-medium mt-1">Aanbetaling blijft</p>
                 <p className="text-[#888]">✓ Omboeken & annuleren</p>
               </div>
               <div className="p-3 rounded-lg bg-white border border-[#e8e8e8]">
@@ -509,7 +509,7 @@ export default function TrajectInstellingenPaneel() {
           {/* annuleer_gratis_grens_dagen */}
           <div>
             <label className="text-[13px] font-medium text-[#1a1a1a] mb-2 block">
-              Gratis-grens (dagen)
+              Verplaats-grens (dagen)
             </label>
             <input
               type="number"
@@ -520,7 +520,7 @@ export default function TrajectInstellingenPaneel() {
               className="w-[120px] px-4 py-2.5 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265] transition"
             />
             <p className="text-[10px] text-[#888] mt-1.5">
-              Grens venster 1→2
+              Tot zoveel dagen vóór start mag de klant eenmalig verplaatsen
             </p>
           </div>
 

@@ -14,7 +14,7 @@ const NO_STORE_HEADERS = {
 /**
  * POST /api/traject/checkout
  *
- * Maakt een Stripe Checkout sessie voor de 50% aanbetaling.
+ * Maakt een Stripe Checkout sessie voor de 20% aanbetaling (cursussen).
  * KLAS-gebaseerd: boekt een plek in een klas (klas_id), niet een losse datum.
  */
 export async function POST(req: NextRequest) {
@@ -124,9 +124,10 @@ export async function POST(req: NextRequest) {
     // Blok_dagen van de klas gebruiken (altijd actueel)
     const blok_dagen = klas.blok_dagen
 
-    // Prijs berekening: prijs_cents is EX BTW. Eerst BTW toevoegen, dan 50%.
+    // Prijs berekening: prijs_cents is EX BTW. Eerst BTW toevoegen, dan 20%.
+    // De 20% aanbetaling is onder geen enkele omstandigheid restitueerbaar.
     const prijsInclBtw = Math.round(prijs_cents * 1.21)
-    const aanbetaling = Math.round(prijsInclBtw / 2)
+    const aanbetaling = Math.round(prijsInclBtw * 0.2)
 
     // Stripe checkout
     const Stripe = (await import('stripe')).default
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
             unit_amount: aanbetaling,
             product_data: {
               name: `Aanbetaling: ${cursus.naam}`,
-              description: `50% aanbetaling — restbedrag betaal je in de studio op de startdag.`,
+              description: `20% aanbetaling (niet-restitueerbaar) — restbedrag betaal je in de studio op de startdag.`,
             },
           },
           quantity: 1,
