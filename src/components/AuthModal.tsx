@@ -13,6 +13,8 @@ interface AuthModalProps {
 export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalProps) {
   const [tab, setTab] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -46,6 +48,11 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
         }
       } else {
         // Registration validations
+        if (!firstName.trim() || !lastName.trim()) {
+          setError('Vul je voor- en achternaam in.')
+          setLoading(false)
+          return
+        }
         if (!getPasswordStrength(password).valid) {
           setError('Wachtwoord is niet sterk genoeg.')
           setLoading(false)
@@ -61,13 +68,30 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           setLoading(false)
           return
         }
-        const { data, error: err } = await supabase.auth.signUp({ email, password })
+        const { data, error: err } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { first_name: firstName.trim(), last_name: lastName.trim(), full_name: `${firstName.trim()} ${lastName.trim()}` },
+            emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          },
+        })
         if (err) throw err
         if (data.user) {
           // Check if email confirmation is required
           if (data.session) {
             onAuthSuccess({ id: data.user.id, email: data.user.email ?? email })
           } else {
+            // Send branded confirmation email (M01) via Resend, same as /register
+            try {
+              await fetch('/api/auth/send-confirmation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+              })
+            } catch (e) {
+              console.error('Failed to send branded confirmation email:', e)
+            }
             setMessage('Check je email om je account te bevestigen.')
           }
         }
@@ -97,6 +121,8 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
     setError(null)
     setMessage(null)
     setEmail('')
+    setFirstName('')
+    setLastName('')
     setPassword('')
     setConfirmPassword('')
     setTermsAccepted(false)
@@ -149,6 +175,34 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
 
         {/* Email form */}
         <form onSubmit={handleEmailAuth} className="auth-form">
+          {tab === 'register' && (
+            <div className="auth-name-row">
+              <label className="auth-label">
+                Voornaam
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  placeholder="Voornaam"
+                  autoComplete="given-name"
+                />
+              </label>
+              <label className="auth-label">
+                Achternaam
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  placeholder="Achternaam"
+                  autoComplete="family-name"
+                />
+              </label>
+            </div>
+          )}
           <label className="auth-label">
             Email
             <input
@@ -249,6 +303,8 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           padding: 40px 36px 36px;
           max-width: 420px;
           width: 100%;
+          max-height: calc(100vh - 40px);
+          overflow-y: auto;
           box-shadow: 0 24px 80px rgba(0,0,0,0.6);
         }
         .auth-close {
@@ -354,6 +410,11 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           flex-direction: column;
           gap: 16px;
         }
+        .auth-name-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
         .auth-label {
           display: flex;
           flex-direction: column;
@@ -449,6 +510,19 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
         }
         .auth-link:hover {
           color: #d4b87a;
+        }
+        @media (max-width: 480px) {
+          .auth-modal {
+            padding: 28px 22px 24px;
+          }
+          .auth-title { font-size: 24px; }
+          .auth-subtitle { margin-bottom: 16px; }
+          .auth-tabs { margin-bottom: 16px; }
+          .auth-divider { margin: 14px 0; }
+          .auth-form { gap: 12px; }
+          .auth-name-row { gap: 10px; }
+          .auth-social-btn { padding: 10px 12px; }
+          .auth-submit { padding: 12px; }
         }
       `}</style>
     </div>
