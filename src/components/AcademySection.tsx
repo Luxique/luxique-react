@@ -46,7 +46,7 @@ export default function AcademySection({ courses, loading }: Props) {
   const t = useTranslations('Academy')
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', background: '#0c100d' }}>
+    <div style={{ width: '100%', minHeight: '100vh', background: '#0c100d', paddingBottom: 64 }}>
       <div className="lxq-courses-wrap">
 
         {/* ══ HERO ══ */}
