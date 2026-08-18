@@ -184,12 +184,7 @@
   margin: 0 auto 10px;
   opacity: 0.5;
 }
-.lxq-thumb-exclusive {
-  background:
-    radial-gradient(320px 220px at 70% 25%, rgba(201,168,106, 0.14), transparent 60%),
-    linear-gradient(200deg, #1a1f1b 0%, rgba(18,22,19,0.063) 100%),
-    linear-gradient(160deg, #1c2018 0%, #121511 100%);
-}
+
 
 /* ── Badges ── */
 .lxq-pill {
@@ -304,12 +299,6 @@
   color: rgba(242,236,221, 0.38);
   letter-spacing: 0.04em;
 }
-.lxq-op-aanvraag {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: 22px;
-  color: rgba(242,236,221, 0.62);
-}
 
 /* ── Buttons ── */
 .lxq-btn-primary {
@@ -349,29 +338,64 @@
   font-size: 11.5px;
   color: rgba(242,236,221, 0.38);
 }
-.lxq-btn-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  width: 100%;
-  border: 1px solid rgba(201,168,106, 0.35);
-  color: #f2ecdd;
-  padding: 12px 20px;
-  border-radius: 999px;
-  text-decoration: none;
-  font-size: 14px;
-  transition: background 0.25s, border-color 0.25s;
-}
-.lxq-btn-outline:hover {
-  background: rgba(201,168,106, 0.16);
-  border-color: #c9a86a;
-}
 
-/* ── Exclusive card variant ── */
-.lxq-card-exclusive {
-  border-color: rgba(245,239,227, 0.08);
-  background: #141a16;
+
+/* ══ IRL wide section card (Intensive 1:1) ══ */
+.lxq-irl-card {
+  display: flex;
+  align-items: stretch;
+  background: linear-gradient(165deg, #1b211c 0%, #161c17 55%, #141a16 100%);
+  border: 1px solid rgba(201,168,106, 0.35);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0, 0.4), 0 0 0 1px rgba(201,168,106, 0.05) inset;
+  margin-bottom: 72px;
+  transition: box-shadow 0.3s ease;
+}
+.lxq-irl-card:hover {
+  box-shadow: 0 32px 70px rgba(0,0,0, 0.5), 0 0 0 1px rgba(201,168,106, 0.12) inset;
+}
+.lxq-irl-media {
+  flex: 0 0 44%;
+  position: relative;
+  min-height: 420px;
+  background:
+    radial-gradient(320px 220px at 70% 25%, rgba(201,168,106, 0.14), transparent 60%),
+    linear-gradient(160deg, #1c2018 0%, #121511 100%);
+}
+.lxq-irl-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lxq-irl-body {
+  flex: 1;
+  padding: 46px 48px 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #f2ecdd;
+}
+.lxq-irl-body h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.15;
+  color: #f2ecdd;
+}
+.lxq-irl-body h3 em {
+  font-style: italic;
+  color: #c9a86a;
+  font-weight: 400;
+}
+.lxq-irl-body .lxq-course-sub {
+  font-size: 14.5px;
+  max-width: 480px;
+}
+.lxq-irl-cta {
+  margin-top: 26px;
 }
 
 /* ══ Gratis Start Banner ══ */
@@ -417,6 +441,20 @@
 @media (max-width: 980px) {
   .lxq-course-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .lxq-irl-card {
+    flex-direction: column;
+  }
+  .lxq-irl-media {
+    flex: none;
+    min-height: 0;
+    aspect-ratio: 4/3;
+  }
+  .lxq-irl-body {
+    padding: 30px 26px 28px;
+  }
+  .lxq-irl-body h3 {
+    font-size: 27px;
   }
   .lxq-hero {
     grid-template-columns: 1fr;

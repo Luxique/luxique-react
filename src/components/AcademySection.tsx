@@ -76,6 +76,26 @@ export default function AcademySection({ courses, loading }: Props) {
           </aside>
         </header>
 
+        {/* ══ IRL — INTENSIVE 1:1 (wide section card, boven de online cursussen) ══ */}
+        <section className="lxq-irl-card">
+          <div className="lxq-irl-media">
+            <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/persoonlijk-traject-card.webp?width=1200&quality=80" alt="Intensive 1:1 guidance" />
+          </div>
+          <div className="lxq-irl-body">
+            <div className="lxq-eyebrow">{t('trajectEyebrow')}</div>
+            <h3>{t('trajectTitlePlain')}<em> {t('trajectTitleEm')}</em></h3>
+            <p className="lxq-course-sub">{t('trajectDesc')}</p>
+            <ul className="lxq-usps">
+              <li>{t('trajectFeature1')}</li>
+              <li>{t('trajectFeature2')}</li>
+              <li>{t('trajectFeature3')}</li>
+            </ul>
+            <div className="lxq-irl-cta">
+              <a href="/persoonlijk-traject" className="lxq-btn-primary">{t('trajectCta')}</a>
+            </div>
+          </div>
+        </section>
+
         {/* ══ CURSUSSEN ══ */}
         <main id="cursussen">
           <div className="lxq-section-head">
@@ -143,29 +163,6 @@ export default function AcademySection({ courses, loading }: Props) {
                   </article>
                 )
               })}
-
-              {/* Persoonlijk Traject — always last card */}
-              <article className="lxq-course-card lxq-card-exclusive">
-                <div className="lxq-course-thumb lxq-thumb-exclusive">
-                  <span className="lxq-pill" style={{ borderColor: 'rgba(245,239,227,0.08)', color: 'rgba(242,236,221,0.62)' }}>{t('trajectEyebrow')}</span>
-                  <img src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/persoonlijk-traject-card.webp?width=800&quality=75&resize=contain" alt="Persoonlijk Traject" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-                <div className="lxq-course-body">
-                  <h3>{t('trajectTitlePlain')}<br /><em style={{ fontStyle: 'italic', color: '#c9a86a', fontWeight: 400 }}>{t('trajectTitleEm')}</em></h3>
-                  <p className="lxq-course-sub">{t('trajectDesc')}</p>
-                  <ul className="lxq-usps">
-                    <li>{t('trajectFeature1')}</li>
-                    <li>{t('trajectFeature2')}</li>
-                    <li>{t('trajectFeature3')}</li>
-                  </ul>
-                  <div className="lxq-course-foot">
-                    <div className="lxq-price-row">
-                      <span className="lxq-op-aanvraag">{t('trajectPriceLabel')}</span>
-                    </div>
-                    <a href="/persoonlijk-traject" className="lxq-btn-outline">{t('trajectCta')}</a>
-                  </div>
-                </div>
-              </article>
 
             </div>
           )}
