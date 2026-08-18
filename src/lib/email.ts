@@ -143,6 +143,21 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:6px; max-width:430px; margin:0 auto;">A calendar invite (.ics) is attached so you can add it to your calendar.</div>
       </td></tr>
+      <tr><td style="padding:0 40px 8px 40px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px;">
+          <tr><td style="padding:24px 28px;">
+            <div style="font-family:Arial,sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#C4A265; text-align:center; padding-bottom:14px;">Good to know before your visit</div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="padding:0 0 10px 0; font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; <strong>Come with clean skin</strong> &mdash; please arrive without make-up (especially oily products around the eyes) and without lotions or sunscreen on the treatment area.</td></tr>
+              <tr><td style="padding:0 0 10px 0; font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; <strong>Just you</strong> &mdash; we kindly ask you not to bring anyone with you to your appointment.</td></tr>
+              <tr><td style="padding:0 0 10px 0; font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; <strong>Arrive on time</strong> &mdash; we work strictly by schedule. If you're more than 20 minutes late we can unfortunately no longer treat you, whatever the reason. Early? You're welcome to wait in our waiting room.</td></tr>
+              <tr><td style="padding:0 0 10px 0; font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; <strong>Cancel or reschedule</strong> &mdash; you can do this yourself up to 24 hours before your appointment. Within 24 hours we can't refund your deposit, whatever the reason.</td></tr>
+              <tr><td style="padding:0; font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; <strong>Not fully happy?</strong> &mdash; let us know right after your treatment so we can resolve it on the spot. Written complaints can be submitted within 72 hours.</td></tr>
+            </table>
+            <div style="font-family:Arial,sans-serif; font-size:12px; line-height:19px; color:#9a958b; text-align:center; padding-top:12px;">You'll find all conditions via the links below.</div>
+          </td></tr>
+        </table>
+      </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
         <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:14px;">With love, Luxique</div>
