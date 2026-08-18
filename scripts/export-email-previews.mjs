@@ -20,9 +20,14 @@ const source = readFileSync(SRC, 'utf8')
 // ── Voorbeeldwaarden voor interpolaties ──
 const SAMPLES = [
   // specifiek eerst (langere expressies)
+  { match: /within24h \? ' — <strong>/, value: ' — <strong>binnen 24 uur</strong>' },
+  { match: /within24h \? 'rgba\(197,60,60,0\.08\)' : 'rgba\(91,140,102,0\.08\)'/, value: 'rgba(197,60,60,0.08)' },
+  { match: /within24h \? 'rgba\(197,60,60,0\.25\)' : 'rgba\(91,140,102,0\.25\)'/, value: 'rgba(197,60,60,0.25)' },
+  { match: /within24h \? '#c53c3c' : '#5b8c66'/, value: '#c53c3c' },
+  { match: /within24h \? 'GEEN REFUND/, value: 'GEEN REFUND — BINNEN 24U (AV)' },
   { match: /trajectDagenHtml/, value: '<tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:\'Cormorant Garamond\',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">vrijdag 4 september 2026</td></tr><tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:\'Cormorant Garamond\',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">zaterdag 5 september 2026</td></tr>' },
   { match: /datumsLijst/, value: 'vrijdag 4 september 2026<br/>zaterdag 5 september 2026' },
-  { match: /refundHtml/, value: '<div style="background:rgba(91,140,102,0.06);border:1px solid rgba(91,140,102,0.2);border-radius:12px;padding:16px 18px;margin-bottom:20px"><p style="margin:0;font-size:15px;color:#5b8c66">Je aanbetaling van <strong>€45</strong> wordt gerestitueerd. We verwerken dit zo spoedig mogelijk.</p></div>' },
+  { match: /refundHtml/, value: '<div style="background:rgba(91,140,102,0.06); border:1px solid rgba(91,140,102,0.25); border-radius:10px; padding:16px 20px; max-width:440px; margin:0 auto 24px auto;"><div style="font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#5b8c66;">Je aanbetaling van <strong>&euro;45</strong> wordt gerestitueerd. We verwerken dit zo spoedig mogelijk.</div></div>' },
   { match: /formatDateNL|formatDateEN|date/i, value: 'vrijdag 4 september 2026' },
   { match: /fmtTime|time/i, value: '10:00' },
   { match: /manageUrl/, value: 'https://www.luxique.nl/dashboard?tab=boekingen' },
