@@ -15,7 +15,8 @@ type Enrollment = {
   id: string; user_id: string; course_id: string; status: string;
   payment_method: string | null; payment_amount: number | null; paid_at: string | null;
   enrolled_at: string; granted_by: string | null;
-  courses: { title: string }[]; profiles: { email: string; full_name: string }[]
+  courses: { title: string } | { title: string }[] | null
+  profiles: { email: string; full_name: string } | { email: string; full_name: string }[] | null
 }
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string }
 type TrajectBoeking = {
@@ -117,15 +118,24 @@ export default function AdminPage() {
   const upcomingBookings = bookings.filter(b => new Date(b.appointment_date) >= now && b.status !== 'cancelled').slice(0, 5)
 
   // ── Unified sales feed: cursussen + trajecten + behandelingen ──
+  // PostgREST levert een to-one embed als OBJECT (profiles: {...}), geen array — normaliseren.
+  const enrCustomer = (e: Enrollment) => {
+    const p = Array.isArray(e.profiles) ? e.profiles[0] : e.profiles
+    return p?.full_name || p?.email || '—'
+  }
+  const enrCourseTitle = (e: Enrollment) => {
+    const c = Array.isArray(e.courses) ? e.courses[0] : e.courses
+    return c?.title || '—'
+  }
   type Sale = { key: string; kind: 'Cursus' | 'Traject' | 'Behandeling'; who: string; what: string; amount: number; date: string; note?: string }
   const salesAll: Sale[] = [
     ...enrollments.map(e => ({
       key: 'e-' + e.id, kind: 'Cursus' as const,
-      who: e.profiles?.[0]?.full_name || e.profiles?.[0]?.email || '—',
-      what: e.courses?.[0]?.title || '—',
+      who: enrCustomer(e),
+      what: enrCourseTitle(e),
       amount: e.payment_amount || 0,
       date: e.paid_at || e.enrolled_at,
-      note: e.payment_method === 'manual' ? 'handmatig toegekend' : undefined,
+      note: e.payment_method === 'manual' ? 'handmatig toegewezen' : undefined,
     })),
     ...trajectBoekingen.filter(t => t.aanbetaling_status === 'betaald').map(t => ({
       key: 't-' + t.id, kind: 'Traject' as const,
@@ -406,8 +416,8 @@ export default function AdminPage() {
                   <tbody>
                     {enrollments.map(e => (
                       <tr key={e.id} className="border-b border-[#f5f5f5] hover:bg-[#fafafa]">
-                        <td className="px-5 py-3 text-[13px]">{e.profiles?.[0]?.full_name || e.profiles?.[0]?.email || '—'}</td>
-                        <td className="px-5 py-3 text-[13px]">{e.courses?.[0]?.title || '—'}</td>
+                        <td className="px-5 py-3 text-[13px]">{enrCustomer(e)}</td>
+                        <td className="px-5 py-3 text-[13px]">{enrCourseTitle(e)}</td>
                         <td className="px-5 py-3 text-[13px]">{e.payment_amount ? `€${e.payment_amount}` : e.payment_method === 'manual' ? 'Handmatig' : '—'}</td>
                         <td className="px-5 py-3">
                           <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${e.payment_method === 'stripe' ? 'bg-purple-50 text-purple-600' : e.payment_method === 'manual' ? 'bg-[#C4A265]/10 text-[#C4A265]' : 'bg-[#f5f5f5] text-[#888]'}`}>{e.payment_method || '—'}</span>

@@ -18,7 +18,7 @@ type Enrollment = {
   id: string; course_id: string; status: string; payment_method: string | null;
   payment_amount: number | null; paid_at: string | null; enrolled_at: string;
   granted_by: string | null; stripe_payment_intent_id: string | null;
-  courses: { title: string }[]
+  courses: { title: string } | { title: string }[] | null
 }
 
 type LessonProgress = {
@@ -322,7 +322,7 @@ export default function AdminCustomersPage() {
                           <div key={e.id} className="border border-[#f0f0f0] rounded-xl p-4">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <p className="text-[14px] font-semibold">{e.courses?.[0]?.title || 'Cursus'}</p>
+                                <p className="text-[14px] font-semibold">{(Array.isArray(e.courses) ? e.courses[0]?.title : e.courses?.title) || 'Cursus'}</p>
                                 <p className="text-[11px] text-[#aaa] mt-0.5">Ingeschreven {fmt(e.enrolled_at)}</p>
                               </div>
                               <div className="text-right">
