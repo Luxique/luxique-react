@@ -171,7 +171,7 @@ export default function CourseLandingClient({
           course_id: course.id,
           user_id: user.id,
           email: user.email,
-          success_url: `${window.location.origin}/cursus/${course.slug}?enrolled=1`,
+          success_url: `${window.location.origin}/academy/${course.slug}?enrolled=1`,
           cancel_url: `${window.location.origin}/cursus/${course.slug}?canceled=1`,
         }),
       })

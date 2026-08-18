@@ -25,6 +25,7 @@ export default function CourseInteriorPage() {
   const [enrolled, setEnrolled] = useState(false)
   const [checkingEnrollment, setCheckingEnrollment] = useState(true)
   const [progress, setProgress] = useState<Map<string, ProgressRecord>>(new Map())
+  const [showEnrollSuccess, setShowEnrollSuccess] = useState(false)
 
   // Fetch course + lessons
   useEffect(() => {
@@ -102,6 +103,16 @@ export default function CourseInteriorPage() {
   const totalCount = lessons.length
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
+  // Enrollment success — na Stripe betaling direct door naar de cursus
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('enrolled') === '1') {
+      setShowEnrollSuccess(true)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
   if (!user) return (
     <div className="ci-wrap">
       <div className="ci-login-prompt"><h2>Log in om verder te gaan</h2><p>Je moet ingelogd zijn om deze cursus te bekijken.</p><a href={`/auth/login?redirect=/academy/${slug}`} className="ci-login-btn">Inloggen</a></div>
@@ -112,6 +123,21 @@ export default function CourseInteriorPage() {
 
   return (
     <div className="ci-wrap">
+      {showEnrollSuccess && (
+        <div className="ci-success-overlay" onClick={() => setShowEnrollSuccess(false)}>
+          <div className="ci-success-box" onClick={e => e.stopPropagation()}>
+            <button className="ci-success-close" onClick={() => setShowEnrollSuccess(false)} aria-label="Sluiten">✕</button>
+            <div className="ci-success-icon">✓</div>
+            <h2 className="ci-success-title">Bedankt voor je bestelling!</h2>
+            <p className="ci-success-sub">Je hebt toegang tot {course.title}. Start meteen met je eerste les.</p>
+            {nextLesson ? (
+              <button className="ci-success-btn" onClick={() => router.push(`/academy/${slug}/${nextLesson.id}`)}>Start met de eerste les →</button>
+            ) : (
+              <button className="ci-success-btn" onClick={() => setShowEnrollSuccess(false)}>Veel plezier met de cursus</button>
+            )}
+          </div>
+        </div>
+      )}
       <div className="ci-eyebrow">Academy · jouw cursus</div>
       <h1>{course.title?.split(' ').map((w, i) => i === course.title!.split(' ').length - 1 ? <em key={i}>{w}</em> : w + ' ')}</h1>
       <p className="ci-sub">Welkom terug. Je bent goed op weg.</p>

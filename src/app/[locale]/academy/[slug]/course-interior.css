@@ -356,3 +356,95 @@
   .ci-lesson { padding: 14px 16px; gap: 12px; }
   .ci-lesson .name { font-size: 14px; }
 }
+
+/* ── Enrollment success — witte box na betaling ── */
+.ci-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 8, 7, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: ciSuccessFade 0.25s ease-out;
+}
+.ci-success-box {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 44px 40px 40px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  animation: ciSuccessPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+}
+.ci-success-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: #b5b0a6;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+.ci-success-close:hover { color: #1a1712; }
+.ci-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C4A265, #a8893f);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 24px rgba(196, 162, 101, 0.35);
+}
+.ci-success-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1712;
+  margin: 0 0 10px;
+}
+.ci-success-sub {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #7a756b;
+  margin: 0 0 26px;
+}
+.ci-success-btn {
+  background: #0C0A07;
+  color: #FAF8F4;
+  border: none;
+  padding: 14px 34px;
+  border-radius: 999px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.ci-success-btn:hover {
+  background: #C4A265;
+  color: #0C0A07;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(196, 162, 101, 0.35);
+}
+@keyframes ciSuccessFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ciSuccessPop {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
