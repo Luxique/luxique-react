@@ -142,6 +142,8 @@ export async function POST(request: NextRequest) {
           cursus_naam: courseRow.title,
           cursus_slug: courseRow.slug,
           bedrag: amount_total / 100,
+          betaaldatum: now,
+          ordernummer: (payment_intent_id || '').replace('pi_', '').slice(0, 12).toUpperCase() || null,
         })
         await sendCourseVerkochtNotificatie({
           klant_naam: klantNaam,

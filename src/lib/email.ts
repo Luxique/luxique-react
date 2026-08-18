@@ -943,6 +943,9 @@ export interface CoursePurchaseMailData {
   cursus_naam: string
   cursus_slug: string
   bedrag: number // euros
+  betaaldatum?: string | null // ISO
+  ordernummer?: string | null // Stripe payment intent id
+  aanbetaling?: boolean // true = deelbetaling, undefined/false = volledig betaald
 }
 
 export async function sendCourseBevestigingMail(data: CoursePurchaseMailData) {
@@ -981,9 +984,18 @@ export async function sendCourseBevestigingMail(data: CoursePurchaseMailData) {
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.cursus_naam}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Toegang</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">12 maanden, incl. updates</td></tr>
-              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Betaling</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">&euro;${data.bedrag.toFixed(2).replace('.', ',')} via Stripe</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Datum</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.betaaldatum ? new Date(data.betaaldatum).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
+              ${data.ordernummer ? `<tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Ordernummer</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.ordernummer}</td></tr>` : ''}
             </table>
+          </td></tr>
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0C0A07; border-radius:10px; margin:0 0 26px 0;">
+          <tr><td style="padding:22px 26px;" align="center">
+            <div style="font-family:Arial,sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#C4A265; padding-bottom:10px;">Betaaloverzicht</div>
+            <div style="font-family:'Cormorant Garamond',Georgia,serif; font-size:26px; color:#FAF8F4; padding-bottom:6px;">&euro;${data.bedrag.toFixed(2).replace('.', ',')}</div>
+            <div style="font-family:Arial,sans-serif; font-size:12px; color:#9a958b;">${data.aanbetaling ? 'Aanbetaling ontvangen' : 'Volledig betaald'} &middot; via Stripe</div>
           </td></tr>
         </table>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
