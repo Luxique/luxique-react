@@ -229,7 +229,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
         </form>
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
         .auth-overlay {
           position: fixed;
           inset: 0;
@@ -363,6 +363,8 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           color: rgba(250, 248, 244, 0.6);
         }
         .auth-input {
+          width: 100%;
+          box-sizing: border-box;
           background: rgba(250, 248, 244, 0.05);
           border: 1px solid rgba(196, 162, 101, 0.15);
           border-radius: 10px;
