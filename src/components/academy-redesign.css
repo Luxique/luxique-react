@@ -386,6 +386,7 @@
   color: #f2ecdd;
 }
 .lxq-irl-body h3 em {
+  display: block;
   font-style: italic;
   color: #c9a86a;
   font-weight: 400;

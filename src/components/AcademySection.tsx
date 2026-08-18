@@ -83,7 +83,7 @@ export default function AcademySection({ courses, loading }: Props) {
           </div>
           <div className="lxq-irl-body">
             <div className="lxq-eyebrow">{t('trajectEyebrow')}</div>
-            <h3>{t('trajectTitlePlain')}<em> {t('trajectTitleEm')}</em></h3>
+            <h3>{t('trajectTitlePlain')}<em>{t('trajectTitleEm')}</em></h3>
             <p className="lxq-course-sub">{t('trajectDesc')}</p>
             <ul className="lxq-usps">
               <li>{t('trajectFeature1')}</li>
