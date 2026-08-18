@@ -79,6 +79,9 @@ interface Block {
   subtitles?: boolean
   fileName?: string
   fileDescription?: string
+  showTitle?: boolean
+  showSubtitle?: boolean
+  showBody?: boolean
 }
 
 interface Lesson {
@@ -504,6 +507,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           content: {
             title: block.title,
             subtitle: block.subtitle,
+            showTitle: block.showTitle,
+            showSubtitle: block.showSubtitle,
+            showBody: block.showBody,
             content: block.content,
             url: block.url,
             caption: block.caption,
@@ -688,6 +694,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               content: {
                 title: block.title,
                 subtitle: block.subtitle,
+                showTitle: block.showTitle,
+                showSubtitle: block.showSubtitle,
+                showBody: block.showBody,
                 content: block.content,
                 url: block.url,
                 caption: block.caption,
@@ -969,6 +978,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         type: b.type as BlockType,
         title: b.content?.title,
         subtitle: b.content?.subtitle,
+        showTitle: b.content?.showTitle,
+        showSubtitle: b.content?.showSubtitle,
+        showBody: b.content?.showBody,
         content: b.content?.content,
         url: b.content?.url,
         question: b.content?.question,

@@ -28,7 +28,21 @@ export interface Block {
   subtitles?: boolean
   fileName?: string
   fileDescription?: string
+  showTitle?: boolean
+  showSubtitle?: boolean
+  showBody?: boolean
 }
+
+/* ── Visibility toggle ( Titel / Subtitel / Body ) ── */
+const FieldToggle = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
+  <span
+    title={on ? 'Zichtbaar voor studenten — klik om te verbergen' : 'Verborgen voor studenten — klik om te tonen'}
+    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle() }}
+    style={{ width: 26, height: 15, borderRadius: 8, background: on ? '#5E8463' : '#d8d2c6', position: 'relative', display: 'inline-block', transition: 'background .2s', flexShrink: 0, cursor: 'pointer' }}
+  >
+    <span style={{ position: 'absolute', width: 11, height: 11, borderRadius: '50%', background: '#fff', top: 2, left: on ? 13 : 2, transition: 'left .2s', boxShadow: '0 1px 2px rgba(0,0,0,0.15)' }} />
+  </span>
+)
 
 interface BlockProps {
   block: Block
@@ -40,37 +54,63 @@ const colors = {
 }
 
 /* ── TextBlock (Rich Text via RichTextField) ── */
-export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => (
-  <div className="space-y-2">
-    <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
-      <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide mb-0.5">Titel</div>
-      <RichTextField
-        content={block.title || ''}
-        onChange={(html) => onUpdate(block.id, { title: html })}
-        variant="inline"
-        placeholder="Hoofdtitel..."
-        className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
-      />
+export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => {
+  const showTitle = block.showTitle !== false
+  const showSubtitle = block.showSubtitle !== false
+  const showBody = block.showBody !== false
+  return (
+    <div className="space-y-2">
+      <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide">Titel</div>
+          <FieldToggle on={showTitle} onToggle={() => onUpdate(block.id, { showTitle: !showTitle })} />
+        </div>
+        {showTitle ? (
+          <RichTextField
+            content={block.title || ''}
+            onChange={(html) => onUpdate(block.id, { title: html })}
+            variant="inline"
+            placeholder="Hoofdtitel..."
+            className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
+          />
+        ) : (
+          <div className="text-[11px] italic text-[#c9c2b6] py-1">Verborgen voor studenten</div>
+        )}
+      </div>
+      <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide">Subtitel / Introductie</div>
+          <FieldToggle on={showSubtitle} onToggle={() => onUpdate(block.id, { showSubtitle: !showSubtitle })} />
+        </div>
+        {showSubtitle ? (
+          <RichTextField
+            content={block.subtitle || ''}
+            onChange={(html) => onUpdate(block.id, { subtitle: html })}
+            variant="inline"
+            placeholder="Subtitel of introductie..."
+            className="text-[14px] text-[#7A7268]"
+          />
+        ) : (
+          <div className="text-[11px] italic text-[#c9c2b6] py-1">Verborgen voor studenten</div>
+        )}
+      </div>
+      <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide">Body tekst</div>
+          <FieldToggle on={showBody} onToggle={() => onUpdate(block.id, { showBody: !showBody })} />
+        </div>
+        {showBody ? (
+          <RichTextField
+            content={typeof block.content === 'string' ? block.content : ''}
+            onChange={(html) => onUpdate(block.id, { content: html })}
+          />
+        ) : (
+          <div className="text-[11px] italic text-[#c9c2b6] py-1">Verborgen voor studenten</div>
+        )}
+      </div>
     </div>
-    <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
-      <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide mb-0.5">Subtitel / Introductie</div>
-      <RichTextField
-        content={block.subtitle || ''}
-        onChange={(html) => onUpdate(block.id, { subtitle: html })}
-        variant="inline"
-        placeholder="Subtitel of introductie..."
-        className="text-[14px] text-[#7A7268]"
-      />
-    </div>
-    <div className="border border-transparent hover:border-[rgba(30,26,20,0.06)] rounded-lg p-1 -m-1 transition">
-      <div className="text-[9px] font-semibold text-[#bbb] uppercase tracking-wide mb-0.5">Body tekst</div>
-      <RichTextField
-        content={typeof block.content === 'string' ? block.content : ''}
-        onChange={(html) => onUpdate(block.id, { content: html })}
-      />
-    </div>
-  </div>
-))
+  )
+})
 TextBlock.displayName = 'TextBlock'
 
 /* ── ImageBlock ── */

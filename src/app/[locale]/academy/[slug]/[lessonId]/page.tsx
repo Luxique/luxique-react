@@ -22,6 +22,7 @@ interface Block {
   option_type?: 'text' | 'image'
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
+  showTitle?: boolean; showSubtitle?: boolean; showBody?: boolean
 }
 interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }
 
@@ -32,6 +33,9 @@ function extractBlockContent(block: Block) {
   return {
     title: (c?.title as string) || block.title,
     subtitle: (c?.subtitle as string) || block.subtitle,
+    showTitle: (c?.showTitle as boolean | undefined) ?? block.showTitle,
+    showSubtitle: (c?.showSubtitle as boolean | undefined) ?? block.showSubtitle,
+    showBody: (c?.showBody as boolean | undefined) ?? block.showBody,
     body: typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : ''),
     muxPlaybackId: (nestedC?.mux_playback_id as string) || (c?.mux_playback_id as string) || undefined,
     question: (c?.question as string) || block.question,
@@ -459,9 +463,9 @@ export default function LessonPage() {
                     {/* TEXT */}
                     {block.type === 'text' && (
                       <div className="tt">
-                        {bc.title && <h2>{bc.title}</h2>}
-                        {bc.subtitle && <div className="subtitle">{bc.subtitle}</div>}
-                        {bc.body && <div dangerouslySetInnerHTML={{ __html: bc.body }} />}
+                        {bc.showTitle !== false && bc.title && <h2>{bc.title}</h2>}
+                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle">{bc.subtitle}</div>}
+                        {bc.showBody !== false && bc.body && <div dangerouslySetInnerHTML={{ __html: bc.body }} />}
                       </div>
                     )}
 
