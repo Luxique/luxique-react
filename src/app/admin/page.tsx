@@ -18,6 +18,16 @@ type Enrollment = {
   courses: { title: string }[]; profiles: { email: string; full_name: string }[]
 }
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string }
+type TrajectBoeking = {
+  id: string; cursus_naam: string; klant_naam: string | null; klant_email: string | null;
+  startdatum: string; starttijd: string | null; blok_dagen: string[] | null;
+  aanbetaling_cents: number | null; restbedrag_cents: number | null; aanbetaling_status: string | null;
+  bevestiging_mail_verzonden_op: string | null
+}
+type PendingBookingRow = {
+  id: string; event_type: string; slot_start: string; status: string;
+  amount_cents: number | null; customer_name: string | null; customer_email: string | null
+}
 
 /* ── icons ── */
 function IconDashboard() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg> }
@@ -37,6 +47,8 @@ export default function AdminPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [trajectBoekingen, setTrajectBoekingen] = useState<TrajectBoeking[]>([])
+  const [paidBookings, setPaidBookings] = useState<PendingBookingRow[]>([])
   const [showGrant, setShowGrant] = useState(false)
   const [grantUserId, setGrantUserId] = useState('')
   const [grantCourseId, setGrantCourseId] = useState('')
@@ -57,6 +69,14 @@ export default function AdminPage() {
       .order('enrolled_at', { ascending: false })
       .then(({ data }) => setEnrollments(data || []))
     supabase.from('bookings').select('id, treatment_name, appointment_date, status').order('appointment_date', { ascending: false }).then(({ data }) => setBookings(data || []))
+    supabase.from('traject_boekingen')
+      .select('id, cursus_naam, klant_naam, klant_email, startdatum, starttijd, blok_dagen, aanbetaling_cents, restbedrag_cents, aanbetaling_status, bevestiging_mail_verzonden_op')
+      .order('startdatum', { ascending: false })
+      .then(({ data }) => setTrajectBoekingen(data || []))
+    supabase.from('pending_bookings')
+      .select('id, event_type, slot_start, status, amount_cents, customer_name, customer_email')
+      .order('slot_start', { ascending: false })
+      .then(({ data }) => setPaidBookings(data || []))
   }, [role])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,14 +113,52 @@ export default function AdminPage() {
 
   // ── Computed stats ──
   const now = new Date()
-  const thisMonth = enrollments.filter(e => {
-    const d = new Date(e.paid_at || e.enrolled_at)
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  })
-  const totalRevenue = enrollments.reduce((sum, e) => sum + (e.payment_amount || 0), 0)
-  const monthlyRevenue = thisMonth.reduce((sum, e) => sum + (e.payment_amount || 0), 0)
   const activeStudents = new Set(enrollments.filter(e => e.status === 'active').map(e => e.user_id)).size
   const upcomingBookings = bookings.filter(b => new Date(b.appointment_date) >= now && b.status !== 'cancelled').slice(0, 5)
+
+  // ── Unified sales feed: cursussen + trajecten + behandelingen ──
+  type Sale = { key: string; kind: 'Cursus' | 'Traject' | 'Behandeling'; who: string; what: string; amount: number; date: string; note?: string }
+  const salesAll: Sale[] = [
+    ...enrollments.map(e => ({
+      key: 'e-' + e.id, kind: 'Cursus' as const,
+      who: e.profiles?.[0]?.full_name || e.profiles?.[0]?.email || '—',
+      what: e.courses?.[0]?.title || '—',
+      amount: e.payment_amount || 0,
+      date: e.paid_at || e.enrolled_at,
+      note: e.payment_method === 'manual' ? 'handmatig toegekend' : undefined,
+    })),
+    ...trajectBoekingen.filter(t => t.aanbetaling_status === 'betaald').map(t => ({
+      key: 't-' + t.id, kind: 'Traject' as const,
+      who: t.klant_naam || t.klant_email || '—',
+      what: t.cursus_naam,
+      amount: (t.aanbetaling_cents || 0) / 100,
+      date: t.bevestiging_mail_verzonden_op || t.startdatum,
+      note: 'aanbetaling (20%)',
+    })),
+    ...paidBookings.filter(b => b.status === 'paid').map(b => ({
+      key: 'b-' + b.id, kind: 'Behandeling' as const,
+      who: b.customer_name || b.customer_email || '—',
+      what: b.event_type,
+      amount: (b.amount_cents || 0) / 100,
+      date: b.slot_start,
+      note: 'aanbetaling (50%)',
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  const totalRevenueAll = salesAll.reduce((s, x) => s + x.amount, 0)
+  const monthSales = salesAll.filter(x => { const d = new Date(x.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() })
+  const monthlyRevenueAll = monthSales.reduce((s, x) => s + x.amount, 0)
+
+  // ── Upcoming: behandelingen (pending_bookings paid) + trajecten + legacy bookings ──
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0)
+  const upcomingTreatments = paidBookings
+    .filter(b => b.status === 'paid' && new Date(b.slot_start) >= now)
+    .sort((a, b) => new Date(a.slot_start).getTime() - new Date(b.slot_start).getTime())
+    .slice(0, 6)
+  const upcomingTrajecten = trajectBoekingen
+    .filter(t => t.aanbetaling_status === 'betaald' && new Date(t.startdatum) >= startOfToday)
+    .slice(0, 6)
+  const upcomingTotal = upcomingTreatments.length + upcomingTrajecten.length + upcomingBookings.length
 
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) : '—'
 
@@ -140,6 +198,7 @@ export default function AdminPage() {
       <AdminMobileNav
         items={[
           { label: 'Overzicht', onClick: () => setTab('overview'), active: tab === 'overview', icon: '📊' },
+          { label: 'Toewijzen', onClick: () => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }, icon: '🎓' },
           { label: 'Klanten', href: '/admin/customers', icon: '👥' },
           { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
           { label: 'Agenda', onClick: () => setTab('calendar'), active: tab === 'calendar', icon: '📅' },
@@ -175,6 +234,9 @@ export default function AdminPage() {
                 </button>
               )
             ))}
+            <button onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }} className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-t border-[#f5f5f5] bg-[#C4A265] text-[#0C0A07] font-bold hover:brightness-95 transition">
+              <IconPlus /> Cursus toewijzen
+            </button>
             <a href="/admin/courses" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition">
               <span className="text-[16px]">📚</span>
               Bouw Cursus
@@ -195,10 +257,10 @@ export default function AdminPage() {
               {/* Stat cards */}
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
-                  { label: 'Inkomen deze maand', value: `€${monthlyRevenue.toLocaleString('nl-NL')}`, sub: `${thisMonth.length} betalingen`, accent: true },
-                  { label: 'Totaal inkomen', value: `€${totalRevenue.toLocaleString('nl-NL')}`, sub: `${enrollments.length} inschrijvingen` },
+                  { label: 'Inkomen deze maand', value: `€${monthlyRevenueAll.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}`, sub: `${monthSales.length} betalingen`, accent: true },
+                  { label: 'Totaal inkomen', value: `€${totalRevenueAll.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}`, sub: `${salesAll.length} verkopen` },
                   { label: 'Actieve studenten', value: String(activeStudents), sub: `${profiles.length} totaal`, href: '/admin/customers' },
-                  { label: 'Aankomende afspraken', value: String(upcomingBookings.length), sub: 'deze week' },
+                  { label: 'Aankomende afspraken', value: String(upcomingTotal), sub: 'behandelingen + trajecten' },
                 ].map(s => (
                   <a key={s.label} href={s.href || '#'} className={`bg-white rounded-2xl p-5 border border-[#eee] block ${s.href ? 'hover:border-[#D4AF37] transition' : ''}`}>
                     <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">{s.label}</p>
@@ -209,32 +271,61 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
-                {/* Recent enrollments */}
+                {/* Recent sales — cursussen + trajecten + behandelingen */}
                 <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
-                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente inschrijvingen</h3>
-                  {enrollments.length > 0 ? (
+                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente verkopen</h3>
+                  {salesAll.length > 0 ? (
                     <div className="space-y-3">
-                      {enrollments.slice(0, 8).map(e => (
-                        <div key={e.id} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
-                          <div>
-                            <p className="text-[13px] font-medium">{e.profiles?.[0]?.full_name || e.profiles?.[0]?.email || '—'}</p>
-                            <p className="text-[11px] text-[#aaa]">{e.courses?.[0]?.title}</p>
+                      {salesAll.slice(0, 8).map(s => (
+                        <div key={s.key} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-[13px] font-medium truncate">{s.who}</p>
+                              <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold tracking-wide uppercase shrink-0 ${s.kind === 'Cursus' ? 'bg-purple-50 text-purple-600' : s.kind === 'Traject' ? 'bg-[#C4A265]/15 text-[#8a6d3b]' : 'bg-green-50 text-green-600'}`}>{s.kind}</span>
+                            </div>
+                            <p className="text-[12px] text-[#666] truncate">{s.what}{s.note ? <span className="text-[#aaa]"> · {s.note}</span> : null}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[13px] font-medium">{e.payment_amount ? `€${e.payment_amount}` : '—'}</p>
-                            <p className="text-[11px] text-[#aaa]">{fmt(e.paid_at || e.enrolled_at)}</p>
+                          <div className="text-right shrink-0 pl-2">
+                            <p className="text-[13px] font-medium">{s.amount > 0 ? `€${s.amount.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}` : '—'}</p>
+                            <p className="text-[11px] text-[#aaa]">{fmt(s.date)}</p>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ) : <p className="text-[13px] text-[#888]">Nog geen inschrijvingen</p>}
+                  ) : <p className="text-[13px] text-[#888]">Nog geen verkopen</p>}
                 </div>
 
                 {/* Upcoming bookings / mini calendar */}
                 <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Aankomende afspraken</h3>
-                  {upcomingBookings.length > 0 ? (
+                  {(upcomingTreatments.length > 0 || upcomingTrajecten.length > 0 || upcomingBookings.length > 0) ? (
                     <div className="space-y-3">
+                      {upcomingTreatments.map(b => (
+                        <div key={b.id} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
+                          <div className="w-10 h-10 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
+                            <span className="text-[10px] font-semibold leading-none">{new Date(b.slot_start).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
+                            <span className="text-[14px] font-bold leading-none">{new Date(b.slot_start).getDate()}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium truncate">{b.event_type}</p>
+                            <p className="text-[11px] text-[#888] truncate">{(b.customer_name || b.customer_email || '—').trim()} · {new Date(b.slot_start).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                          <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium bg-green-50 text-green-600 shrink-0">betaald</span>
+                        </div>
+                      ))}
+                      {upcomingTrajecten.map(t => (
+                        <div key={t.id} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
+                          <div className="w-10 h-10 rounded-xl bg-[#C4A265] flex flex-col items-center justify-center text-[#0C0A07] shrink-0">
+                            <span className="text-[10px] font-semibold leading-none">{new Date(t.startdatum + 'T00:00:00').toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
+                            <span className="text-[14px] font-bold leading-none">{new Date(t.startdatum + 'T00:00:00').getDate()}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-medium truncate">{t.cursus_naam}</p>
+                            <p className="text-[11px] text-[#888] truncate">{(t.klant_naam || t.klant_email || '—').trim()}{t.starttijd ? ` · ${t.starttijd.slice(0, 5)}` : ''}</p>
+                          </div>
+                          <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#C4A265]/15 text-[#8a6d3b] shrink-0">traject</span>
+                        </div>
+                      ))}
                       {upcomingBookings.map(b => (
                         <div key={b.id} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
                           <div className="w-10 h-10 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
@@ -375,17 +466,17 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                   <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">Totaal omzet</p>
-                  <p className="text-[36px] font-['Cormorant_Garamond'] text-[#1a1a1a]">€{totalRevenue.toLocaleString('nl-NL')}</p>
-                  <p className="text-[11px] text-[#aaa] mt-1">{enrollments.length} inschrijvingen</p>
+                  <p className="text-[36px] font-['Cormorant_Garamond'] text-[#1a1a1a]">€{totalRevenueAll.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-[11px] text-[#aaa] mt-1">{salesAll.length} verkopen</p>
                 </div>
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                   <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">Deze maand</p>
-                  <p className="text-[36px] font-['Cormorant_Garamond'] text-[#C4A265]">€{monthlyRevenue.toLocaleString('nl-NL')}</p>
-                  <p className="text-[11px] text-[#aaa] mt-1">{thisMonth.length} betalingen</p>
+                  <p className="text-[36px] font-['Cormorant_Garamond'] text-[#C4A265]">€{monthlyRevenueAll.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-[11px] text-[#aaa] mt-1">{monthSales.length} betalingen</p>
                 </div>
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
-                  <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">Gemiddeld per inschrijving</p>
-                  <p className="text-[36px] font-['Cormorant_Garamond'] text-[#1a1a1a]">€{enrollments.length > 0 ? Math.round(totalRevenue / enrollments.length).toLocaleString('nl-NL') : '0'}</p>
+                  <p className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-2">Gemiddeld per verkoop</p>
+                  <p className="text-[36px] font-['Cormorant_Garamond'] text-[#1a1a1a]">€{salesAll.length > 0 ? (totalRevenueAll / salesAll.length).toLocaleString('nl-NL', { maximumFractionDigits: 0 }) : '0'}</p>
                 </div>
               </div>
 
@@ -395,20 +486,20 @@ export default function AdminPage() {
                 <table className="w-full text-left admin-table">
                   <thead>
                     <tr className="border-b border-[#eee]">
-                      <th className="pb-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Methode</th>
+                      <th className="pb-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Bron</th>
                       <th className="pb-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Aantal</th>
                       <th className="pb-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Totaal</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {['stripe', 'manual'].map(method => {
-                      const items = enrollments.filter(e => e.payment_method === method)
-                      const total = items.reduce((s, e) => s + (e.payment_amount || 0), 0)
+                    {(['Cursus', 'Traject', 'Behandeling'] as const).map(kind => {
+                      const items = salesAll.filter(s => s.kind === kind)
+                      const total = items.reduce((s, x) => s + x.amount, 0)
                       return (
-                        <tr key={method} className="border-b border-[#f5f5f5]">
-                          <td className="py-3 text-[13px] font-medium capitalize">{method === 'stripe' ? 'Stripe' : 'Handmatig'}</td>
+                        <tr key={kind} className="border-b border-[#f5f5f5]">
+                          <td className="py-3 text-[13px] font-medium">{kind === 'Traject' ? 'Trajecten (aanbetaling 20%)' : kind === 'Behandeling' ? 'Behandelingen (aanbetaling 50%)' : 'Online cursussen'}</td>
                           <td className="py-3 text-[13px]">{items.length}</td>
-                          <td className="py-3 text-[13px] font-medium">€{total.toLocaleString('nl-NL')}</td>
+                          <td className="py-3 text-[13px] font-medium">€{total.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</td>
                         </tr>
                       )
                     })}
@@ -425,20 +516,20 @@ export default function AdminPage() {
                   <thead>
                     <tr className="border-b border-[#eee]">
                       <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Datum</th>
-                      <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Cursist</th>
-                      <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Cursus</th>
+                      <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Klant</th>
+                      <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Type</th>
+                      <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Wat</th>
                       <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Bedrag</th>
-                      <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888]">Methode</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {enrollments.filter(e => e.payment_amount).map(e => (
-                      <tr key={e.id} className="border-b border-[#f5f5f5]">
-                        <td className="px-5 py-3 text-[12px] text-[#888]">{fmt(e.paid_at || e.enrolled_at)}</td>
-                        <td className="px-5 py-3 text-[13px]">{e.profiles?.[0]?.full_name || e.profiles?.[0]?.email || '—'}</td>
-                        <td className="px-5 py-3 text-[13px]">{e.courses?.[0]?.title || '—'}</td>
-                        <td className="px-5 py-3 text-[13px] font-medium">€{e.payment_amount}</td>
-                        <td className="px-5 py-3"><span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${e.payment_method === 'stripe' ? 'bg-purple-50 text-purple-600' : 'bg-[#C4A265]/10 text-[#C4A265]'}`}>{e.payment_method === 'stripe' ? 'Stripe' : 'Handmatig'}</span></td>
+                    {salesAll.filter(s => s.amount > 0).map(s => (
+                      <tr key={s.key} className="border-b border-[#f5f5f5]">
+                        <td className="px-5 py-3 text-[12px] text-[#888]">{fmt(s.date)}</td>
+                        <td className="px-5 py-3 text-[13px]">{s.who}</td>
+                        <td className="px-5 py-3"><span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${s.kind === 'Cursus' ? 'bg-purple-50 text-purple-600' : s.kind === 'Traject' ? 'bg-[#C4A265]/15 text-[#8a6d3b]' : 'bg-green-50 text-green-600'}`}>{s.kind}</span></td>
+                        <td className="px-5 py-3 text-[13px]">{s.what}</td>
+                        <td className="px-5 py-3 text-[13px] font-medium">€{s.amount.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}</td>
                       </tr>
                     ))}
                   </tbody>

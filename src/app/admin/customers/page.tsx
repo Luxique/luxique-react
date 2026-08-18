@@ -32,6 +32,7 @@ type PendingBooking = {
   id: string; event_type: string; slot_start: string; status: string;
   customer_name: string | null; customer_email: string | null; amount_cents: number | null
 }
+type CourseOption = { id: string; title: string; is_published: boolean; is_ghost: boolean }
 
 /* ── icons (same as /admin) ── */
 function IconDashboard() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg> }
@@ -50,6 +51,13 @@ export default function AdminCustomersPage() {
   const [bookings, setBookings] = useState<PendingBooking[]>([])
   const [progress, setProgress] = useState<LessonProgress[]>([])
   const [lessonsByCourse, setLessonsByCourse] = useState<Record<string, Lesson[]>>({})
+  const [courses, setCourses] = useState<CourseOption[]>([])
+  const [showGrant, setShowGrant] = useState(false)
+  const [grantUserId, setGrantUserId] = useState('')
+  const [grantCourseId, setGrantCourseId] = useState('')
+  const [grantSearch, setGrantSearch] = useState('')
+  const [grantSearchFocused, setGrantSearchFocused] = useState(false)
+  const [granting, setGranting] = useState(false)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading])
@@ -57,7 +65,26 @@ export default function AdminCustomersPage() {
   useEffect(() => {
     if (role !== 'admin') return
     supabase.from('profiles').select('*').order('created_at', { ascending: false }).then(({ data }) => setProfiles(data || []))
+    supabase.from('courses').select('id, title, is_published, is_ghost').order('sort_order').then(({ data }) => setCourses(data || []))
   }, [role])
+
+  const grantAccess = async () => {
+    if (!grantUserId || !grantCourseId) return
+    setGranting(true)
+    await supabase.from('enrollments').upsert({
+      user_id: grantUserId, course_id: grantCourseId, status: 'active',
+      payment_method: 'manual', paid_at: new Date().toISOString(),
+      enrolled_at: new Date().toISOString(), granted_by: user?.id,
+      access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    }, { onConflict: 'user_id,course_id' })
+    setShowGrant(false); setGrantUserId(''); setGrantCourseId(''); setGrantSearch('')
+    if (selectedId) {
+      // refresh detail van geselecteerde klant
+      setSelectedId(null)
+      setTimeout(() => setSelectedId(selectedId), 50)
+    }
+    setGranting(false)
+  }
 
   useEffect(() => {
     if (!selectedId) return
@@ -179,6 +206,13 @@ export default function AdminCustomersPage() {
           <div className="grid lg:grid-cols-[340px_1fr] gap-5">
             {/* LEFT: Customer list */}
             <div>
+              <button
+                onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }}
+                className="w-full mb-3 px-4 py-3 rounded-xl bg-[#C4A265] text-[#0C0A07] text-[13px] font-bold hover:brightness-95 transition flex items-center justify-center gap-2"
+              >
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                Cursus toewijzen
+              </button>
               <input
                 type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Zoek op naam of email..."
                 className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[14px] focus:outline-none focus:border-[#C4A265] mb-3"
@@ -407,6 +441,57 @@ export default function AdminCustomersPage() {
           </div>
         </div>
       </div>
+
+      {/* Grant modal */}
+      {showGrant && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setShowGrant(false)}>
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full sm:w-[400px] sm:max-w-[92vw] shadow-2xl border border-[#eee] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 className="font-['Cormorant_Garamond'] text-[24px] mb-6">Cursus toewijzen</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Cursist — typ een naam of e-mail</label>
+                <input
+                  type="text"
+                  value={grantUserId ? (profiles.find(p => p.id === grantUserId)?.full_name || profiles.find(p => p.id === grantUserId)?.email || grantSearch) : grantSearch}
+                  onChange={e => { setGrantSearch(e.target.value); setGrantUserId(''); setGrantSearchFocused(true) }}
+                  onFocus={() => setGrantSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setGrantSearchFocused(false), 180)}
+                  placeholder="Zoek op naam of e-mail…"
+                  className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265]"
+                  autoComplete="off"
+                />
+                {grantSearchFocused && (
+                  <div className="mt-1 max-h-52 overflow-y-auto border border-[#eee] rounded-xl bg-white shadow-sm">
+                    {profiles
+                      .filter(p => !grantSearch || (p.full_name || '').toLowerCase().includes(grantSearch.toLowerCase()) || p.email.toLowerCase().includes(grantSearch.toLowerCase()))
+                      .slice(0, 8)
+                      .map(p => (
+                        <button key={p.id} type="button" onMouseDown={() => { setGrantUserId(p.id); setGrantSearchFocused(false) }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-[#fafafa] border-b border-[#f5f5f5] last:border-0">
+                          <span className="text-[13px] font-medium">{p.full_name || 'Onbekend'}</span>
+                          <span className="text-[11px] text-[#888] block">{p.email}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5 block">Cursus</label>
+                <select value={grantCourseId} onChange={e => setGrantCourseId(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[14px] focus:outline-none focus:border-[#C4A265] bg-white">
+                  <option value="">Kies een cursus…</option>
+                  {courses.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}{c.is_ghost ? ' 👻' : ''}{!c.is_published ? ' (concept)' : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <button onClick={grantAccess} disabled={!grantUserId || !grantCourseId || granting}
+                className="w-full py-3 rounded-xl bg-[#0C0A07] text-white text-[14px] font-semibold hover:bg-[#333] transition disabled:opacity-40">
+                {granting ? 'Toekennen…' : 'Toewijzen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

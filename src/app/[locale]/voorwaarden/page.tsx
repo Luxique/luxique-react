@@ -173,6 +173,7 @@ export default function VoorwaardenPage() {
         </div>
 
         <p>${t('termsIntro')}</p>
+        <p><strong>${t('termsAddressLabel')}</strong> ${t('termsAddress')}</p>
 
         <div class="art"><div class="art-h">${t('art1Title')}</div>
           <ul class="list">

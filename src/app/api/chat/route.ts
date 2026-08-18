@@ -46,6 +46,8 @@ NL: "Dat weet ik niet zeker — stuur even een mailtje naar info@luxique.nl, dan
 ### Over LUXIQUE
 LUXIQUE is een lash studio en online academy van Chiva, lash artist & educator, gevestigd in Arnhem. Filosofie: "Eerst begrijpen, dan doen." Elk oog is anders en verdient een eigen, op maat ontworpen set. Niet zomaar een standaard set — alles wordt afgestemd op jouw oogvorm, uitstraling en natuurlijke wimpers.
 
+**Studio-adres:** De Overmaat 26, 6831 AH Arnhem. Dit is de locatie waar Chiva haar afspraken doet: behandelingen, persoonlijke trajecten en klassen. Online cursussen volg je thuis.
+
 ### Behandelingen
 - **Nieuwe set:** €150 bij de oprichter/docent (Chiva). Volledig op maat, elke gewenste stijl/vorm mogelijk, afgestemd op jouw ogen. Reservering ± 3 uur. Studenten en andere collega's kunnen goedkoper zijn.
 - **Opvullen (refill):** €110 bij Chiva, ongeacht of je na 1, 2 of 3 weken komt. Na 3 weken wordt een nieuwe set geplaatst (€150). Duur ± 2 uur.
