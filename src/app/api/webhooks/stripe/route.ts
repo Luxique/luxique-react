@@ -124,6 +124,38 @@ export async function POST(request: NextRequest) {
 
     console.log('Webhook: enrollment created', { user_id, course_id, amount: amount_total })
 
+    // ── Stuur mails: klant-bevestiging + "You've sold a course!" naar Chiva ──
+    try {
+      const { data: courseRow } = await supabase
+        .from('courses')
+        .select('title, slug')
+        .eq('id', course_id)
+        .single()
+      const { data: authUser } = await supabase.auth.admin.getUserById(user_id)
+      const accountEmail = authUser?.user?.email || session.customer_details?.email || null
+      const klantNaam = session.customer_details?.name || authUser?.user?.user_metadata?.full_name || accountEmail || 'Onbekend'
+      if (courseRow && accountEmail) {
+        const { sendCourseBevestigingMail, sendCourseVerkochtNotificatie } = await import('@/lib/email')
+        await sendCourseBevestigingMail({
+          email: accountEmail,
+          voornaam: authUser?.user?.user_metadata?.first_name || null,
+          cursus_naam: courseRow.title,
+          cursus_slug: courseRow.slug,
+          bedrag: amount_total / 100,
+        })
+        await sendCourseVerkochtNotificatie({
+          klant_naam: klantNaam,
+          klant_email: accountEmail,
+          cursus_naam: courseRow.title,
+          bedrag: amount_total / 100,
+        })
+      } else {
+        console.error('Webhook: course mails skipped — missing data', { courseRow: !!courseRow, accountEmail })
+      }
+    } catch (mailErr) {
+      console.error('Webhook: course mails failed (non-blocking):', mailErr)
+    }
+
     // Update profile name from Stripe checkout (if profile has no first_name yet)
     const customerName = session.customer_details?.name
     if (customerName && user_id) {
