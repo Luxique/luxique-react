@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
 import { formatPrice, formatDuur } from '@/lib/traject'
+import { PaymentLogos } from '@/components/PaymentLogos'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
 
@@ -367,7 +368,7 @@ function TrajectBoekenInner() {
   const klasVol = klas.plekken_over === 0 || klas.vol
 
   return (
-    <div className="min-h-screen bg-[#0C0A07] py-12 px-4">
+    <div className="min-h-screen bg-[#0C0A07] pb-12 px-4" style={{ paddingTop: 'var(--content-pad-top)' }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -599,6 +600,11 @@ function TrajectBoekenInner() {
                       ? `Betaal aanbetaling (${formatPrice(aanbetaling)})`
                       : `Inloggen om door te gaan →`}
                   </button>
+
+                  <div className="mt-5 flex flex-col items-center gap-1.5">
+                    <span className="text-[11.5px] tracking-[0.04em] text-[#FBF8F2]/50">Veilig betalen via Stripe</span>
+                    <PaymentLogos />
+                  </div>
 
                   <p className="text-[#FBF8F2]/40 text-xs text-center mt-4">
                     {user
