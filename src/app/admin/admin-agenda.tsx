@@ -6,7 +6,7 @@ type ViewMode = 'month' | 'week'
 type TreatmentKey = 'new_lash_set' | 'fill_lash_set'
 type CalendarItem = {
   id: string
-  kind: 'booking' | 'override'
+  kind: 'booking' | 'override' | 'traject-day'
   date: string
   startTime: string
   endTime?: string
@@ -14,6 +14,8 @@ type CalendarItem = {
   treatmentKey?: TreatmentKey
   status?: string
   customer?: string
+  paidCount?: number
+  maxParticipants?: number
 }
 type CalBooking = {
   id: number
@@ -23,7 +25,19 @@ type CalBooking = {
   endTime: string
   customerName: string
   customerEmail: string
+  eventTypeId: number
   eventTypeTitle: string
+}
+type TrajectClass = {
+  id: string
+  blok_dagen: string[]
+  cursus_naam: string
+  titel: string
+  starttijd: string
+  eindtijd: string
+  betaald_aantal: number
+  max_deelnemers: number
+  status: string
 }
 type TreatmentAvailability = {
   key: TreatmentKey
@@ -36,6 +50,8 @@ const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }>
   new_lash_set: { name: 'New Lash Set', duration: 180 },
   fill_lash_set: { name: 'Fill Lash Set', duration: 120 },
 }
+
+const TRAJECT_BLOK_DAG_EVENT_TYPE_ID = 6195439
 
 function pad(value: number) { return String(value).padStart(2, '0') }
 function dateKey(date: Date) { return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` }
@@ -59,6 +75,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date()))
   const [bookings, setBookings] = useState<CalBooking[]>([])
   const [availability, setAvailability] = useState<TreatmentAvailability[]>([])
+  const [trajectClasses, setTrajectClasses] = useState<TrajectClass[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -74,20 +91,26 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     setError(null)
     try {
       const cacheBust = Date.now()
-      const [bookingsResponse, availabilityResponse] = await Promise.all([
+      const [bookingsResponse, availabilityResponse, trajectResponse] = await Promise.all([
         fetch(`/api/cal/bookings?t=${cacheBust}`, { cache: 'no-store' }),
         fetch(`/api/admin/cal-availability?t=${cacheBust}`, {
           cache: 'no-store',
           headers: { Authorization: `Bearer ${sessionToken}` },
         }),
+        fetch(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${sessionToken}` },
+        }),
       ])
-      const [bookingsPayload, availabilityPayload] = await Promise.all([
-        bookingsResponse.json(), availabilityResponse.json(),
+      const [bookingsPayload, availabilityPayload, trajectPayload] = await Promise.all([
+        bookingsResponse.json(), availabilityResponse.json(), trajectResponse.json(),
       ])
       if (!bookingsResponse.ok) throw new Error(bookingsPayload.error || 'Afspraken laden mislukt.')
       if (!availabilityResponse.ok) throw new Error(availabilityPayload.error || 'Beschikbaarheid laden mislukt.')
-      setBookings(bookingsPayload.bookings || [])
+      if (!trajectResponse.ok) throw new Error(trajectPayload.error || 'Traject-dagen laden mislukt.')
+      setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) => booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID))
       setAvailability(availabilityPayload.treatments || [])
+      setTrajectClasses(trajectPayload.trajectDagen || [])
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Agenda laden mislukt.')
     } finally {
@@ -117,7 +140,18 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       title: treatment.name,
       treatmentKey: treatment.key,
     }))),
-  ], [availability, bookings])
+    ...trajectClasses.flatMap(traject => traject.blok_dagen.map(day => ({
+      id: `traject-${traject.id}-${day}`,
+      kind: 'traject-day' as const,
+      date: day,
+      startTime: traject.starttijd,
+      endTime: traject.eindtijd,
+      title: traject.titel || traject.cursus_naam,
+      status: traject.status,
+      paidCount: traject.betaald_aantal,
+      maxParticipants: traject.max_deelnemers,
+    }))),
+  ], [availability, bookings, trajectClasses])
 
   const visibleDays = useMemo(() => {
     const start = view === 'week' ? startOfWeek(cursor) : startOfMonthGrid(cursor)
@@ -231,7 +265,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
               <button key={key} type="button" onClick={() => setSelectedDate(key)} onDoubleClick={() => openAdd(key)} className={`min-h-[82px] sm:min-h-[116px] p-1.5 sm:p-2 text-left border-r border-b border-[#f0f0f0] transition ${selected ? 'bg-[#C4A265]/8 ring-1 ring-inset ring-[#C4A265]' : 'hover:bg-[#fafafa]'}`}>
                 <span className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-[11px] ${key === dateKey(new Date()) ? 'bg-[#0C0A07] text-white' : muted ? 'text-[#ccc]' : 'text-[#555]'}`}>{day.getDate()}</span>
                 <div className="mt-1 space-y-1 overflow-hidden">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}</span></div>)}
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
               </button>
@@ -249,8 +283,8 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
             <div key={item.id} className="px-5 py-4 flex items-center gap-4">
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
-              <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : 'Boekbaar via Cal.com'}</p></div>
-              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' ? 'Afspraak' : 'Boekbaar'}</span>
+              <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Boekbaar via Cal.com'}</p></div>
+              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Boekbaar'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
           ))}</div>
