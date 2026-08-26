@@ -73,6 +73,7 @@ export default function DashboardPage() {
   const [cancelMode, setCancelMode] = useState(false)
   const [cancelAgreed, setCancelAgreed] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
   const [rescheduleMode, setRescheduleMode] = useState(false)
   const [rescheduleDate, setRescheduleDate] = useState('')
   const [rescheduleTime, setRescheduleTime] = useState('')
@@ -286,10 +287,11 @@ export default function DashboardPage() {
     if (!selectedBooking || !user) return
     if (isWithin24h(selectedBooking.slot_start) && !cancelAgreed) return
     setCancelling(true)
+    setCancelError('')
     try {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session?.access_token) {
-        setCancelling(false)
+        setCancelError('Je sessie is verlopen. Log opnieuw in en probeer het nogmaals.')
         return
       }
       const res = await fetch('/api/boeking/cancel', {
@@ -299,10 +301,16 @@ export default function DashboardPage() {
       const result = await res.json()
       if (result.success) {
         setPendingBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancelled' } : b))
-        setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false)
+        setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false); setCancelError('')
+      } else {
+        setCancelError('Annuleren is niet gelukt. Probeer het nogmaals.')
       }
-    } catch (err) { console.error('Cancel failed:', err) }
-    setCancelling(false)
+    } catch (err) {
+      console.error('Cancel failed:', err)
+      setCancelError('Annuleren is niet gelukt. Controleer je verbinding en probeer het opnieuw.')
+    } finally {
+      setCancelling(false)
+    }
   }
 
   const handleRescheduleBooking = async () => {
@@ -853,7 +861,7 @@ export default function DashboardPage() {
               <div style={{ background:'#FBF8F2', borderRadius:20, padding:24, border:'1px solid rgba(28,24,20,.13)', marginBottom:16 }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
                   <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'1.6rem', color:'#1C1814' }}>{selectedBooking.event_type}</h3>
-                  <button onClick={() => { setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false) }} style={{ color:'#888', fontSize:20, background:'none', border:'none', cursor:'pointer' }}>✕</button>
+                  <button onClick={() => { setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false); setCancelError('') }} disabled={cancelling} aria-label="Boeking sluiten" style={{ color:'#888', fontSize:20, background:'none', border:'none', cursor:cancelling?'not-allowed':'pointer', opacity:cancelling?.4:1 }}>✕</button>
                 </div>
                 <div className="space-y-2 text-[14px] mb-5">
                   <div style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid rgba(28,24,20,.07)', paddingBottom:8 }}><span style={{color:'#888'}}>Datum</span><span style={{fontWeight:500,color:'#1C1814'}}>{formatDateNL(selectedBooking.slot_start)}</span></div>
@@ -888,7 +896,7 @@ export default function DashboardPage() {
                           {!isWithin24h(selectedBooking.slot_start) && (
                             <button onClick={() => setRescheduleMode(true)} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(176,141,79,.3)', color:'#B08D4F', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Verplaatsen</button>
                           )}
-                          <button onClick={() => setCancelMode(true)} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(229,85,85,.3)', color:'#c44', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Annuleren</button>
+                          <button onClick={() => { setCancelMode(true); setCancelError('') }} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(229,85,85,.3)', color:'#c44', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Annuleren</button>
                         </div>
                       </>
                     ) : rescheduleMode ? (
@@ -980,11 +988,18 @@ export default function DashboardPage() {
                             <p style={{ fontSize:'.85rem', color:'#2a8c2a' }}>Je annuleert meer dan 24 uur voor je afspraak. Aanbetaling wordt gerestitueerd.</p>
                           </div>
                         )}
+                        {cancelError && (
+                          <div role="alert" style={{ background:'rgba(229,85,85,.08)', border:'1px solid rgba(229,85,85,.2)', borderRadius:12, padding:14, fontSize:'.83rem', color:'#c44' }}>
+                            {cancelError}
+                          </div>
+                        )}
                         <div style={{ display:'flex', gap:12 }}>
-                          <button onClick={() => { setCancelMode(false); setCancelAgreed(false) }} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(28,24,20,.13)', color:'#888', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:'pointer' }}>Terug</button>
+                          <button onClick={() => { setCancelMode(false); setCancelAgreed(false); setCancelError('') }} disabled={cancelling} style={{ flex:1, padding:'12px', borderRadius:12, border:'1px solid rgba(28,24,20,.13)', color:'#888', fontWeight:500, fontSize:'.9rem', background:'transparent', cursor:cancelling?'not-allowed':'pointer', opacity:cancelling?.4:1 }}>Terug</button>
                           <button onClick={handleCancelBooking} disabled={isWithin24h(selectedBooking.slot_start) ? !cancelAgreed || cancelling : cancelling}
-                            style={{ flex:1, padding:'12px', borderRadius:12, background:'#e55', color:'#fff', fontWeight:500, fontSize:'.9rem', border:'none', cursor:'pointer', opacity: (isWithin24h(selectedBooking.slot_start) ? !cancelAgreed || cancelling : cancelling) ? .4 : 1 }}>
-                            {cancelling ? 'Annuleren...' : 'Bevestig annulering'}
+                            aria-busy={cancelling}
+                            style={{ flex:1, minHeight:43, padding:'12px', borderRadius:12, background:'#e55', color:'#fff', fontWeight:500, fontSize:'.9rem', border:'none', cursor:(isWithin24h(selectedBooking.slot_start) ? !cancelAgreed || cancelling : cancelling)?'not-allowed':'pointer', opacity: (isWithin24h(selectedBooking.slot_start) ? !cancelAgreed || cancelling : cancelling) ? .55 : 1, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                            {cancelling && <span className="animate-spin" aria-hidden="true" style={{ width:15, height:15, border:'2px solid rgba(255,255,255,.45)', borderTopColor:'#fff', borderRadius:'50%', flexShrink:0 }} />}
+                            {cancelling ? 'Bezig met annuleren...' : 'Bevestig annulering'}
                           </button>
                         </div>
                       </div>
