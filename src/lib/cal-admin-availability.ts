@@ -33,14 +33,14 @@ export const TREATMENTS: Record<TreatmentKey, {
     name: 'New Lash Set',
     durationMinutes: 180,
     eventTypeId: 5492038,
-    scheduleId: 2286124,
+    scheduleId: 2292165,
   },
   fill_lash_set: {
     key: 'fill_lash_set',
     name: 'Fill Lash Set',
     durationMinutes: 120,
     eventTypeId: 5492037,
-    scheduleId: 2286125,
+    scheduleId: 2292166,
   },
 }
 

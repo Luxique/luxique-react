@@ -27,8 +27,7 @@ type MyTraject = {
   cal_sync_status: string
 }
 
-// Available time slots for rescheduling (LUXIQUE schedule — will be updated)
-const RESCHEDULE_SLOTS = ['09:00', '12:00']
+type RescheduleSlot = { start: string; time: string }
 type LessonRow = { id: string; title: string; slug: string; sort_order: number; lesson_type: string; course_id: string }
 type ProgressRow = { lesson_id: string; completed: boolean }
 
@@ -79,7 +78,8 @@ export default function DashboardPage() {
   const [rescheduleTime, setRescheduleTime] = useState('')
   const [rescheduling, setRescheduling] = useState(false)
   const [rescheduleError, setRescheduleError] = useState('')
-  const [bookedSlots, setBookedSlots] = useState<string[]>([])
+  const [rescheduleSlots, setRescheduleSlots] = useState<RescheduleSlot[]>([])
+  const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'academy' | 'boekingen'>('overview')
   const [profileFirstName, setProfileFirstName] = useState<string>('')
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([])
@@ -254,34 +254,44 @@ export default function DashboardPage() {
     return () => obs.disconnect()
   })
 
-  // Fetch booked slots for reschedule availability check
+  // Fetch the selected treatment's real Cal.com availability.
   useEffect(() => {
-    if (!rescheduleDate) {
-      setBookedSlots([])
+    if (!rescheduleDate || !selectedBooking || !rescheduleMode) {
+      setRescheduleSlots([])
       return
     }
 
-    const fetchBookedSlots = async () => {
-      const dateStart = `${rescheduleDate}T00:00:00.000Z`
-      const dateEnd = `${rescheduleDate}T23:59:59.999Z`
+    let cancelled = false
+    const fetchAvailability = async () => {
+      setRescheduleSlotsLoading(true)
+      setRescheduleSlots([])
+      setRescheduleTime('')
+      setRescheduleError('')
+      const { data } = await supabase.auth.getSession()
+      if (!data.session?.access_token) {
+        if (!cancelled) setRescheduleError('Je sessie is verlopen. Log opnieuw in.')
+        if (!cancelled) setRescheduleSlotsLoading(false)
+        return
+      }
 
-      const { data } = await supabase
-        .from('pending_bookings')
-        .select('slot_start')
-        .or('status.eq.paid,status.eq.pending')
-        .gte('slot_start', dateStart)
-        .lt('slot_start', dateEnd)
-
-      const slots = data?.map(b => {
-        const h = new Date(b.slot_start).getHours()
-        return `${h.toString().padStart(2, '0')}:00`
-      }) || []
-
-      setBookedSlots(slots)
+      try {
+        const params = new URLSearchParams({ bookingId: selectedBooking.id, date: rescheduleDate })
+        const response = await fetch(`/api/boeking/reschedule-availability?${params}`, {
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+          cache: 'no-store',
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(payload?.error || 'Beschikbaarheid laden mislukt.')
+        if (!cancelled) setRescheduleSlots(Array.isArray(payload?.slots) ? payload.slots : [])
+      } catch (error) {
+        if (!cancelled) setRescheduleError(error instanceof Error ? error.message : 'Beschikbaarheid laden mislukt.')
+      } finally {
+        if (!cancelled) setRescheduleSlotsLoading(false)
+      }
     }
-
-    fetchBookedSlots()
-  }, [rescheduleDate])
+    fetchAvailability()
+    return () => { cancelled = true }
+  }, [rescheduleDate, rescheduleMode, selectedBooking])
 
   const handleCancelBooking = async () => {
     if (!selectedBooking || !user) return
@@ -928,28 +938,29 @@ export default function DashboardPage() {
                         <div>
                           <label style={{ display:'block', fontSize:'.82rem', color:'#888', marginBottom:6, fontWeight:500 }}>Tijd</label>
                           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-                            {RESCHEDULE_SLOTS.map(slot => {
-                              const isBooked = bookedSlots.includes(slot)
+                            {rescheduleSlots.map(slot => {
                               return (
                                 <button
-                                  key={slot}
-                                  onClick={() => !isBooked && setRescheduleTime(slot)}
-                                  disabled={isBooked}
+                                  key={slot.start}
+                                  onClick={() => setRescheduleTime(slot.time)}
                                   style={{
                                     padding:'10px', borderRadius:10, fontSize:'.88rem', fontWeight:500,
-                                    cursor: isBooked ? 'not-allowed' : 'pointer',
-                                    border: rescheduleTime === slot ? '1px solid #B08D4F' : '1px solid rgba(28,24,20,.13)',
-                                    background: isBooked ? 'rgba(28,24,20,.05)' : (rescheduleTime === slot ? 'rgba(176,141,79,.12)' : 'transparent'),
-                                    color: isBooked ? '#aaa' : (rescheduleTime === slot ? '#B08D4F' : '#1C1814'),
-                                    opacity: isBooked ? .5 : 1,
+                                    cursor: 'pointer',
+                                    border: rescheduleTime === slot.time ? '1px solid #B08D4F' : '1px solid rgba(28,24,20,.13)',
+                                    background: rescheduleTime === slot.time ? 'rgba(176,141,79,.12)' : 'transparent',
+                                    color: rescheduleTime === slot.time ? '#B08D4F' : '#1C1814',
                                     transition: 'all .2s',
                                   }}
                                 >
-                                  {slot}
+                                  {slot.time}
                                 </button>
                               )
                             })}
                           </div>
+                          {rescheduleSlotsLoading && <p style={{fontSize:'.82rem',color:'#888',marginTop:8}}>Beschikbaarheid laden…</p>}
+                          {!rescheduleSlotsLoading && rescheduleDate && rescheduleSlots.length === 0 && !rescheduleError && (
+                            <p style={{fontSize:'.82rem',color:'#888',marginTop:8}}>Geen beschikbare tijden op deze datum.</p>
+                          )}
                         </div>
 
                         {rescheduleError && (
