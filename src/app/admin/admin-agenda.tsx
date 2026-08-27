@@ -68,6 +68,12 @@ function localTimeFromIso(value: string) {
 }
 function monthTitle(date: Date) { return new Intl.DateTimeFormat('nl-NL', { month: 'long', year: 'numeric' }).format(date) }
 function longDate(key: string) { return new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${key}T12:00:00`)) }
+function defaultEndTime(startTime: string, treatmentKey: TreatmentKey) {
+  const [hours, minutes] = startTime.split(':').map(Number)
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return ''
+  const end = hours * 60 + minutes + TREATMENT_LABELS[treatmentKey].duration
+  return `${pad(Math.floor(end / 60))}:${pad(end % 60)}`
+}
 
 export default function AdminAgenda({ sessionToken }: { sessionToken: string }) {
   const [cursor, setCursor] = useState(() => new Date())
@@ -82,6 +88,8 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [modalOpen, setModalOpen] = useState(false)
   const [treatmentKey, setTreatmentKey] = useState<TreatmentKey>('new_lash_set')
   const [slotTime, setSlotTime] = useState('09:00')
+  const [slotEndTime, setSlotEndTime] = useState('12:00')
+  const [endTimeEdited, setEndTimeEdited] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
 
@@ -169,9 +177,21 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const openAdd = (date = selectedDate) => {
     setSelectedDate(date)
     setSlotTime('09:00')
+    setSlotEndTime(defaultEndTime('09:00', treatmentKey))
+    setEndTimeEdited(false)
     setError(null)
     setSuccess(null)
     setModalOpen(true)
+  }
+
+  const changeTreatment = (nextTreatmentKey: TreatmentKey) => {
+    setTreatmentKey(nextTreatmentKey)
+    if (!endTimeEdited) setSlotEndTime(defaultEndTime(slotTime, nextTreatmentKey))
+  }
+
+  const changeStartTime = (nextStartTime: string) => {
+    setSlotTime(nextStartTime)
+    if (!endTimeEdited) setSlotEndTime(defaultEndTime(nextStartTime, treatmentKey))
   }
 
   const saveOverride = async () => {
@@ -184,12 +204,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
         method: 'POST',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
-        body: JSON.stringify({ treatmentKey, date: selectedDate, startTime: slotTime }),
+        body: JSON.stringify({ treatmentKey, date: selectedDate, startTime: slotTime, endTime: slotEndTime }),
       })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Tijdslot opslaan mislukt.')
       setModalOpen(false)
-      setSuccess(`${TREATMENT_LABELS[treatmentKey].name} is boekbaar gemaakt op ${selectedDate} om ${slotTime}.`)
+      setSuccess(`${TREATMENT_LABELS[treatmentKey].name} is boekbaar gemaakt op ${selectedDate} van ${slotTime} tot ${slotEndTime}.`)
       await loadAgenda()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Tijdslot opslaan mislukt.')
@@ -209,7 +229,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
         method: 'DELETE',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
-        body: JSON.stringify({ treatmentKey: item.treatmentKey, date: item.date, startTime: item.startTime }),
+        body: JSON.stringify({ treatmentKey: item.treatmentKey, date: item.date, startTime: item.startTime, endTime: item.endTime }),
       })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Tijdslot verwijderen mislukt.')
@@ -296,9 +316,13 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="flex items-start justify-between mb-6"><div><h4 className="font-['Cormorant_Garamond'] text-[25px]">Boekbaar moment toevoegen</h4><p className="text-[11px] text-[#999] mt-1 capitalize">{longDate(selectedDate)}</p></div><button onClick={() => setModalOpen(false)} className="text-[#999]">✕</button></div>
           {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {error}</div>}
           <div className="space-y-4">
-            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Behandeling</label><select value={treatmentKey} onChange={event => setTreatmentKey(event.target.value as TreatmentKey)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[13px] focus:outline-none focus:border-[#C4A265]"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
+            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Behandeling</label><select value={treatmentKey} onChange={event => changeTreatment(event.target.value as TreatmentKey)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[13px] focus:outline-none focus:border-[#C4A265]"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
             <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Datum</label><input type="date" value={selectedDate} min={dateKey(new Date())} onChange={event => setSelectedDate(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
-            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Starttijd</label><input type="time" min="09:00" max={treatmentKey === 'new_lash_set' ? '16:00' : '17:00'} step="1800" value={slotTime} onChange={event => setSlotTime(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /><p className="text-[10px] text-[#999] mt-1.5">Werkdag 09:00–19:00 · eindigt om {(() => { const [h, m] = slotTime.split(':').map(Number); const end = h * 60 + m + TREATMENT_LABELS[treatmentKey].duration; return `${pad(Math.floor(end / 60))}:${pad(end % 60)}` })()}</p></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Starttijd</label><input type="time" min="09:00" max="18:59" step="1800" value={slotTime} onChange={event => changeStartTime(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
+              <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Eindtijd</label><input type="time" min="09:01" max="19:00" step="1800" value={slotEndTime} onChange={event => { setSlotEndTime(event.target.value); setEndTimeEdited(true) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
+            </div>
+            <p className="text-[10px] text-[#999] -mt-2">Werkdag 09:00–19:00 · de eindtijd volgt automatisch tot je die zelf aanpast.</p>
           </div>
           <div className="flex gap-3 mt-7"><button onClick={() => setModalOpen(false)} disabled={saving} className="flex-1 py-3 rounded-full border border-[#eee] text-[13px] text-[#888]">Annuleren</button><button onClick={saveOverride} disabled={saving} className="flex-1 py-3 rounded-full bg-[#0C0A07] text-white font-semibold text-[13px] disabled:opacity-50">{saving ? 'Opslaan…' : 'Boekbaar maken'}</button></div>
         </div>

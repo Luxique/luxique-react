@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     const treatmentKey: TreatmentKey = body.treatmentKey
     const treatment = TREATMENTS[treatmentKey]
-    const built = buildOverride(body.startTime, treatment.durationMinutes)
+    const built = buildOverride(body.startTime, treatment.durationMinutes, body.endTime)
     if ('error' in built) return json({ error: built.error }, 400)
 
     const candidate = { ...built, date: body.date }
@@ -159,7 +159,7 @@ export async function DELETE(req: NextRequest) {
 
     const treatmentKey: TreatmentKey = body.treatmentKey
     const treatment = TREATMENTS[treatmentKey]
-    const built = buildOverride(body.startTime, treatment.durationMinutes)
+    const built = buildOverride(body.startTime, treatment.durationMinutes, body.endTime)
     if ('error' in built) return json({ error: built.error }, 400)
     const target = { ...built, date: body.date }
 
