@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 import {
   buildOverride,
   isTreatmentKey,
@@ -91,6 +92,24 @@ async function authenticate(req: NextRequest) {
   return null
 }
 
+async function findTrajectOnDate(date: string): Promise<{ cursus_naam: string } | null> {
+  const { data, error } = await supabaseAdmin
+    .from('traject_klassen')
+    .select('traject_cursussen (naam)')
+    .in('status', ['open', 'vol'])
+    .contains('blok_dagen', [date])
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(`Traject-dag controleren mislukt: ${error.message}`)
+  if (!data) return null
+
+  const cursus = Array.isArray(data.traject_cursussen)
+    ? data.traject_cursussen[0]
+    : data.traject_cursussen
+  return { cursus_naam: cursus?.naam || 'Onbekend traject' }
+}
+
 export async function GET(req: NextRequest) {
   const denied = await authenticate(req)
   if (denied) return denied
@@ -122,6 +141,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null)
     if (!isTreatmentKey(body?.treatmentKey) || !isValidLocalDate(body?.date)) {
       return json({ error: 'Kies een geldige behandeling en datum.' }, 400)
+    }
+
+    const traject = await findTrajectOnDate(body.date)
+    if (traject) {
+      return json({
+        error: `Op deze dag loopt een traject (${traject.cursus_naam}). Er kunnen geen behandelingen worden ingepland.`,
+      }, 409)
     }
 
     const treatmentKey: TreatmentKey = body.treatmentKey

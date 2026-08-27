@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
         weergave_titel,
         traject_cursussen (naam)
       `)
+      .in('status', ['open', 'vol'])
       .order('startdatum', { ascending: true })
 
     if (klassenError) {

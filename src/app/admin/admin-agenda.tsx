@@ -75,6 +75,10 @@ function defaultEndTime(startTime: string, treatmentKey: TreatmentKey) {
   return `${pad(Math.floor(end / 60))}:${pad(end % 60)}`
 }
 
+function trajectConflictMessage(traject: TrajectClass) {
+  return `Op deze dag loopt een traject (${traject.cursus_naam}). Er kunnen geen behandelingen worden ingepland.`
+}
+
 export default function AdminAgenda({ sessionToken }: { sessionToken: string }) {
   const [cursor, setCursor] = useState(() => new Date())
   const [view, setView] = useState<ViewMode>('month')
@@ -166,6 +170,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     return Array.from({ length: view === 'week' ? 7 : 42 }, (_, index) => addDays(start, index))
   }, [cursor, view])
   const selectedItems = items.filter(item => item.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime))
+  const trajectForDate = (date: string) => trajectClasses.find(traject => traject.blok_dagen.includes(date))
 
   const navigate = (direction: number) => {
     const next = new Date(cursor)
@@ -176,6 +181,13 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   const openAdd = (date = selectedDate) => {
     setSelectedDate(date)
+    const traject = trajectForDate(date)
+    if (traject) {
+      setModalOpen(false)
+      setSuccess(null)
+      setError(trajectConflictMessage(traject))
+      return
+    }
     setSlotTime('09:00')
     setSlotEndTime(defaultEndTime('09:00', treatmentKey))
     setEndTimeEdited(false)
@@ -196,6 +208,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   const saveOverride = async () => {
     if (saving) return
+    const traject = trajectForDate(selectedDate)
+    if (traject) {
+      setSuccess(null)
+      setError(trajectConflictMessage(traject))
+      return
+    }
     setSaving(true)
     setError(null)
     setSuccess(null)
@@ -317,14 +335,14 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {error}</div>}
           <div className="space-y-4">
             <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Behandeling</label><select value={treatmentKey} onChange={event => changeTreatment(event.target.value as TreatmentKey)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[13px] focus:outline-none focus:border-[#C4A265]"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
-            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Datum</label><input type="date" value={selectedDate} min={dateKey(new Date())} onChange={event => setSelectedDate(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
+            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Datum</label><input type="date" value={selectedDate} min={dateKey(new Date())} onChange={event => { const nextDate = event.target.value; setSelectedDate(nextDate); const traject = trajectForDate(nextDate); setError(traject ? trajectConflictMessage(traject) : null) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Starttijd</label><input type="time" min="09:00" max="18:59" step="1800" value={slotTime} onChange={event => changeStartTime(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
               <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Eindtijd</label><input type="time" min="09:01" max="19:00" step="1800" value={slotEndTime} onChange={event => { setSlotEndTime(event.target.value); setEndTimeEdited(true) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
             </div>
             <p className="text-[10px] text-[#999] -mt-2">Werkdag 09:00–19:00 · de eindtijd volgt automatisch tot je die zelf aanpast.</p>
           </div>
-          <div className="flex gap-3 mt-7"><button onClick={() => setModalOpen(false)} disabled={saving} className="flex-1 py-3 rounded-full border border-[#eee] text-[13px] text-[#888]">Annuleren</button><button onClick={saveOverride} disabled={saving} className="flex-1 py-3 rounded-full bg-[#0C0A07] text-white font-semibold text-[13px] disabled:opacity-50">{saving ? 'Opslaan…' : 'Boekbaar maken'}</button></div>
+          <div className="flex gap-3 mt-7"><button onClick={() => setModalOpen(false)} disabled={saving} className="flex-1 py-3 rounded-full border border-[#eee] text-[13px] text-[#888]">Annuleren</button><button onClick={saveOverride} disabled={saving || Boolean(trajectForDate(selectedDate))} className="flex-1 py-3 rounded-full bg-[#0C0A07] text-white font-semibold text-[13px] disabled:opacity-50">{saving ? 'Opslaan…' : 'Boekbaar maken'}</button></div>
         </div>
       </div>}
     </div>
