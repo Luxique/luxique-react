@@ -74,24 +74,37 @@ export function minutesToTime(value: number): string {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }
 
-export function buildOverride(startTime: string, durationMinutes: number): CalOverride | { error: string } {
+export function defaultEndTime(startTime: string, durationMinutes: number): string {
+  if (!isValidTime(startTime)) return ''
+  return minutesToTime(timeToMinutes(startTime) + durationMinutes)
+}
+
+export function buildOverride(startTime: string, durationMinutes: number, requestedEndTime?: string): CalOverride | { error: string } {
   if (!isValidTime(startTime)) return { error: 'Kies een geldige starttijd.' }
+  const endTime = requestedEndTime ?? defaultEndTime(startTime, durationMinutes)
+  if (!isValidTime(endTime)) return { error: 'Kies een geldige eindtijd.' }
 
   const start = timeToMinutes(startTime)
   const workdayStart = timeToMinutes(WORKDAY_START)
   const workdayEnd = timeToMinutes(WORKDAY_END)
-  const end = start + durationMinutes
+  const end = timeToMinutes(endTime)
 
   if (start < workdayStart) {
     return { error: `Een behandeling kan niet vóór ${WORKDAY_START} starten.` }
   }
+  if (start >= workdayEnd) {
+    return { error: `Een behandeling moet vóór ${WORKDAY_END} starten.` }
+  }
+  if (end <= start) {
+    return { error: 'De eindtijd moet na de starttijd liggen.' }
+  }
   if (end > workdayEnd) {
     return {
-      error: `Dit tijdslot eindigt om ${minutesToTime(end)}, na het einde van de werkdag (${WORKDAY_END}). Kies een eerder tijdstip.`,
+      error: `De eindtijd mag niet later zijn dan ${WORKDAY_END}.`,
     }
   }
 
-  return { date: '', startTime, endTime: minutesToTime(end) }
+  return { date: '', startTime, endTime }
 }
 
 export function sameOverride(a: CalOverride, b: CalOverride): boolean {

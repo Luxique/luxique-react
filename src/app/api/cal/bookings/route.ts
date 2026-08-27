@@ -35,6 +35,7 @@ export async function GET() {
         paid: b.paid,
         customerName: responses?.name || 'Onbekend',
         customerEmail: responses?.email || '',
+        eventTypeId: Number(eventType?.id || b.eventTypeId || 0),
         eventTypeTitle: eventType?.title || 'Onbekend',
         eventTypeSlug: eventType?.slug || '',
         price: eventType?.price || 0,
