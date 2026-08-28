@@ -171,6 +171,11 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   }, [cursor, view])
   const selectedItems = items.filter(item => item.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime))
   const trajectForDate = (date: string) => trajectClasses.find(traject => traject.blok_dagen.includes(date))
+  const selectedTraject = trajectForDate(selectedDate)
+  const addDisabled = loading || Boolean(selectedTraject)
+  const addDisabledExplanation = selectedTraject
+    ? `Op deze dag loopt een traject (${selectedTraject.cursus_naam}) — geen behandelingen mogelijk.`
+    : null
 
   const navigate = (direction: number) => {
     const next = new Date(cursor)
@@ -267,14 +272,26 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda & beschikbaarheid</h3>
           <p className="text-[11px] text-[#aaa] mt-1">Afspraken en boekbare momenten rechtstreeks uit Cal.com.</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-start gap-2 flex-wrap">
           <div className="flex rounded-full border border-[#e5e5e5] bg-white p-1">
             {(['month', 'week'] as ViewMode[]).map(mode => (
               <button key={mode} onClick={() => setView(mode)} className={`px-3 py-1.5 rounded-full text-[11px] ${view === mode ? 'bg-[#0C0A07] text-white' : 'text-[#777]'}`}>{mode === 'month' ? 'Maand' : 'Week'}</button>
             ))}
           </div>
           <button onClick={loadAgenda} className="px-3 py-2 rounded-full border border-[#e5e5e5] bg-white text-[11px] text-[#666]">Vernieuwen</button>
-          <button onClick={() => openAdd()} className="px-4 py-2 rounded-full bg-[#0C0A07] text-white text-[11px] font-semibold">+ Tijdslot</button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={() => openAdd()}
+              disabled={addDisabled}
+              aria-describedby={addDisabledExplanation ? 'agenda-add-disabled-explanation' : undefined}
+              title={addDisabledExplanation || undefined}
+              className="px-4 py-2 rounded-full bg-[#0C0A07] text-white text-[11px] font-semibold disabled:bg-[#e3e1dd] disabled:text-[#999] disabled:cursor-not-allowed"
+            >
+              + Tijdslot
+            </button>
+            {addDisabledExplanation && <p id="agenda-add-disabled-explanation" className="max-w-[290px] text-right text-[10px] leading-relaxed text-[#8a6d3b]">{addDisabledExplanation}</p>}
+          </div>
         </div>
       </div>
 
@@ -313,9 +330,21 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       </div>
 
       <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#eee] flex items-center justify-between gap-3">
+        <div className="px-5 py-4 border-b border-[#eee] flex items-start justify-between gap-3">
           <div><h4 className="font-['Cormorant_Garamond'] text-[22px] capitalize">{longDate(selectedDate)}</h4><p className="text-[10px] text-[#aaa]">{selectedItems.length} item{selectedItems.length === 1 ? '' : 's'}</p></div>
-          <button onClick={() => openAdd(selectedDate)} className="text-[11px] text-[#9a7838]">+ Boekbaar moment</button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              onClick={() => openAdd(selectedDate)}
+              disabled={addDisabled}
+              aria-describedby={addDisabledExplanation ? 'day-detail-add-disabled-explanation' : undefined}
+              title={addDisabledExplanation || undefined}
+              className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#9a7838] disabled:bg-[#f0efec] disabled:text-[#aaa] disabled:cursor-not-allowed"
+            >
+              + Boekbaar moment
+            </button>
+            {addDisabledExplanation && <p id="day-detail-add-disabled-explanation" className="max-w-[320px] text-right text-[10px] leading-relaxed text-[#8a6d3b]">{addDisabledExplanation}</p>}
+          </div>
         </div>
         {loading ? <div className="p-8 text-center text-[13px] text-[#888]">Agenda laden…</div> : selectedItems.length === 0 ? <div className="p-8 text-center text-[13px] text-[#888]">Deze dag is leeg.</div> : (
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
