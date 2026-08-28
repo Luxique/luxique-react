@@ -16,7 +16,7 @@ type Profile = {
 
 type Enrollment = {
   id: string; course_id: string; status: string; payment_method: string | null;
-  payment_amount: number | null; paid_at: string | null; enrolled_at: string;
+  payment_amount: number | null; paid_at: string | null; enrolled_at: string; access_expires_at: string | null;
   granted_by: string | null; stripe_payment_intent_id: string | null;
   courses: { title: string } | { title: string }[] | null
 }
@@ -58,6 +58,9 @@ export default function AdminCustomersPage() {
   const [grantSearch, setGrantSearch] = useState('')
   const [grantSearchFocused, setGrantSearchFocused] = useState(false)
   const [granting, setGranting] = useState(false)
+  const [extensionDates, setExtensionDates] = useState<Record<string, string>>({})
+  const [extendingId, setExtendingId] = useState<string | null>(null)
+  const [extensionError, setExtensionError] = useState<Record<string, string>>({})
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading])
@@ -86,6 +89,36 @@ export default function AdminCustomersPage() {
     setGranting(false)
   }
 
+  const extendAccess = async (enrollment: Enrollment) => {
+    const selectedDate = extensionDates[enrollment.id]
+    if (!selectedDate) return
+
+    setExtendingId(enrollment.id)
+    setExtensionError(prev => ({ ...prev, [enrollment.id]: '' }))
+
+    const expiresAt = new Date(`${selectedDate}T23:59:59.999`).toISOString()
+    const wasExpired = enrollment.access_expires_at !== null && new Date(enrollment.access_expires_at) < new Date()
+    const update: { access_expires_at: string; status?: string } = { access_expires_at: expiresAt }
+    if (wasExpired) update.status = 'active'
+
+    const { data, error } = await supabase
+      .from('enrollments')
+      .update(update)
+      .eq('id', enrollment.id)
+      .select('id, access_expires_at, status')
+      .single()
+
+    if (error) {
+      setExtensionError(prev => ({ ...prev, [enrollment.id]: 'Verlengen mislukt. Probeer het opnieuw.' }))
+    } else {
+      setEnrollments(prev => prev.map(item => item.id === enrollment.id
+        ? { ...item, access_expires_at: data.access_expires_at, status: data.status }
+        : item
+      ))
+    }
+    setExtendingId(null)
+  }
+
   useEffect(() => {
     if (!selectedId) return
     const sel = profiles.find(p => p.id === selectedId)
@@ -93,7 +126,7 @@ export default function AdminCustomersPage() {
 
     // Fetch enrollments
     supabase.from('enrollments')
-      .select('id, course_id, status, payment_method, payment_amount, paid_at, enrolled_at, granted_by, stripe_payment_intent_id, courses(title)')
+      .select('id, course_id, status, payment_method, payment_amount, paid_at, enrolled_at, access_expires_at, granted_by, stripe_payment_intent_id, courses(title)')
       .eq('user_id', selectedId).order('enrolled_at', { ascending: false })
       .then(({ data }) => {
         const enrolled = (data || []) as Enrollment[]
@@ -150,15 +183,17 @@ export default function AdminCustomersPage() {
     { key: 'overview', label: 'Overzicht', icon: <IconDashboard />, href: '/admin' },
     { key: 'customers', label: 'Klanten', icon: <IconUsers />, href: '/admin/customers', active: true },
     { key: 'courses', label: 'Cursussen', icon: <IconBook />, href: '/admin/courses' },
-    { key: 'calendar', label: 'Agenda', icon: <IconCalendar />, href: '/admin' },
-    { key: 'finance', label: 'Financiën', icon: <IconEuro />, href: '/admin' },
+    { key: 'calendar', label: 'Agenda', icon: <IconCalendar />, href: '/admin?tab=calendar' },
+    { key: 'finance', label: 'Financiën', icon: <IconEuro />, href: '/admin?tab=finance' },
+    { key: 'traject', label: 'Traject-instellingen', icon: <IconCalendar />, href: '/admin?tab=traject' },
+    { key: 'klassen', label: 'Klassen', icon: <IconCalendar />, href: '/admin?tab=klassen' },
   ]
 
   return (
     <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
       {/* Top bar — same as /admin */}
       <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+        <div className="mx-auto flex w-full items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
             <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">Klanten</h1>
@@ -175,13 +210,17 @@ export default function AdminCustomersPage() {
           { label: 'Overzicht', href: '/admin', icon: '📊' },
           { label: 'Klanten', href: '/admin/customers', active: true, icon: '👥' },
           { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
+          { label: 'Agenda', href: '/admin?tab=calendar', icon: '📅' },
+          { label: 'Financiën', href: '/admin?tab=finance', icon: '💶' },
+          { label: 'Traject-instellingen', href: '/admin?tab=traject', icon: '🗓️' },
+          { label: 'Klassen', href: '/admin?tab=klassen', icon: '🎓' },
           { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
         ]}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col lg:flex-row gap-4 lg:gap-6">
+      <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:flex-row xl:gap-6">
         {/* ── Sidebar — same as /admin (desktop only) ── */}
-        <div className="w-[220px] shrink-0 hidden lg:block">
+        <div className="hidden w-[220px] shrink-0 xl:block">
           <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">
             {navItems.map(t => (
               <a key={t.key} href={t.href}
@@ -311,12 +350,10 @@ export default function AdminCustomersPage() {
                         const totalCount = courseLessons.length
                         const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
-                        const enrolledDate = new Date(e.enrolled_at)
-                        const expiryDate = new Date(enrolledDate)
-                        expiryDate.setDate(expiryDate.getDate() + 365)
-                        const daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-                        const isExpired = daysLeft < 0
-                        const monthsLeft = Math.floor(Math.abs(daysLeft) / 30)
+                        const expiryDate = e.access_expires_at ? new Date(e.access_expires_at) : null
+                        const daysLeft = expiryDate ? Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
+                        const isExpired = daysLeft !== null && daysLeft < 0
+                        const monthsLeft = daysLeft === null ? null : Math.floor(Math.abs(daysLeft) / 30)
 
                         return (
                           <div key={e.id} className="border border-[#f0f0f0] rounded-xl p-4">
@@ -341,10 +378,32 @@ export default function AdminCustomersPage() {
                             </div>
 
                             <div className="flex items-center gap-2 mb-3 text-[11px]">
-                              <span className={`px-2 py-0.5 rounded-full font-medium ${isExpired ? 'bg-red-50 text-red-500' : daysLeft < 30 ? 'bg-orange-50 text-orange-500' : 'bg-green-50 text-green-600'}`}>
-                                {isExpired ? `Verlopen ${Math.abs(monthsLeft)} md geleden` : daysLeft < 30 ? `${daysLeft} dagen over` : `${monthsLeft} maanden over`}
+                              <span className={`px-2 py-0.5 rounded-full font-medium ${isExpired ? 'bg-red-50 text-red-500' : daysLeft === null ? 'bg-[#f5f5f5] text-[#888]' : daysLeft < 30 ? 'bg-orange-50 text-orange-500' : 'bg-green-50 text-green-600'}`}>
+                                {daysLeft === null ? 'Geen einddatum' : isExpired ? `Verlopen ${monthsLeft} md geleden` : daysLeft < 30 ? `${daysLeft} dagen over` : `${monthsLeft} maanden over`}
                               </span>
-                              <span className="text-[#aaa]">Toegang tot {fmt(expiryDate.toISOString())}</span>
+                              <span className="text-[#aaa]">Toegang tot {expiryDate ? fmt(expiryDate.toISOString()) : '—'}</span>
+                            </div>
+
+                            <div className="mb-3 flex flex-wrap items-end gap-2 rounded-lg bg-[#fafafa] p-3">
+                              <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-[11px] text-[#777]">
+                                Nieuwe einddatum
+                                <input
+                                  type="date"
+                                  value={extensionDates[e.id] || ''}
+                                  min={new Date().toISOString().slice(0, 10)}
+                                  onChange={event => setExtensionDates(prev => ({ ...prev, [e.id]: event.target.value }))}
+                                  className="rounded-lg border border-[#ddd] bg-white px-3 py-2 text-[13px] text-[#1a1a1a] focus:border-[#C4A265] focus:outline-none"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => extendAccess(e)}
+                                disabled={!extensionDates[e.id] || extendingId === e.id}
+                                className="rounded-lg bg-[#0C0A07] px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-[#29241f] disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                {extendingId === e.id ? 'Verlengen…' : 'Verlengen'}
+                              </button>
+                              {extensionError[e.id] && <p className="w-full text-[11px] text-red-500">{extensionError[e.id]}</p>}
                             </div>
 
                             {totalCount > 0 && (

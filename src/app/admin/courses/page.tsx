@@ -442,7 +442,7 @@ export default function CoursesOverviewPage() {
       <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
         {/* Admin topbar */}
         <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="mx-auto flex w-full items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
               <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">Cursussen</h1>
@@ -459,19 +459,25 @@ export default function CoursesOverviewPage() {
             { label: 'Overzicht', href: '/admin', icon: '📊' },
             { label: 'Klanten', href: '/admin/customers', icon: '👥' },
             { label: 'Cursussen', href: '/admin/courses', active: true, icon: '📚' },
+            { label: 'Agenda', href: '/admin?tab=calendar', icon: '📅' },
+            { label: 'Financiën', href: '/admin?tab=finance', icon: '💶' },
+            { label: 'Traject-instellingen', href: '/admin?tab=traject', icon: '🗓️' },
+            { label: 'Klassen', href: '/admin?tab=klassen', icon: '🎓' },
             { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
           ]}
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col lg:flex-row gap-4 lg:gap-6">
+        <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:flex-row xl:gap-6">
           {/* Admin sidebar (desktop only) */}
-          <div className="w-[220px] shrink-0 hidden lg:block">
+          <div className="hidden w-[220px] shrink-0 xl:block">
             <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-[120px]">
               <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">📊 Overzicht</a>
               <a href="/admin/customers" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">👥 Klanten</a>
               <div className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] bg-[#0C0A07] text-white border-b border-[#f5f5f5]">📚 Cursussen</div>
-              <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">📅 Agenda</a>
-              <a href="/admin" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">💶 Financiën</a>
+              <a href="/admin?tab=calendar" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">📅 Agenda</a>
+              <a href="/admin?tab=finance" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">💶 Financiën</a>
+              <a href="/admin?tab=traject" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">🗓️ Traject-instellingen</a>
+              <a href="/admin?tab=klassen" className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">🎓 Klassen</a>
               <div onClick={() => setShowModal(true)} className="w-full flex items-center gap-3 px-5 py-4 text-[13px] border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition cursor-pointer">➕ Nieuwe cursus</div>
             </div>
           </div>

@@ -62,6 +62,13 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading])
 
+  useEffect(() => {
+    const requestedTab = new URLSearchParams(window.location.search).get('tab')
+    if (requestedTab && ['overview', 'calendar', 'finance', 'traject', 'klassen'].includes(requestedTab)) {
+      setTab(requestedTab as Tab)
+    }
+  }, [])
+
   const refresh = useCallback(() => {
     if (role !== 'admin') return
     supabase.from('profiles').select('id, email, full_name, role, created_at').order('created_at', { ascending: false }).then(({ data }) => setProfiles(data || []))
@@ -183,7 +190,7 @@ export default function AdminPage() {
     { key: 'courses', label: `Cursussen (${courses.length})`, icon: <IconBook /> },
     { key: 'calendar', label: 'Agenda', icon: <IconCalendar /> },
     { key: 'finance', label: 'Financiën', icon: <IconEuro /> },
-    { key: 'traject', label: 'Trajecten', icon: <IconCalendar /> },
+    { key: 'traject', label: 'Traject-instellingen', icon: <IconCalendar /> },
     { key: 'klassen', label: 'Klassen', icon: <IconCalendar /> },
   ]
 
@@ -214,7 +221,7 @@ export default function AdminPage() {
           { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
           { label: 'Agenda', onClick: () => setTab('calendar'), active: tab === 'calendar', icon: '📅' },
           { label: 'Financiën', onClick: () => setTab('finance'), active: tab === 'finance', icon: '💶' },
-          { label: 'Trajecten', onClick: () => setTab('traject'), active: tab === 'traject', icon: '🗓️' },
+          { label: 'Traject-instellingen', onClick: () => setTab('traject'), active: tab === 'traject', icon: '🗓️' },
           { label: 'Klassen', onClick: () => setTab('klassen'), active: tab === 'klassen', icon: '🎓' },
           { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
         ]}
@@ -241,7 +248,7 @@ export default function AdminPage() {
                 <button key={t.key} onClick={() => setTab(t.key)}
                   className={`w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] last:border-0 transition ${tab === t.key ? 'bg-[#0C0A07] text-white' : 'text-[#666] hover:bg-[#fafafa]'}`}>
                   {t.icon}
-                  {t.key === 'overview' ? 'Overzicht' : t.key === 'calendar' ? 'Agenda' : t.key === 'finance' ? 'Financiën' : t.key === 'traject' ? 'Trajecten' : 'Klassen'}
+                  {t.key === 'overview' ? 'Overzicht' : t.key === 'calendar' ? 'Agenda' : t.key === 'finance' ? 'Financiën' : t.key === 'traject' ? 'Traject-instellingen' : 'Klassen'}
                 </button>
               )
             ))}
