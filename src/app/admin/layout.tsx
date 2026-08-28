@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import { AuthProvider } from '@/lib/auth-context'
 import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
 import ChatWidget from '@/components/ChatWidget'
 import { NextIntlClientProvider } from 'next-intl'
 import nlMessages from '../../../messages/nl.json'
@@ -17,8 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AuthProvider>
         <Navbar />
         <main>{children}</main>
-        {/* Footer & ChatWidget hidden on builder pages */}
-        {!isBuilderPage && <Footer />}
+        {/* ChatWidget hidden on builder pages; admin routes never render the public footer. */}
         {!isBuilderPage && <ChatWidget />}
       </AuthProvider>
     </NextIntlClientProvider>

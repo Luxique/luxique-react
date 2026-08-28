@@ -1,8 +1,7 @@
 'use client'
 
-/* Mobile horizontal-scroll nav for the admin dashboard.
-   Renders as a pill bar below the top bar on < lg screens.
-   The desktop sidebar stays visible on lg+ (hidden lg:block). */
+/* Compact horizontal-scroll nav for mobile and tablet.
+   The desktop sidebar takes over at xl widths. */
 
 export type AdminNavItem = {
   label: string
@@ -21,7 +20,7 @@ export default function AdminMobileNav({ items }: { items: AdminNavItem[] }) {
     }`
 
   return (
-    <div className="lg:hidden bg-white border-b border-[#eee] z-20">
+    <div className="bg-white border-b border-[#eee] z-20 xl:hidden">
       <div className="flex gap-1.5 overflow-x-auto px-4 py-2.5 admin-no-scrollbar">
         {items.map((it, i) =>
           it.href ? (

@@ -14,6 +14,9 @@ type CalendarItem = {
   treatmentKey?: TreatmentKey
   status?: string
   customer?: string
+  customerEmail?: string
+  customerPhone?: string
+  courseName?: string
   paidCount?: number
   maxParticipants?: number
 }
@@ -25,6 +28,7 @@ type CalBooking = {
   endTime: string
   customerName: string
   customerEmail: string
+  customerPhone?: string
   eventTypeId: number
   eventTypeTitle: string
 }
@@ -83,6 +87,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [cursor, setCursor] = useState(() => new Date())
   const [view, setView] = useState<ViewMode>('month')
   const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date()))
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [bookings, setBookings] = useState<CalBooking[]>([])
   const [availability, setAvailability] = useState<TreatmentAvailability[]>([])
   const [trajectClasses, setTrajectClasses] = useState<TrajectClass[]>([])
@@ -120,7 +125,10 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       if (!bookingsResponse.ok) throw new Error(bookingsPayload.error || 'Afspraken laden mislukt.')
       if (!availabilityResponse.ok) throw new Error(availabilityPayload.error || 'Beschikbaarheid laden mislukt.')
       if (!trajectResponse.ok) throw new Error(trajectPayload.error || 'Traject-dagen laden mislukt.')
-      setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) => booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID))
+      setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) =>
+        booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
+        && booking.status?.toLowerCase() !== 'cancelled'
+      ))
       setAvailability(availabilityPayload.treatments || [])
       setTrajectClasses(trajectPayload.trajectDagen || [])
     } catch (reason) {
@@ -142,6 +150,8 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       title: booking.eventTypeTitle,
       status: booking.status,
       customer: booking.customerName || booking.customerEmail,
+      customerEmail: booking.customerEmail,
+      customerPhone: booking.customerPhone,
     })),
     ...availability.flatMap(treatment => treatment.overrides.map(override => ({
       id: `override-${treatment.key}-${override.date}-${override.startTime}`,
@@ -159,6 +169,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       startTime: traject.starttijd,
       endTime: traject.eindtijd,
       title: traject.titel || traject.cursus_naam,
+      courseName: traject.cursus_naam,
       status: traject.status,
       paidCount: traject.betaald_aantal,
       maxParticipants: traject.max_deelnemers,
@@ -170,6 +181,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     return Array.from({ length: view === 'week' ? 7 : 42 }, (_, index) => addDays(start, index))
   }, [cursor, view])
   const selectedItems = items.filter(item => item.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime))
+  const selectedItem = selectedItemId ? items.find(item => item.id === selectedItemId) || null : null
   const trajectForDate = (date: string) => trajectClasses.find(traject => traject.blok_dagen.includes(date))
   const selectedTraject = trajectForDate(selectedDate)
   const addDisabled = loading || Boolean(selectedTraject)
@@ -182,6 +194,17 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     if (view === 'month') next.setMonth(next.getMonth() + direction)
     else next.setDate(next.getDate() + direction * 7)
     setCursor(next)
+  }
+
+  const selectDate = (date: string) => {
+    setSelectedDate(date)
+    setSelectedItemId(null)
+  }
+
+  const selectItem = (item: CalendarItem) => {
+    if (item.kind === 'override') return
+    setSelectedDate(item.date)
+    setSelectedItemId(item.id)
   }
 
   const openAdd = (date = selectedDate) => {
@@ -298,12 +321,13 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[12px] text-red-700">⚠️ {error}</div>}
       {success && <div role="status" className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-[12px] text-green-700">✓ {success}</div>}
 
-      <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
+      <div className="min-w-0 bg-white rounded-2xl border border-[#eee] overflow-hidden">
         <div className="px-4 sm:px-5 py-4 flex items-center justify-between border-b border-[#eee]">
           <button onClick={() => navigate(-1)} aria-label="Vorige periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">←</button>
           <div className="text-center">
             <h4 className="font-['Cormorant_Garamond'] text-[23px] capitalize">{monthTitle(cursor)}</h4>
-            <button onClick={() => { const today = new Date(); setCursor(today); setSelectedDate(dateKey(today)) }} className="text-[10px] text-[#9a7838]">Naar vandaag</button>
+            <button onClick={() => { const today = new Date(); setCursor(today); selectDate(dateKey(today)) }} className="text-[10px] text-[#9a7838]">Naar vandaag</button>
           </div>
           <button onClick={() => navigate(1)} aria-label="Volgende periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">→</button>
         </div>
@@ -317,10 +341,10 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             const muted = view === 'month' && day.getMonth() !== cursor.getMonth()
             const selected = key === selectedDate
             return (
-              <button key={key} type="button" onClick={() => setSelectedDate(key)} onDoubleClick={() => openAdd(key)} className={`min-h-[82px] sm:min-h-[116px] p-1.5 sm:p-2 text-left border-r border-b border-[#f0f0f0] transition ${selected ? 'bg-[#C4A265]/8 ring-1 ring-inset ring-[#C4A265]' : 'hover:bg-[#fafafa]'}`}>
+              <button key={key} type="button" onClick={() => selectDate(key)} onDoubleClick={() => openAdd(key)} className={`min-h-[82px] sm:min-h-[116px] p-1.5 sm:p-2 text-left border-r border-b border-[#f0f0f0] transition ${selected ? 'bg-[#C4A265]/8 ring-1 ring-inset ring-[#C4A265]' : 'hover:bg-[#fafafa]'}`}>
                 <span className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-[11px] ${key === dateKey(new Date()) ? 'bg-[#0C0A07] text-white' : muted ? 'text-[#ccc]' : 'text-[#555]'}`}>{day.getDate()}</span>
                 <div className="mt-1 space-y-1 overflow-hidden">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
               </button>
@@ -329,7 +353,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden lg:sticky lg:top-[130px]">
         <div className="px-5 py-4 border-b border-[#eee] flex items-start justify-between gap-3">
           <div><h4 className="font-['Cormorant_Garamond'] text-[22px] capitalize">{longDate(selectedDate)}</h4><p className="text-[10px] text-[#aaa]">{selectedItems.length} item{selectedItems.length === 1 ? '' : 's'}</p></div>
           <div className="flex flex-col items-end gap-1">
@@ -346,9 +370,24 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             {addDisabledExplanation && <p id="day-detail-add-disabled-explanation" className="max-w-[320px] text-right text-[10px] leading-relaxed text-[#8a6d3b]">{addDisabledExplanation}</p>}
           </div>
         </div>
+        {selectedItem && <div className="border-b border-[#eee] bg-[#faf9f7] px-5 py-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">{selectedItem.kind === 'booking' ? 'Afspraakdetails' : 'Traject-details'}</p>
+              <h5 className="mt-1 font-['Cormorant_Garamond'] text-[23px] leading-tight">{selectedItem.kind === 'booking' ? selectedItem.customer || 'Onbekende klant' : selectedItem.courseName || selectedItem.title}</h5>
+            </div>
+            <button type="button" onClick={() => setSelectedItemId(null)} aria-label="Details sluiten" className="rounded-full border border-[#e5e2dc] bg-white px-2.5 py-1 text-[11px] text-[#777]">✕</button>
+          </div>
+          <dl className="grid gap-3 text-[11px]">
+            <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">{selectedItem.kind === 'booking' ? 'Behandeling' : 'Cursus'}</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.kind === 'booking' ? selectedItem.title : selectedItem.courseName || selectedItem.title}</dd></div>
+            <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Tijd</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.startTime}–{selectedItem.endTime}</dd></div>
+            {selectedItem.kind === 'booking' && (selectedItem.customerEmail || selectedItem.customerPhone) && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Contact</dt><dd className="mt-1 flex flex-col gap-1">{selectedItem.customerEmail && <a href={`mailto:${selectedItem.customerEmail}`} className="break-all text-[#80642e] hover:underline">{selectedItem.customerEmail}</a>}{selectedItem.customerPhone && <a href={`tel:${selectedItem.customerPhone}`} className="text-[#80642e] hover:underline">{selectedItem.customerPhone}</a>}</dd></div>}
+            {selectedItem.kind === 'traject-day' && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Deelnemers</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.paidCount}/{selectedItem.maxParticipants} betaald</dd></div>}
+          </dl>
+        </div>}
         {loading ? <div className="p-8 text-center text-[13px] text-[#888]">Agenda laden…</div> : selectedItems.length === 0 ? <div className="p-8 text-center text-[13px] text-[#888]">Deze dag is leeg.</div> : (
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
-            <div key={item.id} className="px-5 py-4 flex items-center gap-4">
+            <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
               <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Boekbaar via Cal.com'}</p></div>
               <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Boekbaar'}</span>
@@ -357,9 +396,10 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           ))}</div>
         )}
       </div>
+      </div>
 
-      {modalOpen && <div className="fixed inset-0 z-50 bg-black/35 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !saving && setModalOpen(false)}>
-        <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-[440px] shadow-2xl border border-[#eee]" onClick={event => event.stopPropagation()}>
+      {modalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4 py-6 backdrop-blur-sm" onClick={() => !saving && setModalOpen(false)}>
+        <div className="max-h-[calc(100dvh-3rem)] w-full max-w-[440px] overflow-y-auto rounded-2xl border border-[#eee] bg-white p-6 shadow-2xl sm:p-8" onClick={event => event.stopPropagation()}>
           <div className="flex items-start justify-between mb-6"><div><h4 className="font-['Cormorant_Garamond'] text-[25px]">Boekbaar moment toevoegen</h4><p className="text-[11px] text-[#999] mt-1 capitalize">{longDate(selectedDate)}</p></div><button onClick={() => setModalOpen(false)} className="text-[#999]">✕</button></div>
           {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {error}</div>}
           <div className="space-y-4">
