@@ -46,6 +46,8 @@ export const TREATMENTS: Record<TreatmentKey, {
 
 export const WORKDAY_START = '09:00'
 export const WORKDAY_END = '19:00'
+export const CALENDAR_TIME_ZONE = 'Europe/Amsterdam'
+export const PAST_TIMESLOT_ERROR = 'Je kunt geen tijdslot in het verleden toevoegen.'
 
 export function isTreatmentKey(value: unknown): value is TreatmentKey {
   return value === 'new_lash_set' || value === 'fill_lash_set'
@@ -66,6 +68,32 @@ export function isValidTime(value: unknown): value is string {
 export function timeToMinutes(value: string): number {
   const [hours, minutes] = value.split(':').map(Number)
   return hours * 60 + minutes
+}
+
+export function getCalendarNow(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: CALENDAR_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now)
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find(part => part.type === type)?.value || ''
+
+  return {
+    date: `${value('year')}-${value('month')}-${value('day')}`,
+    time: `${value('hour')}:${value('minute')}`,
+  }
+}
+
+export function isPastTimeslot(date: string, startTime: string, now = new Date()): boolean {
+  if (!isValidLocalDate(date) || !isValidTime(startTime)) return false
+  const current = getCalendarNow(now)
+  if (date !== current.date) return date < current.date
+  return timeToMinutes(startTime) < timeToMinutes(current.time)
 }
 
 export function minutesToTime(value: number): string {

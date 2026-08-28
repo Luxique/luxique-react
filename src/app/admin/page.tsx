@@ -190,7 +190,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
       {/* Top bar */}
-      <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
+      {tab !== 'calendar' && <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
         <div className="mx-auto flex w-full items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
@@ -203,7 +203,7 @@ export default function AdminPage() {
             <button onClick={signOut} className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">Uitloggen</button>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Mobile nav (horizontal pills) */}
       <AdminMobileNav
@@ -220,7 +220,7 @@ export default function AdminPage() {
         ]}
       />
 
-      <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-4 sm:px-6 sm:py-6 lg:flex-row lg:gap-6">
+      <div className={`mx-auto flex w-full max-w-none flex-col gap-4 px-4 sm:px-6 lg:flex-row lg:gap-6 ${tab === 'calendar' ? 'py-6 sm:py-8' : 'py-4 sm:py-6'}`}>
         {/* ── Sidebar nav (desktop only) ── */}
         <div className="hidden w-[220px] shrink-0 xl:block">
           <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">

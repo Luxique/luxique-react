@@ -1,6 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  getCalendarNow,
+  isPastTimeslot,
+  PAST_TIMESLOT_ERROR,
+} from '@/lib/cal-admin-availability'
 
 type ViewMode = 'month' | 'week'
 type TreatmentKey = 'new_lash_set' | 'fill_lash_set'
@@ -72,6 +77,9 @@ function localTimeFromIso(value: string) {
 }
 function monthTitle(date: Date) { return new Intl.DateTimeFormat('nl-NL', { month: 'long', year: 'numeric' }).format(date) }
 function longDate(key: string) { return new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${key}T12:00:00`)) }
+function RefreshIcon() {
+  return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" /></svg>
+}
 function defaultEndTime(startTime: string, treatmentKey: TreatmentKey) {
   const [hours, minutes] = startTime.split(':').map(Number)
   if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return ''
@@ -182,12 +190,15 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   }, [cursor, view])
   const selectedItems = items.filter(item => item.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime))
   const selectedItem = selectedItemId ? items.find(item => item.id === selectedItemId) || null : null
+  const todayKey = getCalendarNow().date
   const trajectForDate = (date: string) => trajectClasses.find(traject => traject.blok_dagen.includes(date))
   const selectedTraject = trajectForDate(selectedDate)
-  const addDisabled = loading || Boolean(selectedTraject)
+  const selectedDateHasNoFutureStart = isPastTimeslot(selectedDate, '18:59')
+  const selectedStartIsPast = isPastTimeslot(selectedDate, slotTime)
+  const addDisabled = loading || Boolean(selectedTraject) || selectedDateHasNoFutureStart
   const addDisabledExplanation = selectedTraject
     ? `Op deze dag loopt een traject (${selectedTraject.cursus_naam}) — geen behandelingen mogelijk.`
-    : null
+    : selectedDateHasNoFutureStart ? PAST_TIMESLOT_ERROR : null
 
   const navigate = (direction: number) => {
     const next = new Date(cursor)
@@ -209,6 +220,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   const openAdd = (date = selectedDate) => {
     setSelectedDate(date)
+    if (isPastTimeslot(date, '18:59')) {
+      setModalOpen(false)
+      setSuccess(null)
+      setError(PAST_TIMESLOT_ERROR)
+      return
+    }
     const traject = trajectForDate(date)
     if (traject) {
       setModalOpen(false)
@@ -219,7 +236,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     setSlotTime('09:00')
     setSlotEndTime(defaultEndTime('09:00', treatmentKey))
     setEndTimeEdited(false)
-    setError(null)
+    setError(isPastTimeslot(date, '09:00') ? PAST_TIMESLOT_ERROR : null)
     setSuccess(null)
     setModalOpen(true)
   }
@@ -236,6 +253,11 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   const saveOverride = async () => {
     if (saving) return
+    if (isPastTimeslot(selectedDate, slotTime)) {
+      setSuccess(null)
+      setError(PAST_TIMESLOT_ERROR)
+      return
+    }
     const traject = trajectForDate(selectedDate)
     if (traject) {
       setSuccess(null)
@@ -255,7 +277,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Tijdslot opslaan mislukt.')
       setModalOpen(false)
-      setSuccess(`${TREATMENT_LABELS[treatmentKey].name} is boekbaar gemaakt op ${selectedDate} van ${slotTime} tot ${slotEndTime}.`)
+      setSuccess(`Tijdslot voor ${TREATMENT_LABELS[treatmentKey].name} toegevoegd op ${selectedDate} van ${slotTime} tot ${slotEndTime}.`)
       await loadAgenda()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Tijdslot opslaan mislukt.')
@@ -266,7 +288,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   const removeOverride = async (item: CalendarItem) => {
     if (!item.treatmentKey || deleting) return
-    if (!window.confirm(`Boekbaar moment ${item.title} om ${item.startTime} verwijderen? Bestaande afspraken blijven staan.`)) return
+    if (!window.confirm(`Tijdslot ${item.title} om ${item.startTime} verwijderen? Bestaande afspraken blijven staan.`)) return
     setDeleting(item.id)
     setError(null)
     setSuccess(null)
@@ -279,7 +301,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Tijdslot verwijderen mislukt.')
-      setSuccess('Het boekbare moment is verwijderd. Bestaande afspraken zijn niet gewijzigd.')
+      setSuccess('Het tijdslot is verwijderd. Bestaande afspraken zijn niet gewijzigd.')
       await loadAgenda()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Tijdslot verwijderen mislukt.')
@@ -290,31 +312,10 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
         <div>
           <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda & beschikbaarheid</h3>
-          <p className="text-[11px] text-[#aaa] mt-1">Afspraken en boekbare momenten rechtstreeks uit Cal.com.</p>
-        </div>
-        <div className="flex items-start gap-2 flex-wrap">
-          <div className="flex rounded-full border border-[#e5e5e5] bg-white p-1">
-            {(['month', 'week'] as ViewMode[]).map(mode => (
-              <button key={mode} onClick={() => setView(mode)} className={`px-3 py-1.5 rounded-full text-[11px] ${view === mode ? 'bg-[#0C0A07] text-white' : 'text-[#777]'}`}>{mode === 'month' ? 'Maand' : 'Week'}</button>
-            ))}
-          </div>
-          <button onClick={loadAgenda} className="px-3 py-2 rounded-full border border-[#e5e5e5] bg-white text-[11px] text-[#666]">Vernieuwen</button>
-          <div className="flex flex-col items-end gap-1">
-            <button
-              type="button"
-              onClick={() => openAdd()}
-              disabled={addDisabled}
-              aria-describedby={addDisabledExplanation ? 'agenda-add-disabled-explanation' : undefined}
-              title={addDisabledExplanation || undefined}
-              className="px-4 py-2 rounded-full bg-[#0C0A07] text-white text-[11px] font-semibold disabled:bg-[#e3e1dd] disabled:text-[#999] disabled:cursor-not-allowed"
-            >
-              + Tijdslot
-            </button>
-            {addDisabledExplanation && <p id="agenda-add-disabled-explanation" className="max-w-[290px] text-right text-[10px] leading-relaxed text-[#8a6d3b]">{addDisabledExplanation}</p>}
-          </div>
+          <p className="text-[11px] text-[#aaa] mt-1">Afspraken en tijdsloten rechtstreeks uit Cal.com.</p>
         </div>
       </div>
 
@@ -323,13 +324,18 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
       <div className="min-w-0 bg-white rounded-2xl border border-[#eee] overflow-hidden">
-        <div className="px-4 sm:px-5 py-4 flex items-center justify-between border-b border-[#eee]">
+        <div className="px-3 sm:px-5 py-3 flex flex-wrap items-center gap-3 border-b border-[#eee]">
           <button onClick={() => navigate(-1)} aria-label="Vorige periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">←</button>
-          <div className="text-center">
-            <h4 className="font-['Cormorant_Garamond'] text-[23px] capitalize">{monthTitle(cursor)}</h4>
-            <button onClick={() => { const today = new Date(); setCursor(today); selectDate(dateKey(today)) }} className="text-[10px] text-[#9a7838]">Naar vandaag</button>
+          <h4 className="min-w-0 flex-1 font-['Cormorant_Garamond'] text-[21px] sm:text-[23px] capitalize">{monthTitle(cursor)}</h4>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="flex rounded-full border border-[#e5e5e5] bg-white p-1">
+              {(['month', 'week'] as ViewMode[]).map(mode => (
+                <button key={mode} onClick={() => setView(mode)} className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] ${view === mode ? 'bg-[#0C0A07] text-white' : 'text-[#777]'}`}>{mode === 'month' ? 'Maand' : 'Week'}</button>
+              ))}
+            </div>
+            <button onClick={loadAgenda} aria-label="Agenda vernieuwen" className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-full border border-[#e5e5e5] bg-white text-[10px] sm:text-[11px] text-[#666]"><RefreshIcon /><span className="hidden sm:inline">Vernieuwen</span></button>
+            <button onClick={() => navigate(1)} aria-label="Volgende periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">→</button>
           </div>
-          <button onClick={() => navigate(1)} aria-label="Volgende periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">→</button>
         </div>
         <div className="grid grid-cols-7 border-b border-[#eee] bg-[#faf9f7]">
           {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map(day => <div key={day} className="py-2 text-center text-[9px] font-semibold tracking-wider uppercase text-[#999]">{day}</div>)}
@@ -340,14 +346,29 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             const dayItems = items.filter(item => item.date === key)
             const muted = view === 'month' && day.getMonth() !== cursor.getMonth()
             const selected = key === selectedDate
+            const today = key === todayKey
+            const cellAddDisabled = loading || Boolean(trajectForDate(key)) || isPastTimeslot(key, '18:59')
+            const cellAddExplanation = trajectForDate(key)
+              ? trajectConflictMessage(trajectForDate(key) as TrajectClass)
+              : isPastTimeslot(key, '18:59') ? PAST_TIMESLOT_ERROR : undefined
             return (
-              <button key={key} type="button" onClick={() => selectDate(key)} onDoubleClick={() => openAdd(key)} className={`min-h-[82px] sm:min-h-[116px] p-1.5 sm:p-2 text-left border-r border-b border-[#f0f0f0] transition ${selected ? 'bg-[#C4A265]/8 ring-1 ring-inset ring-[#C4A265]' : 'hover:bg-[#fafafa]'}`}>
-                <span className={`inline-flex w-6 h-6 items-center justify-center rounded-full text-[11px] ${key === dateKey(new Date()) ? 'bg-[#0C0A07] text-white' : muted ? 'text-[#ccc]' : 'text-[#555]'}`}>{day.getDate()}</span>
-                <div className="mt-1 space-y-1 overflow-hidden">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
+              <div key={key} className={`group relative min-h-[82px] sm:min-h-[116px] border-r border-b border-[#f0f0f0] transition ${selected ? 'bg-[#C4A265]/8' : 'hover:bg-[#fafafa]'} ${today ? 'bg-[#C4A265]/10' : ''} hover:z-10 hover:ring-1 hover:ring-inset hover:ring-[#C4A265]`}>
+                <button type="button" onClick={() => selectDate(key)} aria-label={`${longDate(key)} selecteren`} className="absolute inset-0 z-0" />
+                <span className={`pointer-events-none absolute right-2 top-2 z-10 inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[11px] ${today ? 'border border-[#C4A265] bg-[#fffaf0] font-bold text-[#80642e] shadow-[0_0_0_2px_rgba(196,162,101,0.12)]' : muted ? 'text-[#ccc]' : 'text-[#555]'}`}>{day.getDate()}</span>
+                <button
+                  type="button"
+                  onClick={event => { event.stopPropagation(); openAdd(key) }}
+                  aria-disabled={cellAddDisabled}
+                  title={cellAddExplanation}
+                  className={`absolute left-1.5 top-2 z-20 rounded-full border px-2 py-1 text-[8px] font-medium opacity-0 shadow-sm transition group-hover:opacity-100 focus:opacity-100 ${cellAddDisabled ? 'cursor-not-allowed border-[#ddd] bg-[#fafafa]/95 text-[#aaa]' : 'border-[#C4A265]/40 bg-[#fffaf0]/95 text-[#80642e]'}`}
+                >
+                  + Tijdslot
+                </button>
+                <div className="relative z-10 space-y-1 overflow-hidden p-1.5 pt-10 sm:p-2 sm:pt-10 pointer-events-none">
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
-              </button>
+              </div>
             )
           })}
         </div>
@@ -365,7 +386,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
               title={addDisabledExplanation || undefined}
               className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-[#9a7838] disabled:bg-[#f0efec] disabled:text-[#aaa] disabled:cursor-not-allowed"
             >
-              + Boekbaar moment
+              + Tijdslot
             </button>
             {addDisabledExplanation && <p id="day-detail-add-disabled-explanation" className="max-w-[320px] text-right text-[10px] leading-relaxed text-[#8a6d3b]">{addDisabledExplanation}</p>}
           </div>
@@ -389,8 +410,8 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
             <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
-              <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Boekbaar via Cal.com'}</p></div>
-              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Boekbaar'}</span>
+              <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
+              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
           ))}</div>
@@ -400,18 +421,18 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
       {modalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4 py-6 backdrop-blur-sm" onClick={() => !saving && setModalOpen(false)}>
         <div className="max-h-[calc(100dvh-3rem)] w-full max-w-[440px] overflow-y-auto rounded-2xl border border-[#eee] bg-white p-6 shadow-2xl sm:p-8" onClick={event => event.stopPropagation()}>
-          <div className="flex items-start justify-between mb-6"><div><h4 className="font-['Cormorant_Garamond'] text-[25px]">Boekbaar moment toevoegen</h4><p className="text-[11px] text-[#999] mt-1 capitalize">{longDate(selectedDate)}</p></div><button onClick={() => setModalOpen(false)} className="text-[#999]">✕</button></div>
+          <div className="flex items-start justify-between mb-6"><div><h4 className="font-['Cormorant_Garamond'] text-[25px]">+ Tijdslot toevoegen</h4><p className="text-[11px] text-[#999] mt-1 capitalize">{longDate(selectedDate)}</p></div><button onClick={() => setModalOpen(false)} className="text-[#999]">✕</button></div>
           {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {error}</div>}
           <div className="space-y-4">
             <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Behandeling</label><select value={treatmentKey} onChange={event => changeTreatment(event.target.value as TreatmentKey)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[13px] focus:outline-none focus:border-[#C4A265]"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
-            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Datum</label><input type="date" value={selectedDate} min={dateKey(new Date())} onChange={event => { const nextDate = event.target.value; setSelectedDate(nextDate); const traject = trajectForDate(nextDate); setError(traject ? trajectConflictMessage(traject) : null) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
+            <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Datum</label><input type="date" value={selectedDate} min={todayKey} onChange={event => { const nextDate = event.target.value; setSelectedDate(nextDate); const traject = trajectForDate(nextDate); setError(isPastTimeslot(nextDate, slotTime) ? PAST_TIMESLOT_ERROR : traject ? trajectConflictMessage(traject) : null) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Starttijd</label><input type="time" min="09:00" max="18:59" step="1800" value={slotTime} onChange={event => changeStartTime(event.target.value)} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
+              <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Starttijd</label><input type="time" min="09:00" max="18:59" step="1800" value={slotTime} onChange={event => { const nextTime = event.target.value; changeStartTime(nextTime); const traject = trajectForDate(selectedDate); setError(isPastTimeslot(selectedDate, nextTime) ? PAST_TIMESLOT_ERROR : traject ? trajectConflictMessage(traject) : null) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
               <div><label className="block text-[10px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-1.5">Eindtijd</label><input type="time" min="09:01" max="19:00" step="1800" value={slotEndTime} onChange={event => { setSlotEndTime(event.target.value); setEndTimeEdited(true) }} className="w-full px-4 py-3 rounded-xl border border-[#ddd] text-[13px] focus:outline-none focus:border-[#C4A265]" /></div>
             </div>
             <p className="text-[10px] text-[#999] -mt-2">Werkdag 09:00–19:00 · de eindtijd volgt automatisch tot je die zelf aanpast.</p>
           </div>
-          <div className="flex gap-3 mt-7"><button onClick={() => setModalOpen(false)} disabled={saving} className="flex-1 py-3 rounded-full border border-[#eee] text-[13px] text-[#888]">Annuleren</button><button onClick={saveOverride} disabled={saving || Boolean(trajectForDate(selectedDate))} className="flex-1 py-3 rounded-full bg-[#0C0A07] text-white font-semibold text-[13px] disabled:opacity-50">{saving ? 'Opslaan…' : 'Boekbaar maken'}</button></div>
+          <div className="flex gap-3 mt-7"><button onClick={() => setModalOpen(false)} disabled={saving} className="flex-1 py-3 rounded-full border border-[#eee] text-[13px] text-[#888]">Annuleren</button><button onClick={saveOverride} disabled={saving || Boolean(trajectForDate(selectedDate)) || selectedStartIsPast} title={selectedStartIsPast ? PAST_TIMESLOT_ERROR : undefined} className="flex-1 py-3 rounded-full bg-[#0C0A07] text-white font-semibold text-[13px] disabled:opacity-50">{saving ? 'Opslaan…' : 'Tijdslot opslaan'}</button></div>
         </div>
       </div>}
     </div>

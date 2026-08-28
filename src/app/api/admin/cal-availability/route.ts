@@ -3,8 +3,10 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import {
   buildOverride,
+  isPastTimeslot,
   isTreatmentKey,
   isValidLocalDate,
+  PAST_TIMESLOT_ERROR,
   sameOverride,
   sortOverrides,
   TREATMENTS,
@@ -143,17 +145,20 @@ export async function POST(req: NextRequest) {
       return json({ error: 'Kies een geldige behandeling en datum.' }, 400)
     }
 
+    const treatmentKey: TreatmentKey = body.treatmentKey
+    const treatment = TREATMENTS[treatmentKey]
+    const built = buildOverride(body.startTime, treatment.durationMinutes, body.endTime)
+    if ('error' in built) return json({ error: built.error }, 400)
+    if (isPastTimeslot(body.date, built.startTime)) {
+      return json({ error: PAST_TIMESLOT_ERROR }, 400)
+    }
+
     const traject = await findTrajectOnDate(body.date)
     if (traject) {
       return json({
         error: `Op deze dag loopt een traject (${traject.cursus_naam}). Er kunnen geen behandelingen worden ingepland.`,
       }, 409)
     }
-
-    const treatmentKey: TreatmentKey = body.treatmentKey
-    const treatment = TREATMENTS[treatmentKey]
-    const built = buildOverride(body.startTime, treatment.durationMinutes, body.endTime)
-    if ('error' in built) return json({ error: built.error }, 400)
 
     const candidate = { ...built, date: body.date }
     const schedule = await readSchedule(treatmentKey)
