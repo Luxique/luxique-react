@@ -312,29 +312,24 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   return (
     <div className="space-y-5">
-      <div>
-        <div>
-          <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Agenda & beschikbaarheid</h3>
-          <p className="text-[11px] text-[#aaa] mt-1">Afspraken en tijdsloten rechtstreeks uit Cal.com.</p>
-        </div>
-      </div>
-
       {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[12px] text-red-700">⚠️ {error}</div>}
       {success && <div role="status" className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-[12px] text-green-700">✓ {success}</div>}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
       <div className="min-w-0 bg-white rounded-2xl border border-[#eee] overflow-hidden">
-        <div className="px-3 sm:px-5 py-3 flex flex-wrap items-center gap-3 border-b border-[#eee]">
-          <button onClick={() => navigate(-1)} aria-label="Vorige periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">←</button>
-          <h4 className="min-w-0 flex-1 font-['Cormorant_Garamond'] text-[21px] sm:text-[23px] capitalize">{monthTitle(cursor)}</h4>
-          <div className="ml-auto flex items-center gap-2">
+        <div className="grid grid-cols-1 items-center gap-3 border-b border-[#eee] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:px-5">
+          <div className="flex items-center justify-center gap-2 sm:col-start-2">
+            <button onClick={() => navigate(-1)} aria-label="Vorige periode" className="h-9 w-9 rounded-full border border-[#eee] text-[#777]">←</button>
+            <h4 className="whitespace-nowrap font-['Cormorant_Garamond'] text-[21px] capitalize sm:text-[23px]">{monthTitle(cursor)}</h4>
+            <button onClick={() => navigate(1)} aria-label="Volgende periode" className="h-9 w-9 rounded-full border border-[#eee] text-[#777]">→</button>
+          </div>
+          <div className="flex items-center justify-center gap-2 sm:col-start-3 sm:row-start-1 sm:justify-self-end">
             <div className="flex rounded-full border border-[#e5e5e5] bg-white p-1">
               {(['month', 'week'] as ViewMode[]).map(mode => (
                 <button key={mode} onClick={() => setView(mode)} className={`px-2.5 sm:px-3 py-1.5 rounded-full text-[10px] sm:text-[11px] ${view === mode ? 'bg-[#0C0A07] text-white' : 'text-[#777]'}`}>{mode === 'month' ? 'Maand' : 'Week'}</button>
               ))}
             </div>
             <button onClick={loadAgenda} aria-label="Agenda vernieuwen" className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-full border border-[#e5e5e5] bg-white text-[10px] sm:text-[11px] text-[#666]"><RefreshIcon /><span className="hidden sm:inline">Vernieuwen</span></button>
-            <button onClick={() => navigate(1)} aria-label="Volgende periode" className="w-9 h-9 rounded-full border border-[#eee] text-[#777]">→</button>
           </div>
         </div>
         <div className="grid grid-cols-7 border-b border-[#eee] bg-[#faf9f7]">
