@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -18,6 +19,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    if (!phone.trim()) {
+      setError('Vul je telefoonnummer in')
+      setLoading(false)
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Wachtwoorden komen niet overeen')
@@ -35,7 +42,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        data: { first_name: firstName, last_name: lastName, full_name: `${firstName} ${lastName}` },
+        data: { first_name: firstName, last_name: lastName, full_name: `${firstName} ${lastName}`, phone: phone.trim() },
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     })
@@ -106,6 +113,11 @@ export default function RegisterPage() {
                     <label className={labelClass}>Achternaam</label>
                     <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} required className={inputClass} placeholder="Achternaam" />
                   </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Telefoonnummer</label>
+                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required className={inputClass} placeholder="+31 6 12345678" autoComplete="tel" />
                 </div>
 
                 <div>

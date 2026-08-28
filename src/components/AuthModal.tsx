@@ -15,6 +15,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -53,6 +54,11 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           setLoading(false)
           return
         }
+        if (!phone.trim()) {
+          setError('Vul je telefoonnummer in.')
+          setLoading(false)
+          return
+        }
         if (!getPasswordStrength(password).valid) {
           setError('Wachtwoord is niet sterk genoeg.')
           setLoading(false)
@@ -72,7 +78,12 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
           email,
           password,
           options: {
-            data: { first_name: firstName.trim(), last_name: lastName.trim(), full_name: `${firstName.trim()} ${lastName.trim()}` },
+            data: {
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+              full_name: `${firstName.trim()} ${lastName.trim()}`,
+              phone: phone.trim(),
+            },
             emailRedirectTo: `${window.location.origin}/api/auth/callback`,
           },
         })
@@ -123,6 +134,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
     setEmail('')
     setFirstName('')
     setLastName('')
+    setPhone('')
     setPassword('')
     setConfirmPassword('')
     setTermsAccepted(false)
@@ -202,6 +214,20 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
                 />
               </label>
             </div>
+          )}
+          {tab === 'register' && (
+            <label className="auth-label">
+              Telefoonnummer
+              <input
+                type="tel"
+                className="auth-input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                placeholder="+31 6 12345678"
+                autoComplete="tel"
+              />
+            </label>
           )}
           <label className="auth-label">
             Email

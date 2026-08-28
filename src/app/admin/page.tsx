@@ -6,8 +6,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import TrajectInstellingenPaneel from './traject-settings'
 import KlassenAdmin from './klassen-admin'
-import AdminMobileNav from '@/components/AdminMobileNav'
 import AdminAgenda from './admin-agenda'
+import { AdminDashboardMobileNav, AdminDashboardSidebar, type AdminDashboardNavKey } from '@/components/AdminDashboardNav'
 
 /* ── types ── */
 type Profile = { id: string; email: string; full_name: string; role: string; created_at: string }
@@ -32,17 +32,12 @@ type PendingBookingRow = {
 }
 
 /* ── icons ── */
-function IconDashboard() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg> }
-function IconUsers() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg> }
-function IconBook() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg> }
-function IconCalendar() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg> }
-function IconEuro() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> }
 function IconPlus() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> }
 
 type Tab = 'overview' | 'customers' | 'courses' | 'calendar' | 'finance' | 'traject' | 'klassen'
 
 export default function AdminPage() {
-  const { user, session, role, loading, signOut } = useAuth()
+  const { user, session, role, loading } = useAuth()
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('overview')
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -184,87 +179,15 @@ export default function AdminPage() {
   if (!user) return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Doorverwijzen...</div></div>
   if (role !== 'admin') return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center flex-col gap-4"><div className="text-[#888] text-[14px]">Geen toegang.</div><a href="/dashboard" className="text-[13px] text-[#D4AF37]">← Terug</a></div>
 
-  const tabs: { key: Tab; label: string; icon: JSX.Element }[] = [
-    { key: 'overview', label: 'Overzicht', icon: <IconDashboard /> },
-    { key: 'customers', label: `Klanten (${profiles.length})`, icon: <IconUsers /> },
-    { key: 'courses', label: `Cursussen (${courses.length})`, icon: <IconBook /> },
-    { key: 'calendar', label: 'Agenda', icon: <IconCalendar /> },
-    { key: 'finance', label: 'Financiën', icon: <IconEuro /> },
-    { key: 'traject', label: 'Traject-instellingen', icon: <IconCalendar /> },
-    { key: 'klassen', label: 'Klassen', icon: <IconCalendar /> },
-  ]
+  // Keep the settings route available to CJ without showing it in Chiva's nav.
+  const activeNav = tab === 'traject' ? undefined : tab as AdminDashboardNavKey
 
   return (
     <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
-      {/* Top bar */}
-      {tab !== 'calendar' && <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
-        <div className="mx-auto flex w-full items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
-            <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">
-              {tabs.find(t => t.key === tab)?.label || 'Dashboard'}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee] hidden sm:inline-block">← Website</a>
-            <button onClick={signOut} className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">Uitloggen</button>
-          </div>
-        </div>
-      </div>}
+      <AdminDashboardMobileNav active={activeNav} />
 
-      {/* Mobile nav (horizontal pills) */}
-      <AdminMobileNav
-        items={[
-          { label: 'Overzicht', onClick: () => setTab('overview'), active: tab === 'overview', icon: '📊' },
-          { label: 'Toewijzen', onClick: () => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }, icon: '🎓' },
-          { label: 'Klanten', href: '/admin/customers', icon: '👥' },
-          { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
-          { label: 'Agenda', onClick: () => setTab('calendar'), active: tab === 'calendar', icon: '📅' },
-          { label: 'Financiën', onClick: () => setTab('finance'), active: tab === 'finance', icon: '💶' },
-          { label: 'Traject-instellingen', onClick: () => setTab('traject'), active: tab === 'traject', icon: '🗓️' },
-          { label: 'Klassen', onClick: () => setTab('klassen'), active: tab === 'klassen', icon: '🎓' },
-          { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
-        ]}
-      />
-
-      <div className={`mx-auto flex w-full max-w-none flex-col gap-4 px-4 sm:px-6 lg:flex-row lg:gap-6 ${tab === 'calendar' ? 'py-6 sm:py-8' : 'py-4 sm:py-6'}`}>
-        {/* ── Sidebar nav (desktop only) ── */}
-        <div className="hidden w-[220px] shrink-0 xl:block">
-          <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">
-            {tabs.map(t => (
-              t.key === 'customers' ? (
-                <a key={t.key} href="/admin/customers"
-                  className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">
-                  {t.icon}
-                  Klanten
-                </a>
-              ) : t.key === 'courses' ? (
-                <a key={t.key} href="/admin/courses"
-                  className="w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">
-                  {t.icon}
-                  Cursussen
-                </a>
-              ) : (
-                <button key={t.key} onClick={() => setTab(t.key)}
-                  className={`w-full flex items-center gap-3 px-5 py-3.5 text-[13px] text-left border-b border-[#f5f5f5] last:border-0 transition ${tab === t.key ? 'bg-[#0C0A07] text-white' : 'text-[#666] hover:bg-[#fafafa]'}`}>
-                  {t.icon}
-                  {t.key === 'overview' ? 'Overzicht' : t.key === 'calendar' ? 'Agenda' : t.key === 'finance' ? 'Financiën' : t.key === 'traject' ? 'Traject-instellingen' : 'Klassen'}
-                </button>
-              )
-            ))}
-            <button onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }} className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-t border-[#f5f5f5] bg-[#C4A265] text-[#0C0A07] font-bold hover:brightness-95 transition">
-              <IconPlus /> Cursus toewijzen
-            </button>
-            <a href="/admin/courses" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition">
-              <span className="text-[16px]">📚</span>
-              Bouw Cursus
-            </a>
-            <a href="/admin/lux-knowledge" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] text-left border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">
-              <span className="text-[16px]">🤖</span>
-              Loenique Kennis
-            </a>
-          </div>
-        </div>
+      <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
+        <AdminDashboardSidebar active={activeNav} />
 
         {/* ── Main content ── */}
         <div className="flex-1 min-w-0">

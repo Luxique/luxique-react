@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
-import Navbar from '@/components/Navbar'
+import { AdminDashboardMobileNav, AdminDashboardSidebar } from '@/components/AdminDashboardNav'
 
 export default function LuxKnowledgePage() {
   const { user, loading, role } = useAuth()
@@ -108,30 +108,23 @@ export default function LuxKnowledgePage() {
 
   if (loading) {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-[#B08D4F] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </>
+      <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center pt-[50px]">
+        <div className="w-8 h-8 border-2 border-[#B08D4F] border-t-transparent rounded-full animate-spin" />
+      </div>
     )
   }
 
   if (role !== 'admin') {
     return (
-      <>
-        <Navbar />
-        <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center flex-col gap-4">
-          <div className="text-[#888] text-[14px]">Geen toegang.</div>
-          <a href="/dashboard" className="text-[13px] text-[#D4AF37]">← Terug</a>
-        </div>
-      </>
+      <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center flex-col gap-4 pt-[50px]">
+        <div className="text-[#888] text-[14px]">Geen toegang.</div>
+        <a href="/dashboard" className="text-[13px] text-[#D4AF37]">← Terug</a>
+      </div>
     )
   }
 
   return (
     <>
-      <Navbar />
       {/* Toast notification */}
       <div
         style={{
@@ -160,8 +153,11 @@ export default function LuxKnowledgePage() {
         <span style={{ fontSize: '1.3rem' }}>✓</span>
         <span>{toast.msg}</span>
       </div>
-      <div className="min-h-screen bg-[#F3EFE7]" style={{ paddingTop: 'var(--content-pad-top)' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 24px' }}>
+      <div className="min-h-screen bg-[#F3EFE7] pt-[50px]">
+        <AdminDashboardMobileNav active="knowledge" />
+        <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
+          <AdminDashboardSidebar active="knowledge" />
+          <div className="min-w-0 flex-1" style={{ maxWidth: 900 }}>
           <div style={{ marginBottom: 32 }}>
             <h1 className="font-['Cormorant_Garamond']" style={{ fontWeight: 600, fontSize: 'clamp(2rem, 4vw, 2.8rem)', color: '#1C1814', marginBottom: 8 }}>
               Lux Kennisbank
@@ -355,6 +351,7 @@ export default function LuxKnowledgePage() {
             </>
           )}
         </div>
+      </div>
       </div>
     </>
   )

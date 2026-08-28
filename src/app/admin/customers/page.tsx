@@ -2,9 +2,9 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, JSX } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
-import AdminMobileNav from '@/components/AdminMobileNav'
+import { AdminDashboardMobileNav, AdminDashboardSidebar } from '@/components/AdminDashboardNav'
 
 /* ── types ── */
 type Profile = {
@@ -42,7 +42,7 @@ function IconCalendar() { return <svg width="16" height="16" fill="none" viewBox
 function IconEuro() { return <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> }
 
 export default function AdminCustomersPage() {
-  const { user, role, loading, signOut } = useAuth()
+  const { user, role, loading } = useAuth()
   const router = useRouter()
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [search, setSearch] = useState('')
@@ -179,66 +179,12 @@ export default function AdminCustomersPage() {
   const selected = selectedId ? profiles.find(p => p.id === selectedId) : null
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 
-  const navItems: { key: string; label: string; icon: JSX.Element; href: string; active?: boolean }[] = [
-    { key: 'overview', label: 'Overzicht', icon: <IconDashboard />, href: '/admin' },
-    { key: 'customers', label: 'Klanten', icon: <IconUsers />, href: '/admin/customers', active: true },
-    { key: 'courses', label: 'Cursussen', icon: <IconBook />, href: '/admin/courses' },
-    { key: 'calendar', label: 'Agenda', icon: <IconCalendar />, href: '/admin?tab=calendar' },
-    { key: 'finance', label: 'Financiën', icon: <IconEuro />, href: '/admin?tab=finance' },
-    { key: 'traject', label: 'Traject-instellingen', icon: <IconCalendar />, href: '/admin?tab=traject' },
-    { key: 'klassen', label: 'Klassen', icon: <IconCalendar />, href: '/admin?tab=klassen' },
-  ]
-
   return (
     <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
-      {/* Top bar — same as /admin */}
-      <div className="bg-white border-b border-[#eee] px-4 sm:px-6 py-3 sm:py-4 sticky top-[50px] z-30">
-        <div className="mx-auto flex w-full items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <span className="text-[10px] bg-[#0C0A07] text-white px-2.5 py-1 rounded-full font-bold tracking-[0.12em] uppercase shrink-0">LXQ Admin</span>
-            <h1 className="font-['Cormorant_Garamond'] text-[20px] sm:text-[24px] text-[#1a1a1a] truncate">Klanten</h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <a href="/" className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee] hidden sm:inline-block">← Website</a>
-            <button onClick={signOut} className="text-[12px] text-[#888] hover:text-[#1a1a1a] px-3 py-1.5 rounded-full border border-[#eee]">Uitloggen</button>
-          </div>
-        </div>
-      </div>
+      <AdminDashboardMobileNav active="customers" />
 
-      <AdminMobileNav
-        items={[
-          { label: 'Overzicht', href: '/admin', icon: '📊' },
-          { label: 'Klanten', href: '/admin/customers', active: true, icon: '👥' },
-          { label: 'Cursussen', href: '/admin/courses', icon: '📚' },
-          { label: 'Agenda', href: '/admin?tab=calendar', icon: '📅' },
-          { label: 'Financiën', href: '/admin?tab=finance', icon: '💶' },
-          { label: 'Traject-instellingen', href: '/admin?tab=traject', icon: '🗓️' },
-          { label: 'Klassen', href: '/admin?tab=klassen', icon: '🎓' },
-          { label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
-        ]}
-      />
-
-      <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:flex-row xl:gap-6">
-        {/* ── Sidebar — same as /admin (desktop only) ── */}
-        <div className="hidden w-[220px] shrink-0 xl:block">
-          <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden sticky top-6">
-            {navItems.map(t => (
-              <a key={t.key} href={t.href}
-                className={`w-full flex items-center gap-3 px-5 py-3.5 text-[13px] border-b border-[#f5f5f5] last:border-0 transition ${t.active ? 'bg-[#0C0A07] text-white' : 'text-[#666] hover:bg-[#fafafa]'}`}>
-                {t.icon}
-                {t.label}
-              </a>
-            ))}
-            <a href="/admin/courses" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] border-t-2 border-[#C4A265]/20 bg-[#C4A265]/5 text-[#C4A265] font-semibold hover:bg-[#C4A265]/10 transition">
-              <span className="text-[16px]">📚</span>
-              Bouw Cursus
-            </a>
-            <a href="/admin/lux-knowledge" className="w-full flex items-center gap-3 px-5 py-4 text-[13px] border-b border-[#f5f5f5] text-[#666] hover:bg-[#fafafa] transition">
-              <span className="text-[16px]">🤖</span>
-              Luxique Kennis
-            </a>
-          </div>
-        </div>
+      <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
+        <AdminDashboardSidebar active="customers" />
 
         {/* ── Main content ── */}
         <div className="flex-1 min-w-0">
