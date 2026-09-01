@@ -88,7 +88,6 @@ function TrajectBoekenInner() {
   const [regLastName, setRegLastName] = useState('')
   const [regPhone, setRegPhone] = useState('')
   const [regEmail, setRegEmail] = useState('')
-  const [regPhone, setRegPhone] = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [regConfirmPassword, setRegConfirmPassword] = useState('')
   const [regError, setRegError] = useState('')
