@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
-import { AdminDashboardMobileNav, AdminDashboardSidebar } from '@/components/AdminDashboardNav'
+import {
+  AdminDashboardMobileNav,
+  AdminDashboardSidebar,
+} from '@/components/AdminDashboardNav'
 
 export default function LuxKnowledgePage() {
   const { user, loading, role } = useAuth()
@@ -13,7 +16,10 @@ export default function LuxKnowledgePage() {
   const [updatedAt, setUpdatedAt] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [toast, setToast] = useState<{ msg: string; visible: boolean }>({ msg: '', visible: false })
+  const [toast, setToast] = useState<{ msg: string; visible: boolean }>({
+    msg: '',
+    visible: false,
+  })
   const [prevContent, setPrevContent] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [loadingData, setLoadingData] = useState(true)
@@ -97,8 +103,11 @@ export default function LuxKnowledgePage() {
         setUpdatedAt(insertData.updated_at)
       }
       setSaved(true)
-      setToast({ msg: '✓ Opgeslagen! Lux gebruikt de nieuwe kennis binnen 60 seconden.', visible: true })
-      setTimeout(() => setToast(t => ({ ...t, visible: false })), 4000)
+      setToast({
+        msg: '✓ Opgeslagen! Lux gebruikt de nieuwe kennis binnen 60 seconden.',
+        visible: true,
+      })
+      setTimeout(() => setToast((t) => ({ ...t, visible: false })), 4000)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
       setError(`Onverwachte fout bij opslaan: ${err}`)
@@ -108,23 +117,33 @@ export default function LuxKnowledgePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center pt-[50px]">
-        <div className="w-8 h-8 border-2 border-[#B08D4F] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center pt-[50px]">
+        <div className="w-8 h-8 border-2 border-[#C4A265] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   if (role !== 'admin') {
     return (
-      <div className="min-h-screen bg-[#F3EFE7] flex items-center justify-center flex-col gap-4 pt-[50px]">
+      <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center flex-col gap-4 pt-[50px]">
         <div className="text-[#888] text-[14px]">Geen toegang.</div>
-        <a href="/dashboard" className="text-[13px] text-[#D4AF37]">← Terug</a>
+        <a href="/dashboard" className="text-[13px] text-[#C4A265]">
+          ← Terug
+        </a>
       </div>
     )
   }
 
   return (
     <>
+      <style jsx global>{`
+        html,
+        body {
+          font-family: 'Outfit', sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+      `}</style>
+
       {/* Toast notification */}
       <div
         style={{
@@ -132,12 +151,12 @@ export default function LuxKnowledgePage() {
           top: 'calc(env(safe-area-inset-top) + 70px)',
           right: 24,
           zIndex: 9999,
-          background: 'linear-gradient(135deg, #1a1a1a, #2c2722)',
-          color: '#D8B97A',
-          padding: '16px 28px',
+          background: '#0C0A07',
+          color: '#fff',
+          padding: '14px 22px',
           borderRadius: 14,
-          border: '1px solid rgba(216,185,122,.5)',
-          boxShadow: '0 20px 50px -12px rgba(0,0,0,.4), 0 0 30px -8px rgba(216,185,122,.2)',
+          border: '1px solid rgba(196,162,101,.35)',
+          boxShadow: '0 16px 40px -12px rgba(12,10,7,.35)',
           fontSize: '.92rem',
           fontWeight: 500,
           display: 'flex',
@@ -145,7 +164,8 @@ export default function LuxKnowledgePage() {
           gap: 10,
           opacity: toast.visible ? 1 : 0,
           transform: toast.visible ? 'translateX(0)' : 'translateX(120%)',
-          transition: 'opacity .4s cubic-bezier(.16,1,.3,1), transform .4s cubic-bezier(.16,1,.3,1)',
+          transition:
+            'opacity .4s cubic-bezier(.16,1,.3,1), transform .4s cubic-bezier(.16,1,.3,1)',
           pointerEvents: toast.visible ? 'auto' : 'none',
           maxWidth: 380,
         }}
@@ -153,205 +173,171 @@ export default function LuxKnowledgePage() {
         <span style={{ fontSize: '1.3rem' }}>✓</span>
         <span>{toast.msg}</span>
       </div>
-      <div className="min-h-screen bg-[#F3EFE7] pt-[50px]">
+      <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
         <AdminDashboardMobileNav active="knowledge" />
         <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
           <AdminDashboardSidebar active="knowledge" />
-          <div className="min-w-0 flex-1" style={{ maxWidth: 900 }}>
-          <div style={{ marginBottom: 32 }}>
-            <h1 className="font-['Cormorant_Garamond']" style={{ fontWeight: 600, fontSize: 'clamp(2rem, 4vw, 2.8rem)', color: '#1C1814', marginBottom: 8 }}>
-              Lux Kennisbank
-            </h1>
-            <p style={{ color: '#888', fontSize: '.95rem' }}>
-              Beheer de kennis die Lux (de AI-chatbot) gebruikt om bezoekers te helpen.
-              Wijzigingen zijn binnen 60 seconden actief.
-            </p>
-            {updatedAt && (
-              <p style={{ color: '#888', fontSize: '.82rem', marginTop: 8 }}>
-                Laatst bijgewerkt: {new Date(updatedAt).toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })}
-              </p>
-            )}
-          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mx-auto w-full max-w-[900px] space-y-5">
+              <div className="bg-white rounded-2xl border border-[#eee] p-5 sm:p-6">
+                <h1 className="font-['Cormorant_Garamond',serif] text-[32px] sm:text-[38px] font-light leading-none tracking-[-0.02em] text-[#1a1a1a]">
+                  Lux Kennisbank
+                </h1>
+                <p className="mt-3 text-[13px] sm:text-[14px] leading-relaxed text-[#888]">
+                  Beheer de kennis die Lux (de AI-chatbot) gebruikt om bezoekers
+                  te helpen. Wijzigingen zijn binnen 60 seconden actief.
+                </p>
+                {updatedAt && (
+                  <p className="mt-2 text-[11px] text-[#aaa]">
+                    Laatst bijgewerkt:{' '}
+                    {new Date(updatedAt).toLocaleString('nl-NL', {
+                      dateStyle: 'long',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                )}
+              </div>
 
-          {loadingData ? (
-            <div style={{ textAlign: 'center', padding: 48 }}>
-              <div className="w-8 h-8 border-2 border-[#B08D4F] border-t-transparent rounded-full animate-spin mx-auto" />
-              <p style={{ color: '#888', marginTop: 16, fontSize: '.9rem' }}>Kennis laden...</p>
-            </div>
-          ) : (
-            <>
-              {error && (
-                <div style={{
-                  background: 'rgba(229,85,85,.08)',
-                  border: '1px solid rgba(229,85,85,.3)',
-                  borderRadius: 12,
-                  padding: 16,
-                  marginBottom: 20,
-                  color: '#c44',
-                  fontSize: '.9rem',
-                }}>
-                  ⚠️ {error}
+              {loadingData ? (
+                <div className="bg-white rounded-2xl border border-[#eee] px-5 py-16 text-center">
+                  <div className="w-8 h-8 border-2 border-[#C4A265] border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="mt-4 text-[13px] text-[#888]">
+                    Kennis laden...
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-6">
+                  {error && (
+                    <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
+                      ⚠️ {error}
+                    </div>
+                  )}
+
+                  {saved && null}
+
+                  <div className="mx-auto w-full max-w-[820px]">
+                    <textarea
+                      id="lux-knowledge-textarea"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="min-h-[500px] w-full resize-y rounded-xl border border-[#ddd] bg-white px-4 py-4 font-mono text-[13px] leading-relaxed text-[#1a1a1a] outline-none transition focus:border-[#C4A265] sm:px-5"
+                      placeholder="Voer hier de kennisbank tekst in die Lux gebruikt..."
+                    />
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap gap-2 sm:mr-auto">
+                        <button
+                          onClick={() => {
+                            const ta = document.getElementById(
+                              'lux-knowledge-textarea',
+                            ) as HTMLTextAreaElement
+                            if (!ta) return
+                            ta.focus()
+                            ta.select()
+                            document.execCommand('selectAll')
+                          }}
+                          className="rounded-full border border-[#eee] px-3.5 py-2 text-[11.5px] font-medium text-[#888] transition hover:border-[rgba(30,26,20,0.18)] hover:text-[#1a1a1a]"
+                        >
+                          📋 Alles selecteren
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(content)
+                              setToast({
+                                msg: '📋 Kennisbank gekopieerd naar klembord!',
+                                visible: true,
+                              })
+                              setTimeout(
+                                () =>
+                                  setToast((t) => ({ ...t, visible: false })),
+                                3000,
+                              )
+                            } catch {
+                              // Fallback for older browsers
+                              const ta = document.getElementById(
+                                'lux-knowledge-textarea',
+                              ) as HTMLTextAreaElement
+                              if (ta) {
+                                ta.select()
+                                document.execCommand('copy')
+                              }
+                              setToast({
+                                msg: '📋 Kennisbank gekopieerd!',
+                                visible: true,
+                              })
+                              setTimeout(
+                                () =>
+                                  setToast((t) => ({ ...t, visible: false })),
+                                3000,
+                              )
+                            }
+                          }}
+                          disabled={!content.trim()}
+                          className="rounded-full border border-[#eee] px-3.5 py-2 text-[11.5px] font-medium text-[#888] transition hover:border-[rgba(30,26,20,0.18)] hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          📄 Kopiëren
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!content.trim()) return
+                            setPrevContent(content)
+                            setContent('')
+                            setToast({
+                              msg: '🗑 Tekst gewist. Klik ↩️ Ongedaan maken om terug te halen.',
+                              visible: true,
+                            })
+                            setTimeout(
+                              () => setToast((t) => ({ ...t, visible: false })),
+                              5000,
+                            )
+                          }}
+                          disabled={!content.trim()}
+                          className="rounded-full border border-red-200 px-3.5 py-2 text-[11.5px] font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          🗑 Wissen
+                        </button>
+                        {prevContent !== null && (
+                          <button
+                            onClick={() => {
+                              setContent(prevContent)
+                              setPrevContent(null)
+                              setToast({
+                                msg: '↩️ Tekst hersteld!',
+                                visible: true,
+                              })
+                              setTimeout(
+                                () =>
+                                  setToast((t) => ({ ...t, visible: false })),
+                                3000,
+                              )
+                            }}
+                            className="rounded-full border border-green-200 bg-green-50 px-3.5 py-2 text-[11.5px] font-medium text-green-700 transition hover:bg-green-100"
+                          >
+                            ↩️ Ongedaan maken
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={fetchKnowledge}
+                        className="rounded-xl border border-[#ddd] bg-white px-5 py-2.5 text-[12px] font-semibold text-[#888] transition hover:border-[#C4A265] hover:text-[#1a1a1a]"
+                      >
+                        Annuleren
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={saving || !content.trim()}
+                        className="rounded-xl bg-[#C4A265] px-6 py-2.5 text-[12px] font-bold text-[#0C0A07] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {saving ? 'Opslaan...' : 'Opslaan'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
-
-              {saved && null}
-
-              <textarea
-                id="lux-knowledge-textarea"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                style={{
-                  width: '100%',
-                  minHeight: 500,
-                  padding: 20,
-                  borderRadius: 16,
-                  border: '1px solid rgba(28,24,20,.13)',
-                  background: '#FBF8F2',
-                  color: '#1C1814',
-                  fontSize: '.9rem',
-                  fontFamily: 'monospace',
-                  lineHeight: 1.6,
-                  outline: 'none',
-                  resize: 'vertical',
-                }}
-                placeholder="Voer hier de kennisbank tekst in die Lux gebruikt..."
-              />
-
-              <div style={{ display: 'flex', gap: 12, marginTop: 20, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <div style={{ marginRight: 'auto', display: 'flex', gap: 8 }}>
-                  <button
-                    onClick={() => {
-                      const ta = document.getElementById('lux-knowledge-textarea') as HTMLTextAreaElement
-                      if (!ta) return
-                      ta.focus()
-                      ta.select()
-                      document.execCommand('selectAll')
-                    }}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 100,
-                      border: '1px solid rgba(28,24,20,.13)',
-                      color: '#888',
-                      fontWeight: 500,
-                      fontSize: '.82rem',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    📋 Alles selecteren
-                  </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(content)
-                        setToast({ msg: '📋 Kennisbank gekopieerd naar klembord!', visible: true })
-                        setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
-                      } catch {
-                        // Fallback for older browsers
-                        const ta = document.getElementById('lux-knowledge-textarea') as HTMLTextAreaElement
-                        if (ta) { ta.select(); document.execCommand('copy'); }
-                        setToast({ msg: '📋 Kennisbank gekopieerd!', visible: true })
-                        setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
-                      }
-                    }}
-                    disabled={!content.trim()}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 100,
-                      border: '1px solid rgba(28,24,20,.13)',
-                      color: '#888',
-                      fontWeight: 500,
-                      fontSize: '.82rem',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      opacity: !content.trim() ? .3 : 1,
-                    }}
-                  >
-                    📄 Kopiëren
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!content.trim()) return
-                      setPrevContent(content)
-                      setContent('')
-                      setToast({ msg: '🗑 Tekst gewist. Klik ↩️ Ongedaan maken om terug te halen.', visible: true })
-                      setTimeout(() => setToast(t => ({ ...t, visible: false })), 5000)
-                    }}
-                    disabled={!content.trim()}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 100,
-                      border: '1px solid rgba(229,85,85,.3)',
-                      color: '#c44',
-                      fontWeight: 500,
-                      fontSize: '.82rem',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      opacity: !content.trim() ? .3 : 1,
-                    }}
-                  >
-                    🗑 Wissen
-                  </button>
-                  {prevContent !== null && (
-                    <button
-                      onClick={() => {
-                        setContent(prevContent)
-                        setPrevContent(null)
-                        setToast({ msg: '↩️ Tekst hersteld!', visible: true })
-                        setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000)
-                      }}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: 100,
-                        border: '1px solid rgba(34,139,34,.3)',
-                        color: '#2a8c2a',
-                        fontWeight: 500,
-                        fontSize: '.82rem',
-                        background: 'rgba(34,139,34,.05)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      ↩️ Ongedaan maken
-                    </button>
-                  )}
-                </div>
-                <button
-                  onClick={fetchKnowledge}
-                  style={{
-                    padding: '12px 24px',
-                    borderRadius: 100,
-                    border: '1px solid rgba(28,24,20,.13)',
-                    color: '#888',
-                    fontWeight: 500,
-                    fontSize: '.9rem',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Annuleren
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={saving || !content.trim()}
-                  style={{
-                    padding: '12px 32px',
-                    borderRadius: 100,
-                    background: '#B08D4F',
-                    color: '#fff',
-                    fontWeight: 500,
-                    fontSize: '.9rem',
-                    border: 'none',
-                    cursor: 'pointer',
-                    opacity: (saving || !content.trim()) ? .4 : 1,
-                  }}
-                >
-                  {saving ? 'Opslaan...' : 'Opslaan'}
-                </button>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
       </div>
     </>
   )
