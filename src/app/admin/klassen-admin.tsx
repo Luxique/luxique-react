@@ -202,8 +202,9 @@ function Overzicht({
         body: JSON.stringify({ max_deelnemers: newMax }),
       })
       if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.error || `HTTP ${res.status}`)
+        const d = await res.json().catch(() => null)
+        const reason = d?.details || d?.error || `HTTP ${res.status}`
+        throw new Error(reason)
       }
       setFeedback(`✓ Max voor "${klas.cursus_naam}" bijgewerkt naar ${newMax}`)
       onChanged()

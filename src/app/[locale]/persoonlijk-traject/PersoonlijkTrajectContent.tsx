@@ -8,7 +8,7 @@ import Navbar from '@/components/Navbar'
 const CURSUS = {
   beginner:      'ac16d676-cb17-43ea-a3a7-a1dce56c143a', // Beginner lash to artist (4d, €1.650)
   wispy:         'b43062ef-2756-4d9f-90fe-962e2abd1548', // Wispy masterclass (1d, €500)
-  medusa:        'e33310cb-2c73-4f8e-a878-ecaf35c5a4c3', // Medusa masterclass (2d, €1.000)
+  medusa:        'e33310cb-2c73-4f8e-a878-ecaf35c5a4c3', // Medusa masterclass (2d, €1.300)
   techToArtist:  'af8adfc8-ae38-4869-bf8a-e3dd9381c231', // Lash tech to artist (3d, €1.200)
   workshop:      '0fa8540d-1ccd-4c94-9541-55bf041226d0', // Beginner workshop (1u, €35)
 } as const

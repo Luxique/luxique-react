@@ -150,7 +150,10 @@ export async function POST(req: NextRequest) {
     if (insertError) {
       console.error('POST /api/admin/klassen insert error:', insertError)
       return NextResponse.json(
-        { error: 'Aanmaken klas mislukt', details: insertError.message },
+        {
+          error: `Aanmaken klas mislukt: ${insertError.message}`,
+          details: insertError.message,
+        },
         { status: 500, headers: NO_STORE_HEADERS },
       )
     }
