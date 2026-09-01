@@ -34,8 +34,8 @@ export default function Reveal({
     }
 
     el.style.opacity = '0'
-    el.style.transform = 'translateY(24px)'
-    el.style.transition = `opacity .75s cubic-bezier(.16,1,.3,1) ${delay}ms, transform .75s cubic-bezier(.16,1,.3,1) ${delay}ms`
+    el.style.transform = 'translateY(14px)'
+    el.style.transition = `opacity .45s cubic-bezier(.16,1,.3,1) ${delay}ms, transform .45s cubic-bezier(.16,1,.3,1) ${delay}ms`
 
     const io = new IntersectionObserver(
       (entries) => {
@@ -47,7 +47,7 @@ export default function Reveal({
           }
         })
       },
-      { threshold: 0.2 }
+      { threshold: 0.12 }
     )
     io.observe(el)
     return () => io.disconnect()
