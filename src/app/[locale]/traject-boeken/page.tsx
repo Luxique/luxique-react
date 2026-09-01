@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
 import { formatPrice, formatDuur } from '@/lib/traject'
 import { PaymentLogos } from '@/components/PaymentLogos'
+import PasswordInput from '@/components/PasswordInput'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
 
@@ -86,6 +87,7 @@ function TrajectBoekenInner() {
   const [regFirstName, setRegFirstName] = useState('')
   const [regLastName, setRegLastName] = useState('')
   const [regEmail, setRegEmail] = useState('')
+  const [regPhone, setRegPhone] = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [regConfirmPassword, setRegConfirmPassword] = useState('')
   const [regError, setRegError] = useState('')
@@ -277,6 +279,12 @@ function TrajectBoekenInner() {
       return
     }
 
+    if (!regPhone.trim()) {
+      setRegError('Vul je telefoonnummer in')
+      setRegLoading(false)
+      return
+    }
+
     if (regPassword.length < 8) {
       setRegError('Wachtwoord moet minimaal 8 tekens bevatten')
       setRegLoading(false)
@@ -287,7 +295,12 @@ function TrajectBoekenInner() {
       email: regEmail,
       password: regPassword,
       options: {
-        data: { first_name: regFirstName, last_name: regLastName, full_name: `${regFirstName} ${regLastName}` },
+        data: {
+          first_name: regFirstName,
+          last_name: regLastName,
+          full_name: `${regFirstName} ${regLastName}`,
+          phone: regPhone.trim(),
+        },
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     })
@@ -475,7 +488,7 @@ function TrajectBoekenInner() {
                     </div>
                     <div>
                       <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">Wachtwoord</label>
-                      <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="••••••••" />
+                      <PasswordInput variant="dark" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="••••••••" />
                     </div>
                     <button type="submit" disabled={loginLoading} className="w-full py-3 rounded-lg bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07] font-bold transition disabled:opacity-50">{loginLoading ? 'Bezig...' : 'Inloggen'}</button>
                   </form>
@@ -515,14 +528,18 @@ function TrajectBoekenInner() {
                           <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">E-mailadres</label>
                           <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="jou@email.nl" />
                         </div>
+                        <div>
+                          <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">Telefoonnummer</label>
+                          <input type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} required autoComplete="tel" className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="06 12345678" />
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">Wachtwoord</label>
-                            <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="min. 8 tekens" />
+                            <PasswordInput variant="dark" value={regPassword} onChange={e => setRegPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="min. 8 tekens" />
                           </div>
                           <div>
                             <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">Herhaal</label>
-                            <input type="password" value={regConfirmPassword} onChange={e => setRegConfirmPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" />
+                            <PasswordInput variant="dark" value={regConfirmPassword} onChange={e => setRegConfirmPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" />
                           </div>
                         </div>
                         <button type="submit" disabled={regLoading} className="w-full py-3 rounded-lg bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07] font-bold transition disabled:opacity-50">{regLoading ? 'Bezig...' : 'Account aanmaken'}</button>

@@ -2,6 +2,8 @@
 
 import CalEmbedRaw from '@calcom/embed-react'
 
+const CALENDAR_TIME_ZONE = 'Europe/Amsterdam'
+
 /**
  * CalEmbed — Cal.com official embed-react wrapper.
  *
@@ -31,6 +33,7 @@ export default function CalEmbed({
   const config: Record<string, string | string[] | Record<string, string>> = {
     layout,
     theme,
+    timeZone: CALENDAR_TIME_ZONE,
   }
 
   // Flat keys → become ?name=...&email=... on the iframe URL

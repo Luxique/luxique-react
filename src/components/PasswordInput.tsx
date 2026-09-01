@@ -19,7 +19,7 @@ export default function PasswordInput({
 }: PasswordInputProps) {
   const [show, setShow] = useState(false)
 
-  const iconColor = variant === 'dark' ? 'rgba(250,248,244,0.4)' : '#999'
+  const iconColor = variant === 'dark' ? '#FFFFFF' : '#999'
 
   return (
     <div className="relative" style={{ width: '100%' }}>
