@@ -3,6 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
+function bookingLookupFailure(error: { code?: string; message?: string; details?: string; hint?: string }) {
+  console.error('❌ Checkout booking lookup failed:', JSON.stringify(error))
+  return NextResponse.json({
+    error: 'We could not load your booking. Please try again.',
+    code: 'BOOKING_LOOKUP_FAILED',
+  }, { status: 500 })
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const uid = searchParams.get('uid')
@@ -20,9 +28,13 @@ export async function GET(request: NextRequest) {
     .from('pending_bookings')
     .select('*')
     .eq('cal_booking_uid', uid)
-    .single()
+    .maybeSingle()
 
-  if (error || !booking) {
+  if (error) {
+    return bookingLookupFailure(error)
+  }
+
+  if (!booking) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
@@ -53,9 +65,13 @@ export async function POST(request: NextRequest) {
     .from('pending_bookings')
     .select('*')
     .eq('cal_booking_uid', uid)
-    .single()
+    .maybeSingle()
 
-  if (error || !booking) {
+  if (error) {
+    return bookingLookupFailure(error)
+  }
+
+  if (!booking) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 

@@ -27,12 +27,21 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Idempotency: check if webhook already created it
-  const { data: existing } = await supabase
+  // Fast path when the webhook already created the row. maybeSingle keeps a
+  // genuine missing row distinct from an unexpected database error.
+  const { data: existing, error: lookupError } = await supabase
     .from('pending_bookings')
     .select('*')
     .eq('cal_booking_uid', uid)
-    .single()
+    .maybeSingle()
+
+  if (lookupError) {
+    console.error('❌ Fallback booking lookup failed:', JSON.stringify(lookupError))
+    return NextResponse.json({
+      error: 'Could not load booking',
+      code: 'BOOKING_LOOKUP_FAILED',
+    }, { status: 500 })
+  }
 
   if (existing) {
     return NextResponse.json({ booking: existing })
@@ -84,10 +93,11 @@ export async function POST(request: NextRequest) {
   // Set expires_at to 10 minutes from now
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-  // Create pending booking (idempotent — if webhook races us, the unique constraint catches it)
+  // Create idempotently. The webhook can race this request, so the database
+  // unique index decides the winner without either request overwriting data.
   const { data, error } = await supabase
     .from('pending_bookings')
-    .insert({
+    .upsert({
       cal_booking_uid: uid,
       event_type: eventConfig.name,
       slot_start: slotStart,
@@ -96,25 +106,40 @@ export async function POST(request: NextRequest) {
       expires_at: expiresAt,
       customer_name: customerName,
       customer_email: customerEmail,
+    }, {
+      onConflict: 'cal_booking_uid',
+      ignoreDuplicates: true,
     })
     .select()
-    .single()
 
   if (error) {
-    // Maybe webhook created it between our check and insert — try fetching again
-    const { data: retry } = await supabase
-      .from('pending_bookings')
-      .select('*')
-      .eq('cal_booking_uid', uid)
-      .single()
-
-    if (retry) {
-      return NextResponse.json({ booking: retry })
-    }
-
+    console.error('❌ Fallback booking upsert failed:', JSON.stringify(error))
     return NextResponse.json({ error: 'Could not create booking' }, { status: 500 })
   }
 
+  if (!data?.length) {
+    const { data: concurrentBooking, error: concurrentLookupError } = await supabase
+      .from('pending_bookings')
+      .select('*')
+      .eq('cal_booking_uid', uid)
+      .maybeSingle()
+
+    if (concurrentLookupError) {
+      console.error('❌ Concurrent booking lookup failed:', JSON.stringify(concurrentLookupError))
+      return NextResponse.json({
+        error: 'Could not load booking',
+        code: 'BOOKING_LOOKUP_FAILED',
+      }, { status: 500 })
+    }
+
+    if (!concurrentBooking) {
+      console.error('❌ Conflict-safe upsert returned no row and no existing booking:', uid)
+      return NextResponse.json({ error: 'Could not create booking' }, { status: 500 })
+    }
+
+    return NextResponse.json({ booking: concurrentBooking })
+  }
+
   console.log(`✅ Fallback: created pending booking ${uid} via Cal API`)
-  return NextResponse.json({ booking: data })
+  return NextResponse.json({ booking: data[0] })
 }

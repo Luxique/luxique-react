@@ -136,22 +136,15 @@ async function handleBookingCreated(payload: any, supabase: any) {
   const depositAmount = TEST_DEPOSIT ?? 100 // TODO: revert to Math.round(eventConfig.priceCents / 2)
   console.log(`Webhook deposit calc: TEST_DEPOSIT_CENTS=${TEST_DEPOSIT_RAW}, parsed=${TEST_DEPOSIT}, final=${depositAmount}`)
 
-  const { data: existing } = await supabase
-    .from('pending_bookings')
-    .select('id')
-    .eq('cal_booking_uid', calBookingUid)
-    .single()
-
-  if (existing) {
-    return NextResponse.json({ received: true, duplicate: true })
-  }
-
   // Set expires_at to 10 minutes from now
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-  const { error } = await supabase
+  // The webhook and fetch-from-Cal fallback can run concurrently. Let the
+  // database unique index arbitrate that race and never overwrite an existing
+  // row (especially one that has already progressed to payment).
+  const { data: inserted, error } = await supabase
     .from('pending_bookings')
-    .insert({
+    .upsert({
       cal_booking_uid: calBookingUid,
       event_type: eventConfig.name,
       slot_start: slotStart,
@@ -160,11 +153,20 @@ async function handleBookingCreated(payload: any, supabase: any) {
       expires_at: expiresAt,
       customer_name: customerName,
       customer_email: customerEmail,
+    }, {
+      onConflict: 'cal_booking_uid',
+      ignoreDuplicates: true,
     })
+    .select('id')
 
   if (error) {
-    console.error('❌ DB insert failed:', JSON.stringify(error))
-    return NextResponse.json({ error: 'DB insert failed', details: error.message }, { status: 500 })
+    console.error('❌ DB upsert failed:', JSON.stringify(error))
+    return NextResponse.json({ error: 'DB upsert failed', details: error.message }, { status: 500 })
+  }
+
+  if (!inserted?.length) {
+    console.log(`ℹ️ Pending booking already exists: ${calBookingUid}`)
+    return NextResponse.json({ received: true, duplicate: true })
   }
 
   console.log(`✅ Pending booking: ${calBookingUid} — ${eventConfig.name} — €${depositAmount / 100}`)
