@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase-client'
+import { setRememberMe, supabase } from '@/lib/supabase-client'
 import PasswordInput from '@/components/PasswordInput'
 
 interface AuthModalProps {
@@ -22,6 +22,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [rememberMe, setRememberMeState] = useState(true)
 
   const getPasswordStrength = (pw: string): { valid: boolean; hint: string } => {
     if (pw.length === 0) return { valid: false, hint: '' }
@@ -42,6 +43,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
 
     try {
       if (tab === 'login') {
+        setRememberMe(rememberMe)
         const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
         if (err) throw err
         if (data.user) {
@@ -117,6 +119,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
 
   const handleSocialLogin = async (provider: 'google' | 'apple') => {
     setError(null)
+    setRememberMe(rememberMe)
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/cursus` },
@@ -259,6 +262,13 @@ export default function AuthModal({ open, onClose, onAuthSuccess }: AuthModalPro
               </span>
             )}
           </label>
+
+          {tab === 'login' && (
+            <label className="auth-checkbox-label">
+              <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMeState(e.target.checked)} className="auth-checkbox" />
+              <span>Onthoud mij</span>
+            </label>
+          )}
 
           {tab === 'register' && (
             <label className="auth-label">

@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState } from 'react'
-import { supabase } from '@/lib/supabase-client'
+import { setRememberMe, supabase } from '@/lib/supabase-client'
 import { useSearchParams } from 'next/navigation'
 import PasswordInput from '@/components/PasswordInput'
 
@@ -13,12 +13,14 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [rememberMe, setRememberMeState] = useState(true)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
+    setRememberMe(rememberMe)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
@@ -75,7 +77,11 @@ function LoginForm() {
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-4">
+              <label className="flex items-center gap-2 text-[11px] text-[#666] cursor-pointer">
+                <input type="checkbox" checked={rememberMe} onChange={e => setRememberMeState(e.target.checked)} className="accent-[#D4AF37]" />
+                Onthoud mij
+              </label>
               <a href="/forgot-password" className="text-[11px] text-[#888] hover:text-[#D4AF37] transition">
                 Wachtwoord vergeten?
               </a>

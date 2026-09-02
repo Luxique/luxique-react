@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
-import { supabase } from '@/lib/supabase-client'
+import { setRememberMe, supabase } from '@/lib/supabase-client'
 import { formatPrice, formatDuur } from '@/lib/traject'
 import { PaymentLogos } from '@/components/PaymentLogos'
 import PasswordInput from '@/components/PasswordInput'
@@ -82,6 +82,7 @@ function TrajectBoekenInner() {
   const [authMode, setAuthMode] = useState<'none' | 'login' | 'register'>('none')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+  const [rememberMe, setRememberMeState] = useState(true)
   const [loginError, setLoginError] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
   const [regFirstName, setRegFirstName] = useState('')
@@ -247,6 +248,7 @@ function TrajectBoekenInner() {
     setLoginLoading(true)
     setLoginError('')
 
+    setRememberMe(rememberMe)
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: loginPassword,
@@ -490,6 +492,10 @@ function TrajectBoekenInner() {
                       <label className="text-sm text-[#FBF8F2]/70 mb-1.5 block">Wachtwoord</label>
                       <PasswordInput variant="dark" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required className="w-full px-4 py-3 rounded-lg bg-[#1a1614] border border-[#C4A265]/30 text-[#FBF8F2] placeholder-[#FBF8F2]/30 focus:outline-none focus:border-[#C4A265]" placeholder="••••••••" />
                     </div>
+                    <label className="flex items-center gap-2 text-sm text-[#FBF8F2]/70 cursor-pointer">
+                      <input type="checkbox" checked={rememberMe} onChange={e => setRememberMeState(e.target.checked)} className="accent-[#C4A265]" />
+                      Onthoud mij
+                    </label>
                     <button type="submit" disabled={loginLoading} className="w-full py-3 rounded-lg bg-[#C4A265] hover:bg-[#C4A265]/90 text-[#0C0A07] font-bold transition disabled:opacity-50">{loginLoading ? 'Bezig...' : 'Inloggen'}</button>
                   </form>
                   <div className="flex items-center justify-between text-sm">
