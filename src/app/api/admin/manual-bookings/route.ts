@@ -5,12 +5,14 @@ import {
   addMinutes,
   createManualCalBooking,
   cancelManualCalBooking,
+  consumePublicAvailability,
   getManualEventTypeId,
   isManualTreatmentKey,
   MANUAL_TREATMENTS,
   type ManualDepositStatus,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
+import { findManualBookingConflict } from '@/lib/manual-booking-conflicts'
 import { sendManualBookingConfirmation } from '@/lib/manual-booking-email'
 
 export const dynamic = 'force-dynamic'
@@ -84,17 +86,28 @@ export async function POST(request: NextRequest) {
 
   const treatmentKey = body.treatmentKey as ManualTreatmentKey
   const treatment = MANUAL_TREATMENTS[treatmentKey]
+  const candidateStart = new Date(start).toISOString()
+  const candidateEnd = addMinutes(candidateStart, treatment.durationMinutes)
   try {
+    const conflict = await findManualBookingConflict(supabaseAdmin, candidateStart, candidateEnd)
+    if (conflict) return json({ error: conflict.message, conflictType: conflict.type }, 409)
+
     const eventTypeId = getManualEventTypeId(treatment.key)
     const calBooking = await createManualCalBooking({
       eventTypeId,
-      start: new Date(start).toISOString(),
+      start: candidateStart,
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
     })
     const slotStart = calBooking.start
     const slotEnd = calBooking.end || addMinutes(slotStart, treatment.durationMinutes)
+
+    const conflictAfterCalCreation = await findManualBookingConflict(supabaseAdmin, slotStart, slotEnd)
+    if (conflictAfterCalCreation) {
+      await cancelManualCalBooking(calBooking.uid, 'Luxique overlap check failed')
+      return json({ error: conflictAfterCalCreation.message, conflictType: conflictAfterCalCreation.type }, 409)
+    }
 
     const { data: booking, error: insertError } = await supabaseAdmin
       .from('manual_bookings')
@@ -121,6 +134,18 @@ export async function POST(request: NextRequest) {
         console.error('[manual-bookings] Cal rollback failed:', cleanupError)
       })
       return json({ error: `Boeking kon niet worden opgeslagen: ${insertError?.message || 'onbekende fout'}` }, 500)
+    }
+
+    try {
+      await consumePublicAvailability(slotStart, slotEnd)
+    } catch (availabilityError) {
+      await supabaseAdmin.from('manual_bookings').delete().eq('id', booking.id)
+      await cancelManualCalBooking(calBooking.uid, 'Public availability could not be consumed').catch(cleanupError => {
+        console.error('[manual-bookings] Cal rollback after availability failure failed:', cleanupError)
+      })
+      return json({
+        error: availabilityError instanceof Error ? availabilityError.message : 'Publieke beschikbaarheid bijwerken mislukt.',
+      }, 502)
     }
 
     try {

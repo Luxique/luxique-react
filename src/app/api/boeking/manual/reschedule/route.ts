@@ -3,12 +3,15 @@ import { createClient } from '@supabase/supabase-js'
 import {
   addMinutes,
   cancelManualCalBooking,
+  consumePublicAvailability,
   createManualCalBooking,
   getManualAvailability,
   isWithin24Hours,
   MANUAL_TREATMENTS,
+  restoreConsumedPublicAvailability,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
+import { findManualBookingConflict } from '@/lib/manual-booking-conflicts'
 import { sendManualBookingRescheduled } from '@/lib/manual-booking-email'
 
 export const dynamic = 'force-dynamic'
@@ -46,8 +49,12 @@ export async function POST(request: NextRequest) {
   if (new Date(newStart).getTime() <= Date.now()) return json({ error: 'Kies een tijdstip in de toekomst.' }, 400)
   const treatment = MANUAL_TREATMENTS[booking.treatment_key as ManualTreatmentKey]
   if (!treatment) return json({ error: 'Onbekende behandeling.' }, 409)
+  const candidateEnd = addMinutes(newStart, treatment.durationMinutes)
 
   try {
+    const conflict = await findManualBookingConflict(supabase, newStart, candidateEnd, booking.id)
+    if (conflict) return json({ error: conflict.message, conflictType: conflict.type }, 409)
+
     const available = await getManualAvailability({
       eventTypeId: Number(booking.event_type_id), date: amsterdamDate(newStart), bookingUidToIgnore: booking.cal_booking_uid,
     })
@@ -68,6 +75,14 @@ export async function POST(request: NextRequest) {
     })
     const replacementEnd = replacement.end || addMinutes(replacement.start, treatment.durationMinutes)
 
+    const conflictAfterCalCreation = await findManualBookingConflict(
+      supabase, replacement.start, replacementEnd, booking.id,
+    )
+    if (conflictAfterCalCreation) {
+      await cancelManualCalBooking(replacement.uid, 'Luxique overlap check failed')
+      return json({ error: conflictAfterCalCreation.message, conflictType: conflictAfterCalCreation.type }, 409)
+    }
+
     const { error: updateError } = await supabase.from('manual_bookings').update({
       cal_booking_uid: replacement.uid,
       cal_booking_id: replacement.id,
@@ -87,9 +102,33 @@ export async function POST(request: NextRequest) {
       return json({ error: 'Verplaatsen kon niet worden opgeslagen; de nieuwe Cal.com-boeking is teruggedraaid.' }, 500)
     }
 
+    let consumedAvailability
+    try {
+      consumedAvailability = await consumePublicAvailability(replacement.start, replacementEnd)
+    } catch (availabilityError) {
+      await supabase.from('manual_bookings').update({
+        cal_booking_uid: booking.cal_booking_uid,
+        cal_booking_id: booking.cal_booking_id,
+        previous_cal_booking_uid: booking.previous_cal_booking_uid,
+        slot_start: booking.slot_start,
+        slot_end: booking.slot_end,
+        rescheduled_at: booking.rescheduled_at,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id).eq('user_id', user.id)
+      await cancelManualCalBooking(replacement.uid, 'Public availability could not be consumed').catch(cleanupError => {
+        console.error('[manual-reschedule] replacement rollback failed:', cleanupError)
+      })
+      return json({
+        error: availabilityError instanceof Error ? availabilityError.message : 'Publieke beschikbaarheid bijwerken mislukt.',
+      }, 502)
+    }
+
     try {
       await cancelManualCalBooking(booking.cal_booking_uid, 'Replaced by a new manual Luxique booking')
     } catch (cleanupError) {
+      await restoreConsumedPublicAvailability(consumedAvailability).catch(restoreError => {
+        console.error('[manual-reschedule] publieke beschikbaarheid herstellen mislukt:', restoreError)
+      })
       const message = cleanupError instanceof Error ? cleanupError.message : 'Oude Cal.com-boeking kon niet worden geannuleerd.'
       await supabase.from('manual_bookings').update({
         sync_status: 'cleanup_required', sync_error: message, updated_at: new Date().toISOString(),
