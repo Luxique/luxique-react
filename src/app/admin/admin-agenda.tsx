@@ -28,7 +28,7 @@ type CalendarItem = {
   source?: 'online' | 'manual'
 }
 type CalBooking = {
-  id: number
+  id: number | string
   uid: string
   status: string
   startTime: string
