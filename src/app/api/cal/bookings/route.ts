@@ -28,7 +28,9 @@ export async function GET() {
     const bookings = data.data.bookings.map((b: Record<string, unknown>) => {
       const eventType = b.eventType as Record<string, unknown> | undefined
       const responses = b.responses as Record<string, unknown> | undefined
+      const metadata = b.metadata as Record<string, unknown> | undefined
       const eventTypeId = Number(eventType?.id || b.eventTypeId || 0)
+      const isManual = manualEventTypeIds.has(eventTypeId) || metadata?.source === 'luxique-manual'
       return {
         id: b.id,
         uid: b.uid,
@@ -42,7 +44,7 @@ export async function GET() {
         customerEmail: responses?.email || '',
         customerPhone: responses?.phone || responses?.phoneNumber || '',
         eventTypeId,
-        source: manualEventTypeIds.has(eventTypeId) ? 'manual' : 'online',
+        source: isManual ? 'manual' : 'online',
         eventTypeTitle: eventType?.title || 'Onbekend',
         eventTypeSlug: eventType?.slug || '',
         price: eventType?.price || 0,

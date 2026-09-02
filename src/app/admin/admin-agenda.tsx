@@ -16,6 +16,7 @@ type CalendarItem = {
   startTime: string
   endTime?: string
   title: string
+  treatmentName?: string
   treatmentKey?: TreatmentKey
   status?: string
   customer?: string
@@ -195,7 +196,10 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       date: localDateFromIso(booking.startTime),
       startTime: localTimeFromIso(booking.startTime),
       endTime: localTimeFromIso(booking.endTime),
-      title: booking.eventTypeTitle,
+      title: booking.source === 'manual'
+        ? `Handmatige boeking — ${booking.customerName || booking.customerEmail || 'Klant'}`
+        : booking.eventTypeTitle,
+      treatmentName: booking.eventTypeTitle,
       status: booking.status,
       customer: booking.customerName || booking.customerEmail,
       customerEmail: booking.customerEmail,
@@ -450,7 +454,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
                   + Tijdslot
                 </button>
                 <div className="relative z-10 space-y-1 overflow-hidden p-1.5 pt-10 sm:p-2 sm:pt-10 pointer-events-none">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.source === 'manual' ? 'bg-blue-50 text-blue-700 border border-blue-200' : item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
               </div>
@@ -480,12 +484,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">{selectedItem.kind === 'booking' ? 'Afspraakdetails' : 'Traject-details'}</p>
-              <div className="mt-1 flex flex-wrap items-center gap-2"><h5 className="font-['Cormorant_Garamond'] text-[23px] leading-tight">{selectedItem.kind === 'booking' ? selectedItem.customer || 'Onbekende klant' : selectedItem.courseName || selectedItem.title}</h5>{selectedItem.source === 'manual' && <span className="rounded-full border border-[#C4A265]/35 bg-[#C4A265]/12 px-2.5 py-1 text-[9px] font-semibold text-[#80642e]">Handmatig</span>}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-2"><h5 className="font-['Cormorant_Garamond'] text-[23px] leading-tight">{selectedItem.kind === 'booking' ? selectedItem.customer || 'Onbekende klant' : selectedItem.courseName || selectedItem.title}</h5>{selectedItem.source === 'manual' && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[9px] font-semibold text-blue-700">Handmatige boeking</span>}</div>
             </div>
             <button type="button" onClick={() => setSelectedItemId(null)} aria-label="Details sluiten" className="rounded-full border border-[#e5e2dc] bg-white px-2.5 py-1 text-[11px] text-[#777]">✕</button>
           </div>
           <dl className="grid gap-3 text-[11px]">
-            <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">{selectedItem.kind === 'booking' ? 'Behandeling' : 'Cursus'}</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.kind === 'booking' ? selectedItem.title : selectedItem.courseName || selectedItem.title}</dd></div>
+            <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">{selectedItem.kind === 'booking' ? 'Behandeling' : 'Cursus'}</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.kind === 'booking' ? selectedItem.treatmentName || selectedItem.title : selectedItem.courseName || selectedItem.title}</dd></div>
             <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Tijd</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.startTime}–{selectedItem.endTime}</dd></div>
             {selectedItem.kind === 'booking' && (selectedItem.customerEmail || selectedItem.customerPhone) && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Contact</dt><dd className="mt-1 flex flex-col gap-1">{selectedItem.customerEmail && <a href={`mailto:${selectedItem.customerEmail}`} className="break-all text-[#80642e] hover:underline">{selectedItem.customerEmail}</a>}{selectedItem.customerPhone && <a href={`tel:${selectedItem.customerPhone}`} className="text-[#80642e] hover:underline">{selectedItem.customerPhone}</a>}</dd></div>}
             {selectedItem.kind === 'traject-day' && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Deelnemers</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.paidCount}/{selectedItem.maxParticipants} betaald</dd></div>}
@@ -496,7 +500,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
               <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
-              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.source === 'manual' ? 'border-[#C4A265]/35 bg-[#C4A265]/12 text-[#80642e]' : item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.source === 'manual' ? 'Handmatig' : item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
+              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.source === 'manual' ? 'border-blue-200 bg-blue-50 text-blue-700' : item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.source === 'manual' ? 'Handmatige boeking' : item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
           ))}</div>
