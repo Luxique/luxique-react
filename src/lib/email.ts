@@ -6,15 +6,20 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
+const AMSTERDAM_TIME_ZONE = 'Europe/Amsterdam'
 
 function formatDateEN(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: AMSTERDAM_TIME_ZONE,
   })
 }
 
 function formatTimeEN(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: AMSTERDAM_TIME_ZONE,
+  })
 }
 
 interface BookingData {
@@ -89,7 +94,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
     const remainder = deposit // 50/50 split
 
     // Build manage booking URL (dashboard with bookings tab)
-    const manageUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?tab=boekingen`
+    const manageUrl = `${SITE_URL}/dashboard?tab=boekingen`
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -252,8 +257,8 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
           <tr>
             <td align="center" bgcolor="#C4A265" style="border-radius:9px; background:linear-gradient(180deg,#D8B978,#C4A265);">
-              <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?tab=boekingen" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="17%" fillcolor="#C4A265" stroke="f"><center style="color:#0C0A07;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Mijn afspraak beheren</center></v:roundrect><![endif]-->
-              <!--[if !mso]><!--><a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?tab=boekingen" style="display:inline-block; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; letter-spacing:.5px; color:#0C0A07; text-decoration:none; padding:17px 44px; border-radius:9px;">Mijn afspraak beheren</a><!--<![endif]-->
+              <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${SITE_URL}/dashboard?tab=boekingen" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="17%" fillcolor="#C4A265" stroke="f"><center style="color:#0C0A07;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Mijn afspraak beheren</center></v:roundrect><![endif]-->
+              <!--[if !mso]><!--><a href="${SITE_URL}/dashboard?tab=boekingen" style="display:inline-block; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; letter-spacing:.5px; color:#0C0A07; text-decoration:none; padding:17px 44px; border-radius:9px;">Mijn afspraak beheren</a><!--<![endif]-->
             </td>
           </tr>
         </table>
@@ -849,6 +854,16 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:14px; max-width:440px; margin:0 auto;">Het restbedrag van <strong>${formatBedrag(data.restbedrag_cents)}</strong> voldoe je contant of met pin bij Chiva op de startdag.</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#9a958b; padding-bottom:22px; max-width:440px; margin:0 auto;">Let op: de aanbetaling (20%) is onder geen enkele omstandigheid restitueerbaar.</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
+          <tr><td style="padding:24px 28px;">
+            <div style="font-family:Arial,sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#C4A265; text-align:center; padding-bottom:14px;">Praktische informatie</div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="padding:0 0 10px 0; font-family:Arial,sans-serif; font-size:14px; line-height:21px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Kom goed uitgeslapen naar iedere trajectdag.</td></tr>
+              <tr><td style="padding:0 0 10px 0; font-family:Arial,sans-serif; font-size:14px; line-height:21px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Er is gratis parkeergelegenheid aanwezig.</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:14px; line-height:21px; color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Lunch is inbegrepen. Heb je een allergie? Beantwoord deze mail of mail naar <a href="mailto:info@luxique.nl" style="color:#4a463e; text-decoration:underline;">info@luxique.nl</a>.</td></tr>
+            </table>
+          </td></tr>
+        </table>
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -965,7 +980,7 @@ export interface CoursePurchaseMailData {
 
 export async function sendCourseBevestigingMail(data: CoursePurchaseMailData) {
   try {
-    const startUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/academy/${data.cursus_slug}`
+    const startUrl = `${SITE_URL}/academy/${data.cursus_slug}`
     const { error } = await resend.emails.send({
       from: FROM,
       to: data.email,
