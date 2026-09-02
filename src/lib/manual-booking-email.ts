@@ -69,6 +69,16 @@ export async function sendManualBookingConfirmation(data: ManualBookingMailData)
   }))
 }
 
+export async function sendManualBookingReminder(data: ManualBookingMailData) {
+  await send(data.customerEmail, 'Herinnering: morgen heb je een afspraak bij LUXIQUE', shell({
+    eyebrow: 'Afspraakherinnering',
+    title: `Tot morgen, ${escapeHtml(data.customerName.split(' ')[0] || data.customerName)}`,
+    intro: 'Dit is een herinnering voor je afspraak bij Chiva. Hieronder vind je de datum, tijd en locatie.',
+    details: details(data),
+    notice: '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">Kom met schone wimpers, zonder mascara of olieproducten rond de ogen.</div>',
+  }))
+}
+
 export async function sendManualBookingCancellation(data: ManualBookingMailData) {
   const notice = data.within24h
     ? data.salonDepositStatus === 'paid'

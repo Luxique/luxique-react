@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 export const dynamic = 'force-dynamic'
 
 /**
- * Daily reminder cron — sends reminders for paid bookings ~24h before appointment.
+ * Daily reminder cron — sends reminders for paid and manual bookings ~24h before appointment.
  *
  * Trigger: Vercel Cron once daily at 09:00 AM CET.
  * Schedule: "0 7 * * *" (UTC 7 = CET 8/9 depending on DST)
@@ -35,31 +35,41 @@ export async function GET(request: NextRequest) {
   const in20h = new Date(now + 20 * 60 * 60 * 1000).toISOString()
   const in32h = new Date(now + 32 * 60 * 60 * 1000).toISOString()
 
-  // Find paid bookings in the 20-32h window without reminder sent
-  const { data: bookings, error } = await supabase
-    .from('pending_bookings')
-    .select('*')
-    .eq('status', 'paid')
-    .gte('slot_start', in20h)
-    .lte('slot_start', in32h)
-    .is('reminder_sent_at', null)
+  const [{ data: bookings, error }, { data: manualBookings, error: manualError }] = await Promise.all([
+    supabase
+      .from('pending_bookings')
+      .select('*')
+      .eq('status', 'paid')
+      .gte('slot_start', in20h)
+      .lte('slot_start', in32h)
+      .is('reminder_sent_at', null),
+    supabase
+      .from('manual_bookings')
+      .select('*')
+      .eq('status', 'confirmed')
+      .gte('slot_start', in20h)
+      .lte('slot_start', in32h)
+      .is('reminder_sent_at', null),
+  ])
 
   if (error) {
     console.error('Reminder cron: fetch failed:', error)
     return NextResponse.json({ error: 'DB fetch failed' }, { status: 500 })
   }
-
-  if (!bookings || bookings.length === 0) {
-    return NextResponse.json({ processed: 0, message: 'No reminders needed' })
+  if (manualError) {
+    console.error('Reminder cron: manual fetch failed:', manualError)
+    return NextResponse.json({ error: 'Manual booking DB fetch failed' }, { status: 500 })
   }
 
-  console.log(`Reminder cron: ${bookings.length} bookings need reminders`)
+  console.log(`Reminder cron: ${bookings?.length || 0} paid and ${manualBookings?.length || 0} manual bookings need reminders`)
 
   const { sendReminderEmail, getBookingWithCustomerFromCal } = await import('@/lib/email')
+  const { sendManualBookingReminder } = await import('@/lib/manual-booking-email')
+  const { MANUAL_TREATMENTS } = await import('@/lib/manual-bookings')
 
   const results: any[] = []
 
-  for (const booking of bookings) {
+  for (const booking of bookings || []) {
     try {
       const calBooking = await getBookingWithCustomerFromCal(booking.cal_booking_uid)
       const enriched = {
@@ -71,10 +81,50 @@ export async function GET(request: NextRequest) {
 
       // Reminder goes to account email via user_id — no need to check customer_email
       await sendReminderEmail(booking.id, enriched)
-      results.push({ uid: booking.cal_booking_uid, action: 'reminder_sent' })
+      results.push({ source: 'online', uid: booking.cal_booking_uid, action: 'reminder_sent' })
     } catch (err) {
       console.error(`Reminder cron: error for ${booking.cal_booking_uid}:`, err)
-      results.push({ uid: booking.cal_booking_uid, action: 'error', error: String(err) })
+      results.push({ source: 'online', uid: booking.cal_booking_uid, action: 'error', error: String(err) })
+    }
+  }
+
+  for (const booking of manualBookings || []) {
+    try {
+      const [{ data: authData }, { data: profile }] = await Promise.all([
+        supabase.auth.admin.getUserById(booking.user_id),
+        supabase.from('profiles').select('email, full_name').eq('id', booking.user_id).maybeSingle(),
+      ])
+      const customerEmail = authData?.user?.email || profile?.email
+      const customerName = profile?.full_name
+        || authData?.user?.user_metadata?.full_name
+        || customerEmail?.split('@')[0]
+      const treatment = MANUAL_TREATMENTS[booking.treatment_key as keyof typeof MANUAL_TREATMENTS]
+      if (!customerEmail || !customerName || !treatment) throw new Error('Klant- of behandelingsgegevens ontbreken.')
+
+      await sendManualBookingReminder({
+        bookingId: booking.id,
+        customerName,
+        customerEmail,
+        treatmentName: treatment.name,
+        slotStart: booking.slot_start,
+        salonDepositStatus: booking.salon_deposit_status,
+        salonDepositCents: booking.salon_deposit_cents,
+      })
+      const { error: reminderUpdateError } = await supabase.from('manual_bookings').update({
+        reminder_sent_at: new Date().toISOString(),
+        reminder_error: null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id)
+      if (reminderUpdateError) throw new Error(`Reminderstatus opslaan mislukt: ${reminderUpdateError.message}`)
+      results.push({ source: 'manual', uid: booking.cal_booking_uid, action: 'reminder_sent' })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error(`Reminder cron: manual error for ${booking.cal_booking_uid}:`, err)
+      await supabase.from('manual_bookings').update({
+        reminder_error: message,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id)
+      results.push({ source: 'manual', uid: booking.cal_booking_uid, action: 'error', error: message })
     }
   }
 
@@ -83,6 +133,8 @@ export async function GET(request: NextRequest) {
     sent: results.filter(r => r.action === 'reminder_sent').length,
     skipped: results.filter(r => r.action === 'skipped').length,
     errors: results.filter(r => r.action === 'error').length,
+    online: results.filter(r => r.source === 'online').length,
+    manual: results.filter(r => r.source === 'manual').length,
     results,
   }
 
