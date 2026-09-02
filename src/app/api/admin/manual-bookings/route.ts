@@ -88,6 +88,11 @@ export async function POST(request: NextRequest) {
   const treatment = MANUAL_TREATMENTS[treatmentKey]
   const candidateStart = new Date(start).toISOString()
   const candidateEnd = addMinutes(candidateStart, treatment.durationMinutes)
+  console.info('[manual-bookings] create attempt', {
+    treatmentKey,
+    candidateStart,
+    candidateEnd,
+  })
   try {
     const conflict = await findManualBookingConflict(supabaseAdmin, candidateStart, candidateEnd)
     if (conflict) return json({ error: conflict.message, conflictType: conflict.type }, 409)
