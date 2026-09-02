@@ -12,6 +12,10 @@ type PendingBooking = {
   id: string; cal_booking_uid: string; event_type: string; slot_start: string;
   amount_cents: number; status: string; customer_name: string | null; customer_email: string | null;
   cancelled_within_24h?: boolean
+  source: 'online' | 'manual'
+  salon_deposit_status?: 'paid' | 'not_recorded'
+  salon_deposit_cents?: number | null
+  sync_status?: string
 }
 
 type MyTraject = {
@@ -207,24 +211,31 @@ export default function DashboardPage() {
       .then(({ data }) => setBookings(data || []))
   }, [user])
 
-  // Fetch pending_bookings (Cal.com)
+  // Fetch the existing online bookings and isolated manual bookings, then normalize for display.
   useEffect(() => {
     if (!user) return
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session?.access_token) {
         console.warn('[dashboard] No session token for my-bookings fetch')
         return
       }
-      fetch('/api/boeking/my-bookings', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
-        .then(res => {
-          if (!res.ok) {
-            console.error('[dashboard] my-bookings API error:', res.status)
-            return []
-          }
-          return res.json()
-        })
-        .then(data => setPendingBookings(data?.bookings || []))
-        .catch(err => console.error('[dashboard] my-bookings fetch failed:', err))
+      const headers = { Authorization: `Bearer ${data.session.access_token}` }
+      try {
+        const [onlineResponse, manualResponse] = await Promise.all([
+          fetch('/api/boeking/my-bookings', { headers }),
+          fetch('/api/boeking/manual/my-bookings', { headers }),
+        ])
+        if (!onlineResponse.ok) console.error('[dashboard] my-bookings API error:', onlineResponse.status)
+        if (!manualResponse.ok) console.error('[dashboard] manual my-bookings API error:', manualResponse.status)
+        const [onlinePayload, manualPayload] = await Promise.all([
+          onlineResponse.ok ? onlineResponse.json() : Promise.resolve({ bookings: [] }),
+          manualResponse.ok ? manualResponse.json() : Promise.resolve({ bookings: [] }),
+        ])
+        const online = (onlinePayload?.bookings || []).map((booking: Omit<PendingBooking, 'source'>) => ({ ...booking, source: 'online' as const }))
+        setPendingBookings([...online, ...(manualPayload?.bookings || [])])
+      } catch (err) {
+        console.error('[dashboard] bookings fetch failed:', err)
+      }
     })
   }, [user])
 
@@ -276,7 +287,10 @@ export default function DashboardPage() {
 
       try {
         const params = new URLSearchParams({ bookingId: selectedBooking.id, date: rescheduleDate })
-        const response = await fetch(`/api/boeking/reschedule-availability?${params}`, {
+        const availabilityPath = selectedBooking.source === 'manual'
+          ? '/api/boeking/manual/reschedule-availability'
+          : '/api/boeking/reschedule-availability'
+        const response = await fetch(`${availabilityPath}?${params}`, {
           headers: { Authorization: `Bearer ${data.session.access_token}` },
           cache: 'no-store',
         })
@@ -304,7 +318,8 @@ export default function DashboardPage() {
         setCancelError('Je sessie is verlopen. Log opnieuw in en probeer het nogmaals.')
         return
       }
-      const res = await fetch('/api/boeking/cancel', {
+      const cancelPath = selectedBooking.source === 'manual' ? '/api/boeking/manual/cancel' : '/api/boeking/cancel'
+      const res = await fetch(cancelPath, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
         body: JSON.stringify({ bookingId: selectedBooking.id, within24h: isWithin24h(selectedBooking.slot_start) }),
       })
@@ -342,7 +357,8 @@ export default function DashboardPage() {
         return
       }
 
-      const res = await fetch('/api/boeking/reschedule', {
+      const reschedulePath = selectedBooking.source === 'manual' ? '/api/boeking/manual/reschedule' : '/api/boeking/reschedule'
+      const res = await fetch(reschedulePath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
         body: JSON.stringify({ bookingId: selectedBooking.id, newStart: isoStart }),
@@ -416,7 +432,7 @@ export default function DashboardPage() {
 
   // Next upcoming booking
   const upcomingBookings = pendingBookings
-    .filter(b => b.status === 'paid' && new Date(b.slot_start) > new Date())
+    .filter(b => (b.status === 'paid' || b.status === 'confirmed') && new Date(b.slot_start) > new Date())
     .sort((a, b) => new Date(a.slot_start).getTime() - new Date(b.slot_start).getTime())
   const nextBookingDate = upcomingBookings.length > 0
     ? new Date(upcomingBookings[0].slot_start).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
@@ -699,12 +715,15 @@ export default function DashboardPage() {
                         </div>
                         {/* Info */}
                         <div>
-                          <h5 className="font-['Cormorant_Garamond']" style={{ fontWeight:600, fontSize:'1.25rem', lineHeight:1.1, color:'#1C1814', textDecoration: isCancelled ? 'line-through' : 'none' }}>{b.event_type}</h5>
+                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                            <h5 className="font-['Cormorant_Garamond']" style={{ fontWeight:600, fontSize:'1.25rem', lineHeight:1.1, color:'#1C1814', textDecoration: isCancelled ? 'line-through' : 'none' }}>{b.event_type}</h5>
+                            {b.source === 'manual' && <span style={{fontSize:'.62rem',padding:'3px 8px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34',border:'1px solid rgba(176,141,79,.28)'}}>Handmatig</span>}
+                          </div>
                           <p style={{ fontSize:'.82rem', color:'#888', marginTop:3 }}>{formatTimeNL(b.slot_start)} uur · Lashed by Chiva, Arnhem</p>
                         </div>
                         {/* Pay */}
                         <div style={{ textAlign:'right' }}>
-                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.3rem', fontWeight:600, color:'#1C1814' }}>€{(b.amount_cents/100).toFixed(0)}</div>
+                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.3rem', fontWeight:600, color:'#1C1814' }}>{b.source === 'manual' ? 'Handmatig' : `€${(b.amount_cents/100).toFixed(0)}`}</div>
                           <span style={{
                             display:'inline-block', marginTop:6, fontSize:'.68rem', letterSpacing:'.05em',
                             padding:'4px 11px', borderRadius:100, fontWeight:500,
@@ -712,7 +731,7 @@ export default function DashboardPage() {
                               : isPast ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
                               : { background:'rgba(176,141,79,.14)', color:'#B08D4F', border:'1px solid rgba(176,141,79,.3)' })
                           }}>
-                            {isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : 'Aanbetaling voldaan'}
+                            {isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
                           </span>
                         </div>
                       </button>
@@ -870,29 +889,29 @@ export default function DashboardPage() {
             {selectedBooking ? (
               <div style={{ background:'#FBF8F2', borderRadius:20, padding:24, border:'1px solid rgba(28,24,20,.13)', marginBottom:16 }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-                  <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'1.6rem', color:'#1C1814' }}>{selectedBooking.event_type}</h3>
+                  <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}><h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'1.6rem', color:'#1C1814' }}>{selectedBooking.event_type}</h3>{selectedBooking.source === 'manual' && <span style={{fontSize:'.68rem',padding:'4px 10px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34',border:'1px solid rgba(176,141,79,.28)'}}>Handmatig ingepland</span>}</div>
                   <button onClick={() => { setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false); setCancelError('') }} disabled={cancelling} aria-label="Boeking sluiten" style={{ color:'#888', fontSize:20, background:'none', border:'none', cursor:cancelling?'not-allowed':'pointer', opacity:cancelling?.4:1 }}>✕</button>
                 </div>
                 <div className="space-y-2 text-[14px] mb-5">
                   <div style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid rgba(28,24,20,.07)', paddingBottom:8 }}><span style={{color:'#888'}}>Datum</span><span style={{fontWeight:500,color:'#1C1814'}}>{formatDateNL(selectedBooking.slot_start)}</span></div>
                   <div style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid rgba(28,24,20,.07)', paddingBottom:8 }}><span style={{color:'#888'}}>Tijd</span><span style={{fontWeight:500,color:'#1C1814'}}>{formatTimeNL(selectedBooking.slot_start)} uur</span></div>
                   <div style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid rgba(28,24,20,.07)', paddingBottom:8 }}><span style={{color:'#888'}}>Locatie</span><span style={{fontWeight:500,color:'#1C1814'}}>De Overmaat 26, Arnhem</span></div>
-                  <div style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid rgba(28,24,20,.07)', paddingBottom:8 }}><span style={{color:'#888'}}>Aanbetaling</span><span style={{fontWeight:500,color:'#1C1814'}}>€{(selectedBooking.amount_cents/100).toFixed(0)}</span></div>
+                  <div style={{ display:'flex', justifyContent:'space-between', borderBottom:'1px solid rgba(28,24,20,.07)', paddingBottom:8 }}><span style={{color:'#888'}}>Aanbetaling</span><span style={{fontWeight:500,color:'#1C1814'}}>{selectedBooking.source === 'manual' ? selectedBooking.salon_deposit_status === 'paid' ? `In salon betaald · €${((selectedBooking.salon_deposit_cents || 0)/100).toFixed(0)}` : 'Niet geregistreerd' : `€${(selectedBooking.amount_cents/100).toFixed(0)}`}</span></div>
                   <div style={{ display:'flex', justifyContent:'space-between', paddingBottom:8 }}><span style={{color:'#888'}}>Status</span><span style={{fontWeight:500,textTransform:'capitalize',color:selectedBooking.status==='paid'?'#B08D4F':selectedBooking.status==='cancelled'?'#e55':'#B08D4F'}}>{selectedBooking.status}</span></div>
                 </div>
 
                 {selectedBooking.status === 'cancelled' && selectedBooking.cancelled_within_24h && (
                   <div style={{ background:'rgba(229,85,85,.08)', border:'1px solid rgba(229,85,85,.2)', borderRadius:12, padding:16, marginBottom:16, fontSize:'.85rem', color:'#c44' }}>
-                    Geannuleerd binnen 24 uur — aanbetaling niet gerestitueerd, conform de <a href="/voorwaarden" style={{textDecoration:'underline'}}>algemene voorwaarden</a>.
+                    {selectedBooking.source === 'manual' ? 'Geannuleerd binnen 24 uur — een eventueel in de salon betaalde aanbetaling is niet restitueerbaar.' : <>Geannuleerd binnen 24 uur — aanbetaling niet gerestitueerd, conform de <a href="/voorwaarden" style={{textDecoration:'underline'}}>algemene voorwaarden</a>.</>}
                   </div>
                 )}
                 {selectedBooking.status === 'cancelled' && !selectedBooking.cancelled_within_24h && (
                   <div style={{ background:'rgba(176,141,79,.08)', border:'1px solid rgba(176,141,79,.2)', borderRadius:12, padding:16, marginBottom:16, fontSize:'.85rem', color:'#B08D4F' }}>
-                    Geannuleerd — restitutie wordt door LUXIQUE verwerkt.
+                    {selectedBooking.source === 'manual' ? 'Geannuleerd — er is via de website geen betaling of terugbetaling verwerkt.' : 'Geannuleerd — restitutie wordt door LUXIQUE verwerkt.'}
                   </div>
                 )}
 
-                {selectedBooking.status === 'paid' && new Date(selectedBooking.slot_start) > new Date() && (
+                {(selectedBooking.status === 'paid' || selectedBooking.status === 'confirmed') && new Date(selectedBooking.slot_start) > new Date() && (
                   <>
                     {!cancelMode && !rescheduleMode ? (
                       <>
@@ -988,7 +1007,7 @@ export default function DashboardPage() {
                       <div className="space-y-4">
                         {isWithin24h(selectedBooking.slot_start) ? (
                           <div style={{ background:'rgba(229,85,85,.08)', border:'1px solid rgba(229,85,85,.2)', borderRadius:12, padding:16 }}>
-                            <p style={{ fontSize:'.85rem', color:'#c44', fontWeight:500, marginBottom:12 }}>⚠️ Je annuleert binnen 24 uur. Aanbetaling van €{(selectedBooking.amount_cents/100).toFixed(0)} niet restitueerbaar.</p>
+                            <p style={{ fontSize:'.85rem', color:'#c44', fontWeight:500, marginBottom:12 }}>⚠️ {selectedBooking.source === 'manual' ? (selectedBooking.salon_deposit_status === 'paid' ? `Je annuleert binnen 24 uur. De in de salon betaalde aanbetaling van €${((selectedBooking.salon_deposit_cents || 0)/100).toFixed(0)} is niet restitueerbaar.` : 'Je annuleert binnen 24 uur. Een eventueel in de salon betaalde aanbetaling is niet restitueerbaar.') : `Je annuleert binnen 24 uur. Aanbetaling van €${(selectedBooking.amount_cents/100).toFixed(0)} niet restitueerbaar.`}</p>
                             <label style={{ display:'flex', alignItems:'flex-start', gap:8, cursor:'pointer' }}>
                               <input type="checkbox" checked={cancelAgreed} onChange={(e) => setCancelAgreed(e.target.checked)} style={{marginTop:4}} />
                               <span style={{ fontSize:'.85rem', color:'#1C1814' }}>Ik begrijp dat mijn aanbetaling niet wordt gerestitueerd.</span>
@@ -996,7 +1015,7 @@ export default function DashboardPage() {
                           </div>
                         ) : (
                           <div style={{ background:'rgba(34,139,34,.08)', border:'1px solid rgba(34,139,34,.2)', borderRadius:12, padding:16 }}>
-                            <p style={{ fontSize:'.85rem', color:'#2a8c2a' }}>Je annuleert meer dan 24 uur voor je afspraak. Aanbetaling wordt gerestitueerd.</p>
+                            <p style={{ fontSize:'.85rem', color:'#2a8c2a' }}>{selectedBooking.source === 'manual' ? 'Je annuleert meer dan 24 uur voor je afspraak. Er wordt geen online betaling of terugbetaling verwerkt.' : 'Je annuleert meer dan 24 uur voor je afspraak. Aanbetaling wordt gerestitueerd.'}</p>
                           </div>
                         )}
                         {cancelError && (
@@ -1031,7 +1050,7 @@ export default function DashboardPage() {
                           onMouseEnter={e => e.currentTarget.style.borderColor='#B08D4F'}
                           onMouseLeave={e => e.currentTarget.style.borderColor='rgba(28,24,20,.13)'}>
                           <div>
-                            <span style={{ fontWeight:500, fontSize:'.95rem', color:'#1C1814', textDecoration:isCancelled?'line-through':'none' }}>{b.event_type}</span>
+                            <span style={{ fontWeight:500, fontSize:'.95rem', color:'#1C1814', textDecoration:isCancelled?'line-through':'none' }}>{b.event_type}</span>{b.source === 'manual' && <span style={{marginLeft:8,fontSize:'.62rem',padding:'3px 8px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34'}}>Handmatig</span>}
                             <p style={{ fontSize:'.8rem', color:'#888', marginTop:4 }}>{formatDateNL(b.slot_start)} om {formatTimeNL(b.slot_start)} uur</p>
                           </div>
                           <span style={{ fontSize:'.7rem', padding:'4px 11px', borderRadius:100, fontWeight:500,

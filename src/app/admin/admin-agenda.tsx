@@ -24,6 +24,7 @@ type CalendarItem = {
   courseName?: string
   paidCount?: number
   maxParticipants?: number
+  source?: 'online' | 'manual'
 }
 type CalBooking = {
   id: number
@@ -36,7 +37,9 @@ type CalBooking = {
   customerPhone?: string
   eventTypeId: number
   eventTypeTitle: string
+  source?: 'online' | 'manual'
 }
+type CustomerResult = { id: string; email: string | null; full_name: string | null }
 type TrajectClass = {
   id: string
   blok_dagen: string[]
@@ -109,6 +112,18 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [endTimeEdited, setEndTimeEdited] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [manualModalOpen, setManualModalOpen] = useState(false)
+  const [manualCustomerQuery, setManualCustomerQuery] = useState('')
+  const [manualCustomers, setManualCustomers] = useState<CustomerResult[]>([])
+  const [manualCustomer, setManualCustomer] = useState<CustomerResult | null>(null)
+  const [manualTreatmentKey, setManualTreatmentKey] = useState<TreatmentKey>('new_lash_set')
+  const [manualDate, setManualDate] = useState(() => dateKey(new Date()))
+  const [manualTime, setManualTime] = useState('09:00')
+  const [manualDepositPaid, setManualDepositPaid] = useState(false)
+  const [manualDepositEuros, setManualDepositEuros] = useState('')
+  const [manualSearching, setManualSearching] = useState(false)
+  const [manualSaving, setManualSaving] = useState(false)
+  const [manualError, setManualError] = useState<string | null>(null)
 
   const loadAgenda = useCallback(async () => {
     if (!sessionToken) return
@@ -148,6 +163,31 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
 
   useEffect(() => { loadAgenda() }, [loadAgenda])
 
+  useEffect(() => {
+    if (!manualModalOpen || manualCustomer || manualCustomerQuery.trim().length < 2) {
+      setManualCustomers([])
+      setManualSearching(false)
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      setManualSearching(true)
+      try {
+        const response = await fetch(`/api/admin/manual-bookings?q=${encodeURIComponent(manualCustomerQuery.trim())}`, {
+          headers: { Authorization: `Bearer ${sessionToken}` }, signal: controller.signal, cache: 'no-store',
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(payload?.error || 'Klanten zoeken mislukt.')
+        setManualCustomers(payload?.customers || [])
+      } catch (reason) {
+        if (!controller.signal.aborted) setManualError(reason instanceof Error ? reason.message : 'Klanten zoeken mislukt.')
+      } finally {
+        if (!controller.signal.aborted) setManualSearching(false)
+      }
+    }, 250)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [manualCustomer, manualCustomerQuery, manualModalOpen, sessionToken])
+
   const items = useMemo<CalendarItem[]>(() => [
     ...bookings.map(booking => ({
       id: `booking-${booking.uid || booking.id}`,
@@ -160,6 +200,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       customer: booking.customerName || booking.customerEmail,
       customerEmail: booking.customerEmail,
       customerPhone: booking.customerPhone,
+      source: booking.source,
     })),
     ...availability.flatMap(treatment => treatment.overrides.map(override => ({
       id: `override-${treatment.key}-${override.date}-${override.startTime}`,
@@ -310,10 +351,59 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     }
   }
 
+  const openManualBooking = (date = selectedDate) => {
+    setManualDate(date)
+    setManualTime('09:00')
+    setManualCustomerQuery('')
+    setManualCustomer(null)
+    setManualCustomers([])
+    setManualDepositPaid(false)
+    setManualDepositEuros('')
+    setManualError(null)
+    setManualModalOpen(true)
+  }
+
+  const createManualBooking = async () => {
+    if (!manualCustomer || manualSaving) return
+    const start = new Date(`${manualDate}T${manualTime}:00`).toISOString()
+    const euros = Number(manualDepositEuros.replace(',', '.'))
+    if (manualDepositPaid && (!Number.isFinite(euros) || euros < 0)) {
+      setManualError('Vul een geldig aanbetalingsbedrag in.')
+      return
+    }
+    setManualSaving(true)
+    setManualError(null)
+    try {
+      const response = await fetch('/api/admin/manual-bookings', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({
+          userId: manualCustomer.id,
+          treatmentKey: manualTreatmentKey,
+          start,
+          salonDepositStatus: manualDepositPaid ? 'paid' : 'not_recorded',
+          salonDepositCents: manualDepositPaid ? Math.round(euros * 100) : null,
+        }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || 'Klant inboeken mislukt.')
+      setManualModalOpen(false)
+      setSuccess(payload?.emailSent === false
+        ? 'De afspraak is ingepland. Let op: de bevestigingsmail kon niet worden verzonden.'
+        : `${manualCustomer.full_name || manualCustomer.email || 'De klant'} is handmatig ingepland en heeft de bevestigingsmail ontvangen.`)
+      await loadAgenda()
+    } catch (reason) {
+      setManualError(reason instanceof Error ? reason.message : 'Klant inboeken mislukt.')
+    } finally {
+      setManualSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-[12px] text-red-700">⚠️ {error}</div>}
       {success && <div role="status" className="rounded-xl border border-green-200 bg-green-50 px-5 py-4 text-[12px] text-green-700">✓ {success}</div>}
+      <div className="flex justify-end"><button type="button" onClick={() => openManualBooking(selectedDate)} className="rounded-full bg-[#0C0A07] px-5 py-2.5 text-[12px] font-semibold text-white shadow-sm hover:bg-[#29241e]">+ Klant inboeken</button></div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
       <div className="min-w-0 bg-white rounded-2xl border border-[#eee] overflow-hidden">
@@ -390,7 +480,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">{selectedItem.kind === 'booking' ? 'Afspraakdetails' : 'Traject-details'}</p>
-              <h5 className="mt-1 font-['Cormorant_Garamond'] text-[23px] leading-tight">{selectedItem.kind === 'booking' ? selectedItem.customer || 'Onbekende klant' : selectedItem.courseName || selectedItem.title}</h5>
+              <div className="mt-1 flex flex-wrap items-center gap-2"><h5 className="font-['Cormorant_Garamond'] text-[23px] leading-tight">{selectedItem.kind === 'booking' ? selectedItem.customer || 'Onbekende klant' : selectedItem.courseName || selectedItem.title}</h5>{selectedItem.source === 'manual' && <span className="rounded-full border border-[#C4A265]/35 bg-[#C4A265]/12 px-2.5 py-1 text-[9px] font-semibold text-[#80642e]">Handmatig</span>}</div>
             </div>
             <button type="button" onClick={() => setSelectedItemId(null)} aria-label="Details sluiten" className="rounded-full border border-[#e5e2dc] bg-white px-2.5 py-1 text-[11px] text-[#777]">✕</button>
           </div>
@@ -406,7 +496,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
               <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
-              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
+              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.source === 'manual' ? 'border-[#C4A265]/35 bg-[#C4A265]/12 text-[#80642e]' : item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.source === 'manual' ? 'Handmatig' : item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
           ))}</div>
@@ -428,6 +518,21 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <p className="text-[10px] text-[#999] -mt-2">Werkdag 09:00–19:00 · de eindtijd volgt automatisch tot je die zelf aanpast.</p>
           </div>
           <div className="flex gap-3 mt-7"><button onClick={() => setModalOpen(false)} disabled={saving} className="flex-1 py-3 rounded-full border border-[#eee] text-[13px] text-[#888]">Annuleren</button><button onClick={saveOverride} disabled={saving || Boolean(trajectForDate(selectedDate)) || selectedStartIsPast} title={selectedStartIsPast ? PAST_TIMESLOT_ERROR : undefined} className="flex-1 py-3 rounded-full bg-[#0C0A07] text-white font-semibold text-[13px] disabled:opacity-50">{saving ? 'Opslaan…' : 'Tijdslot opslaan'}</button></div>
+        </div>
+      </div>}
+
+      {manualModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 p-4 py-6 backdrop-blur-sm" onClick={() => !manualSaving && setManualModalOpen(false)}>
+        <div className="max-h-[calc(100dvh-3rem)] w-full max-w-[520px] overflow-y-auto rounded-2xl border border-[#eee] bg-white p-6 shadow-2xl sm:p-8" onClick={event => event.stopPropagation()}>
+          <div className="mb-6 flex items-start justify-between"><div><h4 className="font-['Cormorant_Garamond'] text-[27px]">+ Klant inboeken</h4><p className="mt-1 text-[11px] text-[#999]">Alleen voor klanten met een bestaand LUXIQUE-account.</p></div><button onClick={() => setManualModalOpen(false)} disabled={manualSaving} className="text-[#999]">✕</button></div>
+          {manualError && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {manualError}</div>}
+          <div className="space-y-4">
+            <div className="relative"><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Klant zoeken</label>{manualCustomer ? <div className="flex items-center justify-between rounded-xl border border-[#C4A265]/40 bg-[#fffaf0] px-4 py-3"><div><p className="text-[13px] font-medium">{manualCustomer.full_name || 'Naam onbekend'}</p><p className="text-[11px] text-[#888]">{manualCustomer.email}</p></div><button type="button" onClick={() => { setManualCustomer(null); setManualCustomerQuery('') }} className="text-[11px] text-[#80642e]">Wijzigen</button></div> : <><input value={manualCustomerQuery} onChange={event => { setManualCustomerQuery(event.target.value); setManualError(null) }} placeholder="Naam of e-mailadres" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" />{manualSearching && <p className="mt-2 text-[11px] text-[#999]">Zoeken…</p>}{!manualSearching && manualCustomerQuery.trim().length >= 2 && manualCustomers.length === 0 && <p className="mt-2 text-[11px] text-[#9a6b3f]">Geen bestaand account gevonden. Laat de klant eerst een account aanmaken.</p>}{manualCustomers.length > 0 && <div className="mt-2 overflow-hidden rounded-xl border border-[#eee] bg-white shadow-lg">{manualCustomers.map(customer => <button type="button" key={customer.id} onClick={() => { setManualCustomer(customer); setManualCustomers([]); setManualError(null) }} className="block w-full border-b border-[#f2f2f2] px-4 py-3 text-left last:border-0 hover:bg-[#faf9f7]"><span className="block text-[13px] font-medium">{customer.full_name || 'Naam onbekend'}</span><span className="block text-[11px] text-[#888]">{customer.email}</span></button>)}</div>}</>}</div>
+            <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Behandeling</label><select value={manualTreatmentKey} onChange={event => setManualTreatmentKey(event.target.value as TreatmentKey)} className="w-full rounded-xl border border-[#ddd] bg-white px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
+            <div className="grid grid-cols-2 gap-3"><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Datum</label><input type="date" min={todayKey} value={manualDate} onChange={event => setManualDate(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Tijd</label><input type="time" value={manualTime} onChange={event => setManualTime(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div></div>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#eee] p-4"><input type="checkbox" checked={manualDepositPaid} onChange={event => setManualDepositPaid(event.target.checked)} className="mt-0.5" /><span><span className="block text-[13px] font-medium">Aanbetaling in de salon geregistreerd</span><span className="block text-[11px] text-[#888]">Er loopt nooit een betaling of refund via de website.</span></span></label>
+            {manualDepositPaid && <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Bedrag aanbetaling (€)</label><input inputMode="decimal" value={manualDepositEuros} onChange={event => setManualDepositEuros(event.target.value)} placeholder="50,00" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div>}
+          </div>
+          <div className="mt-7 flex gap-3"><button onClick={() => setManualModalOpen(false)} disabled={manualSaving} className="flex-1 rounded-full border border-[#eee] py-3 text-[13px] text-[#888]">Annuleren</button><button onClick={createManualBooking} disabled={!manualCustomer || manualSaving || !manualDate || !manualTime} className="flex-1 rounded-full bg-[#0C0A07] py-3 text-[13px] font-semibold text-white disabled:opacity-45">{manualSaving ? 'Inboeken…' : 'Klant inboeken'}</button></div>
         </div>
       </div>}
     </div>

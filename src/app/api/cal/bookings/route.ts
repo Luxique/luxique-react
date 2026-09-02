@@ -21,9 +21,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Invalid response from cal.com' }, { status: 500 })
     }
 
+    const manualEventTypeIds = new Set([
+      Number(process.env.CAL_MANUAL_NEW_LASH_EVENT_TYPE_ID || 0),
+      Number(process.env.CAL_MANUAL_FILL_LASH_EVENT_TYPE_ID || 0),
+    ].filter(Boolean))
     const bookings = data.data.bookings.map((b: Record<string, unknown>) => {
       const eventType = b.eventType as Record<string, unknown> | undefined
       const responses = b.responses as Record<string, unknown> | undefined
+      const eventTypeId = Number(eventType?.id || b.eventTypeId || 0)
       return {
         id: b.id,
         uid: b.uid,
@@ -36,7 +41,8 @@ export async function GET() {
         customerName: responses?.name || 'Onbekend',
         customerEmail: responses?.email || '',
         customerPhone: responses?.phone || responses?.phoneNumber || '',
-        eventTypeId: Number(eventType?.id || b.eventTypeId || 0),
+        eventTypeId,
+        source: manualEventTypeIds.has(eventTypeId) ? 'manual' : 'online',
         eventTypeTitle: eventType?.title || 'Onbekend',
         eventTypeSlug: eventType?.slug || '',
         price: eventType?.price || 0,
