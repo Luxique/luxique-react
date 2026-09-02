@@ -8,6 +8,7 @@ interface BookingInfo {
   slot_start: string
   amount_cents: number
   status: string
+  customer_email?: string | null
 }
 
 function BevestigdContent() {
@@ -30,8 +31,8 @@ function BevestigdContent() {
       .catch(() => setLoading(false))
   }, [uid])
 
-  const formatDate = (iso: string) => new Date(iso).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+  const formatDate = (iso: string) => new Date(iso).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Amsterdam' })
+  const formatTime = (iso: string) => new Date(iso).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Europe/Amsterdam' })
 
   if (loading) {
     return <div style={{ background: '#f6f1e7', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: '#6a6256', fontFamily: 'Jost, sans-serif' }}>Laden...</div></div>
@@ -65,6 +66,10 @@ function BevestigdContent() {
         .payment-info { margin:0 28px 24px; background:rgba(91,140,102,.06); border:1px solid rgba(91,140,102,.2); border-radius:14px; padding:16px 18px; }
         .payment-info p { font-size:14.5px; color:var(--ink-dim); margin:0; }
         .payment-info strong { color:var(--ink); }
+        .email-info { margin:0 28px 24px; display:flex; gap:12px; align-items:flex-start; background:rgba(91,140,102,.08); border:1px solid rgba(91,140,102,.24); border-radius:14px; padding:16px 18px; }
+        .email-info svg { flex:0 0 auto; margin-top:2px; }
+        .email-info p { font-size:14px; color:var(--ink-dim); margin:0; line-height:1.55; }
+        .email-info strong { color:var(--ink); overflow-wrap:anywhere; }
         .map-link { display:block; margin:0 28px 28px; border-radius:14px; overflow:hidden; text-decoration:none; }
         .map-link img { width:100%; display:block; }
         .cta { display:block; text-align:center; padding:16px; background:linear-gradient(180deg,var(--gold),var(--gold-deep)); color:#fff; font-weight:600; border-radius:14px; text-decoration:none; font-size:15px; font-family:'Jost',sans-serif; margin:0 28px 28px; box-shadow:0 8px 24px rgba(176,141,79,.25); }
@@ -96,6 +101,12 @@ function BevestigdContent() {
             <div className="payment-info">
               <p>Aanbetaling van <strong>€{deposit}</strong> ontvangen ✅<br/>Resterend in de studio: <strong>€{remainder}</strong> — direct na je behandeling.</p>
             </div>
+            {booking.customer_email && (
+              <div className="email-info" role="status">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b8c66" strokeWidth="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6" strokeLinecap="round" strokeLinejoin="round"/><path d="m16.5 17.5 1.5 1.5 3-3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <p>We hebben je afspraakbevestiging naar <strong>{booking.customer_email}</strong> gestuurd. Het kan tot 30 minuten duren voordat je die ontvangt — check ook je spam.</p>
+              </div>
+            )}
             <a className="map-link" href="https://maps.google.com/?q=De+Overmaat+26,+6831+AH+Arnhem" target="_blank" rel="noopener">
               <img src="https://maps.googleapis.com/maps/api/staticmap?center=De+Overmaat+26,Arnhem&zoom=15&size=500x200&markers=red:De+Overmaat+26,Arnhem&key=AIzaSyBFb6wY4H8M2qNl7K5L1qY8m2p3r4s5t6" alt="Kaart - De Overmaat 26, Arnhem" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
             </a>

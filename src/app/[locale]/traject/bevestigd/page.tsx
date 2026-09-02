@@ -10,6 +10,7 @@ interface BoekingDetails {
   eindtijd?: string | null
   blok_dagen: string[]
   klant_naam: string
+  klant_email: string
   aanbetaling_cents: number
   restbedrag_cents: number
 }
@@ -149,7 +150,7 @@ function TrajectBevestigdContent() {
 
         <div className="mt-8 bg-[#C4A265]/5 border border-[#C4A265]/20 rounded-lg p-6 text-center">
           <p className="text-[#FBF8F2]/70 text-sm">
-            📧 Bevestigingsmail is verzonden naar je inbox.
+            📧 We hebben je bevestiging naar <strong>{boeking.klant_email}</strong> gestuurd. Het kan tot 30 minuten duren voordat je die ontvangt — check ook je spam.
             <br />
             Het restbedrag betaal je contact of met pin bij Chiva op de startdag.
           </p>

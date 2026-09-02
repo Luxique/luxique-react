@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('traject_boekingen')
-      .select('cursus_naam, startdatum, starttijd, blok_dagen, klant_naam, aanbetaling_cents, restbedrag_cents')
+      .select('cursus_naam, startdatum, starttijd, blok_dagen, klant_naam, klant_email, aanbetaling_cents, restbedrag_cents')
       .eq('stripe_session_id', sessionId)
       .maybeSingle()
 
