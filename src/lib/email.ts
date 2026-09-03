@@ -32,17 +32,29 @@ interface BookingData {
   customer_name?: string | null
   customer_email?: string | null
   user_id?: string | null
+  stripe_session_id?: string | null
   cancellation_refund_eligible?: boolean
 }
 
-async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
-  if (!userId) return fallback || null
+async function getAccountIdentity(booking: BookingData): Promise<{ name: string; email: string }> {
+  let name = booking.customer_name?.trim() || ''
+  let email = booking.customer_email?.trim() || ''
+  if (!booking.user_id) return { name: name || email.split('@')[0] || 'Klant', email }
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  const { data: authUser } = await supabase.auth.admin.getUserById(userId)
-  return authUser?.user?.email || fallback || null
+  const [{ data: authUser }, { data: profile }] = await Promise.all([
+    supabase.auth.admin.getUserById(booking.user_id),
+    supabase.from('profiles').select('full_name, email').eq('id', booking.user_id).maybeSingle(),
+  ])
+  email = authUser?.user?.email || profile?.email || email
+  name = profile?.full_name || authUser?.user?.user_metadata?.full_name || name
+  return { name: name.trim() || email.split('@')[0] || 'Klant', email }
+}
+
+async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
+  return (await getAccountIdentity({ cal_booking_uid: '', event_type: '', slot_start: '', amount_cents: 0, user_id: userId, customer_email: fallback })).email || null
 }
 
 async function markMailSent(bookingId: string, column: string) {
@@ -442,6 +454,7 @@ export async function sendExpiredNotification(booking: BookingData) {
 // ============================================================
 export async function sendCancellationNotification(booking: BookingData & { cancelled_within_24h?: boolean }) {
   try {
+    const customer = await getAccountIdentity(booking)
     const date = formatDateEN(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
@@ -452,8 +465,8 @@ export async function sendCancellationNotification(booking: BookingData & { canc
       return
     }
     const subject = within24h
-      ? `CANCELLED • NO REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
-      : `REFUND ${booking.customer_name || 'Klant'} ${date} €${deposit} GELDIGE ANNULERING`
+      ? `CANCELLED • NO REFUND • ${customer.name} • ${date} • ${booking.event_type}`
+      : `REFUND ${customer.name} • ${date} • €${deposit} • GELDIGE ANNULERING`
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -479,7 +492,7 @@ export async function sendCancellationNotification(booking: BookingData & { canc
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Annulering</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${booking.customer_name || 'Klant'}</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${customer.name}</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">De volgende afspraak is geannuleerd${within24h ? ' — <strong>binnen 24 uur</strong>' : ''}:</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
@@ -490,6 +503,11 @@ export async function sendCancellationNotification(booking: BookingData & { canc
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${date} om ${time} uur</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Aanbetaling</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">&euro;${deposit}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Klant</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 4px 0;">${customer.name}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:14px; color:#4a463e; padding:0 0 14px 0;">${customer.email || 'Geen e-mailadres geregistreerd'}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Stripe checkout session</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#0C0A07; word-break:break-all;">${booking.stripe_session_id || 'Niet geregistreerd'}</td></tr>
             </table>
           </td></tr>
         </table>

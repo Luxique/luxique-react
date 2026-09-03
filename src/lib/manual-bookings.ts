@@ -286,13 +286,29 @@ export async function restoreManualBookingPublicAvailability(start: string, end:
       availability: Array.isArray(data.availability) ? data.availability : [],
       overrides: Array.isArray(data.overrides) ? data.overrides : [],
     }
-    const alreadyPresent = snapshot.overrides.some(override =>
-      override.date === restored.date
-      && override.startTime === restored.startTime
-      && override.endTime === restored.endTime
-    )
-    if (!alreadyPresent) await writeSchedule({ ...snapshot, overrides: [...snapshot.overrides, restored] })
+    const sameDate = snapshot.overrides.filter(override => override.date === restored.date)
+    const otherDates = snapshot.overrides.filter(override => override.date !== restored.date)
+    const windows = [...sameDate, restored]
+      .map(override => ({ ...override }))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+    const merged: typeof windows = []
+    for (const window of windows) {
+      const previous = merged[merged.length - 1]
+      if (!previous || window.startTime > previous.endTime) merged.push(window)
+      else if (window.endTime > previous.endTime) previous.endTime = window.endTime
+    }
+    await writeSchedule({ ...snapshot, overrides: [...otherDates, ...merged] })
   }
+
+
+  // Cal schedule writes can propagate asynchronously. Do not finalize the DB
+  // cancellation until the public slots endpoint confirms this window is back.
+  for (const delayMs of [0, 250, 750, 1500]) {
+    if (delayMs) await new Promise(resolve => setTimeout(resolve, delayMs))
+    const requestedStart = new Date(start).getTime()
+    if ((await getPublicOverlappingSlots(start, end)).some(slot => new Date(slot).getTime() === requestedStart)) return
+  }
+  throw new Error('Het herstelde tijdslot is nog niet zichtbaar in de publieke Cal.com-widget.')
 }
 
 export async function consumePublicAvailability(start: string, end: string): Promise<ConsumedPublicAvailability> {

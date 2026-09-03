@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
+import { isCancelledCalStatus } from '@/lib/cal-cancellation'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,9 @@ export async function GET() {
       Number(process.env.CAL_MANUAL_NEW_LASH_EVENT_TYPE_ID || 0),
       Number(process.env.CAL_MANUAL_FILL_LASH_EVENT_TYPE_ID || 0),
     ].filter(Boolean))
-    const calBookings = data.data.bookings.map((b: Record<string, unknown>) => {
+    const calBookings = data.data.bookings.filter((b: Record<string, unknown>) =>
+      !isCancelledCalStatus(b.status)
+    ).map((b: Record<string, unknown>) => {
       const eventType = b.eventType as Record<string, unknown> | undefined
       const responses = b.responses as Record<string, unknown> | undefined
       const metadata = b.metadata as Record<string, unknown> | undefined
@@ -114,13 +117,14 @@ export async function GET() {
       calBookings.map((booking: Record<string, unknown>) => [String(booking.uid), booking]),
     )
     for (const booking of manualBookings) bookingsByUid.set(String(booking.uid), booking)
-    const { data: pendingCancellations } = await supabaseAdmin
+    const { data: nonActiveOnlineBookings } = await supabaseAdmin
       .from('pending_bookings')
-      .select('cal_booking_uid')
-      .eq('status', 'cancellation_pending')
-    for (const row of pendingCancellations || []) {
+      .select('cal_booking_uid, status')
+      .in('status', ['cancelled', 'cancellation_pending'])
+    for (const row of nonActiveOnlineBookings || []) {
       const existing = bookingsByUid.get(String(row.cal_booking_uid))
-      if (existing) bookingsByUid.set(String(row.cal_booking_uid), { ...existing, status: 'cancellation_pending' })
+      if (row.status === 'cancelled') bookingsByUid.delete(String(row.cal_booking_uid))
+      else if (existing) bookingsByUid.set(String(row.cal_booking_uid), { ...existing, status: 'cancellation_pending' })
     }
     const bookings = Array.from(bookingsByUid.values())
 

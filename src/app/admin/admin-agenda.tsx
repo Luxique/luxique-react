@@ -153,7 +153,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       if (!trajectResponse.ok) throw new Error(trajectPayload.error || 'Traject-dagen laden mislukt.')
       setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) =>
         booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
-        && booking.status?.toLowerCase() !== 'cancelled'
+        && !['cancelled', 'canceled'].includes(booking.status?.toLowerCase())
       ))
       setAvailability(availabilityPayload.treatments || [])
       setTrajectClasses(trajectPayload.trajectDagen || [])
