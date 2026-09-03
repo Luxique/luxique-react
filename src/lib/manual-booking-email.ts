@@ -46,7 +46,7 @@ function details(data: ManualBookingMailData) {
   const deposit = data.salonDepositStatus === 'paid' && data.salonDepositCents != null
     ? `<tr><td style="padding-top:12px;color:#9a958b">Aanbetaling in de salon</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07">${money(data.salonDepositCents)}</td></tr>`
     : ''
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7;border-radius:10px;margin:0 0 24px"><tr><td style="padding:22px 26px;font-family:Arial,sans-serif;font-size:12px"><table role="presentation" width="100%"><tr><td style="color:#9a958b">Behandeling</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07;padding-bottom:12px">${escapeHtml(data.treatmentName)}</td></tr><tr><td style="color:#9a958b">Datum en tijd</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07;padding-bottom:12px">${formatDate(data.slotStart)} · ${formatTime(data.slotStart)} uur</td></tr><tr><td style="color:#9a958b">Locatie</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07">${STUDIO_ADDRESS}</td></tr>${deposit}</table></td></tr></table>`
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7;border-radius:10px;margin:0 0 24px"><tr><td style="padding:22px 26px;font-family:Arial,sans-serif;font-size:12px"><table role="presentation" width="100%"><tr><td style="color:#9a958b">Behandeling</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07;padding-bottom:12px">${escapeHtml(data.treatmentName)}</td></tr><tr><td style="color:#9a958b">Datum en tijd</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07;padding-bottom:12px">${formatDate(data.slotStart)} om ${formatTime(data.slotStart)}</td></tr><tr><td style="color:#9a958b">Locatie</td></tr><tr><td style="font:19px Georgia,serif;color:#0C0A07">${STUDIO_ADDRESS}</td></tr>${deposit}</table></td></tr></table>`
 }
 
 async function send(to: string, subject: string, html: string) {
@@ -71,10 +71,11 @@ export async function sendManualBookingConfirmation(data: ManualBookingMailData)
 }
 
 export async function sendManualBookingReminder(data: ManualBookingMailData) {
-  await send(data.customerEmail, 'Herinnering: morgen heb je een afspraak bij LUXIQUE', shell({
+  const appointment = `${formatDate(data.slotStart)} om ${formatTime(data.slotStart)}`
+  await send(data.customerEmail, `Herinnering: je afspraak op ${appointment}`, shell({
     eyebrow: 'Afspraakherinnering',
-    title: `Tot morgen, ${escapeHtml(data.customerName.split(' ')[0] || data.customerName)}`,
-    intro: 'Dit is een herinnering voor je afspraak bij Chiva. Hieronder vind je de datum, tijd en locatie.',
+    title: `Je afspraak komt eraan, ${escapeHtml(data.customerName.split(' ')[0] || data.customerName)}`,
+    intro: `Je afspraak bij Chiva is op ${appointment}. Hieronder vind je de datum, tijd en locatie.`,
     details: details(data),
     notice: '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">Kom met schone wimpers, zonder mascara of olieproducten rond de ogen.</div>',
   }))
