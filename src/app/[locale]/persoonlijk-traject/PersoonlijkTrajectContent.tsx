@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Navbar from '@/components/Navbar'
 
@@ -92,15 +92,22 @@ export default function PersoonlijkTrajectContent() {
       .catch(() => {})
   }, [])
 
-  // Reveal on scroll + loenique handler
-  useEffect(() => {
+  // Reveal content already in the viewport before the first paint; observe the rest.
+  useLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
 
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
     }), { threshold: 0.01, rootMargin: '0px 0px -8% 0px' })
-    root.querySelectorAll('.reveal').forEach(el => io.observe(el))
+
+    root.querySelectorAll('.reveal').forEach(el => {
+      const rect = el.getBoundingClientRect()
+      const isInitiallyVisible = rect.top < window.innerHeight && rect.bottom > 0
+
+      if (isInitiallyVisible) el.classList.add('in')
+      else io.observe(el)
+    })
 
     const loeniqueHandler = (e: Event) => {
       const target = (e.target as HTMLElement).closest('[data-loenique]')
