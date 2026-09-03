@@ -747,7 +747,11 @@
     "finalAskLoenique": "Vraag Loenique",
     "finalMail": "Mail info@luxique.nl",
     "bookCta": "Boek dit traject",
-    "workshopBookCta": "Boek deze workshop"
+    "workshopBookCta": "Boek deze workshop",
+    "dateChoiceTitle": "Kies je trajectdatum",
+    "spotsRemaining": "{count, plural, one {Nog # plek over} other {Nog # plekken over}}",
+    "bookSelectedDate": "Boek deze datum",
+    "dateChoiceContact": "Vraag een datum aan"
   },
   "Policies": {
     "disclaimer": "Deze Engelse versie is een vertaling ten behoeve van uw gemak. De Nederlandse versie van deze voorwaarden en beleidsregels is juridisch bindend; in geval van een discrepantie prevaleert de Nederlandse tekst.",

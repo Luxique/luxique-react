@@ -746,7 +746,11 @@
     "finalAskLoenique": "Chiedi a Loenique",
     "finalMail": "Scrivi a info@luxique.nl",
     "bookCta": "Prenota questo percorso",
-    "workshopBookCta": "Prenota questo workshop"
+    "workshopBookCta": "Prenota questo workshop",
+    "dateChoiceTitle": "Scegli la data del tuo percorso",
+    "spotsRemaining": "{count, plural, one {# posto rimasto} other {# posti rimasti}}",
+    "bookSelectedDate": "Prenota questa data",
+    "dateChoiceContact": "Richiedi una data"
   },
   "Policies": {
     "disclaimer": "This English version is a translation provided for your convenience. The Dutch version of these terms and policies is legally binding; in the event of any discrepancy, the Dutch text prevails.",

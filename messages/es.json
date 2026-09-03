@@ -745,7 +745,13 @@
     "finalTitleEm": "encaja contigo?",
     "finalText": "Loenique, nuestro chatbot, piensa contigo — qué programa encaja con tu nivel, o cómo combinar varios en una ruta a medida. ¿Prefieres contacto directo? Escribe a info@luxique.nl.",
     "finalAskLoenique": "Pregunta a Loenique",
-    "finalMail": "Escribe a info@luxique.nl"
+    "finalMail": "Escribe a info@luxique.nl",
+    "bookCta": "Reservar este programa",
+    "workshopBookCta": "Reservar este taller",
+    "dateChoiceTitle": "Elige la fecha de tu programa",
+    "spotsRemaining": "{count, plural, one {Queda # plaza} other {Quedan # plazas}}",
+    "bookSelectedDate": "Reservar esta fecha",
+    "dateChoiceContact": "Solicitar una fecha"
   },
   "Policies": {
     "disclaimer": "This English version is a translation provided for your convenience. The Dutch version of these terms and policies is legally binding; in the event of any discrepancy, the Dutch text prevails.",

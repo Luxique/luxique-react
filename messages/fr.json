@@ -747,7 +747,11 @@
     "finalAskLoenique": "Demande à Loenique",
     "finalMail": "Écris à info@luxique.nl",
     "bookCta": "Réserver ce programme",
-    "workshopBookCta": "Réserver cet atelier"
+    "workshopBookCta": "Réserver cet atelier",
+    "dateChoiceTitle": "Choisis la date de ton programme",
+    "spotsRemaining": "{count, plural, one {# place restante} other {# places restantes}}",
+    "bookSelectedDate": "Réserver cette date",
+    "dateChoiceContact": "Demander une date"
   },
   "Policies": {
     "disclaimer": "This English version is a translation provided for your convenience. The Dutch version of these terms and policies is legally binding; in the event of any discrepancy, the Dutch text prevails.",
