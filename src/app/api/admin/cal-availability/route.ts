@@ -14,12 +14,14 @@ import {
   type CalSchedule,
   type TreatmentKey,
 } from '@/lib/cal-admin-availability'
+import { subtractWindow } from '@/lib/manual-availability-ledger'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const fetchCache = 'force-no-store'
 
 const CAL_API_VERSION = '2024-06-11'
+const CAL_SLOTS_API_VERSION = '2024-09-04'
 const NO_STORE_HEADERS = {
   'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
   Pragma: 'no-cache',
@@ -61,6 +63,42 @@ async function readSchedule(treatmentKey: TreatmentKey): Promise<CalSchedule> {
     overrides: Array.isArray(payload.data.overrides) ? payload.data.overrides : [],
     availability: Array.isArray(payload.data.availability) ? payload.data.availability : [],
   }
+}
+
+async function readEffectiveSlots(treatmentKey: TreatmentKey, start: string, end: string) {
+  const treatment = TREATMENTS[treatmentKey]
+  const apiKey = process.env.CAL_API_KEY
+  if (!apiKey) throw new Error('CAL_API_KEY ontbreekt op de server.')
+  const url = new URL('https://api.cal.com/v2/slots')
+  url.searchParams.set('eventTypeId', String(treatment.eventTypeId))
+  url.searchParams.set('start', start)
+  url.searchParams.set('end', end)
+  url.searchParams.set('timeZone', 'Europe/Amsterdam')
+  const response = await fetch(url, {
+    cache: 'no-store',
+    headers: { Authorization: `Bearer ${apiKey}`, 'cal-api-version': CAL_SLOTS_API_VERSION },
+  })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok || !payload?.data) {
+    const reason = payload?.error?.message || payload?.message || `HTTP ${response.status}`
+    throw new Error(`Cal.com kon effectieve ${treatment.name}-slots niet laden: ${reason}`)
+  }
+
+  return Object.entries(payload.data).flatMap(([date, values]) =>
+    (Array.isArray(values) ? values : []).flatMap(value => {
+      const slotStart = typeof value === 'string'
+        ? value
+        : value && typeof value === 'object' && 'start' in value
+          ? String(value.start)
+          : ''
+      if (!slotStart || !Number.isFinite(new Date(slotStart).getTime())) return []
+      const slotEnd = new Date(new Date(slotStart).getTime() + treatment.durationMinutes * 60_000).toISOString()
+      const formatTime = (iso: string) => new Intl.DateTimeFormat('nl-NL', {
+        timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(new Date(iso))
+      return [{ date, start: slotStart, end: slotEnd, startTime: formatTime(slotStart), endTime: formatTime(slotEnd) }]
+    }),
+  )
 }
 
 async function writeOverrides(schedule: CalSchedule, overrides: CalOverride[]): Promise<CalSchedule> {
@@ -117,14 +155,22 @@ export async function GET(req: NextRequest) {
   if (denied) return denied
 
   try {
+    const start = req.nextUrl.searchParams.get('start') || new Date().toISOString().slice(0, 10)
+    const defaultEnd = new Date(`${start}T00:00:00Z`)
+    defaultEnd.setUTCDate(defaultEnd.getUTCDate() + 42)
+    const end = req.nextUrl.searchParams.get('end') || defaultEnd.toISOString().slice(0, 10)
+    if (!isValidLocalDate(start) || !isValidLocalDate(end) || end <= start) {
+      return json({ error: 'Ongeldig agendabereik.' }, 400)
+    }
     const entries = await Promise.all(
       (Object.keys(TREATMENTS) as TreatmentKey[]).map(async key => {
-        const schedule = await readSchedule(key)
+        const [schedule, slots] = await Promise.all([readSchedule(key), readEffectiveSlots(key, start, end)])
         return {
           ...TREATMENTS[key],
           timeZone: schedule.timeZone,
           availability: schedule.availability,
           overrides: sortOverrides(schedule.overrides),
+          slots,
         }
       }),
     )
@@ -195,13 +241,18 @@ export async function DELETE(req: NextRequest) {
     const target = { ...built, date: body.date }
 
     const schedule = await readSchedule(treatmentKey)
-    const remaining = schedule.overrides.filter(existing => !sameOverride(existing, target))
-    if (remaining.length === schedule.overrides.length) {
+    let removed = false
+    const remaining = schedule.overrides.flatMap(existing => {
+      const result = subtractWindow(existing, target, treatment.durationMinutes)
+      if (result.removed) removed = true
+      return result.remaining
+    })
+    if (!removed) {
       return json({ error: 'Dit tijdslot bestaat niet meer in Cal.com.' }, 404)
     }
 
     const updated = await writeOverrides(schedule, remaining)
-    if (updated.overrides.some(existing => sameOverride(existing, target))) {
+    if (updated.overrides.some(existing => subtractWindow(existing, target, treatment.durationMinutes).removed)) {
       throw new Error('Cal.com heeft het tijdslot niet verwijderd. Probeer het opnieuw.')
     }
 

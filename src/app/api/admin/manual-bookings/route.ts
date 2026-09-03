@@ -10,6 +10,7 @@ import {
   isManualTreatmentKey,
   MANUAL_TREATMENTS,
   normalizePhoneNumber,
+  restoreConsumedPublicAvailability,
   type ManualDepositStatus,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
@@ -147,9 +148,22 @@ export async function POST(request: NextRequest) {
       return json({ error: `Boeking kon niet worden opgeslagen: ${insertError?.message || 'onbekende fout'}` }, 500)
     }
 
+    let consumedAvailability
     try {
-      await consumePublicAvailability(slotStart, slotEnd)
+      consumedAvailability = await consumePublicAvailability(slotStart, slotEnd, treatmentKey)
+      const { error: ledgerError } = await supabaseAdmin.from('manual_bookings').update({
+        availability_restoration_ledger: consumedAvailability.restorationLedger,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id)
+      if (ledgerError) {
+        throw new Error(`Hersteladministratie kon niet worden opgeslagen: ${ledgerError.message}`)
+      }
     } catch (availabilityError) {
+      if (consumedAvailability) {
+        await restoreConsumedPublicAvailability(consumedAvailability).catch(restoreError => {
+          console.error('[manual-bookings] schedule rollback after ledger failure failed:', restoreError)
+        })
+      }
       await supabaseAdmin.from('manual_bookings').delete().eq('id', booking.id)
       await cancelManualCalBooking(calBooking.uid, 'Public availability could not be consumed').catch(cleanupError => {
         console.error('[manual-bookings] Cal rollback after availability failure failed:', cleanupError)

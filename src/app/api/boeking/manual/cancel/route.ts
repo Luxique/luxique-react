@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { isWithin24Hours, MANUAL_TREATMENTS, restoreManualBookingPublicAvailability, type ManualTreatmentKey } from '@/lib/manual-bookings'
 import { cancelCalBookingVerified } from '@/lib/cal-cancellation'
 import { sendManualBookingCancellation, sendManualBookingCancellationNotification } from '@/lib/manual-booking-email'
+import { isManualAvailabilityLedger } from '@/lib/manual-availability-ledger'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,34 +39,44 @@ export async function POST(request: NextRequest) {
     return json({ success: false, pending: true, error: 'Annulering in behandeling. We proberen Cal.com automatisch opnieuw.' }, 202)
   }
 
-  try {
-    await restoreManualBookingPublicAvailability(booking.slot_start, booking.slot_end)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Publieke beschikbaarheid herstellen mislukt.'
-    console.error('[manual-cancel] Cal cancelled but availability restore failed:', { bookingId: booking.id, error: message })
-    await supabase.from('manual_bookings').update({
-      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
-      sync_status: 'cancellation_pending', sync_error: message, updated_at: requestedAt,
-    }).eq('id', booking.id).eq('user_id', user.id)
-    return json({ success: false, partial: true, pending: true, error: 'Cal.com is geannuleerd, maar het tijdslot kon nog niet worden vrijgegeven. We proberen dit automatisch opnieuw.' }, 202)
-  }
-
+  const hasLedger = isManualAvailabilityLedger(booking.availability_restoration_ledger)
   const { error: updateError } = await supabase.from('manual_bookings').update({
     status: 'cancelled',
-    cancelled_at: new Date().toISOString(),
+    cancelled_at: requestedAt,
     cancelled_within_24h: within24h,
-    sync_status: 'synced',
-    sync_error: null,
+    sync_status: hasLedger ? 'availability_restore_pending' : 'availability_review_required',
+    sync_error: hasLedger ? null : 'Bestaande boeking zonder betrouwbare beschikbaarheidsledger; handmatige controle vereist.',
     cancellation_requested_at: requestedAt,
-    updated_at: new Date().toISOString(),
+    updated_at: requestedAt,
   }).eq('id', booking.id).eq('user_id', user.id)
   if (updateError) {
-    await supabase.from('manual_bookings').update({
-      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
-      sync_status: 'cancellation_pending', sync_error: `Cal.com geannuleerd; database afronding mislukt: ${updateError.message}`,
-      updated_at: new Date().toISOString(),
-    }).eq('id', booking.id).eq('user_id', user.id)
+    console.error('[manual-cancel] Cal confirmed but cancelled status write failed:', updateError)
     return json({ error: 'Cal.com is geannuleerd, maar de dashboardstatus kon niet worden bijgewerkt. Neem contact op met LUXIQUE.' }, 500)
+  }
+
+  let availabilityRestored = false
+  let availabilityReviewRequired = !hasLedger
+  let availabilityWarning: string | null = null
+  if (hasLedger) {
+    try {
+      await restoreManualBookingPublicAvailability(
+        booking.treatment_key as ManualTreatmentKey,
+        booking.availability_restoration_ledger,
+      )
+      availabilityRestored = true
+      await supabase.from('manual_bookings').update({
+        sync_status: 'synced', sync_error: null, updated_at: new Date().toISOString(),
+      }).eq('id', booking.id).eq('status', 'cancelled')
+    } catch (error) {
+      availabilityWarning = error instanceof Error ? error.message : 'Publieke beschikbaarheid herstellen mislukt.'
+      availabilityReviewRequired = availabilityWarning.startsWith('AVAILABILITY_REVIEW_REQUIRED:')
+      console.error('[manual-cancel] availability restore deferred:', { bookingId: booking.id, error: availabilityWarning })
+      await supabase.from('manual_bookings').update({
+        sync_status: availabilityReviewRequired ? 'availability_review_required' : 'availability_restore_pending',
+        sync_error: availabilityWarning,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id).eq('status', 'cancelled')
+    }
   }
 
   const { data: authData } = await supabase.auth.admin.getUserById(user.id)
@@ -94,5 +105,12 @@ export async function POST(request: NextRequest) {
     }
   } else emailSent = false
 
-  return json({ success: true, within24h, emailSent })
+  return json({
+    success: true,
+    within24h,
+    emailSent,
+    availabilityRestored,
+    availabilityReviewRequired,
+    ...(availabilityWarning ? { warning: 'De afspraak is geannuleerd; beschikbaarheidsherstel wordt apart opgevolgd.' } : {}),
+  })
 }

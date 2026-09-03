@@ -58,6 +58,7 @@ type TreatmentAvailability = {
   name: string
   durationMinutes: number
   overrides: Array<{ date: string; startTime: string; endTime: string }>
+  slots: Array<{ date: string; start: string; end: string; startTime: string; endTime: string }>
 }
 
 const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }> = {
@@ -134,9 +135,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     setError(null)
     try {
       const cacheBust = Date.now()
+      const rangeStartDate = view === 'week' ? startOfWeek(cursor) : startOfMonthGrid(cursor)
+      const rangeStart = dateKey(rangeStartDate)
+      const rangeEnd = dateKey(addDays(rangeStartDate, view === 'week' ? 7 : 42))
       const [bookingsResponse, availabilityResponse, trajectResponse] = await Promise.all([
         fetch(`/api/cal/bookings?t=${cacheBust}`, { cache: 'no-store' }),
-        fetch(`/api/admin/cal-availability?t=${cacheBust}`, {
+        fetch(`/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`, {
           cache: 'no-store',
           headers: { Authorization: `Bearer ${sessionToken}` },
         }),
@@ -162,7 +166,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     } finally {
       setLoading(false)
     }
-  }, [sessionToken])
+  }, [cursor, sessionToken, view])
 
   useEffect(() => { loadAgenda() }, [loadAgenda])
 
@@ -209,12 +213,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       source: booking.source,
       bookingUid: booking.uid,
     })),
-    ...availability.flatMap(treatment => treatment.overrides.map(override => ({
-      id: `override-${treatment.key}-${override.date}-${override.startTime}`,
+    ...availability.flatMap(treatment => treatment.slots.map(slot => ({
+      id: `override-${treatment.key}-${slot.date}-${slot.start}`,
       kind: 'override' as const,
-      date: override.date,
-      startTime: override.startTime,
-      endTime: override.endTime,
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
       title: treatment.name,
       treatmentKey: treatment.key,
     }))),

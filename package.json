@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test:manual-availability": "node --experimental-strip-types --test src/lib/manual-availability-ledger.test.ts",
     "start": "next start",
     "lint": "next lint"
   },

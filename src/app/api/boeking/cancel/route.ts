@@ -83,11 +83,6 @@ export async function POST(request: NextRequest) {
     .eq('id', bookingId).eq('user_id', user.id)
   if (updateError) {
     console.error('Cancel: Cal succeeded but database update failed:', updateError)
-    await supabase.from('pending_bookings').update({
-      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
-      cancellation_error: `Cal.com geannuleerd; database afronding mislukt: ${updateError.message}`,
-      cancellation_refund_eligible: refundEligible,
-    }).eq('id', bookingId).eq('user_id', user.id)
     return NextResponse.json({ success: false, partial: true, error: 'Cal.com is geannuleerd, maar de dashboardstatus kon niet worden bijgewerkt.' }, { status: 500 })
   }
 

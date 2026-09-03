@@ -10,6 +10,7 @@ import {
   MANUAL_TREATMENTS,
   normalizePhoneNumber,
   restoreConsumedPublicAvailability,
+  restoreManualBookingPublicAvailability,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
 import { findManualBookingConflict } from '@/lib/manual-booking-conflicts'
@@ -111,7 +112,11 @@ export async function POST(request: NextRequest) {
 
     let consumedAvailability
     try {
-      consumedAvailability = await consumePublicAvailability(replacement.start, replacementEnd)
+      consumedAvailability = await consumePublicAvailability(
+        replacement.start,
+        replacementEnd,
+        booking.treatment_key as ManualTreatmentKey,
+      )
     } catch (availabilityError) {
       await supabase.from('manual_bookings').update({
         cal_booking_uid: booking.cal_booking_uid,
@@ -130,6 +135,28 @@ export async function POST(request: NextRequest) {
       }, 502)
     }
 
+    const { error: ledgerUpdateError } = await supabase.from('manual_bookings').update({
+      availability_restoration_ledger: consumedAvailability.restorationLedger,
+      pending_availability_restore_ledger: booking.availability_restoration_ledger,
+      updated_at: new Date().toISOString(),
+    }).eq('id', booking.id).eq('user_id', user.id)
+    if (ledgerUpdateError) {
+      await restoreConsumedPublicAvailability(consumedAvailability).catch(restoreError => {
+        console.error('[manual-reschedule] new availability rollback failed:', restoreError)
+      })
+      await supabase.from('manual_bookings').update({
+        cal_booking_uid: booking.cal_booking_uid,
+        cal_booking_id: booking.cal_booking_id,
+        previous_cal_booking_uid: booking.previous_cal_booking_uid,
+        slot_start: booking.slot_start,
+        slot_end: booking.slot_end,
+        rescheduled_at: booking.rescheduled_at,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id).eq('user_id', user.id)
+      await cancelManualCalBooking(replacement.uid, 'Restoration ledger could not be persisted').catch(() => undefined)
+      return json({ error: 'Verplaatsen is veilig teruggedraaid omdat de hersteladministratie niet kon worden opgeslagen.' }, 500)
+    }
+
     try {
       await cancelManualCalBooking(booking.cal_booking_uid, 'Replaced by a new manual Luxique booking')
     } catch (cleanupError) {
@@ -144,6 +171,37 @@ export async function POST(request: NextRequest) {
         error: 'De nieuwe afspraak staat vast, maar de oude Cal.com-boeking kon niet automatisch worden opgeruimd. Neem contact op met LUXIQUE.',
         syncStatus: 'cleanup_required', newStart: replacement.start,
       }, 502)
+    }
+
+    try {
+      await restoreManualBookingPublicAvailability(
+        booking.treatment_key as ManualTreatmentKey,
+        booking.availability_restoration_ledger,
+      )
+    } catch (restoreError) {
+      const message = restoreError instanceof Error ? restoreError.message : 'Oude beschikbaarheid herstellen mislukt.'
+      const syncStatus = message.startsWith('AVAILABILITY_REVIEW_REQUIRED:')
+        ? 'availability_review_required'
+        : 'availability_restore_pending'
+      await supabase.from('manual_bookings').update({
+        sync_status: syncStatus,
+        sync_error: message,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id)
+      return json({
+        error: 'De afspraak is verplaatst, maar de oude beschikbaarheid moet nog worden nagekeken.',
+        syncStatus,
+      }, 202)
+    }
+
+    const { error: finalizationError } = await supabase.from('manual_bookings').update({
+      pending_availability_restore_ledger: null,
+      sync_status: 'synced',
+      sync_error: null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', booking.id)
+    if (finalizationError) {
+      return json({ error: 'De afspraak is verplaatst, maar de nieuwe hersteladministratie kon niet worden opgeslagen.' }, 500)
     }
 
     let emailSent = true

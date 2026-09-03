@@ -1,3 +1,10 @@
+import {
+  isManualAvailabilityLedger,
+  mergeWindows,
+  subtractWindow,
+  type ManualAvailabilityLedger,
+} from './manual-availability-ledger'
+
 export const MANUAL_TIME_ZONE = 'Europe/Amsterdam'
 export const MANUAL_CAL_API_VERSION = '2026-02-25'
 const CAL_SLOTS_API_VERSION = '2024-09-04'
@@ -72,6 +79,12 @@ export function intervalsOverlap(startA: string, endA: string, startB: string, e
     && new Date(endA).getTime() > new Date(startB).getTime()
 }
 
+function calSlotStart(value: unknown): string | null {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object' && 'start' in value && typeof value.start === 'string') return value.start
+  return null
+}
+
 type PublicScheduleSnapshot = {
   id: number
   name: string
@@ -84,6 +97,7 @@ type PublicScheduleSnapshot = {
 export type ConsumedPublicAvailability = {
   snapshots: PublicScheduleSnapshot[]
   removedOverlappingWindows: number
+  restorationLedger: ManualAvailabilityLedger
 }
 
 export function isWithin24Hours(iso: string): boolean {
@@ -175,7 +189,9 @@ export async function getManualAvailability(input: {
   if (!response.ok || !payload?.data) {
     throw new Error(payload?.error?.message || 'Cal.com beschikbaarheid kon niet worden geladen.')
   }
-  const starts = Array.isArray(payload.data[input.date]) ? payload.data[input.date] : []
+  const starts = (Array.isArray(payload.data[input.date]) ? payload.data[input.date] : [])
+    .map(calSlotStart)
+    .filter((start: string | null): start is string => Boolean(start))
   return starts.map((start: string) => ({
     start,
     time: new Intl.DateTimeFormat('nl-NL', {
@@ -214,7 +230,9 @@ async function getPublicOverlappingSlots(start: string, end: string) {
     if (!response.ok || !payload?.data) {
       throw new Error(payload?.error?.message || `Publieke Cal.com-beschikbaarheid controleren mislukt (HTTP ${response.status}).`)
     }
-    const starts: string[] = Array.isArray(payload.data[date]) ? payload.data[date] : []
+    const starts = (Array.isArray(payload.data[date]) ? payload.data[date] : [])
+      .map(calSlotStart)
+      .filter((slotStart: string | null): slotStart is string => Boolean(slotStart))
     return starts.filter(slotStart => intervalsOverlap(
       start,
       end,
@@ -269,49 +287,45 @@ export async function restoreConsumedPublicAvailability(consumed: ConsumedPublic
   for (const snapshot of [...consumed.snapshots].reverse()) await writeSchedule(snapshot)
 }
 
-export async function restoreManualBookingPublicAvailability(start: string, end: string): Promise<void> {
-  const date = new Intl.DateTimeFormat('en-CA', {
-    timeZone: MANUAL_TIME_ZONE,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date(start))
-  const restored = { date, startTime: timeInAmsterdam(start), endTime: timeInAmsterdam(end) }
-
-  for (const scheduleId of [2292165, 2292166]) {
-    const data = await scheduleRequest(`/schedules/${scheduleId}`)
-    const snapshot: PublicScheduleSnapshot = {
-      id: data.id,
-      name: data.name,
-      timeZone: data.timeZone,
-      isDefault: data.isDefault,
-      availability: Array.isArray(data.availability) ? data.availability : [],
-      overrides: Array.isArray(data.overrides) ? data.overrides : [],
-    }
-    const sameDate = snapshot.overrides.filter(override => override.date === restored.date)
-    const otherDates = snapshot.overrides.filter(override => override.date !== restored.date)
-    const windows = [...sameDate, restored]
-      .map(override => ({ ...override }))
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-    const merged: typeof windows = []
-    for (const window of windows) {
-      const previous = merged[merged.length - 1]
-      if (!previous || window.startTime > previous.endTime) merged.push(window)
-      else if (window.endTime > previous.endTime) previous.endTime = window.endTime
-    }
-    await writeSchedule({ ...snapshot, overrides: [...otherDates, ...merged] })
+export async function restoreManualBookingPublicAvailability(
+  treatmentKey: ManualTreatmentKey,
+  ledgerValue: unknown,
+): Promise<void> {
+  if (!isManualAvailabilityLedger(ledgerValue)) {
+    throw new Error('AVAILABILITY_REVIEW_REQUIRED: deze bestaande boeking heeft geen betrouwbare hersteladministratie.')
+  }
+  const expectedScheduleId = treatmentKey === 'new_lash_set' ? 2292165 : 2292166
+  if (ledgerValue.treatmentKey !== treatmentKey || ledgerValue.scheduleId !== expectedScheduleId) {
+    throw new Error('AVAILABILITY_REVIEW_REQUIRED: behandeltype en hersteladministratie komen niet overeen.')
   }
 
-
-  // Cal schedule writes can propagate asynchronously. Do not finalize the DB
-  // cancellation until the public slots endpoint confirms this window is back.
-  for (const delayMs of [0, 250, 750, 1500]) {
-    if (delayMs) await new Promise(resolve => setTimeout(resolve, delayMs))
-    const requestedStart = new Date(start).getTime()
-    if ((await getPublicOverlappingSlots(start, end)).some(slot => new Date(slot).getTime() === requestedStart)) return
+  const data = await scheduleRequest(`/schedules/${ledgerValue.scheduleId}`)
+  const snapshot: PublicScheduleSnapshot = {
+    id: data.id,
+    name: data.name,
+    timeZone: data.timeZone,
+    isDefault: data.isDefault,
+    availability: Array.isArray(data.availability) ? data.availability : [],
+    overrides: Array.isArray(data.overrides) ? data.overrides : [],
   }
-  throw new Error('Het herstelde tijdslot is nog niet zichtbaar in de publieke Cal.com-widget.')
+  const overrides = mergeWindows([...snapshot.overrides, ...ledgerValue.removedWindows])
+  await writeSchedule({ ...snapshot, overrides })
+
+  const verified = await scheduleRequest(`/schedules/${ledgerValue.scheduleId}`)
+  const verifiedOverrides = Array.isArray(verified.overrides) ? verified.overrides : []
+  const missing = ledgerValue.removedWindows.some(restored => !verifiedOverrides.some((window: typeof restored) =>
+    window.date === restored.date
+    && window.startTime <= restored.startTime
+    && window.endTime >= restored.endTime,
+  ))
+  if (missing) throw new Error('Cal.com bevestigde het exacte beschikbaarheidsherstel niet.')
 }
 
-export async function consumePublicAvailability(start: string, end: string): Promise<ConsumedPublicAvailability> {
+export async function consumePublicAvailability(
+  start: string,
+  end: string,
+  treatmentKey: ManualTreatmentKey,
+): Promise<ConsumedPublicAvailability> {
   const date = new Intl.DateTimeFormat('en-CA', {
     timeZone: MANUAL_TIME_ZONE,
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -319,10 +333,21 @@ export async function consumePublicAvailability(start: string, end: string): Pro
   const startTime = timeInAmsterdam(start)
   const endTime = timeInAmsterdam(end)
   const publicSchedules = [
-    { scheduleId: 2292165, durationMinutes: 180 },
-    { scheduleId: 2292166, durationMinutes: 120 },
+    { treatmentKey: 'new_lash_set' as const, scheduleId: 2292165, durationMinutes: 180 },
+    { treatmentKey: 'fill_lash_set' as const, scheduleId: 2292166, durationMinutes: 120 },
   ]
-  const consumed: ConsumedPublicAvailability = { snapshots: [], removedOverlappingWindows: 0 }
+  const bookedWindow = { date, startTime, endTime }
+  const bookedTreatmentSchedule = publicSchedules.find(schedule => schedule.treatmentKey === treatmentKey)!
+  const consumed: ConsumedPublicAvailability = {
+    snapshots: [],
+    removedOverlappingWindows: 0,
+    restorationLedger: {
+      version: 1,
+      treatmentKey,
+      scheduleId: bookedTreatmentSchedule.scheduleId,
+      removedWindows: [],
+    },
+  }
 
   try {
     for (const publicSchedule of publicSchedules) {
@@ -339,25 +364,14 @@ export async function consumePublicAvailability(start: string, end: string): Pro
       let changed = false
 
       for (const override of snapshot.overrides) {
-        if (override.date !== date || !intervalsOverlap(
-          `${date}T${startTime}:00+02:00`, `${date}T${endTime}:00+02:00`,
-          `${date}T${override.startTime}:00+02:00`, `${date}T${override.endTime}:00+02:00`,
-        )) {
-          nextOverrides.push(override)
-          continue
-        }
-
-        changed = true
-        consumed.removedOverlappingWindows++
-        const overrideStart = Number(override.startTime.slice(0, 2)) * 60 + Number(override.startTime.slice(3, 5))
-        const overrideEnd = Number(override.endTime.slice(0, 2)) * 60 + Number(override.endTime.slice(3, 5))
-        const bookedStart = Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3, 5))
-        const bookedEnd = Number(endTime.slice(0, 2)) * 60 + Number(endTime.slice(3, 5))
-        if (bookedStart - overrideStart >= publicSchedule.durationMinutes) {
-          nextOverrides.push({ ...override, endTime: startTime })
-        }
-        if (overrideEnd - bookedEnd >= publicSchedule.durationMinutes) {
-          nextOverrides.push({ ...override, startTime: endTime })
+        const subtraction = subtractWindow(override, bookedWindow, publicSchedule.durationMinutes)
+        nextOverrides.push(...subtraction.remaining)
+        if (subtraction.removed) {
+          changed = true
+          consumed.removedOverlappingWindows++
+          if (publicSchedule.treatmentKey === treatmentKey) {
+            consumed.restorationLedger.removedWindows.push(subtraction.removed)
+          }
         }
       }
 
