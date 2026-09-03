@@ -26,6 +26,7 @@ type CalendarItem = {
   paidCount?: number
   maxParticipants?: number
   source?: 'online' | 'manual'
+  bookingUid?: string
 }
 type CalBooking = {
   id: number | string
@@ -125,6 +126,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [manualSearching, setManualSearching] = useState(false)
   const [manualSaving, setManualSaving] = useState(false)
   const [manualError, setManualError] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState<string | null>(null)
 
   const loadAgenda = useCallback(async () => {
     if (!sessionToken) return
@@ -205,6 +207,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       customerEmail: booking.customerEmail,
       customerPhone: booking.customerPhone,
       source: booking.source,
+      bookingUid: booking.uid,
     })),
     ...availability.flatMap(treatment => treatment.overrides.map(override => ({
       id: `override-${treatment.key}-${override.date}-${override.startTime}`,
@@ -355,6 +358,33 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     }
   }
 
+  const cancelBooking = async (item: CalendarItem) => {
+    if (item.kind !== 'booking' || !item.bookingUid || cancelling) return
+    if (!window.confirm(`Afspraak van ${item.customer || 'deze klant'} op ${longDate(item.date)} om ${item.startTime} annuleren? Er wordt geen automatische Stripe-refund uitgevoerd.`)) return
+    setCancelling(item.id)
+    setError(null)
+    setSuccess(null)
+    try {
+      const response = await fetch('/api/admin/bookings/cancel', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ uid: item.bookingUid, source: item.source || 'online' }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload?.success) throw new Error(payload?.error || 'Annuleren mislukt.')
+      setSelectedItemId(null)
+      setSuccess(payload.warnings?.length
+        ? `Afspraak geannuleerd. ${payload.warnings.join(' ')}`
+        : 'Afspraak is in Cal.com geannuleerd, het tijdslot is vrijgegeven en de e-mails zijn verzonden.')
+      await loadAgenda()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Annuleren mislukt.')
+      await loadAgenda()
+    } finally {
+      setCancelling(null)
+    }
+  }
+
   const openManualBooking = (date = selectedDate) => {
     setManualDate(date)
     setManualTime('09:00')
@@ -494,6 +524,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             {selectedItem.kind === 'booking' && (selectedItem.customerEmail || selectedItem.customerPhone) && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Contact</dt><dd className="mt-1 flex flex-col gap-1">{selectedItem.customerEmail && <a href={`mailto:${selectedItem.customerEmail}`} className="break-all text-[#80642e] hover:underline">{selectedItem.customerEmail}</a>}{selectedItem.customerPhone && <a href={`tel:${selectedItem.customerPhone}`} className="text-[#80642e] hover:underline">{selectedItem.customerPhone}</a>}</dd></div>}
             {selectedItem.kind === 'traject-day' && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Deelnemers</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.paidCount}/{selectedItem.maxParticipants} betaald</dd></div>}
           </dl>
+          {selectedItem.kind === 'booking' && <button type="button" onClick={() => cancelBooking(selectedItem)} disabled={cancelling === selectedItem.id} className="mt-5 w-full rounded-full border border-red-200 bg-red-50 px-4 py-2.5 text-[11px] font-semibold text-red-700 disabled:opacity-50">{cancelling === selectedItem.id ? 'Annuleren in Cal.com…' : 'Afspraak annuleren'}</button>}
         </div>}
         {loading ? <div className="p-8 text-center text-[13px] text-[#888]">Agenda laden…</div> : selectedItems.length === 0 ? <div className="p-8 text-center text-[13px] text-[#888]">Deze dag is leeg.</div> : (
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (

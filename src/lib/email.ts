@@ -32,6 +32,7 @@ interface BookingData {
   customer_name?: string | null
   customer_email?: string | null
   user_id?: string | null
+  cancellation_refund_eligible?: boolean
 }
 
 async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
@@ -445,9 +446,14 @@ export async function sendCancellationNotification(booking: BookingData & { canc
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const within24h = booking.cancelled_within_24h
+    const refundEligible = booking.cancellation_refund_eligible ?? (booking.status === 'paid' && !within24h && booking.amount_cents > 0)
+    if (!within24h && !refundEligible) {
+      console.log(`Mail: no refund notification needed for unpaid booking ${booking.cal_booking_uid}`)
+      return
+    }
     const subject = within24h
       ? `CANCELLED • NO REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
-      : `CANCELLED • REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
+      : `REFUND ${booking.customer_name || 'Klant'} ${date} €${deposit} GELDIGE ANNULERING`
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -488,7 +494,7 @@ export async function sendCancellationNotification(booking: BookingData & { canc
           </td></tr>
         </table>
         <div style="background:${within24h ? 'rgba(197,60,60,0.08)' : 'rgba(91,140,102,0.08)'}; border:1px solid ${within24h ? 'rgba(197,60,60,0.25)' : 'rgba(91,140,102,0.25)'}; border-radius:10px; padding:14px 20px; max-width:440px; margin:0 auto;">
-          <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:.5px; color:${within24h ? '#c53c3c' : '#5b8c66'};">${within24h ? 'GEEN REFUND — BINNEN 24U (AV)' : 'REFUND NODIG'}</div>
+          <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:.5px; color:${within24h ? '#c53c3c' : '#5b8c66'};">${within24h ? 'GEEN REFUND — BINNEN 24U (AV)' : `GELDIGE ANNULERING BUITEN 24U — betaal de aanbetaling van &euro;${deposit} handmatig terug in Stripe.`}</div>
         </div>
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
@@ -505,12 +511,13 @@ export async function sendCancellationNotification(booking: BookingData & { canc
 
     if (error) {
       console.error(`Mail: cancellation notification FAILED:`, error)
-      return
+      throw new Error(error.message)
     }
 
     console.log(`Mail: Chiva notified of cancellation ${booking.cal_booking_uid} (within24h: ${within24h})`)
   } catch (err) {
     console.error(`Mail: cancellation notification error:`, err)
+    throw err
   }
 }
 
@@ -579,12 +586,13 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
 
     if (error) {
       console.error(`Mail: customer cancellation FAILED:`, error)
-      return
+      throw new Error(error.message)
     }
 
     console.log(`Mail: customer cancellation sent for ${booking.cal_booking_uid}`)
   } catch (err) {
     console.error(`Mail: customer cancellation error:`, err)
+    throw err
   }
 }
 

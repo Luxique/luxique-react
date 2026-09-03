@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cancelManualCalBooking, isWithin24Hours, MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
-import { sendManualBookingCancellation } from '@/lib/manual-booking-email'
+import { isWithin24Hours, MANUAL_TREATMENTS, restoreManualBookingPublicAvailability, type ManualTreatmentKey } from '@/lib/manual-bookings'
+import { cancelCalBookingVerified } from '@/lib/cal-cancellation'
+import { sendManualBookingCancellation, sendManualBookingCancellationNotification } from '@/lib/manual-booking-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,11 +25,29 @@ export async function POST(request: NextRequest) {
   if (booking.status === 'cancelled') return json({ error: 'Deze afspraak is al geannuleerd.' }, 400)
 
   const within24h = isWithin24Hours(booking.slot_start)
+  const requestedAt = new Date().toISOString()
   try {
-    await cancelManualCalBooking(booking.cal_booking_uid, 'Cancelled by customer via Luxique dashboard')
+    await cancelCalBookingVerified(booking.cal_booking_uid, 'Cancelled by customer via Luxique dashboard')
   } catch (error) {
-    console.error('[manual-cancel] Cal cancellation failed:', error)
-    return json({ error: error instanceof Error ? error.message : 'Cal.com-annulering mislukt.' }, 502)
+    const message = error instanceof Error ? error.message : 'Cal.com-annulering mislukt.'
+    console.error('[manual-cancel] Cal cancellation failed:', { bookingId: booking.id, uid: booking.cal_booking_uid, error: message })
+    await supabase.from('manual_bookings').update({
+      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
+      sync_status: 'cancellation_pending', sync_error: message, updated_at: requestedAt,
+    }).eq('id', booking.id).eq('user_id', user.id)
+    return json({ success: false, pending: true, error: 'Annulering in behandeling. We proberen Cal.com automatisch opnieuw.' }, 202)
+  }
+
+  try {
+    await restoreManualBookingPublicAvailability(booking.slot_start, booking.slot_end)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Publieke beschikbaarheid herstellen mislukt.'
+    console.error('[manual-cancel] Cal cancelled but availability restore failed:', { bookingId: booking.id, error: message })
+    await supabase.from('manual_bookings').update({
+      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
+      sync_status: 'cancellation_pending', sync_error: message, updated_at: requestedAt,
+    }).eq('id', booking.id).eq('user_id', user.id)
+    return json({ success: false, partial: true, pending: true, error: 'Cal.com is geannuleerd, maar het tijdslot kon nog niet worden vrijgegeven. We proberen dit automatisch opnieuw.' }, 202)
   }
 
   const { error: updateError } = await supabase.from('manual_bookings').update({
@@ -37,9 +56,15 @@ export async function POST(request: NextRequest) {
     cancelled_within_24h: within24h,
     sync_status: 'synced',
     sync_error: null,
+    cancellation_requested_at: requestedAt,
     updated_at: new Date().toISOString(),
   }).eq('id', booking.id).eq('user_id', user.id)
   if (updateError) {
+    await supabase.from('manual_bookings').update({
+      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
+      sync_status: 'cancellation_pending', sync_error: `Cal.com geannuleerd; database afronding mislukt: ${updateError.message}`,
+      updated_at: new Date().toISOString(),
+    }).eq('id', booking.id).eq('user_id', user.id)
     return json({ error: 'Cal.com is geannuleerd, maar de dashboardstatus kon niet worden bijgewerkt. Neem contact op met LUXIQUE.' }, 500)
   }
 
@@ -52,6 +77,12 @@ export async function POST(request: NextRequest) {
   if (customerEmail) {
     try {
       await sendManualBookingCancellation({
+        bookingId: booking.id, customerName, customerEmail,
+        treatmentName: treatment?.name || 'Behandeling', slotStart: booking.slot_start,
+        salonDepositStatus: booking.salon_deposit_status,
+        salonDepositCents: booking.salon_deposit_cents, within24h,
+      })
+      await sendManualBookingCancellationNotification({
         bookingId: booking.id, customerName, customerEmail,
         treatmentName: treatment?.name || 'Behandeling', slotStart: booking.slot_start,
         salonDepositStatus: booking.salon_deposit_status,

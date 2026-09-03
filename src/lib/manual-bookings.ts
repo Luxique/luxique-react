@@ -269,6 +269,32 @@ export async function restoreConsumedPublicAvailability(consumed: ConsumedPublic
   for (const snapshot of [...consumed.snapshots].reverse()) await writeSchedule(snapshot)
 }
 
+export async function restoreManualBookingPublicAvailability(start: string, end: string): Promise<void> {
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: MANUAL_TIME_ZONE,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date(start))
+  const restored = { date, startTime: timeInAmsterdam(start), endTime: timeInAmsterdam(end) }
+
+  for (const scheduleId of [2292165, 2292166]) {
+    const data = await scheduleRequest(`/schedules/${scheduleId}`)
+    const snapshot: PublicScheduleSnapshot = {
+      id: data.id,
+      name: data.name,
+      timeZone: data.timeZone,
+      isDefault: data.isDefault,
+      availability: Array.isArray(data.availability) ? data.availability : [],
+      overrides: Array.isArray(data.overrides) ? data.overrides : [],
+    }
+    const alreadyPresent = snapshot.overrides.some(override =>
+      override.date === restored.date
+      && override.startTime === restored.startTime
+      && override.endTime === restored.endTime
+    )
+    if (!alreadyPresent) await writeSchedule({ ...snapshot, overrides: [...snapshot.overrides, restored] })
+  }
+}
+
 export async function consumePublicAvailability(start: string, end: string): Promise<ConsumedPublicAvailability> {
   const date = new Intl.DateTimeFormat('en-CA', {
     timeZone: MANUAL_TIME_ZONE,

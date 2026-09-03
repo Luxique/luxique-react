@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { cancelCalBookingVerified } from '@/lib/cal-cancellation'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { bookingId, within24h } = body
+  const { bookingId } = body
 
   if (!bookingId) {
     return NextResponse.json({ error: 'Missing bookingId' }, { status: 400 })
@@ -49,57 +50,69 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Already cancelled or expired' }, { status: 400 })
   }
 
-  // Cancel in Cal.com
-  let calCancelled = false
+  const within24h = new Date(booking.slot_start).getTime() - Date.now() < 24 * 60 * 60 * 1000
+  const refundEligible = booking.status === 'paid' && !within24h && booking.amount_cents > 0
+  const requestedAt = new Date().toISOString()
   try {
-    const calRes = await fetch(`https://api.cal.com/v2/bookings/${booking.cal_booking_uid}/cancel`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.CAL_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        cancellationReason: 'Cancelled by customer via dashboard',
-        allRemainingBookings: true,
-      }),
-    })
-    calCancelled = calRes.ok
-    if (!calRes.ok) {
-      console.error('Cancel: Cal API error:', await calRes.text())
-    }
+    await cancelCalBookingVerified(booking.cal_booking_uid, 'Cancelled by customer via dashboard')
   } catch (err) {
-    console.error('Cancel: Cal API failed:', err)
+    const message = err instanceof Error ? err.message : 'Onbekende Cal.com-fout'
+    console.error('Cancel: Cal API failed:', { bookingId, uid: booking.cal_booking_uid, error: message })
+    const { error: pendingError } = await supabase.from('pending_bookings').update({
+      status: 'cancellation_pending', cancellation_error: message, cancellation_requested_at: requestedAt, cancellation_refund_eligible: refundEligible,
+    }).eq('id', bookingId).eq('user_id', user.id)
+    if (pendingError) console.error('Cancel: pending status update failed:', pendingError)
+    return NextResponse.json({
+      success: false, pending: true,
+      error: 'Annulering in behandeling. Cal.com accepteerde de annulering nog niet; we proberen dit automatisch opnieuw.',
+      detail: message,
+    }, { status: 202 })
   }
 
   // Update booking status
-  await supabase
+  const { error: updateError } = await supabase
     .from('pending_bookings')
     .update({ 
       status: 'cancelled',
       cancelled_within_24h: within24h,
       cancelled_at: new Date().toISOString(),
+      cancellation_error: null,
+      cancellation_requested_at: requestedAt,
+      cancellation_refund_eligible: refundEligible,
     })
-    .eq('id', bookingId)
+    .eq('id', bookingId).eq('user_id', user.id)
+  if (updateError) {
+    console.error('Cancel: Cal succeeded but database update failed:', updateError)
+    await supabase.from('pending_bookings').update({
+      status: 'cancellation_pending', cancellation_requested_at: requestedAt,
+      cancellation_error: `Cal.com geannuleerd; database afronding mislukt: ${updateError.message}`,
+      cancellation_refund_eligible: refundEligible,
+    }).eq('id', bookingId).eq('user_id', user.id)
+    return NextResponse.json({ success: false, partial: true, error: 'Cal.com is geannuleerd, maar de dashboardstatus kon niet worden bijgewerkt.' }, { status: 500 })
+  }
 
   // Send Chiva + customer notification emails
+  let emailSent = true
+  const emailWarnings: string[] = []
   try {
     const { sendCancellationNotification, sendCustomerCancellationEmail } = await import('@/lib/email')
-    await sendCancellationNotification({
-      ...booking,
-      cancelled_within_24h: within24h,
-    })
-    // Customer cancellation email goes to account email via user_id
-    await sendCustomerCancellationEmail({
-      ...booking,
-      cancelled_within_24h: within24h,
-    })
+    const mailResults = await Promise.allSettled([
+      sendCancellationNotification({ ...booking, cancelled_within_24h: within24h, cancellation_refund_eligible: refundEligible }),
+      sendCustomerCancellationEmail({ ...booking, cancelled_within_24h: within24h }),
+    ])
+    emailWarnings.push(...mailResults.filter(result => result.status === 'rejected').map(result => result.reason instanceof Error ? result.reason.message : 'Onbekende mailfout'))
+    emailSent = emailWarnings.length === 0
   } catch (mailErr) {
+    emailSent = false
+    emailWarnings.push(mailErr instanceof Error ? mailErr.message : 'Onbekende mailfout')
     console.error('Cancel: mail failed (non-fatal):', mailErr)
   }
 
   return NextResponse.json({
     success: true,
-    calCancelled,
+    calCancelled: true,
     within24h,
+    emailSent,
+    warnings: emailWarnings,
   })
 }

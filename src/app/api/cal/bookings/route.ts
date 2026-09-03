@@ -61,7 +61,7 @@ export async function GET() {
     const { data: manualRows, error: manualError } = await supabaseAdmin
       .from('manual_bookings')
       .select('id, cal_booking_uid, event_type_id, treatment_key, slot_start, slot_end, status, user_id')
-      .eq('status', 'confirmed')
+      .in('status', ['confirmed', 'cancellation_pending'])
       .order('slot_start', { ascending: false })
 
     if (manualError) {
@@ -114,6 +114,14 @@ export async function GET() {
       calBookings.map((booking: Record<string, unknown>) => [String(booking.uid), booking]),
     )
     for (const booking of manualBookings) bookingsByUid.set(String(booking.uid), booking)
+    const { data: pendingCancellations } = await supabaseAdmin
+      .from('pending_bookings')
+      .select('cal_booking_uid')
+      .eq('status', 'cancellation_pending')
+    for (const row of pendingCancellations || []) {
+      const existing = bookingsByUid.get(String(row.cal_booking_uid))
+      if (existing) bookingsByUid.set(String(row.cal_booking_uid), { ...existing, status: 'cancellation_pending' })
+    }
     const bookings = Array.from(bookingsByUid.values())
 
     // Sort by startTime descending
