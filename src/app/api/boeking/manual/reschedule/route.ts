@@ -8,6 +8,7 @@ import {
   getManualAvailability,
   isWithin24Hours,
   MANUAL_TREATMENTS,
+  normalizePhoneNumber,
   restoreConsumedPublicAvailability,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
@@ -63,15 +64,21 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: authData } = await supabase.auth.admin.getUserById(user.id)
-    const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', user.id).maybeSingle()
+    const { data: profile } = await supabase.from('profiles').select('email, full_name, phone').eq('id', user.id).maybeSingle()
     const customerEmail = authData?.user?.email || profile?.email
     const customerName = profile?.full_name || authData?.user?.user_metadata?.full_name || customerEmail?.split('@')[0]
     if (!customerEmail || !customerName) return json({ error: 'Je accountgegevens zijn niet compleet.' }, 409)
+    const customerPhone = normalizePhoneNumber(
+      profile?.phone || authData?.user?.phone || authData?.user?.user_metadata?.phone,
+    )
+    if (!customerPhone) {
+      return json({ error: 'Je profiel heeft geen geldig internationaal telefoonnummer.' }, 409)
+    }
 
     const replacement = await createManualCalBooking({
       eventTypeId: Number(booking.event_type_id), start: newStart,
       customerName, customerEmail,
-      customerPhone: authData?.user?.phone || authData?.user?.user_metadata?.phone || null,
+      customerPhone,
     })
     const replacementEnd = replacement.end || addMinutes(replacement.start, treatment.durationMinutes)
 

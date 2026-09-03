@@ -9,6 +9,7 @@ import {
   getManualEventTypeId,
   isManualTreatmentKey,
   MANUAL_TREATMENTS,
+  normalizePhoneNumber,
   type ManualDepositStatus,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
@@ -25,7 +26,7 @@ function json(body: Record<string, unknown>, status = 200) {
 
 async function accountFor(userId: string) {
   const [{ data: profile }, { data: authData }] = await Promise.all([
-    supabaseAdmin.from('profiles').select('id, email, full_name').eq('id', userId).maybeSingle(),
+    supabaseAdmin.from('profiles').select('id, email, full_name, phone').eq('id', userId).maybeSingle(),
     supabaseAdmin.auth.admin.getUserById(userId),
   ])
   if (!profile || !authData?.user) return null
@@ -35,7 +36,9 @@ async function accountFor(userId: string) {
     id: profile.id,
     email,
     name: profile.full_name || authData.user.user_metadata?.full_name || email.split('@')[0],
-    phone: authData.user.phone || authData.user.user_metadata?.phone || null,
+    phone: normalizePhoneNumber(
+      profile.phone || authData.user.phone || authData.user.user_metadata?.phone,
+    ),
   }
 }
 
@@ -83,6 +86,9 @@ export async function POST(request: NextRequest) {
 
   const customer = await accountFor(userId)
   if (!customer) return json({ error: 'Dit account bestaat niet meer of heeft geen e-mailadres.' }, 404)
+  if (!customer.phone) {
+    return json({ error: 'Deze klant heeft geen geldig internationaal telefoonnummer in het profiel.' }, 409)
+  }
 
   const treatmentKey = body.treatmentKey as ManualTreatmentKey
   const treatment = MANUAL_TREATMENTS[treatmentKey]

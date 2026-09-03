@@ -47,6 +47,26 @@ export function addMinutes(iso: string, minutes: number): string {
   return new Date(new Date(iso).getTime() + minutes * 60_000).toISOString()
 }
 
+export function normalizePhoneNumber(phone: string | null | undefined): string | null {
+  const trimmed = phone?.trim()
+  if (!trimmed) return null
+
+  const digits = trimmed.replace(/\D/g, '')
+  const normalized = trimmed.startsWith('+')
+    ? digits.startsWith('310')
+      ? `+31${digits.slice(3)}`
+      : `+${digits}`
+    : digits.startsWith('00')
+      ? `+${digits.slice(2)}`
+      : digits.startsWith('0')
+        ? `+31${digits.slice(1)}`
+        : digits.startsWith('31')
+          ? `+${digits}`
+          : null
+
+  return normalized && /^\+[1-9]\d{7,14}$/.test(normalized) ? normalized : null
+}
+
 export function intervalsOverlap(startA: string, endA: string, startB: string, endB: string): boolean {
   return new Date(startA).getTime() < new Date(endB).getTime()
     && new Date(endA).getTime() > new Date(startB).getTime()

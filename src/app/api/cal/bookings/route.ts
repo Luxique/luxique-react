@@ -73,7 +73,7 @@ export async function GET() {
       (manualRows || []).map(row => row.user_id).filter((id): id is string => Boolean(id)),
     ))
     const { data: profiles, error: profilesError } = userIds.length > 0
-      ? await supabaseAdmin.from('profiles').select('id, email, full_name').in('id', userIds)
+      ? await supabaseAdmin.from('profiles').select('id, email, full_name, phone').in('id', userIds)
       : { data: [], error: null }
 
     if (profilesError) {
@@ -96,7 +96,7 @@ export async function GET() {
         paid: false,
         customerName: profile?.full_name || profile?.email || 'Onbekend',
         customerEmail: profile?.email || '',
-        customerPhone: '',
+        customerPhone: profile?.phone || '',
         eventTypeId: row.event_type_id,
         source: 'manual' as const,
         eventTypeTitle: treatment?.name || 'Behandeling',
