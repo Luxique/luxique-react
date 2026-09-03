@@ -209,24 +209,24 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       return
     }
 
-    const date = formatDateEN(booking.slot_start)
+    const date = formatDateNL(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
 
     const { error } = await resend.emails.send({
       from: FROM,
       to: accountEmail,
-      subject: 'Tot morgen bij LUXIQUE 💫',
+      subject: `Herinnering: je afspraak op ${date} om ${time}`,
       html: `<!DOCTYPE html>
 <html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Tot morgen bij LUXIQUE</title>
+<title>Afspraakherinnering van LUXIQUE</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 </head>
 <body style="margin:0; padding:0; background-color:#e8e6e1; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
-<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">Morgen is het zover — je LUXIQUE afspraak.</div>
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">Je LUXIQUE afspraak is op ${date} om ${time}.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#e8e6e1;">
   <tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#FAF8F4; border-radius:14px; overflow:hidden;">
@@ -236,8 +236,8 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Herinnering</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Tot morgen bij LUXIQUE 💫</div>
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">We kijken ernaar uit om je te verwelkomen. Hier is een korte herinnering met alle details:</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Je afspraak komt eraan 💫</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">We kijken ernaar uit om je op ${date} om ${time} te verwelkomen. Hieronder vind je alle details:</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -246,7 +246,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Datum</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${date}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Tijd</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${time} uur</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${time}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Locatie</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${STUDIO_ADDRESS}</td></tr>
             </table>
