@@ -321,14 +321,18 @@ export default function DashboardPage() {
       const cancelPath = selectedBooking.source === 'manual' ? '/api/boeking/manual/cancel' : '/api/boeking/cancel'
       const res = await fetch(cancelPath, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
-        body: JSON.stringify({ bookingId: selectedBooking.id, within24h: isWithin24h(selectedBooking.slot_start) }),
+        body: JSON.stringify({ bookingId: selectedBooking.id }),
       })
       const result = await res.json()
       if (result.success) {
         setPendingBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancelled' } : b))
         setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false); setCancelError('')
       } else {
-        setCancelError('Annuleren is niet gelukt. Probeer het nogmaals.')
+        if (result.pending) {
+          setPendingBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancellation_pending' } : b))
+          setSelectedBooking(prev => prev ? { ...prev, status: 'cancellation_pending' } : prev)
+        }
+        setCancelError(result.error || 'Annuleren is niet gelukt. Probeer het nogmaals.')
       }
     } catch (err) {
       console.error('Cancel failed:', err)
@@ -697,6 +701,7 @@ export default function DashboardPage() {
                   {sortedBookings.map((b) => {
                     const isPast = new Date(b.slot_start) < new Date()
                     const isCancelled = b.status === 'cancelled' || b.status === 'expired'
+                    const isCancellationPending = b.status === 'cancellation_pending'
                     const dt = new Date(b.slot_start)
                     return (
                       <button key={b.id} onClick={() => { setSelectedBooking(b); setActiveTab('boekingen') }}
@@ -731,7 +736,7 @@ export default function DashboardPage() {
                               : isPast ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
                               : { background:'rgba(176,141,79,.14)', color:'#B08D4F', border:'1px solid rgba(176,141,79,.3)' })
                           }}>
-                            {isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
+                            {isCancellationPending ? 'Annulering in behandeling' : isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
                           </span>
                         </div>
                       </button>
@@ -910,6 +915,11 @@ export default function DashboardPage() {
                     {selectedBooking.source === 'manual' ? 'Geannuleerd — er is via de website geen betaling of terugbetaling verwerkt.' : 'Geannuleerd — restitutie wordt door LUXIQUE verwerkt.'}
                   </div>
                 )}
+                {selectedBooking.status === 'cancellation_pending' && (
+                  <div style={{ background:'rgba(176,141,79,.08)', border:'1px solid rgba(176,141,79,.2)', borderRadius:12, padding:16, marginBottom:16, fontSize:'.85rem', color:'#8a6b34' }}>
+                    Annulering in behandeling — Cal.com heeft de annulering nog niet bevestigd. LUXIQUE probeert dit automatisch opnieuw.
+                  </div>
+                )}
 
                 {(selectedBooking.status === 'paid' || selectedBooking.status === 'confirmed') && new Date(selectedBooking.slot_start) > new Date() && (
                   <>
@@ -1044,6 +1054,7 @@ export default function DashboardPage() {
                     {sortedBookings.map(b => {
                       const isPast = new Date(b.slot_start) < new Date()
                       const isCancelled = b.status === 'cancelled' || b.status === 'expired'
+                      const isCancellationPending = b.status === 'cancellation_pending'
                       return (
                         <button key={b.id} onClick={() => setSelectedBooking(b)}
                           style={{ width:'100%', textAlign:'left', background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', opacity:isCancelled?.6:1, transition:'border-color .2s' }}
@@ -1058,7 +1069,7 @@ export default function DashboardPage() {
                               : isPast ? { background:'rgba(28,24,20,.07)', color:'#888' }
                               : { background:'rgba(176,141,79,.14)', color:'#B08D4F' })
                           }}>
-                            {isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Afgelopen' : 'Bevestigd'}
+                            {isCancellationPending ? 'Annulering in behandeling' : isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Afgelopen' : 'Bevestigd'}
                           </span>
                         </button>
                       )

@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
 const FROM = 'LUXIQUE <noreply@luxique.nl>'
+const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 
 export type ManualBookingMailData = {
@@ -91,6 +92,15 @@ export async function sendManualBookingCancellation(data: ManualBookingMailData)
     intro: 'Je handmatig ingeplande afspraak is succesvol geannuleerd.',
     details: details(data),
     notice: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">${notice}</div>`,
+  }))
+}
+
+export async function sendManualBookingCancellationNotification(data: ManualBookingMailData) {
+  await send(CHIVA_EMAIL, `HANDMATIGE BOEKING GEANNULEERD • ${data.customerName} • ${formatDate(data.slotStart)}`, shell({
+    eyebrow: 'Handmatige boeking geannuleerd',
+    title: escapeHtml(data.customerName),
+    intro: `De handmatig ingeplande afspraak is succesvol in Cal.com geannuleerd${data.within24h ? ' binnen 24 uur voor aanvang' : ' buiten 24 uur voor aanvang'}. Er is geen websitebetaling of automatische refund uitgevoerd.`,
+    details: details(data),
   }))
 }
 
