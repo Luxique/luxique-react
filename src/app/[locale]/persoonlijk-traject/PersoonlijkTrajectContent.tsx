@@ -1127,7 +1127,7 @@ export default function PersoonlijkTrajectContent() {
           <div className="combo-card reveal">
             <div className="combo-l">
               <span className="eyebrow">{t('comboEyebrow')}</span>
-              <h3 className="serif">{t('comboTitlePre')} <em>{t('comboTitleEm')}</em>{t('comboTitlePost')}</h3>
+              <h3 className="serif">{t('comboTitlePre')} <em>{t('comboTitleEm')}</em>{' '}{t('comboTitlePost')}</h3>
               <p>{t('comboText')}</p>
             </div>
             <div className="combo-r">
