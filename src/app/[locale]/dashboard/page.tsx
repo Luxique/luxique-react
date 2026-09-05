@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
 
 type Course = { id: string; title: string; slug: string; short_description: string; thumbnail_url?: string }
@@ -212,9 +212,9 @@ export default function DashboardPage() {
   }, [user])
 
   // Fetch the existing online bookings and isolated manual bookings, then normalize for display.
-  useEffect(() => {
+  const loadAccountBookings = useCallback(async () => {
     if (!user) return
-    supabase.auth.getSession().then(async ({ data }) => {
+    const { data } = await supabase.auth.getSession()
       if (!data.session?.access_token) {
         console.warn('[dashboard] No session token for my-bookings fetch')
         return
@@ -236,8 +236,21 @@ export default function DashboardPage() {
       } catch (err) {
         console.error('[dashboard] bookings fetch failed:', err)
       }
-    })
   }, [user])
+
+  useEffect(() => {
+    loadAccountBookings()
+  }, [loadAccountBookings])
+
+  useEffect(() => {
+    if (activeTab === 'boekingen') loadAccountBookings()
+  }, [activeTab, loadAccountBookings])
+
+  useEffect(() => {
+    const refresh = () => loadAccountBookings()
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [loadAccountBookings])
 
   // Fetch my trajecten (traject_boekingen)
   useEffect(() => {

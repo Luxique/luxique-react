@@ -22,12 +22,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   }
 
-  // Fetch all bookings for this user — ONLY via user_id (never email)
-  // user_id is stamped when the user lands on the betalen page while logged in
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email, phone')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const phoneDigits = String(profile?.phone || '').replace(/\D/g, '').replace(/^00/, '')
+  const normalizedPhone = phoneDigits.startsWith('0') ? `31${phoneDigits.slice(1)}` : phoneDigits
+  const smsGatewayEmail = normalizedPhone ? `${normalizedPhone}@sms.cal.com` : null
+  const accountEmail = profile?.email?.trim().toLowerCase() || user.email?.trim().toLowerCase() || null
+
+  // user_id is authoritative. Exact account email/phone-gateway matches recover
+  // bookings created before the best-effort link request completed.
+  const ownershipFilters = [`user_id.eq.${user.id}`]
+  if (accountEmail) ownershipFilters.push(`customer_email.eq.${accountEmail}`)
+  if (smsGatewayEmail) ownershipFilters.push(`customer_email.eq.${smsGatewayEmail}`)
+
   const { data: bookings, error } = await supabase
     .from('pending_bookings')
     .select('*')
-    .eq('user_id', user.id)
+    .or(ownershipFilters.join(','))
     .not('stripe_session_id', 'is', null)
     .order('slot_start', { ascending: false })
 
