@@ -36,6 +36,7 @@ export function AdminDashboardMobileNav({ active }: { active?: AdminDashboardNav
         icon: item.icon,
         active: item.key === active,
       }))}
+      belowNav={<AcademyComingSoonToggle />}
     />
   )
 }
