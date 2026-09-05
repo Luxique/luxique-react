@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
+const SPAM_NOTICE = `<div style="font-family:Arial,sans-serif;font-size:13px;line-height:21px;color:#8a857b;padding:0 4px 22px"><strong style="color:#4a463e">Kwam deze mail in je ongewenste mail / spam terecht?</strong> Verplaats 'm dan even naar je normale inbox, zodat je onze berichten voortaan meteen goed ontvangt.</div>`
 
 export type ManualBookingMailData = {
   bookingId: string
@@ -66,7 +67,7 @@ export async function sendManualBookingConfirmation(data: ManualBookingMailData)
     title: `Je bent ingepland, ${escapeHtml(data.customerName.split(' ')[0] || data.customerName)}`,
     intro: 'Chiva heeft je afspraak handmatig bevestigd. Er is via de website geen betaling uitgevoerd.',
     details: details(data),
-    notice: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">${cancellationText}</div>`,
+    notice: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">${cancellationText}</div>${SPAM_NOTICE}`,
   }))
 }
 
@@ -77,7 +78,7 @@ export async function sendManualBookingReminder(data: ManualBookingMailData) {
     title: `Je afspraak komt eraan, ${escapeHtml(data.customerName.split(' ')[0] || data.customerName)}`,
     intro: `Je afspraak bij Chiva is op ${appointment}. Hieronder vind je de datum, tijd en locatie.`,
     details: details(data),
-    notice: '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">Kom met schone wimpers, zonder mascara of olieproducten rond de ogen.</div>',
+    notice: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">Kom met schone wimpers, zonder mascara of olieproducten rond de ogen.</div>${SPAM_NOTICE}`,
   }))
 }
 
@@ -92,7 +93,7 @@ export async function sendManualBookingCancellation(data: ManualBookingMailData)
     title: 'Je afspraak is geannuleerd',
     intro: 'Je handmatig ingeplande afspraak is succesvol geannuleerd.',
     details: details(data),
-    notice: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">${notice}</div>`,
+    notice: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:23px;color:#4a463e;padding:0 4px 22px">${notice}</div>${SPAM_NOTICE}`,
   }))
 }
 
@@ -111,5 +112,6 @@ export async function sendManualBookingRescheduled(data: ManualBookingMailData) 
     title: 'Je nieuwe afspraak staat vast',
     intro: 'Je handmatig ingeplande afspraak is verplaatst. Hieronder staan de nieuwe datum en tijd. Er is via de website geen betaling of terugbetaling verwerkt.',
     details: details(data),
+    notice: SPAM_NOTICE,
   }))
 }

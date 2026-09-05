@@ -48,7 +48,9 @@ async function getAccountIdentity(booking: BookingData): Promise<{ name: string;
     supabase.auth.admin.getUserById(booking.user_id),
     supabase.from('profiles').select('full_name, email').eq('id', booking.user_id).maybeSingle(),
   ])
-  email = authUser?.user?.email || profile?.email || email
+  // profiles.email is the canonical customer-facing address. Cal.com may store
+  // an @sms.cal.com gateway address and auth metadata can lag behind a profile edit.
+  email = profile?.email || authUser?.user?.email || email
   name = profile?.full_name || authUser?.user?.user_metadata?.full_name || name
   return { name: name.trim() || email.split('@')[0] || 'Klant', email }
 }
@@ -56,6 +58,9 @@ async function getAccountIdentity(booking: BookingData): Promise<{ name: string;
 async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
   return (await getAccountIdentity({ cal_booking_uid: '', event_type: '', slot_start: '', amount_cents: 0, user_id: userId, customer_email: fallback })).email || null
 }
+
+const spamNoticeNL = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;"><strong style="color:#4a463e;">Kwam deze mail in je ongewenste mail / spam terecht?</strong> Verplaats 'm dan even naar je normale inbox, zodat je onze berichten voortaan meteen goed ontvangt.</div>`
+const spamNoticeEN = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;"><strong style="color:#4a463e;">Did this email land in your junk or spam folder?</strong> Please move it to your regular inbox so our future messages reach you straight away.</div>`
 
 async function markMailSent(bookingId: string, column: string) {
   const supabase = createClient(
@@ -160,6 +165,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
           </tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:6px; max-width:430px; margin:0 auto;">A calendar invite (.ics) is attached so you can add it to your calendar.</div>
+        ${spamNoticeEN}
       </td></tr>
       <tr><td style="padding:0 40px 8px 40px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px;">
@@ -276,6 +282,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
           </tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;">Kun je onverhoopt niet? Laat het ons z.s.m. weten via <a href="mailto:info@luxique.nl" style="color:#8a857b; text-decoration:underline;">info@luxique.nl</a>.</div>
+        ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -588,6 +595,7 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Je afspraak voor <strong>${booking.event_type}</strong> op ${date} om ${time} uur is succesvol geannuleerd.</div>
         ${refundHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; max-width:430px; margin:0 auto;">Vragen? Mail ons via <a href="mailto:info@luxique.nl" style="color:#8a857b; text-decoration:underline;">info@luxique.nl</a>.</div>
+        ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -879,7 +887,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
           </td></tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:14px; max-width:440px; margin:0 auto;">Het restbedrag van <strong>${formatBedrag(data.restbedrag_cents)}</strong> voldoe je contant of met pin bij Chiva op de startdag.</div>
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#9a958b; padding-bottom:22px; max-width:440px; margin:0 auto;">Let op: de aanbetaling (20%) is onder geen enkele omstandigheid restitueerbaar.</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#9a958b; padding-bottom:22px; max-width:440px; margin:0 auto;">Na de wettelijke bedenktijd geldt bij annulering een annuleringsvergoeding van 20% van de cursusprijs. De betaalde aanbetaling wordt daarmee verrekend.</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:24px 28px;">
             <div style="font-family:Arial,sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#C4A265; text-align:center; padding-bottom:14px;">Praktische informatie</div>
@@ -890,6 +898,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
             </table>
           </td></tr>
         </table>
+        ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
