@@ -214,6 +214,7 @@ export default function VoorwaardenPage() {
           <p>${t('art5_1')}</p>
           <p>${t('art5_2')}</p>
           <p>${t('art5_3')}</p>
+          <p>${t('art5_4')}</p>
         </div>
 
         <div class="art"><div class="art-h">${t('art6Title')}</div>
