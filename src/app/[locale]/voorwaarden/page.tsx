@@ -2,12 +2,18 @@
 
 import { useEffect, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
+import enMessages from '../../../../messages/en.json'
 
 export default function VoorwaardenPage() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const t = useTranslations('Policies')
+  const localeTranslations = useTranslations('Policies')
   const locale = useLocale()
   const isNL = locale === 'nl'
+  // The legal documents are maintained in two canonical languages: Dutch and English.
+  // German, Spanish, French and Italian routes intentionally show the English version.
+  const t = (key: string) => isNL
+    ? localeTranslations(key as never)
+    : String(enMessages.Policies[key as keyof typeof enMessages.Policies] || '')
 
   useEffect(() => {
     // Reading progress
@@ -420,12 +426,13 @@ export default function VoorwaardenPage() {
         </ul>
 
         <h4>${t('cancelTrajectSub')}</h4>
-        <ul class="list">
-          <li>${t('cancelTraject1')}</li>
-          <li><strong>${t('cancelTraject2Label')}</strong> ${t('cancelTraject2')}</li>
-          <li><strong>${t('cancelTraject3Label')}</strong> ${t('cancelTraject3')}</li>
-          <li><strong>${t('cancelTraject4Label')}</strong> ${t('cancelTraject4')}</li>
-        </ul>
+        <div class="sub">${t('cancelTraject2Label')}</div>
+        <p>${t('cancelTraject1')}</p>
+        <p>${t('cancelTraject2')}</p>
+        <div class="sub">${t('cancelTraject3Label')}</div>
+        <p>${t('cancelTraject3')}</p>
+        <div class="sub">${t('cancelTraject4Label')}</div>
+        <p>${t('cancelTraject4')}</p>
 
         <h4>${t('cancelKlachtenSub')}</h4>
         <ul class="list">
