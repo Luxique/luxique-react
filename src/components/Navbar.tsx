@@ -24,9 +24,10 @@ export default function Navbar() {
   }
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [academyComingSoon, setAcademyComingSoon] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const isAcademyPage = pathname === '/courses' || pathname.startsWith('/courses/') || pathname.includes('/courses')
+  const isAcademyPage = pathname.includes('/courses') || pathname.includes('/academy')
   const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
 
   // Extract current locale from path
@@ -41,6 +42,13 @@ export default function Navbar() {
     { label: t('faq'), href: '/faq' },
     { label: t('contact'), href: '/contact' },
   ]
+
+  useEffect(() => {
+    fetch('/api/site-settings/academy', { cache: 'no-store' })
+      .then(response => response.json())
+      .then(data => setAcademyComingSoon(data.academyComingSoon === true))
+      .catch(() => {})
+  }, [pathname])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -131,8 +139,9 @@ export default function Navbar() {
         <div className="hidden md:flex h-[52px] flex-1 items-center justify-center px-5 gap-8 rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)]">
           {navLinks.map(link => (
             <a key={link.href} href={link.href}
-              className="text-[12px] tracking-[0.05em] text-[#6b6357] hover:text-[#C4A265] transition-colors whitespace-nowrap">
+              className="relative text-[12px] tracking-[0.05em] text-[#6b6357] hover:text-[#C4A265] transition-colors whitespace-nowrap">
               {link.label}
+              {link.href === '/courses' && academyComingSoon && <span className="absolute -right-[17px] -top-[8px] h-[7px] w-[7px] rounded-full bg-[#C4A265] shadow-[0_0_0_3px_rgba(196,162,101,.18)]" title="Coming soon" />}
             </a>
           ))}
         </div>
@@ -210,8 +219,9 @@ export default function Navbar() {
         <div id="mobile-menu" className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
           <div className="absolute left-[14px] w-[260px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] p-6 space-y-1" style={{ top: 'calc(env(safe-area-inset-top) + 76px)' }} onClick={e => e.stopPropagation()}>
             {navLinks.map(l => (
-              <a key={l.href} href={l.href} className="block text-[14px] py-2.5 px-3 rounded-xl text-[#3d382f] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>
-                {l.label}
+              <a key={l.href} href={l.href} className="flex items-center justify-between text-[14px] py-2.5 px-3 rounded-xl text-[#3d382f] hover:text-[#DFC08A] hover:bg-[rgba(196,162,101,0.08)] transition" onClick={() => setMobileOpen(false)}>
+                <span>{l.label}</span>
+                {l.href === '/courses' && academyComingSoon && <span className="rounded-full bg-[#0C0A07] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.14em] text-[#C4A265]">Coming soon</span>}
               </a>
             ))}
             <hr className="border-[rgba(196,162,101,0.1)] my-2" />

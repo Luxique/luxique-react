@@ -1,6 +1,7 @@
 'use client'
 
 import AdminMobileNav from '@/components/AdminMobileNav'
+import AcademyComingSoonToggle from '@/components/AcademyComingSoonToggle'
 
 export type AdminDashboardNavKey =
   | 'overview'
@@ -20,9 +21,9 @@ const adminDashboardItems: {
   { key: 'overview', label: 'Overzicht', href: '/admin', icon: '📊' },
   { key: 'customers', label: 'Klanten', href: '/admin/customers', icon: '👥' },
   { key: 'courses', label: 'Cursussen', href: '/admin/courses', icon: '📚' },
+  { key: 'klassen', label: 'Klassen', href: '/admin?tab=klassen', icon: '🎓' },
   { key: 'calendar', label: 'Agenda', href: '/admin?tab=calendar', icon: '📅' },
   { key: 'finance', label: 'Financiën', href: '/admin?tab=finance', icon: '💶' },
-  { key: 'klassen', label: 'Klassen', href: '/admin?tab=klassen', icon: '🎓' },
   { key: 'knowledge', label: 'Kennis', href: '/admin/lux-knowledge', icon: '🤖' },
 ]
 
@@ -61,6 +62,7 @@ export function AdminDashboardSidebar({ active }: { active?: AdminDashboardNavKe
             {item.label}
           </a>
         ))}
+        <AcademyComingSoonToggle />
       </nav>
     </div>
   )
