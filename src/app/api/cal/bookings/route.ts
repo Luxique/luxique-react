@@ -5,6 +5,19 @@ import { isCancelledCalStatus } from '@/lib/cal-cancellation'
 
 export const dynamic = 'force-dynamic'
 
+function normalizeCustomerField(value: unknown): string {
+  if (typeof value === 'string') return value.trim()
+  if (!value || Array.isArray(value) || typeof value !== 'object') return ''
+
+  const field = value as Record<string, unknown>
+  const firstName = typeof field.firstName === 'string' ? field.firstName.trim() : ''
+  const lastName = typeof field.lastName === 'string' ? field.lastName.trim() : ''
+  const fullName = [firstName, lastName].filter(Boolean).join(' ')
+  if (fullName) return fullName
+
+  return typeof field.value === 'string' ? field.value.trim() : ''
+}
+
 export async function GET() {
   const apiKey = process.env.CAL_API_KEY
   if (!apiKey) {
@@ -34,8 +47,21 @@ export async function GET() {
       const eventType = b.eventType as Record<string, unknown> | undefined
       const responses = b.responses as Record<string, unknown> | undefined
       const metadata = b.metadata as Record<string, unknown> | undefined
+      const attendees = Array.isArray(b.attendees) ? b.attendees : []
+      const primaryAttendee = attendees[0] && typeof attendees[0] === 'object'
+        ? attendees[0] as Record<string, unknown>
+        : undefined
       const eventTypeId = Number(eventType?.id || b.eventTypeId || 0)
       const isManual = manualEventTypeIds.has(eventTypeId) || metadata?.source === 'luxique-manual'
+      const customerName = normalizeCustomerField(responses?.name)
+        || normalizeCustomerField(primaryAttendee?.name)
+        || 'Onbekend'
+      const customerEmail = normalizeCustomerField(responses?.email)
+        || normalizeCustomerField(primaryAttendee?.email)
+      const customerPhone = normalizeCustomerField(responses?.phone)
+        || normalizeCustomerField(responses?.phoneNumber)
+        || normalizeCustomerField(primaryAttendee?.phoneNumber)
+        || normalizeCustomerField(primaryAttendee?.phone)
       return {
         id: b.id,
         uid: b.uid,
@@ -45,9 +71,9 @@ export async function GET() {
         endTime: b.endTime,
         location: b.location,
         paid: b.paid,
-        customerName: responses?.name || 'Onbekend',
-        customerEmail: responses?.email || '',
-        customerPhone: responses?.phone || responses?.phoneNumber || '',
+        customerName,
+        customerEmail,
+        customerPhone,
         eventTypeId,
         source: isManual ? 'manual' : 'online',
         eventTypeTitle: eventType?.title || 'Onbekend',
@@ -88,6 +114,7 @@ export async function GET() {
     const manualBookings = (manualRows || []).map(row => {
       const profile = profilesById.get(row.user_id)
       const treatment = MANUAL_TREATMENTS[row.treatment_key as ManualTreatmentKey]
+      const customerEmail = normalizeCustomerField(profile?.email)
       return {
         id: row.id,
         uid: row.cal_booking_uid,
@@ -97,9 +124,9 @@ export async function GET() {
         endTime: row.slot_end,
         location: null,
         paid: false,
-        customerName: profile?.full_name || profile?.email || 'Onbekend',
-        customerEmail: profile?.email || '',
-        customerPhone: profile?.phone || '',
+        customerName: normalizeCustomerField(profile?.full_name) || customerEmail || 'Onbekend',
+        customerEmail,
+        customerPhone: normalizeCustomerField(profile?.phone),
         eventTypeId: row.event_type_id,
         source: 'manual' as const,
         eventTypeTitle: treatment?.name || 'Behandeling',

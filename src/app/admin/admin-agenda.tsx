@@ -34,14 +34,14 @@ type CalBooking = {
   status: string
   startTime: string
   endTime: string
-  customerName: string
-  customerEmail: string
-  customerPhone?: string
+  customerName: unknown
+  customerEmail: unknown
+  customerPhone?: unknown
   eventTypeId: number
   eventTypeTitle: string
   source?: 'online' | 'manual'
 }
-type CustomerResult = { id: string; email: string | null; full_name: string | null }
+type CustomerResult = { id: string; email: unknown; full_name: unknown }
 type TrajectClass = {
   id: string
   blok_dagen: string[]
@@ -69,6 +69,18 @@ const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }>
 const TRAJECT_BLOK_DAG_EVENT_TYPE_ID = 6195439
 
 function pad(value: number) { return String(value).padStart(2, '0') }
+function safeText(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value.trim() || fallback
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (!value || Array.isArray(value) || typeof value !== 'object') return fallback
+
+  const field = value as Record<string, unknown>
+  const firstName = typeof field.firstName === 'string' ? field.firstName.trim() : ''
+  const lastName = typeof field.lastName === 'string' ? field.lastName.trim() : ''
+  const fullName = [firstName, lastName].filter(Boolean).join(' ')
+  if (fullName) return fullName
+  return typeof field.value === 'string' ? field.value.trim() || fallback : fallback
+}
 function dateKey(date: Date) { return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` }
 function addDays(date: Date, amount: number) { const next = new Date(date); next.setDate(next.getDate() + amount); return next }
 function startOfWeek(date: Date) { const next = new Date(date); next.setHours(0, 0, 0, 0); next.setDate(next.getDate() - ((next.getDay() + 6) % 7)); return next }
@@ -157,7 +169,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       if (!trajectResponse.ok) throw new Error(trajectPayload.error || 'Traject-dagen laden mislukt.')
       setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) =>
         booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
-        && !['cancelled', 'canceled'].includes(booking.status?.toLowerCase())
+        && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
       ))
       setAvailability(availabilityPayload.treatments || [])
       setTrajectClasses(trajectPayload.trajectDagen || [])
@@ -196,23 +208,28 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   }, [manualCustomer, manualCustomerQuery, manualModalOpen, sessionToken])
 
   const items = useMemo<CalendarItem[]>(() => [
-    ...bookings.map(booking => ({
-      id: `booking-${booking.uid || booking.id}`,
-      kind: 'booking' as const,
-      date: localDateFromIso(booking.startTime),
-      startTime: localTimeFromIso(booking.startTime),
-      endTime: localTimeFromIso(booking.endTime),
-      title: booking.source === 'manual'
-        ? `Handmatige boeking — ${booking.customerName || booking.customerEmail || 'Klant'}`
-        : booking.eventTypeTitle,
-      treatmentName: booking.eventTypeTitle,
-      status: booking.status,
-      customer: booking.customerName || booking.customerEmail,
-      customerEmail: booking.customerEmail,
-      customerPhone: booking.customerPhone,
-      source: booking.source,
-      bookingUid: booking.uid,
-    })),
+    ...bookings.map(booking => {
+      const customerName = safeText(booking.customerName)
+      const customerEmail = safeText(booking.customerEmail)
+      const customerPhone = safeText(booking.customerPhone)
+      return {
+        id: `booking-${booking.uid || booking.id}`,
+        kind: 'booking' as const,
+        date: localDateFromIso(booking.startTime),
+        startTime: localTimeFromIso(booking.startTime),
+        endTime: localTimeFromIso(booking.endTime),
+        title: booking.source === 'manual'
+          ? `Handmatige boeking — ${customerName || customerEmail || 'Onbekend'}`
+          : safeText(booking.eventTypeTitle, 'Onbekende behandeling'),
+        treatmentName: safeText(booking.eventTypeTitle, 'Onbekende behandeling'),
+        status: safeText(booking.status, 'Geboekt'),
+        customer: customerName || customerEmail || 'Onbekend',
+        customerEmail,
+        customerPhone,
+        source: booking.source,
+        bookingUid: booking.uid,
+      }
+    }),
     ...availability.flatMap(treatment => treatment.slots.map(slot => ({
       id: `override-${treatment.key}-${slot.date}-${slot.start}`,
       kind: 'override' as const,
@@ -428,7 +445,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       setManualModalOpen(false)
       setSuccess(payload?.emailSent === false
         ? 'De afspraak is ingepland. Let op: de bevestigingsmail kon niet worden verzonden.'
-        : `${manualCustomer.full_name || manualCustomer.email || 'De klant'} is handmatig ingepland en heeft de bevestigingsmail ontvangen.`)
+        : `${safeText(manualCustomer.full_name) || safeText(manualCustomer.email) || 'De klant'} is handmatig ingepland en heeft de bevestigingsmail ontvangen.`)
       await loadAgenda()
     } catch (reason) {
       setManualError(reason instanceof Error ? reason.message : 'Klant inboeken mislukt.')
@@ -565,7 +582,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="mb-6 flex items-start justify-between"><div><h4 className="font-['Cormorant_Garamond'] text-[27px]">+ Klant inboeken</h4><p className="mt-1 text-[11px] text-[#999]">Alleen voor klanten met een bestaand LUXIQUE-account.</p></div><button onClick={() => setManualModalOpen(false)} disabled={manualSaving} className="text-[#999]">✕</button></div>
           {manualError && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {manualError}</div>}
           <div className="space-y-4">
-            <div className="relative"><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Klant zoeken</label>{manualCustomer ? <div className="flex items-center justify-between rounded-xl border border-[#C4A265]/40 bg-[#fffaf0] px-4 py-3"><div><p className="text-[13px] font-medium">{manualCustomer.full_name || 'Naam onbekend'}</p><p className="text-[11px] text-[#888]">{manualCustomer.email}</p></div><button type="button" onClick={() => { setManualCustomer(null); setManualCustomerQuery('') }} className="text-[11px] text-[#80642e]">Wijzigen</button></div> : <><input value={manualCustomerQuery} onChange={event => { setManualCustomerQuery(event.target.value); setManualError(null) }} placeholder="Naam of e-mailadres" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" />{manualSearching && <p className="mt-2 text-[11px] text-[#999]">Zoeken…</p>}{!manualSearching && manualCustomerQuery.trim().length >= 2 && manualCustomers.length === 0 && <p className="mt-2 text-[11px] text-[#9a6b3f]">Geen bestaand account gevonden. Laat de klant eerst een account aanmaken.</p>}{manualCustomers.length > 0 && <div className="mt-2 overflow-hidden rounded-xl border border-[#eee] bg-white shadow-lg">{manualCustomers.map(customer => <button type="button" key={customer.id} onClick={() => { setManualCustomer(customer); setManualCustomers([]); setManualError(null) }} className="block w-full border-b border-[#f2f2f2] px-4 py-3 text-left last:border-0 hover:bg-[#faf9f7]"><span className="block text-[13px] font-medium">{customer.full_name || 'Naam onbekend'}</span><span className="block text-[11px] text-[#888]">{customer.email}</span></button>)}</div>}</>}</div>
+            <div className="relative"><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Klant zoeken</label>{manualCustomer ? <div className="flex items-center justify-between rounded-xl border border-[#C4A265]/40 bg-[#fffaf0] px-4 py-3"><div><p className="text-[13px] font-medium">{safeText(manualCustomer.full_name, 'Naam onbekend')}</p><p className="text-[11px] text-[#888]">{safeText(manualCustomer.email)}</p></div><button type="button" onClick={() => { setManualCustomer(null); setManualCustomerQuery('') }} className="text-[11px] text-[#80642e]">Wijzigen</button></div> : <><input value={manualCustomerQuery} onChange={event => { setManualCustomerQuery(event.target.value); setManualError(null) }} placeholder="Naam of e-mailadres" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" />{manualSearching && <p className="mt-2 text-[11px] text-[#999]">Zoeken…</p>}{!manualSearching && manualCustomerQuery.trim().length >= 2 && manualCustomers.length === 0 && <p className="mt-2 text-[11px] text-[#9a6b3f]">Geen bestaand account gevonden. Laat de klant eerst een account aanmaken.</p>}{manualCustomers.length > 0 && <div className="mt-2 overflow-hidden rounded-xl border border-[#eee] bg-white shadow-lg">{manualCustomers.map(customer => <button type="button" key={customer.id} onClick={() => { setManualCustomer(customer); setManualCustomers([]); setManualError(null) }} className="block w-full border-b border-[#f2f2f2] px-4 py-3 text-left last:border-0 hover:bg-[#faf9f7]"><span className="block text-[13px] font-medium">{safeText(customer.full_name, 'Naam onbekend')}</span><span className="block text-[11px] text-[#888]">{safeText(customer.email)}</span></button>)}</div>}</>}</div>
             <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Behandeling</label><select value={manualTreatmentKey} onChange={event => setManualTreatmentKey(event.target.value as TreatmentKey)} className="w-full rounded-xl border border-[#ddd] bg-white px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
             <div className="grid grid-cols-2 gap-3"><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Datum</label><input type="date" min={todayKey} value={manualDate} onChange={event => setManualDate(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Tijd</label><input type="time" value={manualTime} onChange={event => setManualTime(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div></div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#eee] p-4"><input type="checkbox" checked={manualDepositPaid} onChange={event => setManualDepositPaid(event.target.checked)} className="mt-0.5" /><span><span className="block text-[13px] font-medium">Aanbetaling in de salon geregistreerd</span><span className="block text-[11px] text-[#888]">Er loopt nooit een betaling of refund via de website.</span></span></label>
