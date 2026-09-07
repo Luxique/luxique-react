@@ -145,36 +145,39 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     if (!sessionToken) return
     setLoading(true)
     setError(null)
+    const cacheBust = Date.now()
+    const rangeStartDate = view === 'week' ? startOfWeek(cursor) : startOfMonthGrid(cursor)
+    const rangeStart = dateKey(rangeStartDate)
+    const rangeEnd = dateKey(addDays(rangeStartDate, view === 'week' ? 7 : 42))
+    const loadJson = async (url: string, fallbackError: string, authenticated = false) => {
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: authenticated ? { Authorization: `Bearer ${sessionToken}` } : undefined,
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(payload?.error || fallbackError)
+      return payload
+    }
     try {
-      const cacheBust = Date.now()
-      const rangeStartDate = view === 'week' ? startOfWeek(cursor) : startOfMonthGrid(cursor)
-      const rangeStart = dateKey(rangeStartDate)
-      const rangeEnd = dateKey(addDays(rangeStartDate, view === 'week' ? 7 : 42))
-      const [bookingsResponse, availabilityResponse, trajectResponse] = await Promise.all([
-        fetch(`/api/cal/bookings?t=${cacheBust}`, { cache: 'no-store' }),
-        fetch(`/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`, {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${sessionToken}` },
-        }),
-        fetch(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${sessionToken}` },
-        }),
+      const [bookingsResult, availabilityResult, trajectResult] = await Promise.allSettled([
+        loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.'),
+        loadJson(`/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`, 'Beschikbaarheid laden mislukt.', true),
+        loadJson(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, 'Traject-dagen laden mislukt.', true),
       ])
-      const [bookingsPayload, availabilityPayload, trajectPayload] = await Promise.all([
-        bookingsResponse.json(), availabilityResponse.json(), trajectResponse.json(),
-      ])
-      if (!bookingsResponse.ok) throw new Error(bookingsPayload.error || 'Afspraken laden mislukt.')
-      if (!availabilityResponse.ok) throw new Error(availabilityPayload.error || 'Beschikbaarheid laden mislukt.')
-      if (!trajectResponse.ok) throw new Error(trajectPayload.error || 'Traject-dagen laden mislukt.')
-      setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) =>
-        booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
-        && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
-      ))
-      setAvailability(availabilityPayload.treatments || [])
-      setTrajectClasses(trajectPayload.trajectDagen || [])
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Agenda laden mislukt.')
+
+      if (bookingsResult.status === 'fulfilled') {
+        setBookings((bookingsResult.value.bookings || []).filter((booking: CalBooking) =>
+          booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
+          && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
+        ))
+      }
+      if (availabilityResult.status === 'fulfilled') setAvailability(availabilityResult.value.treatments || [])
+      if (trajectResult.status === 'fulfilled') setTrajectClasses(trajectResult.value.trajectDagen || [])
+
+      const failures = [bookingsResult, availabilityResult, trajectResult]
+        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+        .map(result => result.reason instanceof Error ? result.reason.message : 'Agenda-data laden mislukt.')
+      if (failures.length > 0) setError(failures.join(' '))
     } finally {
       setLoading(false)
     }
@@ -394,6 +397,10 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       const payload = await response.json().catch(() => null)
       if (!response.ok || !payload?.success) throw new Error(payload?.error || 'Annuleren mislukt.')
       setSelectedItemId(null)
+      // Cal's list endpoint can lag after a confirmed cancellation. Remove the
+      // booking immediately; loadAgenda then reconciles it without depending on
+      // availability or trajectory endpoints succeeding.
+      setBookings(current => current.filter(booking => booking.uid !== item.bookingUid))
       setSuccess(payload.warnings?.length
         ? `Afspraak geannuleerd. ${payload.warnings.join(' ')}`
         : 'Afspraak is in Cal.com geannuleerd, het tijdslot is vrijgegeven en de e-mails zijn verzonden.')
@@ -545,7 +552,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             {selectedItem.kind === 'booking' && (selectedItem.customerEmail || selectedItem.customerPhone) && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Contact</dt><dd className="mt-1 flex flex-col gap-1">{selectedItem.customerEmail && <a href={`mailto:${selectedItem.customerEmail}`} className="break-all text-[#80642e] hover:underline">{selectedItem.customerEmail}</a>}{selectedItem.customerPhone && <a href={`tel:${selectedItem.customerPhone}`} className="text-[#80642e] hover:underline">{selectedItem.customerPhone}</a>}</dd></div>}
             {selectedItem.kind === 'traject-day' && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Deelnemers</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.paidCount}/{selectedItem.maxParticipants} betaald</dd></div>}
           </dl>
-          {selectedItem.kind === 'booking' && <button type="button" onClick={() => cancelBooking(selectedItem)} disabled={cancelling === selectedItem.id} className="mt-5 w-full rounded-full border border-red-200 bg-red-50 px-4 py-2.5 text-[11px] font-semibold text-red-700 disabled:opacity-50">{cancelling === selectedItem.id ? 'Annuleren in Cal.com…' : 'Afspraak annuleren'}</button>}
+          {selectedItem.kind === 'booking' && <button type="button" onClick={() => cancelBooking(selectedItem)} disabled={cancelling === selectedItem.id} className="mt-5 w-full rounded-full border border-red-200 bg-red-50 px-4 py-2.5 text-[11px] font-semibold text-red-700 disabled:opacity-50">{cancelling === selectedItem.id ? 'Afspraak annuleren…' : 'Afspraak annuleren'}</button>}
         </div>}
         {loading ? <div className="p-8 text-center text-[13px] text-[#888]">Agenda laden…</div> : selectedItems.length === 0 ? <div className="p-8 text-center text-[13px] text-[#888]">Deze dag is leeg.</div> : (
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (

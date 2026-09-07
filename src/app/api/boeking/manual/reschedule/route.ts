@@ -15,6 +15,7 @@ import {
 } from '@/lib/manual-bookings'
 import { findManualBookingConflict } from '@/lib/manual-booking-conflicts'
 import { sendManualBookingRescheduled } from '@/lib/manual-booking-email'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const { data: authData } = await supabase.auth.admin.getUserById(user.id)
     const { data: profile } = await supabase.from('profiles').select('email, full_name, phone').eq('id', user.id).maybeSingle()
-    const customerEmail = authData?.user?.email || profile?.email
+    const customerEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: authData?.user?.email })
     const customerName = profile?.full_name || authData?.user?.user_metadata?.full_name || customerEmail?.split('@')[0]
     if (!customerEmail || !customerName) return json({ error: 'Je accountgegevens zijn niet compleet.' }, 409)
     const customerPhone = normalizePhoneNumber(

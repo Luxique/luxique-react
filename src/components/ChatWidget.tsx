@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { shouldHideChatWidget } from '@/lib/chat-widget-route'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -52,8 +53,8 @@ export default function ChatWidget() {
   const t = useTranslations('chat')
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-  // Chatbot verborgen op academy- en cursuspagina's (verkoop- en lesweergave)
-  const hideOnAcademy = (pathname?.startsWith('/academy') || pathname?.startsWith('/cursus')) ?? false
+  // Keep the public assistant, but never overlay authenticated admin/customer dashboards.
+  const hideOnCurrentRoute = shouldHideChatWidget(pathname)
 
   const welcomeMessage = t('chatWelcome')
   const errorMessage = t('chatError')
@@ -120,7 +121,7 @@ export default function ChatWidget() {
       `}</style>
 
       {/* Chat button */}
-      {!hideOnAcademy && (<button
+      {!hideOnCurrentRoute && (<button
         className="luxique-chat-btn"
         onClick={() => setOpen(!open)}
         aria-label={open ? 'Chat sluiten' : 'Chat openen'}
@@ -142,7 +143,7 @@ export default function ChatWidget() {
       </button>)}
 
       {/* Chat window */}
-      {open && !hideOnAcademy && (
+      {open && !hideOnCurrentRoute && (
         <div
           className="luxique-chat-window"
           style={{

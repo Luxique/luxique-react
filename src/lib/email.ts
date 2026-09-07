@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -38,7 +39,7 @@ interface BookingData {
 
 async function getAccountIdentity(booking: BookingData): Promise<{ name: string; email: string }> {
   let name = booking.customer_name?.trim() || ''
-  let email = booking.customer_email?.trim() || ''
+  let email = canonicalCustomerEmail({ bookingEmail: booking.customer_email }) || ''
   if (!booking.user_id) return { name: name || email.split('@')[0] || 'Klant', email }
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,7 +51,11 @@ async function getAccountIdentity(booking: BookingData): Promise<{ name: string;
   ])
   // profiles.email is the canonical customer-facing address. Cal.com may store
   // an @sms.cal.com gateway address and auth metadata can lag behind a profile edit.
-  email = profile?.email || authUser?.user?.email || email
+  email = canonicalCustomerEmail({
+    profileEmail: profile?.email,
+    authEmail: authUser?.user?.email,
+    bookingEmail: email,
+  }) || ''
   name = profile?.full_name || authUser?.user?.user_metadata?.full_name || name
   return { name: name.trim() || email.split('@')[0] || 'Klant', email }
 }
@@ -314,6 +319,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
 // ============================================================
 export async function sendNewBookingNotification(booking: BookingData) {
   try {
+    const customer = await getAccountIdentity(booking)
     const date = formatDateEN(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
@@ -343,15 +349,15 @@ export async function sendNewBookingNotification(booking: BookingData) {
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Nieuwe boeking</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${booking.customer_name || 'Onbekend'}</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${customer.name}</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Er is een nieuwe betaalde boeking binnengekomen:</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Klant</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${booking.customer_name || 'Onbekend'}</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${customer.name}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">E-mail</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;"><a href="mailto:${booking.customer_email || ''}" style="color:#0C0A07; text-decoration:none;">${booking.customer_email || 'Onbekend'}</a></td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${customer.email ? `<a href="mailto:${customer.email}" style="color:#0C0A07; text-decoration:none;">${customer.email}</a>` : 'Onbekend'}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Behandeling</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${booking.event_type}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Wanneer</td></tr>

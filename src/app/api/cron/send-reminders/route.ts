@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
         supabase.auth.admin.getUserById(booking.user_id),
         supabase.from('profiles').select('email, full_name').eq('id', booking.user_id).maybeSingle(),
       ])
-      const customerEmail = authData?.user?.email || profile?.email
+      const customerEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: authData?.user?.email })
       const customerName = profile?.full_name
         || authData?.user?.user_metadata?.full_name
         || customerEmail?.split('@')[0]

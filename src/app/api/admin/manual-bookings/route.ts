@@ -16,6 +16,7 @@ import {
 } from '@/lib/manual-bookings'
 import { findManualBookingConflict } from '@/lib/manual-booking-conflicts'
 import { sendManualBookingConfirmation } from '@/lib/manual-booking-email'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -31,7 +32,7 @@ async function accountFor(userId: string) {
     supabaseAdmin.auth.admin.getUserById(userId),
   ])
   if (!profile || !authData?.user) return null
-  const email = authData.user.email || profile.email
+  const email = canonicalCustomerEmail({ profileEmail: profile.email, authEmail: authData.user.email })
   if (!email) return null
   return {
     id: profile.id,

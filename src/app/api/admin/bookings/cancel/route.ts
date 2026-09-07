@@ -5,6 +5,7 @@ import { cancelCalBookingVerified } from '@/lib/cal-cancellation'
 import { isWithin24Hours, MANUAL_TREATMENTS, restoreManualBookingPublicAvailability, type ManualTreatmentKey } from '@/lib/manual-bookings'
 import { sendManualBookingCancellation, sendManualBookingCancellationNotification } from '@/lib/manual-booking-email'
 import { isManualAvailabilityLedger } from '@/lib/manual-availability-ledger'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 const headers = { 'Cache-Control': 'private, no-store' }
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
         supabaseAdmin.from('profiles').select('email, full_name').eq('id', booking.user_id).maybeSingle(),
         supabaseAdmin.auth.admin.getUserById(booking.user_id),
       ])
-      const customerEmail = authUser?.user?.email || profile?.email
+      const customerEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: authUser?.user?.email })
       if (!customerEmail) throw new Error('Klant heeft geen e-mailadres.')
       const customerName = profile?.full_name || authUser?.user?.user_metadata?.full_name || customerEmail.split('@')[0]
       const treatment = MANUAL_TREATMENTS[booking.treatment_key as ManualTreatmentKey]

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
 import { isCancelledCalStatus } from '@/lib/cal-cancellation'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { reconcileManualBookingUids } from '@/lib/manual-booking-reconciliation'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +28,7 @@ export async function GET() {
 
   try {
     const res = await fetch('https://api.cal.com/v2/bookings?limit=50', {
+      cache: 'no-store',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'cal-api-version': '2024-09-10',
@@ -85,6 +88,36 @@ export async function GET() {
       }
     })
 
+    // Cal may replace the attendee email with a phone-number gateway address.
+    // Resolve linked online bookings back to profiles.email before exposing them.
+    const calBookingUids = calBookings.map((booking: Record<string, unknown>) => String(booking.uid)).filter(Boolean)
+    const { data: onlineIdentityRows, error: onlineIdentityError } = calBookingUids.length > 0
+      ? await supabaseAdmin.from('pending_bookings').select('cal_booking_uid, user_id').in('cal_booking_uid', calBookingUids)
+      : { data: [], error: null }
+    if (onlineIdentityError) {
+      console.error('[cal-bookings] online booking identities query failed:', onlineIdentityError)
+      return NextResponse.json({ error: 'Failed to resolve booking customers' }, { status: 500 })
+    }
+    const onlineUserIds = Array.from(new Set(
+      (onlineIdentityRows || []).map(row => row.user_id).filter((id): id is string => Boolean(id)),
+    ))
+    const { data: onlineProfiles, error: onlineProfilesError } = onlineUserIds.length > 0
+      ? await supabaseAdmin.from('profiles').select('id, email').in('id', onlineUserIds)
+      : { data: [], error: null }
+    if (onlineProfilesError) {
+      console.error('[cal-bookings] online booking profiles query failed:', onlineProfilesError)
+      return NextResponse.json({ error: 'Failed to resolve booking customer profiles' }, { status: 500 })
+    }
+    const onlineUserIdByUid = new Map((onlineIdentityRows || []).map(row => [String(row.cal_booking_uid), row.user_id]))
+    const onlineProfileEmailById = new Map((onlineProfiles || []).map(profile => [profile.id, profile.email]))
+    const sanitizedCalBookings = calBookings.map((booking: Record<string, unknown>) => ({
+      ...booking,
+      customerEmail: canonicalCustomerEmail({
+        profileEmail: onlineProfileEmailById.get(onlineUserIdByUid.get(String(booking.uid))),
+        bookingEmail: booking.customerEmail,
+      }) || '',
+    }))
+
     // Hidden Cal.com event types are omitted from the bookings listing. Merge the
     // dedicated table so confirmed manual bookings always remain visible in admin.
     const { data: manualRows, error: manualError } = await supabaseAdmin
@@ -114,7 +147,7 @@ export async function GET() {
     const manualBookings = (manualRows || []).map(row => {
       const profile = profilesById.get(row.user_id)
       const treatment = MANUAL_TREATMENTS[row.treatment_key as ManualTreatmentKey]
-      const customerEmail = normalizeCustomerField(profile?.email)
+      const customerEmail = canonicalCustomerEmail({ profileEmail: profile?.email }) || ''
       return {
         id: row.id,
         uid: row.cal_booking_uid,
@@ -140,10 +173,26 @@ export async function GET() {
 
     // The database is authoritative for manual bookings. UID-based replacement
     // prevents duplicates if Cal.com starts returning hidden event types later.
-    const bookingsByUid = new Map<string, Record<string, unknown>>(
-      calBookings.map((booking: Record<string, unknown>) => [String(booking.uid), booking]),
+    // A cancelled manual booking remains present in Cal's list for a short time in
+    // some cases. The local cancellation record is authoritative: use its Cal UID
+    // as a tombstone so the stale provider entry cannot reappear in the agenda.
+    const { data: cancelledManualBookings, error: cancelledManualError } = calBookingUids.length > 0
+      ? await supabaseAdmin
+          .from('manual_bookings')
+          .select('cal_booking_uid')
+          .eq('status', 'cancelled')
+          .in('cal_booking_uid', calBookingUids)
+      : { data: [], error: null }
+    if (cancelledManualError) {
+      console.error('[cal-bookings] cancelled manual booking tombstones query failed:', cancelledManualError)
+      return NextResponse.json({ error: 'Failed to reconcile cancelled manual bookings' }, { status: 500 })
+    }
+    const bookingsByUid = reconcileManualBookingUids(
+      sanitizedCalBookings,
+      manualBookings,
+      (cancelledManualBookings || []).map(row => row.cal_booking_uid),
     )
-    for (const booking of manualBookings) bookingsByUid.set(String(booking.uid), booking)
+
     const { data: nonActiveOnlineBookings } = await supabaseAdmin
       .from('pending_bookings')
       .select('cal_booking_uid, status')

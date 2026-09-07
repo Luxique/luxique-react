@@ -8,6 +8,7 @@ import TrajectInstellingenPaneel from './traject-settings'
 import KlassenAdmin from './klassen-admin'
 import AdminAgenda from './admin-agenda'
 import { AdminDashboardMobileNav, AdminDashboardSidebar, type AdminDashboardNavKey } from '@/components/AdminDashboardNav'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 /* ── types ── */
 type Profile = { id: string; email: string; full_name: string; role: string; created_at: string }
@@ -27,7 +28,7 @@ type TrajectBoeking = {
   bevestiging_mail_verzonden_op: string | null
 }
 type PendingBookingRow = {
-  id: string; event_type: string; slot_start: string; status: string;
+  id: string; user_id: string | null; event_type: string; slot_start: string; status: string;
   amount_cents: number | null; customer_name: string | null; customer_email: string | null
 }
 
@@ -78,7 +79,7 @@ export default function AdminPage() {
       .order('startdatum', { ascending: false })
       .then(({ data }) => setTrajectBoekingen(data || []))
     supabase.from('pending_bookings')
-      .select('id, event_type, slot_start, status, amount_cents, customer_name, customer_email')
+      .select('id, user_id, event_type, slot_start, status, amount_cents, customer_name, customer_email')
       .order('slot_start', { ascending: false })
       .then(({ data }) => setPaidBookings(data || []))
   }, [role])
@@ -130,6 +131,12 @@ export default function AdminPage() {
     const c = Array.isArray(e.courses) ? e.courses[0] : e.courses
     return c?.title || '—'
   }
+  const pendingCustomer = (booking: PendingBookingRow) => {
+    const profile = profiles.find(candidate => candidate.id === booking.user_id)
+    return booking.customer_name
+      || canonicalCustomerEmail({ profileEmail: profile?.email, bookingEmail: booking.customer_email })
+      || '—'
+  }
   type Sale = { key: string; kind: 'Cursus' | 'Traject' | 'Behandeling'; who: string; what: string; amount: number; date: string; note?: string }
   const salesAll: Sale[] = [
     ...enrollments.map(e => ({
@@ -150,7 +157,7 @@ export default function AdminPage() {
     })),
     ...paidBookings.filter(b => b.status === 'paid').map(b => ({
       key: 'b-' + b.id, kind: 'Behandeling' as const,
-      who: b.customer_name || b.customer_email || '—',
+      who: pendingCustomer(b),
       what: b.event_type,
       amount: (b.amount_cents || 0) / 100,
       date: b.slot_start,
@@ -249,7 +256,7 @@ export default function AdminPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-[13px] font-medium truncate">{b.event_type}</p>
-                            <p className="text-[11px] text-[#888] truncate">{(b.customer_name || b.customer_email || '—').trim()} · {new Date(b.slot_start).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
+                            <p className="text-[11px] text-[#888] truncate">{pendingCustomer(b).trim()} · {new Date(b.slot_start).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
                           </div>
                           <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium bg-green-50 text-green-600 shrink-0">betaald</span>
                         </div>

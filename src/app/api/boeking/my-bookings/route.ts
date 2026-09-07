@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,5 +51,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'DB error' }, { status: 500 })
   }
 
-  return NextResponse.json({ bookings: bookings || [] })
+  const canonicalEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: user.email })
+  return NextResponse.json({
+    bookings: (bookings || []).map(booking => ({
+      ...booking,
+      customer_email: canonicalCustomerEmail({
+        profileEmail: canonicalEmail,
+        bookingEmail: booking.customer_email,
+      }),
+    })),
+  })
 }
