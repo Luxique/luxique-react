@@ -470,8 +470,8 @@ export default function DashboardPage() {
 
   const tabs = [
     { key: 'overview' as const, label: 'Overzicht' },
-    { key: 'academy' as const, label: 'Academy' },
     { key: 'boekingen' as const, label: 'Boekingen' },
+    { key: 'academy' as const, label: 'Academy' },
   ]
 
   return (
@@ -507,6 +507,62 @@ export default function DashboardPage() {
         {/* ==================== OVERVIEW TAB ==================== */}
         {activeTab === 'overview' && (
           <div className="space-y-10">
+
+            {/* MIJN AFSPRAKEN */}
+            {sortedBookings.length > 0 && (
+              <div>
+                <div className="dash-reveal" style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:24, gap:18, flexWrap:'wrap' }}>
+                  <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814' }}>Mijn afspraken</h3>
+                  <a href="/behandelingen" style={{ textDecoration:'none', color:'#46403A', fontSize:'.88rem', borderBottom:'1px solid rgba(28,24,20,.13)', paddingBottom:2 }}>Afspraak plannen</a>
+                </div>
+                <div className="dash-reveal" style={{ background:'#FBF8F2', border:'1px solid rgba(28,24,20,.13)', borderRadius:20, overflow:'hidden' }}>
+                  {sortedBookings.map((b) => {
+                    const isPast = new Date(b.slot_start) < new Date()
+                    const isCancelled = b.status === 'cancelled' || b.status === 'expired'
+                    const isCancellationPending = b.status === 'cancellation_pending'
+                    const dt = new Date(b.slot_start)
+                    return (
+                      <button key={b.id} onClick={() => { setSelectedBooking(b); setActiveTab('boekingen') }}
+                        style={{
+                          display:'grid', gridTemplateColumns:'72px 1fr auto', gap:18, alignItems:'center', width:'100%', textAlign:'left',
+                          padding:'20px 26px', borderBottom:'1px solid rgba(28,24,20,.07)', background:'transparent', border:'none',
+                          borderBottomWidth: sortedBookings[sortedBookings.length-1].id === b.id ? 0 : 1,
+                          cursor:'pointer', opacity: isCancelled ? .55 : 1, transition:'background .2s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,24,20,.02)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        {/* Date chip */}
+                        <div style={{ textAlign:'center', border:'1px solid rgba(28,24,20,.13)', borderRadius:13, padding:'8px 0', background:'#F3EFE7' }}>
+                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.6rem', fontWeight:600, lineHeight:1, color:'#1C1814' }}>{dt.getDate()}</div>
+                          <div style={{ fontSize:'.64rem', textTransform:'uppercase', letterSpacing:'.14em', color:'#888', marginTop:3 }}>{dt.toLocaleDateString('nl-NL',{month:'short'})}</div>
+                        </div>
+                        {/* Info */}
+                        <div>
+                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                            <h5 className="font-['Cormorant_Garamond']" style={{ fontWeight:600, fontSize:'1.25rem', lineHeight:1.1, color:'#1C1814', textDecoration: isCancelled ? 'line-through' : 'none' }}>{b.event_type}</h5>
+                            {b.source === 'manual' && <span style={{fontSize:'.62rem',padding:'3px 8px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34',border:'1px solid rgba(176,141,79,.28)'}}>Handmatig</span>}
+                          </div>
+                          <p style={{ fontSize:'.82rem', color:'#888', marginTop:3 }}>{formatTimeNL(b.slot_start)} uur · Lashed by Chiva, Arnhem</p>
+                        </div>
+                        {/* Pay */}
+                        <div style={{ textAlign:'right' }}>
+                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.3rem', fontWeight:600, color:'#1C1814' }}>{b.source === 'manual' ? 'Handmatig' : `€${(b.amount_cents/100).toFixed(0)}`}</div>
+                          <span style={{
+                            display:'inline-block', marginTop:6, fontSize:'.68rem', letterSpacing:'.05em',
+                            padding:'4px 11px', borderRadius:100, fontWeight:500,
+                            ...(isCancelled ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
+                              : isPast ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
+                              : { background:'rgba(176,141,79,.14)', color:'#B08D4F', border:'1px solid rgba(176,141,79,.3)' })
+                          }}>
+                            {isCancellationPending ? 'Annulering in behandeling' : isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* B) RESUME CARD — LIGHT */}
             {progressLoading ? (
@@ -699,62 +755,6 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* E) MIJN AFSPRAKEN */}
-            {sortedBookings.length > 0 && (
-              <div>
-                <div className="dash-reveal" style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:24, gap:18, flexWrap:'wrap' }}>
-                  <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814' }}>Mijn afspraken</h3>
-                  <a href="/behandelingen" style={{ textDecoration:'none', color:'#46403A', fontSize:'.88rem', borderBottom:'1px solid rgba(28,24,20,.13)', paddingBottom:2 }}>Afspraak plannen</a>
-                </div>
-                <div className="dash-reveal" style={{ background:'#FBF8F2', border:'1px solid rgba(28,24,20,.13)', borderRadius:20, overflow:'hidden' }}>
-                  {sortedBookings.map((b) => {
-                    const isPast = new Date(b.slot_start) < new Date()
-                    const isCancelled = b.status === 'cancelled' || b.status === 'expired'
-                    const isCancellationPending = b.status === 'cancellation_pending'
-                    const dt = new Date(b.slot_start)
-                    return (
-                      <button key={b.id} onClick={() => { setSelectedBooking(b); setActiveTab('boekingen') }}
-                        style={{
-                          display:'grid', gridTemplateColumns:'72px 1fr auto', gap:18, alignItems:'center', width:'100%', textAlign:'left',
-                          padding:'20px 26px', borderBottom:'1px solid rgba(28,24,20,.07)', background:'transparent', border:'none',
-                          borderBottomWidth: sortedBookings[sortedBookings.length-1].id === b.id ? 0 : 1,
-                          cursor:'pointer', opacity: isCancelled ? .55 : 1, transition:'background .2s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,24,20,.02)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        {/* Date chip */}
-                        <div style={{ textAlign:'center', border:'1px solid rgba(28,24,20,.13)', borderRadius:13, padding:'8px 0', background:'#F3EFE7' }}>
-                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.6rem', fontWeight:600, lineHeight:1, color:'#1C1814' }}>{dt.getDate()}</div>
-                          <div style={{ fontSize:'.64rem', textTransform:'uppercase', letterSpacing:'.14em', color:'#888', marginTop:3 }}>{dt.toLocaleDateString('nl-NL',{month:'short'})}</div>
-                        </div>
-                        {/* Info */}
-                        <div>
-                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                            <h5 className="font-['Cormorant_Garamond']" style={{ fontWeight:600, fontSize:'1.25rem', lineHeight:1.1, color:'#1C1814', textDecoration: isCancelled ? 'line-through' : 'none' }}>{b.event_type}</h5>
-                            {b.source === 'manual' && <span style={{fontSize:'.62rem',padding:'3px 8px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34',border:'1px solid rgba(176,141,79,.28)'}}>Handmatig</span>}
-                          </div>
-                          <p style={{ fontSize:'.82rem', color:'#888', marginTop:3 }}>{formatTimeNL(b.slot_start)} uur · Lashed by Chiva, Arnhem</p>
-                        </div>
-                        {/* Pay */}
-                        <div style={{ textAlign:'right' }}>
-                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.3rem', fontWeight:600, color:'#1C1814' }}>{b.source === 'manual' ? 'Handmatig' : `€${(b.amount_cents/100).toFixed(0)}`}</div>
-                          <span style={{
-                            display:'inline-block', marginTop:6, fontSize:'.68rem', letterSpacing:'.05em',
-                            padding:'4px 11px', borderRadius:100, fontWeight:500,
-                            ...(isCancelled ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
-                              : isPast ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
-                              : { background:'rgba(176,141,79,.14)', color:'#B08D4F', border:'1px solid rgba(176,141,79,.3)' })
-                          }}>
-                            {isCancellationPending ? 'Annulering in behandeling' : isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
-                          </span>
-                        </div>
-                      </button>
-                    )
-                  })}
                 </div>
               </div>
             )}
