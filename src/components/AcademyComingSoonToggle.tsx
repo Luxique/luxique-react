@@ -38,7 +38,7 @@ export default function AcademyComingSoonToggle() {
         </div>
         <button type="button" role="switch" aria-checked={enabled} aria-label="Academy coming soon" onClick={update} disabled={saving || !available}
           className={`relative h-[28px] w-[48px] shrink-0 rounded-full border-0 transition-colors ${enabled ? 'bg-[#34C759]' : 'bg-[#d8d8dc]'} disabled:cursor-not-allowed disabled:opacity-50`}>
-          <span className={`absolute top-[2px] h-[24px] w-[24px] rounded-full bg-white shadow-[0_2px_5px_rgba(0,0,0,.28)] transition-transform ${enabled ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
+          <span className={`absolute left-[2px] top-[2px] h-[24px] w-[24px] rounded-full bg-white shadow-[0_2px_5px_rgba(0,0,0,.28)] transition-transform duration-200 ${enabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
         </button>
       </div>
     </div>
