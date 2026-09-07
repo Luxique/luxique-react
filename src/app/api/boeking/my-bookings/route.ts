@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,19 +11,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
   // Get user from JWT
   const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+  const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
   if (userError || !user) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   }
 
-  const { data: profile } = await supabase
+  const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('email, phone')
     .eq('id', user.id)
@@ -40,10 +35,11 @@ export async function GET(request: NextRequest) {
   if (accountEmail) ownershipFilters.push(`customer_email.eq.${accountEmail}`)
   if (smsGatewayEmail) ownershipFilters.push(`customer_email.eq.${smsGatewayEmail}`)
 
-  const { data: bookings, error } = await supabase
+  const { data: bookings, error } = await supabaseAdmin
     .from('pending_bookings')
     .select('*')
     .or(ownershipFilters.join(','))
+    .eq('status', 'paid')
     .not('stripe_session_id', 'is', null)
     .order('slot_start', { ascending: false })
 
@@ -60,5 +56,5 @@ export async function GET(request: NextRequest) {
         bookingEmail: booking.customer_email,
       }),
     })),
-  })
+  }, { headers: { 'Cache-Control': 'private, no-store, max-age=0' } })
 }

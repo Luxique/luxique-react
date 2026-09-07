@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import { isActiveCustomerBooking } from '@/lib/customer-booking-visibility'
 
 type Course = { id: string; title: string; slug: string; short_description: string; thumbnail_url?: string }
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string; notes: string }
@@ -222,8 +223,8 @@ export default function DashboardPage() {
       const headers = { Authorization: `Bearer ${data.session.access_token}` }
       try {
         const [onlineResponse, manualResponse] = await Promise.all([
-          fetch('/api/boeking/my-bookings', { headers }),
-          fetch('/api/boeking/manual/my-bookings', { headers }),
+          fetch('/api/boeking/my-bookings', { headers, cache: 'no-store' }),
+          fetch('/api/boeking/manual/my-bookings', { headers, cache: 'no-store' }),
         ])
         if (!onlineResponse.ok) console.error('[dashboard] my-bookings API error:', onlineResponse.status)
         if (!manualResponse.ok) console.error('[dashboard] manual my-bookings API error:', manualResponse.status)
@@ -232,7 +233,9 @@ export default function DashboardPage() {
           manualResponse.ok ? manualResponse.json() : Promise.resolve({ bookings: [] }),
         ])
         const online = (onlinePayload?.bookings || []).map((booking: Omit<PendingBooking, 'source'>) => ({ ...booking, source: 'online' as const }))
-        setPendingBookings([...online, ...(manualPayload?.bookings || [])])
+        const visibleBookings = [...online, ...(manualPayload?.bookings || [])]
+          .filter(booking => isActiveCustomerBooking(booking.source, booking.status))
+        setPendingBookings(visibleBookings)
       } catch (err) {
         console.error('[dashboard] bookings fetch failed:', err)
       }
