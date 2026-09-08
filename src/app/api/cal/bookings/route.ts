@@ -6,6 +6,7 @@ import { canonicalCustomerEmail } from '@/lib/customer-email'
 import { reconcileManualBookingUids } from '@/lib/manual-booking-reconciliation'
 
 export const dynamic = 'force-dynamic'
+const CAL_REQUEST_TIMEOUT_MS = 8_000
 
 function normalizeCustomerField(value: unknown): string {
   if (typeof value === 'string') return value.trim()
@@ -29,15 +30,18 @@ export async function GET() {
   try {
     const res = await fetch('https://api.cal.com/v2/bookings?limit=50', {
       cache: 'no-store',
+      signal: AbortSignal.timeout(CAL_REQUEST_TIMEOUT_MS),
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'cal-api-version': '2024-09-10',
       },
     })
-    const data = await res.json()
+    const data = await res.json().catch(() => null)
 
-    if (!data.data?.bookings) {
-      return NextResponse.json({ error: 'Invalid response from cal.com' }, { status: 500 })
+    if (!res.ok || !data?.data?.bookings) {
+      const reason = data?.error?.message || data?.message || `HTTP ${res.status}`
+      console.error('[cal-bookings] Cal.com bookings request failed:', reason)
+      return NextResponse.json({ error: 'Failed to fetch bookings from Cal.com' }, { status: 502 })
     }
 
     const manualEventTypeIds = new Set([
@@ -210,7 +214,8 @@ export async function GET() {
     )
 
     return NextResponse.json({ bookings })
-  } catch {
+  } catch (error) {
+    console.error('[cal-bookings] GET failed:', error)
     return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 })
   }
 }

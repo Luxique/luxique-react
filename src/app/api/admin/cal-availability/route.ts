@@ -22,6 +22,7 @@ export const fetchCache = 'force-no-store'
 
 const CAL_API_VERSION = '2024-06-11'
 const CAL_SLOTS_API_VERSION = '2024-09-04'
+const CAL_REQUEST_TIMEOUT_MS = 8_000
 const NO_STORE_HEADERS = {
   'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
   Pragma: 'no-cache',
@@ -39,6 +40,7 @@ async function calRequest(path: string, init?: RequestInit): Promise<Response> {
   return fetch(`https://api.cal.com/v2${path}`, {
     ...init,
     cache: 'no-store',
+    signal: init?.signal || AbortSignal.timeout(CAL_REQUEST_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'cal-api-version': CAL_API_VERSION,
@@ -76,6 +78,7 @@ async function readEffectiveSlots(treatmentKey: TreatmentKey, start: string, end
   url.searchParams.set('timeZone', 'Europe/Amsterdam')
   const response = await fetch(url, {
     cache: 'no-store',
+    signal: AbortSignal.timeout(CAL_REQUEST_TIMEOUT_MS),
     headers: { Authorization: `Bearer ${apiKey}`, 'cal-api-version': CAL_SLOTS_API_VERSION },
   })
   const payload = await response.json().catch(() => null)
@@ -164,12 +167,12 @@ export async function GET(req: NextRequest) {
     }
     const entries = await Promise.all(
       (Object.keys(TREATMENTS) as TreatmentKey[]).map(async key => {
-        const [schedule, slots] = await Promise.all([readSchedule(key), readEffectiveSlots(key, start, end)])
+        const slots = await readEffectiveSlots(key, start, end)
         return {
           ...TREATMENTS[key],
-          timeZone: schedule.timeZone,
-          availability: schedule.availability,
-          overrides: sortOverrides(schedule.overrides),
+          timeZone: 'Europe/Amsterdam',
+          availability: [],
+          overrides: [],
           slots,
         }
       }),

@@ -67,6 +67,7 @@ const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }>
 }
 
 const TRAJECT_BLOK_DAG_EVENT_TYPE_ID = 6195439
+const AGENDA_REQUEST_TIMEOUT_MS = 10_000
 
 function pad(value: number) { return String(value).padStart(2, '0') }
 function safeText(value: unknown, fallback = ''): string {
@@ -150,29 +151,54 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     const rangeStart = dateKey(rangeStartDate)
     const rangeEnd = dateKey(addDays(rangeStartDate, view === 'week' ? 7 : 42))
     const loadJson = async (url: string, fallbackError: string, authenticated = false) => {
-      const response = await fetch(url, {
-        cache: 'no-store',
-        headers: authenticated ? { Authorization: `Bearer ${sessionToken}` } : undefined,
-      })
-      const payload = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(payload?.error || fallbackError)
-      return payload
+      const controller = new AbortController()
+      const timeout = window.setTimeout(() => controller.abort(), AGENDA_REQUEST_TIMEOUT_MS)
+      try {
+        const response = await fetch(url, {
+          cache: 'no-store',
+          signal: controller.signal,
+          headers: authenticated ? { Authorization: `Bearer ${sessionToken}` } : undefined,
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(payload?.error || fallbackError)
+        return payload
+      } catch (reason) {
+        if (reason instanceof DOMException && reason.name === 'AbortError') {
+          throw new Error(`${fallbackError} De server reageerde niet op tijd; probeer Vernieuwen.`)
+        }
+        throw reason
+      } finally {
+        window.clearTimeout(timeout)
+      }
     }
     try {
-      const [bookingsResult, availabilityResult, trajectResult] = await Promise.allSettled([
-        loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.'),
-        loadJson(`/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`, 'Beschikbaarheid laden mislukt.', true),
-        loadJson(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, 'Traject-dagen laden mislukt.', true),
-      ])
+      const bookingsRequest = loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.')
+        .then(payload => {
+          setBookings((payload.bookings || []).filter((booking: CalBooking) =>
+            booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
+            && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
+          ))
+          return payload
+        })
+      const availabilityRequest = loadJson(
+        `/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`,
+        'Beschikbaarheid laden mislukt.',
+        true,
+      ).then(payload => {
+        setAvailability(payload.treatments || [])
+        return payload
+      })
+      const trajectRequest = loadJson(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, 'Traject-dagen laden mislukt.', true)
+        .then(payload => {
+          setTrajectClasses(payload.trajectDagen || [])
+          return payload
+        })
 
-      if (bookingsResult.status === 'fulfilled') {
-        setBookings((bookingsResult.value.bookings || []).filter((booking: CalBooking) =>
-          booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
-          && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
-        ))
-      }
-      if (availabilityResult.status === 'fulfilled') setAvailability(availabilityResult.value.treatments || [])
-      if (trajectResult.status === 'fulfilled') setTrajectClasses(trajectResult.value.trajectDagen || [])
+      const [bookingsResult, availabilityResult, trajectResult] = await Promise.allSettled([
+        bookingsRequest,
+        availabilityRequest,
+        trajectRequest,
+      ])
 
       const failures = [bookingsResult, availabilityResult, trajectResult]
         .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
