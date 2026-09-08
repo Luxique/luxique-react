@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import TrajectInstellingenPaneel from './traject-settings'
 import KlassenAdmin from './klassen-admin'
@@ -37,6 +37,7 @@ type PendingBookingRow = {
 function IconPlus() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> }
 
 type Tab = 'overview' | 'customers' | 'courses' | 'calendar' | 'finance' | 'traject' | 'klassen'
+const OVERVIEW_REFRESH_INTERVAL_MS = 45_000
 
 export default function AdminPage() {
   const { user, session, role, loading } = useAuth()
@@ -54,6 +55,7 @@ export default function AdminPage() {
   const [granting, setGranting] = useState(false)
   const [grantSearch, setGrantSearch] = useState('')
   const [grantSearchFocused, setGrantSearchFocused] = useState(false)
+  const paidBookingsRefreshInFlight = useRef(false)
 
   // Auth guard
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -65,6 +67,24 @@ export default function AdminPage() {
       setTab(requestedTab as Tab)
     }
   }, [])
+
+  const refreshPaidBookings = useCallback(async () => {
+    if (role !== 'admin' || !session?.access_token || paidBookingsRefreshInFlight.current) return
+    paidBookingsRefreshInFlight.current = true
+    try {
+      const response = await fetch('/api/admin/dashboard-sales', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(payload.error || 'Betaalde behandelingen laden mislukt.')
+      setPaidBookings(payload.paidBookings || [])
+    } catch (error) {
+      console.error('[admin-dashboard] Paid bookings laden mislukt:', error)
+    } finally {
+      paidBookingsRefreshInFlight.current = false
+    }
+  }, [role, session?.access_token])
 
   const refresh = useCallback(() => {
     if (role !== 'admin') return
@@ -79,19 +99,8 @@ export default function AdminPage() {
       .select('id, cursus_naam, klant_naam, klant_email, startdatum, starttijd, blok_dagen, aanbetaling_cents, restbedrag_cents, aanbetaling_status, bevestiging_mail_verzonden_op')
       .order('startdatum', { ascending: false })
       .then(({ data }) => setTrajectBoekingen(data || []))
-    if (session?.access_token) {
-      fetch('/api/admin/dashboard-sales', {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-        .then(async response => {
-          const payload = await response.json().catch(() => ({}))
-          if (!response.ok) throw new Error(payload.error || 'Betaalde behandelingen laden mislukt.')
-          setPaidBookings(payload.paidBookings || [])
-        })
-        .catch(error => console.error('[admin-dashboard] Paid bookings laden mislukt:', error))
-    }
-  }, [role, session?.access_token])
+    void refreshPaidBookings()
+  }, [refreshPaidBookings, role])
 
   useEffect(() => { refresh() }, [refresh])
 
@@ -107,6 +116,15 @@ export default function AdminPage() {
       document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
   }, [refresh, role])
+
+  useEffect(() => {
+    if (role !== 'admin' || tab !== 'overview') return
+    const refreshVisiblePaidBookings = () => {
+      if (document.visibilityState === 'visible') void refreshPaidBookings()
+    }
+    const intervalId = window.setInterval(refreshVisiblePaidBookings, OVERVIEW_REFRESH_INTERVAL_MS)
+    return () => window.clearInterval(intervalId)
+  }, [refreshPaidBookings, role, tab])
 
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return
@@ -195,7 +213,6 @@ export default function AdminPage() {
   const upcomingTreatments = paidBookings
     .filter(b => b.status === 'paid' && new Date(b.slot_start) >= now)
     .sort((a, b) => new Date(a.slot_start).getTime() - new Date(b.slot_start).getTime())
-    .slice(0, 6)
   const upcomingTrajecten = trajectBoekingen
     .filter(t => t.aanbetaling_status === 'betaald' && new Date(t.startdatum) >= startOfToday)
     .slice(0, 6)

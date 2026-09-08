@@ -70,6 +70,7 @@ const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }>
 
 const TRAJECT_BLOK_DAG_EVENT_TYPE_ID = 6195439
 const AGENDA_REQUEST_TIMEOUT_MS = 10_000
+const AGENDA_REFRESH_INTERVAL_MS = 45_000
 
 function pad(value: number) { return String(value).padStart(2, '0') }
 function safeText(value: unknown, fallback = ''): string {
@@ -230,6 +231,14 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       activeAgendaController.current?.abort()
       activeAgendaController.current = null
     }
+  }, [loadAgenda])
+
+  useEffect(() => {
+    const refreshVisibleAgenda = () => {
+      if (document.visibilityState === 'visible') void loadAgenda()
+    }
+    const intervalId = window.setInterval(refreshVisibleAgenda, AGENDA_REFRESH_INTERVAL_MS)
+    return () => window.clearInterval(intervalId)
   }, [loadAgenda])
 
   useEffect(() => {

@@ -360,15 +360,14 @@ export default function DashboardPage() {
 
   const handleRescheduleBooking = async () => {
     if (!selectedBooking || !rescheduleDate || !rescheduleTime || !user) return
+    const selectedSlot = rescheduleSlots.find(slot => slot.time === rescheduleTime)
+    if (!selectedSlot) {
+      setRescheduleError('Kies opnieuw een beschikbaar tijdstip.')
+      return
+    }
     setRescheduling(true)
     setRescheduleError('')
     try {
-      // Build ISO timestamp from date + time, Amsterdam timezone
-      const dateStr = `${rescheduleDate}T${rescheduleTime}:00`
-      const dt = new Date(dateStr)
-      // Adjust for Amsterdam timezone offset (the server expects UTC)
-      const isoStart = dt.toISOString()
-
       // Get session from Supabase directly (same pattern as my-bookings fetch)
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session?.access_token) {
@@ -381,16 +380,17 @@ export default function DashboardPage() {
       const res = await fetch(reschedulePath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
-        body: JSON.stringify({ bookingId: selectedBooking.id, newStart: isoStart }),
+        body: JSON.stringify({ bookingId: selectedBooking.id, newStart: selectedSlot.start }),
       })
       const result = await res.json()
       if (result.success) {
         // Update local state with new slot_start
         setPendingBookings(prev => prev.map(b =>
           b.id === selectedBooking.id
-            ? { ...b, slot_start: isoStart }
+            ? { ...b, slot_start: result.newStart }
             : b
         ))
+        await loadAccountBookings()
         setSelectedBooking(null)
         setRescheduleMode(false)
         setRescheduleDate('')
