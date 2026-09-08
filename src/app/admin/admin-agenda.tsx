@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   getCalendarNow,
   isPastTimeslot,
@@ -141,9 +141,18 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [manualSaving, setManualSaving] = useState(false)
   const [manualError, setManualError] = useState<string | null>(null)
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const agendaRequestGeneration = useRef(0)
+  const activeAgendaController = useRef<AbortController | null>(null)
 
   const loadAgenda = useCallback(async () => {
     if (!sessionToken) return
+    activeAgendaController.current?.abort()
+    const controller = new AbortController()
+    const requestGeneration = ++agendaRequestGeneration.current
+    activeAgendaController.current = controller
+    const isLatestRequest = () => agendaRequestGeneration.current === requestGeneration
+    const timeout = window.setTimeout(() => controller.abort(), AGENDA_REQUEST_TIMEOUT_MS)
+
     setLoading(true)
     setError(null)
     const cacheBust = Date.now()
@@ -151,8 +160,6 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     const rangeStart = dateKey(rangeStartDate)
     const rangeEnd = dateKey(addDays(rangeStartDate, view === 'week' ? 7 : 42))
     const loadJson = async (url: string, fallbackError: string, authenticated = false) => {
-      const controller = new AbortController()
-      const timeout = window.setTimeout(() => controller.abort(), AGENDA_REQUEST_TIMEOUT_MS)
       try {
         const response = await fetch(url, {
           cache: 'no-store',
@@ -167,13 +174,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           throw new Error(`${fallbackError} De server reageerde niet op tijd; probeer Vernieuwen.`)
         }
         throw reason
-      } finally {
-        window.clearTimeout(timeout)
       }
     }
     try {
       const bookingsRequest = loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.')
         .then(payload => {
+          if (!isLatestRequest()) return payload
           setBookings((payload.bookings || []).filter((booking: CalBooking) =>
             booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
             && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
@@ -185,11 +191,13 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
         'Beschikbaarheid laden mislukt.',
         true,
       ).then(payload => {
+        if (!isLatestRequest()) return payload
         setAvailability(payload.treatments || [])
         return payload
       })
       const trajectRequest = loadJson(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, 'Traject-dagen laden mislukt.', true)
         .then(payload => {
+          if (!isLatestRequest()) return payload
           setTrajectClasses(payload.trajectDagen || [])
           return payload
         })
@@ -203,13 +211,24 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       const failures = [bookingsResult, availabilityResult, trajectResult]
         .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
         .map(result => result.reason instanceof Error ? result.reason.message : 'Agenda-data laden mislukt.')
-      if (failures.length > 0) setError(failures.join(' '))
+      if (isLatestRequest() && failures.length > 0) setError(failures.join(' '))
     } finally {
-      setLoading(false)
+      window.clearTimeout(timeout)
+      if (isLatestRequest()) {
+        activeAgendaController.current = null
+        setLoading(false)
+      }
     }
   }, [cursor, sessionToken, view])
 
-  useEffect(() => { loadAgenda() }, [loadAgenda])
+  useEffect(() => {
+    loadAgenda()
+    return () => {
+      agendaRequestGeneration.current += 1
+      activeAgendaController.current?.abort()
+      activeAgendaController.current = null
+    }
+  }, [loadAgenda])
 
   useEffect(() => {
     if (!manualModalOpen || manualCustomer || manualCustomerQuery.trim().length < 2) {
