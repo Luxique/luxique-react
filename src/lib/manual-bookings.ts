@@ -4,6 +4,7 @@ import {
   subtractWindow,
   type ManualAvailabilityLedger,
 } from './manual-availability-ledger'
+import { normalizeCalAvailabilitySlots } from './cal-slots'
 
 export const MANUAL_TIME_ZONE = 'Europe/Amsterdam'
 export const MANUAL_CAL_API_VERSION = '2026-02-25'
@@ -189,18 +190,7 @@ export async function getManualAvailability(input: {
   if (!response.ok || !payload?.data) {
     throw new Error(payload?.error?.message || 'Cal.com beschikbaarheid kon niet worden geladen.')
   }
-  const starts = (Array.isArray(payload.data[input.date]) ? payload.data[input.date] : [])
-    .map(calSlotStart)
-    .filter((start: string | null): start is string => Boolean(start))
-  return starts.map((start: string) => ({
-    start,
-    time: new Intl.DateTimeFormat('nl-NL', {
-      timeZone: MANUAL_TIME_ZONE,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(new Date(start)),
-  }))
+  return normalizeCalAvailabilitySlots(payload.data[input.date], MANUAL_TIME_ZONE)
 }
 
 async function getPublicOverlappingSlots(start: string, end: string) {
