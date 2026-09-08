@@ -29,7 +29,8 @@ type TrajectBoeking = {
 }
 type PendingBookingRow = {
   id: string; user_id: string | null; event_type: string; slot_start: string; status: string;
-  amount_cents: number | null; customer_name: string | null; customer_email: string | null
+  amount_cents: number | null; customer_name: string | null; customer_email: string | null;
+  created_at: string; agreed_at: string | null
 }
 
 /* ── icons ── */
@@ -78,14 +79,34 @@ export default function AdminPage() {
       .select('id, cursus_naam, klant_naam, klant_email, startdatum, starttijd, blok_dagen, aanbetaling_cents, restbedrag_cents, aanbetaling_status, bevestiging_mail_verzonden_op')
       .order('startdatum', { ascending: false })
       .then(({ data }) => setTrajectBoekingen(data || []))
-    supabase.from('pending_bookings')
-      .select('id, user_id, event_type, slot_start, status, amount_cents, customer_name, customer_email')
-      .order('slot_start', { ascending: false })
-      .then(({ data }) => setPaidBookings(data || []))
-  }, [role])
+    if (session?.access_token) {
+      fetch('/api/admin/dashboard-sales', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then(async response => {
+          const payload = await response.json().catch(() => ({}))
+          if (!response.ok) throw new Error(payload.error || 'Betaalde behandelingen laden mislukt.')
+          setPaidBookings(payload.paidBookings || [])
+        })
+        .catch(error => console.error('[admin-dashboard] Paid bookings laden mislukt:', error))
+    }
+  }, [role, session?.access_token])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { refresh() }, [role])
+  useEffect(() => { refresh() }, [refresh])
+
+  useEffect(() => {
+    if (role !== 'admin') return
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
+  }, [refresh, role])
 
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return
@@ -160,7 +181,7 @@ export default function AdminPage() {
       who: pendingCustomer(b),
       what: b.event_type,
       amount: (b.amount_cents || 0) / 100,
-      date: b.slot_start,
+      date: b.agreed_at || b.created_at,
       note: 'aanbetaling (50%)',
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
