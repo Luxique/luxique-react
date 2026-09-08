@@ -83,12 +83,8 @@ export async function POST(request: NextRequest) {
   const customerEmail = attendee.email || responses.email?.value || null
   const customerName = attendee.name || responses.name?.value || null
   
-  // TEMP TEST: override with TEST_DEPOSIT_CENTS env var if set
-  const TEST_DEPOSIT_RAW = process.env.TEST_DEPOSIT_CENTS
-  const TEST_DEPOSIT = TEST_DEPOSIT_RAW ? parseInt(TEST_DEPOSIT_RAW) : null
-  // HARDCODED FALLBACK FOR TESTING — remove after test
-  const depositAmount = TEST_DEPOSIT ?? 100 // TODO: revert to Math.round(eventConfig.priceCents / 2)
-  console.log(`Fetch-from-cal deposit calc: TEST_DEPOSIT_CENTS=${TEST_DEPOSIT_RAW}, parsed=${TEST_DEPOSIT}, final=${depositAmount}`)
+  const depositAmount = Math.round(eventConfig.priceCents / 2)
+  console.log(`Fetch-from-cal deposit calc: total=${eventConfig.priceCents}, deposit=${depositAmount}`)
 
   // Set expires_at to 10 minutes from now
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
