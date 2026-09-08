@@ -96,7 +96,7 @@ export async function GET() {
     // Resolve linked online bookings back to profiles.email before exposing them.
     const calBookingUids = calBookings.map((booking: Record<string, unknown>) => String(booking.uid)).filter(Boolean)
     const { data: onlineIdentityRows, error: onlineIdentityError } = calBookingUids.length > 0
-      ? await supabaseAdmin.from('pending_bookings').select('cal_booking_uid, user_id').in('cal_booking_uid', calBookingUids)
+      ? await supabaseAdmin.from('pending_bookings').select('cal_booking_uid, user_id, status').in('cal_booking_uid', calBookingUids)
       : { data: [], error: null }
     if (onlineIdentityError) {
       console.error('[cal-bookings] online booking identities query failed:', onlineIdentityError)
@@ -113,6 +113,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to resolve booking customer profiles' }, { status: 500 })
     }
     const onlineUserIdByUid = new Map((onlineIdentityRows || []).map(row => [String(row.cal_booking_uid), row.user_id]))
+    const onlinePaymentStatusByUid = new Map((onlineIdentityRows || []).map(row => [String(row.cal_booking_uid), row.status]))
     const onlineProfileEmailById = new Map((onlineProfiles || []).map(profile => [profile.id, profile.email]))
     const sanitizedCalBookings = calBookings.map((booking: Record<string, unknown>) => ({
       ...booking,
@@ -120,6 +121,7 @@ export async function GET() {
         profileEmail: onlineProfileEmailById.get(onlineUserIdByUid.get(String(booking.uid))),
         bookingEmail: booking.customerEmail,
       }) || '',
+      paymentStatus: onlinePaymentStatusByUid.get(String(booking.uid)) || null,
     }))
 
     // Hidden Cal.com event types are omitted from the bookings listing. Merge the
@@ -161,6 +163,7 @@ export async function GET() {
         endTime: row.slot_end,
         location: null,
         paid: false,
+        paymentStatus: null,
         customerName: normalizeCustomerField(profile?.full_name) || customerEmail || 'Onbekend',
         customerEmail,
         customerPhone: normalizeCustomerField(profile?.phone),
