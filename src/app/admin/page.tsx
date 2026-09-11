@@ -38,6 +38,7 @@ function IconPlus() { return <svg width="14" height="14" fill="none" viewBox="0 
 
 type Tab = 'overview' | 'customers' | 'courses' | 'calendar' | 'finance' | 'traject' | 'klassen'
 const OVERVIEW_REFRESH_INTERVAL_MS = 45_000
+const SALES_PER_PAGE = 15
 
 export default function AdminPage() {
   const { user, session, role, loading } = useAuth()
@@ -49,6 +50,7 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [trajectBoekingen, setTrajectBoekingen] = useState<TrajectBoeking[]>([])
   const [paidBookings, setPaidBookings] = useState<PendingBookingRow[]>([])
+  const [salesPage, setSalesPage] = useState(0)
   const [showGrant, setShowGrant] = useState(false)
   const [grantUserId, setGrantUserId] = useState('')
   const [grantCourseId, setGrantCourseId] = useState('')
@@ -159,7 +161,6 @@ export default function AdminPage() {
   const now = new Date()
   const activeStudents = new Set(enrollments.filter(e => e.status === 'active').map(e => e.user_id)).size
   const upcomingBookings = bookings.filter(b => new Date(b.appointment_date) >= now && b.status !== 'cancelled').slice(0, 5)
-
   // ── Unified sales feed: cursussen + trajecten + behandelingen ──
   // PostgREST levert een to-one embed als OBJECT (profiles: {...}), geen array — normaliseren.
   const enrCustomer = (e: Enrollment) => {
@@ -207,6 +208,12 @@ export default function AdminPage() {
   const totalRevenueAll = salesAll.reduce((s, x) => s + x.amount, 0)
   const monthSales = salesAll.filter(x => { const d = new Date(x.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() })
   const monthlyRevenueAll = monthSales.reduce((s, x) => s + x.amount, 0)
+  const salesPageCount = Math.max(1, Math.ceil(salesAll.length / SALES_PER_PAGE))
+  const visibleSalesPage = Math.min(salesPage, salesPageCount - 1)
+  const visibleSales = salesAll.slice(
+    visibleSalesPage * SALES_PER_PAGE,
+    (visibleSalesPage + 1) * SALES_PER_PAGE,
+  )
 
   // ── Upcoming: behandelingen (pending_bookings paid) + trajecten + legacy bookings ──
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0)
@@ -219,6 +226,9 @@ export default function AdminPage() {
   const upcomingTotal = upcomingTreatments.length + upcomingTrajecten.length + upcomingBookings.length
 
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) : '—'
+  const salesDateRange = visibleSales.length > 0
+    ? `${fmt(visibleSales[visibleSales.length - 1].date)} - ${fmt(visibleSales[0].date)}`
+    : ''
 
   if (loading) return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Laden...</div></div>
   if (!user) return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Doorverwijzen...</div></div>
@@ -259,10 +269,11 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
                 {/* Recent sales — cursussen + trajecten + behandelingen */}
                 <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
-                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente verkopen</h3>
+                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente verkopen{salesDateRange ? ` (${salesDateRange})` : ''}</h3>
                   {salesAll.length > 0 ? (
-                    <div className="space-y-3">
-                      {salesAll.slice(0, 8).map(s => (
+                    <div>
+                      <div className="space-y-3">
+                      {visibleSales.map(s => (
                         <div key={s.key} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -277,6 +288,14 @@ export default function AdminPage() {
                           </div>
                         </div>
                       ))}
+                      </div>
+                      {salesPageCount > 1 && (
+                        <div className="flex items-center justify-between gap-3 pt-4 mt-2 border-t border-[#eee]">
+                          <button type="button" onClick={() => setSalesPage(Math.max(0, visibleSalesPage - 1))} disabled={visibleSalesPage === 0} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#888] disabled:text-[#d2d2d2] disabled:cursor-not-allowed hover:text-[#C4A265] transition">Vorige pagina</button>
+                          <span className="text-[11px] text-[#aaa]">{visibleSalesPage + 1} / {salesPageCount}</span>
+                          <button type="button" onClick={() => setSalesPage(Math.min(salesPageCount - 1, visibleSalesPage + 1))} disabled={visibleSalesPage === salesPageCount - 1} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#888] disabled:text-[#d2d2d2] disabled:cursor-not-allowed hover:text-[#C4A265] transition">Volgende pagina</button>
+                        </div>
+                      )}
                     </div>
                   ) : <p className="text-[13px] text-[#888]">Nog geen verkopen</p>}
                 </div>
