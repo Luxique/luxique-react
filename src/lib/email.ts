@@ -66,6 +66,8 @@ async function getAccountEmail(userId: string | null | undefined, fallback: stri
 
 const spamNoticeNL = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;"><strong style="color:#4a463e;">Kwam deze mail in je ongewenste mail / spam terecht?</strong> Verplaats 'm dan even naar je normale inbox, zodat je onze berichten voortaan meteen goed ontvangt.</div>`
 const spamNoticeEN = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;"><strong style="color:#4a463e;">Did this email land in your junk or spam folder?</strong> Please move it to your regular inbox so our future messages reach you straight away.</div>`
+const availabilityNoticeNL = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#4a463e; padding:14px 18px; max-width:430px; margin:18px auto 0; background:#f3efe7; border-left:3px solid #C4A265; text-align:left;"><strong style="color:#0C0A07;">Let op:</strong> we zijn bereikbaar op werkdagen van 09:00 tot 16:00. Berichten die daarbuiten binnenkomen, beantwoorden we op de eerstvolgende werkdag.</div>`
+const availabilityNoticeEN = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#4a463e; padding:14px 18px; max-width:430px; margin:18px auto 0; background:#f3efe7; border-left:3px solid #C4A265; text-align:left;"><strong style="color:#0C0A07;">Please note:</strong> we are available on working days from 09:00 to 16:00. Messages received outside these hours will be answered on the next working day.</div>`
 
 async function markMailSent(bookingId: string, column: string) {
   const supabase = createClient(
@@ -170,6 +172,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
           </tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:6px; max-width:430px; margin:0 auto;">A calendar invite (.ics) is attached so you can add it to your calendar.</div>
+        ${availabilityNoticeEN}
         ${spamNoticeEN}
       </td></tr>
       <tr><td style="padding:0 40px 8px 40px;">
@@ -287,6 +290,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
           </tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;">Kun je onverhoopt niet? Laat het ons z.s.m. weten via <a href="mailto:info@luxique.nl" style="color:#8a857b; text-decoration:underline;">info@luxique.nl</a>.</div>
+        ${availabilityNoticeNL}
         ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
