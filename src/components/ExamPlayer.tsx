@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
+import { checkEnrollmentCompletion } from '@/lib/academy-completion'
 
 /* ── Types ── */
 interface ExamProps {
@@ -49,6 +50,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
 
   const [screen, setScreen] = useState<ExamScreen>('start')
   const [blocks, setBlocks] = useState<ExamBlock[]>([])
+  const [allBlocks, setAllBlocks] = useState<ExamBlock[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -75,11 +77,14 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
             id: b.id,
             question: c.question || '',
             options: c.options || [],
-            optionType: c.option_type || 'text',
+            optionType: c.options?.some((option: { image_url?: string }) => option.image_url)
+              ? 'image'
+              : c.option_type || 'text',
             media: c.media || null,
           }
         })
         setBlocks(parsed)
+        setAllBlocks(parsed)
         setTotalQuestions(parsed.length)
       }
       setLoading(false)
@@ -136,11 +141,15 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const handleStart = () => {
     if (isRetake && wrongQuestionIds.length > 0) {
       // Only show wrong questions
-      const wrongBlocks = blocks.filter(b => wrongQuestionIds.includes(b.id))
+      const wrongBlocks = allBlocks.filter(b => wrongQuestionIds.includes(b.id))
       setBlocks(wrongBlocks)
-      setTotalQuestions(wrongBlocks.length)
-      setAnswers({})
-      setResults({})
+      setTotalQuestions(allBlocks.length)
+      setAnswers(prev => Object.fromEntries(
+        Object.entries(prev).filter(([blockId]) => !wrongQuestionIds.includes(blockId))
+      ))
+      setResults(prev => Object.fromEntries(
+        Object.entries(prev).filter(([blockId]) => !wrongQuestionIds.includes(blockId))
+      ))
     }
     setCurrentIndex(0)
     setScreen('question')
@@ -157,7 +166,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     const newResults: Record<string, boolean> = {}
     const wrongIds: string[] = []
 
-    blocks.forEach(block => {
+    allBlocks.forEach(block => {
       const chosenId = answers[block.id]
       const correctOpt = block.options.find(o => o.correct)
       const isCorrect = chosenId === correctOpt?.id
@@ -166,7 +175,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
       else wrongIds.push(block.id)
     })
 
-    const pct = blocks.length > 0 ? Math.round((correct / blocks.length) * 100) : 0
+    const pct = allBlocks.length > 0 ? Math.round((correct / allBlocks.length) * 100) : 0
     setResults(newResults)
     setScore(pct)
     setWrongQuestionIds(wrongIds)
@@ -174,7 +183,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     // Save exam answers to DB
     if (user) {
       const examAnswers: Record<string, { chosen: string; correct: boolean }> = {}
-      blocks.forEach(block => {
+      allBlocks.forEach(block => {
         examAnswers[block.id] = {
           chosen: answers[block.id] || '',
           correct: newResults[block.id],
@@ -182,7 +191,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
       })
 
       const passed = pct >= passingScore
-      await supabase.from('lesson_progress').upsert({
+      const { error } = await supabase.from('lesson_progress').upsert({
         user_id: user.id,
         lesson_id: lessonId,
         course_id: courseId,
@@ -190,6 +199,11 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         completed: passed,
         completed_at: passed ? new Date().toISOString() : null,
       }, { onConflict: 'user_id,lesson_id' })
+      if (error) {
+        console.error('[completion] Exam progress upsert failed:', error.message)
+      } else {
+        await checkEnrollmentCompletion(courseId)
+      }
     }
 
     setSubmitting(false)
@@ -245,7 +259,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   }
 
   const currentBlock = blocks[currentIndex]
-  const progress = totalQuestions > 0 ? Math.round(((currentIndex + 1) / totalQuestions) * 100) : 0
+  const progress = blocks.length > 0 ? Math.round(((currentIndex + 1) / blocks.length) * 100) : 0
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: colors.muted }}>Examen laden...</div>
 
@@ -306,7 +320,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span style={{ fontSize: 13, color: colors.gold, fontFamily: '"Jost", sans-serif', fontWeight: 600 }}>
-              Vraag {currentIndex + 1} van {totalQuestions}
+              Vraag {currentIndex + 1} van {blocks.length}
             </span>
             <span style={{ fontSize: 13, color: colors.muted, fontFamily: '"Jost", sans-serif' }}>
               {progress}%

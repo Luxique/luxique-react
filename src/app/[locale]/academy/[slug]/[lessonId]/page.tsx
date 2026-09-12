@@ -7,6 +7,7 @@ import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import ExamPlayer from '@/components/ExamPlayer'
 import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
+import { checkEnrollmentCompletion } from '@/lib/academy-completion'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -224,6 +225,7 @@ export default function LessonPage() {
       setVideoCompleted(false)
     } else {
       console.log('[completion] upsert OK — completed=true for', targetId)
+      await checkEnrollmentCompletion(lesson.course_id)
       // Show conversion modal if: free lesson, user logged in, not enrolled, not admin, not already dismissed
       if (isFreeLesson && !hasAccess && !convertDismissedRef.current) {
         setTimeout(() => setShowConvertModal(true), 800)

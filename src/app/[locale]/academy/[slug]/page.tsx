@@ -71,6 +71,16 @@ export default function CourseInteriorPage() {
       })
   }, [user, course])
 
+  // Enrollment success — na Stripe betaling direct door naar de cursus
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('enrolled') === '1') {
+      setShowEnrollSuccess(true)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
   const isAdmin = role === 'admin'
   const hasAccess = enrolled || isAdmin
   const lessons = course?.lessons || []
@@ -102,16 +112,6 @@ export default function CourseInteriorPage() {
   const completedCount = lessons.filter(l => getLessonStatus(l) === 'done').length
   const totalCount = lessons.length
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
-
-  // Enrollment success — na Stripe betaling direct door naar de cursus
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('enrolled') === '1') {
-      setShowEnrollSuccess(true)
-      window.history.replaceState({}, '', window.location.pathname)
-    }
-  }, [])
 
   if (!user) return (
     <div className="ci-wrap">
