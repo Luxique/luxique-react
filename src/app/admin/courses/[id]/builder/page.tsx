@@ -9,6 +9,7 @@ import { PreviewProvider } from '@/contexts/PreviewContext'
 import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
+import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -240,6 +241,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
   const [blocksCache, setBlocksCache] = useState<Record<string, Block[]>>({})  // Per-les cache
+  const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
   const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
@@ -289,23 +291,35 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const markLessonBlocksDirty = useCallback((lessonId?: string) => {
+    if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
+  }, [])
+
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    
-    setBlocks(prev => {
-      const oldIndex = prev.findIndex(b => b.id === active.id);
-      const newIndex = prev.findIndex(b => b.id === over.id);
-      const reordered = arrayMove(prev, oldIndex, newIndex);
-      // Persist order to Supabase
-      reordered.forEach((block, index) => {
-        supabase.from('blocks').update({ order: index }).eq('id', block.id).then(() => {});
-      });
-      return reordered;
-    });
-    // Update cache
-    if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }));
+
+    const oldIndex = blocks.findIndex(b => b.id === active.id)
+    const newIndex = blocks.findIndex(b => b.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(blocks, oldIndex, newIndex)
+    setBlocks(reordered)
+
+    if (!currentLesson?.id) return
+    const lessonId = currentLesson.id
+    setBlocksCache(prev => ({ ...prev, [lessonId]: reordered }))
+    markLessonBlocksDirty(lessonId)
+
+    const reorderResults = await Promise.all(
+      reordered.map((block, index) =>
+        supabase.from('blocks').update({ sort_order: index }).eq('id', block.id)
+      )
+    )
+    const reorderError = reorderResults.find(result => result.error)?.error
+    if (reorderError) {
+      console.error('[handleDragEnd] Block reorder FAILED:', reorderError)
+      alert(`Volgorde opslaan mislukt: ${reorderError.message}`)
     }
   };
 
@@ -467,13 +481,36 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       }
       console.log(`[saveCourse] Lesson "${lesson.name}" upsert OK`)
 
+      if (!shouldSyncLessonBlocks(dirtyBlockLessonIdsRef.current, lesson.id)) {
+        console.log(`[saveCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
+        continue
+      }
+
       // 3. Sync blokken voor deze les — delete alleen wat echt verwijderd is
       const lessonBlocks = lesson.blocks || []
       console.log(`[saveCourse] Syncing ${lessonBlocks.length} blocks for lesson "${lesson.name}"`)
-      
-      // SAFETY MITIGATION: course-level save must never infer deletions from an
-      // unloaded lesson's empty local blocks array. Explicit block deletion is
-      // handled by the block action itself; save only upserts known blocks.
+
+      const { data: existingBlocks, error: existingBlocksError } = await supabase
+        .from('blocks')
+        .select('id')
+        .eq('lesson_id', lesson.id)
+      if (existingBlocksError) {
+        console.error('[saveCourse] Existing blocks fetch FAILED:', existingBlocksError)
+        alert(`Fout bij ophalen blokken: ${existingBlocksError.message}`)
+        return
+      }
+      const blocksToDelete = getBlockIdsToDelete(
+        existingBlocks?.map(b => b.id) || [],
+        lessonBlocks.map(b => b.id),
+      )
+      if (blocksToDelete.length > 0) {
+        const { error: deleteError } = await supabase.from('blocks').delete().in('id', blocksToDelete)
+        if (deleteError) {
+          console.error('[saveCourse] Block delete FAILED:', deleteError)
+          alert(`Fout bij verwijderen oude blokken: ${deleteError.message}`)
+          return
+        }
+      }
       
       // Dan: upsert nieuwe/gewijzigde blokken
       for (let i = 0; i < lessonBlocks.length; i++) {
@@ -510,6 +547,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           return
         }
       }
+      dirtyBlockLessonIdsRef.current.delete(lesson.id)
     }
 
     console.log('[saveCourse] ✅ Save complete!')
@@ -649,15 +687,31 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           })
           if (lessonError) console.error('Lesson upsert failed:', lessonError)
 
+          if (!shouldSyncLessonBlocks(dirtyBlockLessonIdsRef.current, lesson.id)) {
+            console.log(`[publishCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
+            continue
+          }
+
           const lessonBlocks = lesson.blocks || []
-          
-          // SAFETY MITIGATION: publishing never performs inferred bulk deletes.
-          // Explicit block deletion is handled by the block action itself.
+
+          const { data: existingBlocks, error: existingBlocksError } = await supabase
+            .from('blocks')
+            .select('id')
+            .eq('lesson_id', lesson.id)
+          if (existingBlocksError) throw existingBlocksError
+          const blocksToDelete = getBlockIdsToDelete(
+            existingBlocks?.map(b => b.id) || [],
+            lessonBlocks.map(b => b.id),
+          )
+          if (blocksToDelete.length > 0) {
+            const { error: deleteError } = await supabase.from('blocks').delete().in('id', blocksToDelete)
+            if (deleteError) throw deleteError
+          }
           
           for (let i = 0; i < lessonBlocks.length; i++) {
             const block = lessonBlocks[i]
             const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
-            await supabase.from('blocks').upsert({
+            const { error: blockError } = await supabase.from('blocks').upsert({
               id: block.id,
               lesson_id: lesson.id,
               course_id: courseToSave.id,
@@ -681,7 +735,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
               }
             })
+            if (blockError) throw blockError
           }
+          dirtyBlockLessonIdsRef.current.delete(lesson.id)
         }
       }
 
@@ -997,8 +1053,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     setBlocks(newBlocks)
     if (currentLesson?.id) {
       setBlocksCache(prev => ({ ...prev, [currentLesson.id]: newBlocks }))
+      markLessonBlocksDirty(currentLesson.id)
     }
-  }, [currentLesson])
+  }, [currentLesson, markLessonBlocksDirty])
 
   const addBlock = (type: BlockType) => {
     const newBlock: Block = type === 'quiz'
@@ -1034,8 +1091,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     setBlocks(updated)
     if (currentLesson?.id) {
       setBlocksCache(prev => ({ ...prev, [currentLesson.id]: updated }))
+      markLessonBlocksDirty(currentLesson.id)
     }
-  }, [blocks, currentLesson])
+  }, [blocks, currentLesson, markLessonBlocksDirty])
 
   // Herindexeer lessen: num = volgorde in de array (doorlopend, inclusief sublessen)
   const reindexLessons = (lessons: Lesson[]): Lesson[] =>
@@ -1065,6 +1123,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       reflectionQuestions: [],
       blocks: defaultBlocks
     }
+    dirtyBlockLessonIdsRef.current.add(newLesson.id)
 
     setCourse(prev => {
       if (!prev) return prev
