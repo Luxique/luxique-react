@@ -2,6 +2,7 @@
 
 import './academy-redesign.css'
 import { useTranslations } from 'next-intl'
+import AcademyComingSoonGate from '@/components/AcademyComingSoonGate'
 
 /* ═══════════════════════════════════════════════════════
    AcademySection — Redesigned portrait card grid
@@ -97,7 +98,8 @@ export default function AcademySection({ courses, loading }: Props) {
         </section>
 
         {/* ══ CURSUSSEN ══ */}
-        <main id="cursussen">
+        <AcademyComingSoonGate scope="section">
+          <main id="cursussen">
           <div className="lxq-section-head">
             <div>
               <div className="lxq-eyebrow">{t('coursesEyebrow')}</div>
@@ -176,7 +178,8 @@ export default function AcademySection({ courses, loading }: Props) {
             </div>
             <a href="/register" className="lxq-btn-primary">{t('ctaCreate')}</a>
           </section>
-        </main>
+          </main>
+        </AcademyComingSoonGate>
       </div>
     </div>
   )
