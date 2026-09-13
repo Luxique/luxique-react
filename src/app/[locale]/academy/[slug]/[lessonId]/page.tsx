@@ -8,6 +8,7 @@ import ExamPlayer from '@/components/ExamPlayer'
 import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { checkEnrollmentCompletion } from '@/lib/academy-completion'
+import { extractStoredBlockContent, normalizeRichTextHtml } from '@/lib/course-block-content'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -29,25 +30,24 @@ interface ProgressRec { lesson_id: string; completed: boolean; last_position_sec
 
 /* ── Helpers ───────────────────────────────────── */
 function extractBlockContent(block: Block) {
-  const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
-  const nestedC = typeof c?.content === 'object' && c.content !== null ? c.content as Record<string, unknown> : null
+  const stored = extractStoredBlockContent(block.content)
   return {
-    title: (c?.title as string) || block.title,
-    subtitle: (c?.subtitle as string) || block.subtitle,
-    showTitle: (c?.showTitle as boolean | undefined) ?? block.showTitle,
-    showSubtitle: (c?.showSubtitle as boolean | undefined) ?? block.showSubtitle,
-    showBody: (c?.showBody as boolean | undefined) ?? block.showBody,
-    body: typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : ''),
-    muxPlaybackId: (nestedC?.mux_playback_id as string) || (c?.mux_playback_id as string) || undefined,
-    question: (c?.question as string) || block.question,
-    options: (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
-    optionType: (c?.option_type as string) || block.option_type || ((c?.options as Array<{ image_url?: string }>)?.some((o: { image_url?: string }) => o.image_url) ? 'image' : 'text'),
-    media: (c?.media as { type: string; url: string; caption?: string } | null) || block.media,
-    imageUrl: (c?.url as string) || block.media?.url,
-    caption: (c?.caption as string) || block.media?.caption,
-    fileName: (block.title || (c?.file_name as string)) || 'Bestand',
-    fileSize: c?.file_size as number | undefined,
-    fileUrl: (c?.file_url as string) || block.file_url || '#',
+    title: normalizeRichTextHtml(stored.title || block.title),
+    subtitle: normalizeRichTextHtml(stored.subtitle || block.subtitle),
+    showTitle: stored.showTitle ?? block.showTitle,
+    showSubtitle: stored.showSubtitle ?? block.showSubtitle,
+    showBody: stored.showBody ?? block.showBody,
+    body: normalizeRichTextHtml(stored.body),
+    muxPlaybackId: stored.muxPlaybackId,
+    question: stored.question || block.question,
+    options: (stored.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
+    optionType: stored.optionType || block.option_type || ((stored.options as Array<{ image_url?: string }> | undefined)?.some(o => o.image_url) ? 'image' : 'text'),
+    media: (stored.media as { type: string; url: string; caption?: string } | null) || block.media,
+    imageUrl: stored.url || (stored.media?.url as string | undefined) || block.media?.url,
+    caption: stored.caption || (stored.media?.caption as string | undefined) || block.media?.caption,
+    fileName: block.title || stored.fileName || 'Bestand',
+    fileSize: stored.fileSize,
+    fileUrl: stored.fileUrl || block.file_url || '#',
   }
 }
 
@@ -465,9 +465,9 @@ export default function LessonPage() {
                     {/* TEXT */}
                     {block.type === 'text' && (
                       <div className="tt">
-                        {bc.showTitle !== false && bc.title && <h2>{bc.title}</h2>}
-                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle">{bc.subtitle}</div>}
-                        {bc.showBody !== false && bc.body && <div dangerouslySetInnerHTML={{ __html: bc.body }} />}
+                        {bc.showTitle !== false && bc.title && <div className="block-title" dangerouslySetInnerHTML={{ __html: bc.title }} />}
+                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle" dangerouslySetInnerHTML={{ __html: bc.subtitle }} />}
+                        {bc.showBody !== false && bc.body && <div className="block-body" dangerouslySetInnerHTML={{ __html: bc.body }} />}
                       </div>
                     )}
 

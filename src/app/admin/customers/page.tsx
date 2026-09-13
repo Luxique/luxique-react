@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState, type CSSProperties } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { AdminDashboardMobileNav, AdminDashboardSidebar } from '@/components/AdminDashboardNav'
+import { courseGrantErrorMessage, withCourseGrantTimeout } from '@/lib/course-grant'
 
 /* ── types ── */
 type Profile = {
@@ -59,6 +60,7 @@ export default function AdminCustomersPage() {
   const [grantSearch, setGrantSearch] = useState('')
   const [grantSearchFocused, setGrantSearchFocused] = useState(false)
   const [granting, setGranting] = useState(false)
+  const [grantFeedback, setGrantFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [extensionDates, setExtensionDates] = useState<Record<string, string>>({})
   const [extendingId, setExtendingId] = useState<string | null>(null)
   const [extensionError, setExtensionError] = useState<Record<string, string>>({})
@@ -75,19 +77,35 @@ export default function AdminCustomersPage() {
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return
     setGranting(true)
-    await supabase.from('enrollments').upsert({
-      user_id: grantUserId, course_id: grantCourseId, status: 'active',
-      payment_method: 'manual', paid_at: new Date().toISOString(),
-      enrolled_at: new Date().toISOString(), granted_by: user?.id,
-      access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-    }, { onConflict: 'user_id,course_id' })
-    setShowGrant(false); setGrantUserId(''); setGrantCourseId(''); setGrantSearch('')
-    if (selectedId) {
-      // refresh detail van geselecteerde klant
-      setSelectedId(null)
-      setTimeout(() => setSelectedId(selectedId), 50)
+    setGrantFeedback(null)
+    try {
+      const { error } = await withCourseGrantTimeout(
+        supabase.from('enrollments').upsert({
+          user_id: grantUserId, course_id: grantCourseId, status: 'active',
+          payment_method: 'manual', paid_at: new Date().toISOString(),
+          enrolled_at: new Date().toISOString(), granted_by: user?.id,
+          access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        }, { onConflict: 'user_id,course_id' }),
+      )
+      if (error) throw error
+
+      setGrantFeedback({ type: 'success', message: 'Cursus is succesvol toegewezen.' })
+      if (selectedId) {
+        // refresh detail van geselecteerde klant
+        setSelectedId(null)
+        setTimeout(() => setSelectedId(selectedId), 50)
+      }
+    } catch (error) {
+      console.error('[admin-customers] Course grant failed:', error)
+      setGrantFeedback({ type: 'error', message: courseGrantErrorMessage(error) })
+    } finally {
+      setGranting(false)
     }
-    setGranting(false)
+  }
+
+  const closeGrantModal = () => {
+    setShowGrant(false)
+    setGrantFeedback(null)
   }
 
   const extendAccess = async (enrollment: Enrollment) => {
@@ -215,7 +233,7 @@ export default function AdminCustomersPage() {
             {/* LEFT: Customer list */}
             <div className="mobile-customer-list-column">
               <button
-                onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }}
+                onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setGrantFeedback(null); setShowGrant(true) }}
                 className="mobile-customer-static w-full mb-3 px-4 py-3 rounded-xl bg-[#C4A265] text-[#0C0A07] text-[13px] font-bold hover:brightness-95 transition flex items-center justify-center gap-2"
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
@@ -481,8 +499,14 @@ export default function AdminCustomersPage() {
 
       {/* Grant modal */}
       {showGrant && (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setShowGrant(false)}>
-          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full sm:w-[400px] sm:max-w-[92vw] shadow-2xl border border-[#eee] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={closeGrantModal}>
+          <div className="relative bg-white rounded-2xl p-6 sm:p-8 w-full sm:w-[400px] sm:max-w-[92vw] shadow-2xl border border-[#eee] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={closeGrantModal}
+              aria-label="Sluit cursus toewijzen"
+              className="sticky top-0 float-right -mt-2 -mr-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-[#777] shadow-sm border border-[#eee] hover:text-[#0C0A07]"
+            >×</button>
             <h3 className="font-['Cormorant_Garamond'] text-[24px] mb-6">Cursus toewijzen</h3>
             <div className="space-y-4">
               <div>
@@ -525,6 +549,14 @@ export default function AdminCustomersPage() {
                 className="w-full py-3 rounded-xl bg-[#0C0A07] text-white text-[14px] font-semibold hover:bg-[#333] transition disabled:opacity-40">
                 {granting ? 'Toekennen…' : 'Toewijzen'}
               </button>
+              {grantFeedback && (
+                <div
+                  role={grantFeedback.type === 'error' ? 'alert' : 'status'}
+                  className={`rounded-xl px-4 py-3 text-[13px] ${grantFeedback.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                >
+                  {grantFeedback.message}
+                </div>
+              )}
             </div>
           </div>
         </div>

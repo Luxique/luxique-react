@@ -153,12 +153,12 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
           </svg>
         )}
       </div>
-      <input
-        type="text"
-        placeholder="Bijschrift (optioneel)"
+      <textarea
+        rows={3}
+        placeholder="Bijschrift of extra uitleg (optioneel)"
         value={block.caption || ''}
         onChange={(e) => onUpdate(block.id, { caption: e.target.value })}
-        className="w-full bg-transparent border-none outline-none text-[11.5px] text-[#7A7268] italic text-center mt-1"
+        className="w-full resize-y rounded-lg border border-[rgba(30,26,20,0.08)] bg-white px-3 py-2 outline-none text-[12px] leading-relaxed text-[#7A7268] mt-1 focus:border-[#C4A265]"
       />
     </div>
   )

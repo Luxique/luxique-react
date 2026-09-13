@@ -10,6 +10,7 @@ import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
+import { extractStoredBlockContent } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -1002,21 +1003,27 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       .eq('lesson_id', lessonId)
       .order('sort_order')
     if (data && data.length > 0) {
-      setBlocks(data.map(b => ({
-        id: b.id,
-        type: b.type as BlockType,
-        title: b.content?.title,
-        subtitle: b.content?.subtitle,
-        showTitle: b.content?.showTitle,
-        showSubtitle: b.content?.showSubtitle,
-        showBody: b.content?.showBody,
-        content: b.content?.content,
-        url: b.content?.url,
-        question: b.content?.question,
-        media: b.content?.media,
-        option_type: b.content?.option_type,
-        options: b.content?.options,
-      })))
+      setBlocks(data.map(b => {
+        const stored = extractStoredBlockContent(b.content)
+        return {
+          id: b.id,
+          type: b.type as BlockType,
+          title: stored.title,
+          subtitle: stored.subtitle,
+          showTitle: stored.showTitle,
+          showSubtitle: stored.showSubtitle,
+          showBody: stored.showBody,
+          content: stored.body,
+          url: stored.url,
+          caption: stored.caption,
+          question: stored.question,
+          media: stored.media as Block['media'],
+          option_type: stored.optionType as Block['option_type'],
+          options: stored.options as Block['options'],
+          fileName: stored.fileName,
+          fileDescription: stored.fileDescription,
+        }
+      }))
     } else {
       // Geen blokken: zet standaard blokken op basis van lesson_type
       const lessonData = course?.lessons?.find(l => l.id === lessonId)

@@ -52,6 +52,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       Highlight.configure({ multicolor: true }),
     ],
     content,
+    parseOptions: { preserveWhitespace: 'full' },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
@@ -60,7 +61,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
   // Sync external content changes
   React.useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content || '', { emitUpdate: false })
+      editor.commands.setContent(content || '', { emitUpdate: false, parseOptions: { preserveWhitespace: 'full' } })
     }
   }, [content, editor])
 
@@ -91,8 +92,11 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       )}
       <EditorContent
         editor={editor}
-        className={`text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
+        className={`course-rich-text text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
       />
+      <style jsx global>{`
+        .course-rich-text .ProseMirror { white-space: break-spaces; }
+      `}</style>
       {/* Toolbar — onder het veld */}
       <div className="flex items-center gap-0.5 border-t border-[rgba(30,26,20,0.08)] pt-1.5 mt-1.5 flex-wrap">
         <button
