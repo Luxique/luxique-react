@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { TextStyle } from '@tiptap/extension-text-style'
+import { FontSize, TextStyle } from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 
@@ -48,6 +48,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
         listItem: isBlock ? {} : false,
       }),
       TextStyle,
+      FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
     ],
@@ -111,6 +112,25 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={`px-1.5 py-0.5 rounded text-[10px] line-through ${editor.isActive('strike') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
         >S</button>
+        <select
+          aria-label="Lettergrootte"
+          value={editor.getAttributes('textStyle').fontSize || ''}
+          onChange={(event) => {
+            const fontSize = event.target.value
+            if (fontSize) editor.chain().focus().setFontSize(fontSize).run()
+            else editor.chain().focus().unsetFontSize().run()
+          }}
+          className="h-6 rounded border border-[rgba(30,26,20,0.1)] bg-white px-1 text-[10px] text-[#7A7268] outline-none focus:border-[#C4A265]"
+          title="Lettergrootte"
+        >
+          <option value="">Grootte</option>
+          <option value="11px">11</option>
+          <option value="13px">13</option>
+          <option value="16px">16</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="32px">32</option>
+        </select>
         {isBlock && (
           <>
             <div className="w-px h-3 bg-[rgba(30,26,20,0.1)] mx-0.5" />

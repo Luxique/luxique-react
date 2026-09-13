@@ -242,6 +242,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
   const [blocksCache, setBlocksCache] = useState<Record<string, Block[]>>({})  // Per-les cache
+  const [lastBlockReorder, setLastBlockReorder] = useState<{ lessonId: string; blocks: Block[] } | null>(null)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
@@ -296,6 +297,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
   }, [])
 
+  const persistBlockOrder = async (orderedBlocks: Block[]) => {
+    const reorderResults = await Promise.all(
+      orderedBlocks.map((block, index) =>
+        supabase.from('blocks').update({ sort_order: index }).eq('id', block.id)
+      )
+    )
+    return reorderResults.find(result => result.error)?.error || null
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -312,17 +322,36 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     setBlocksCache(prev => ({ ...prev, [lessonId]: reordered }))
     markLessonBlocksDirty(lessonId)
 
-    const reorderResults = await Promise.all(
-      reordered.map((block, index) =>
-        supabase.from('blocks').update({ sort_order: index }).eq('id', block.id)
-      )
-    )
-    const reorderError = reorderResults.find(result => result.error)?.error
+    const reorderError = await persistBlockOrder(reordered)
     if (reorderError) {
       console.error('[handleDragEnd] Block reorder FAILED:', reorderError)
+      setBlocks(blocks)
+      setBlocksCache(prev => ({ ...prev, [lessonId]: blocks }))
       alert(`Volgorde opslaan mislukt: ${reorderError.message}`)
+      return
     }
+    setLastBlockReorder({ lessonId, blocks })
   };
+
+  const undoLastBlockReorder = async () => {
+    if (!currentLesson?.id || lastBlockReorder?.lessonId !== currentLesson.id) return
+
+    const currentOrder = blocks
+    const previousOrder = lastBlockReorder.blocks
+    setBlocks(previousOrder)
+    setBlocksCache(prev => ({ ...prev, [currentLesson.id]: previousOrder }))
+    markLessonBlocksDirty(currentLesson.id)
+
+    const undoError = await persistBlockOrder(previousOrder)
+    if (undoError) {
+      console.error('[undoLastBlockReorder] Block reorder undo FAILED:', undoError)
+      setBlocks(currentOrder)
+      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: currentOrder }))
+      alert(`Ongedaan maken mislukt: ${undoError.message}`)
+      return
+    }
+    setLastBlockReorder(null)
+  }
 
   const toSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -2571,6 +2600,18 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
           {/* Content Blocks — only for lesson/quiz context */}
           {currentContext !== 'global' && (
+          <>
+          {lastBlockReorder?.lessonId === currentLesson?.id && (
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={undoLastBlockReorder}
+                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)]"
+              >
+                ↩ Laatste reorder ongedaan maken
+              </button>
+            </div>
+          )}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
               {blocks.map((block) => (
@@ -2599,6 +2640,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           ))}
           </SortableContext>
           </DndContext>
+          </>
           )}
 
           {/* Global context: Course landing form in main canvas */}
