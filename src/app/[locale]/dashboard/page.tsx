@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { isActiveCustomerBooking } from '@/lib/customer-booking-visibility'
+import { formatBookingDate, formatBookingTime } from '@/lib/booking-date-time'
 
 type Course = { id: string; title: string; slug: string; short_description: string; thumbnail_url?: string }
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string; notes: string }
@@ -54,10 +55,10 @@ type CourseProgress = {
 }
 
 function formatDateNL(iso: string) {
-  return new Date(iso).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return formatBookingDate(iso, 'nl-NL')
 }
 function formatTimeNL(iso: string) {
-  return new Date(iso).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+  return formatBookingTime(iso, 'nl-NL')
 }
 function isWithin24h(slotStart: string) {
   const diff = new Date(slotStart).getTime() - Date.now()

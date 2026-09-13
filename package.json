@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test:booking-date-time": "node --experimental-strip-types --test src/lib/booking-date-time.test.ts",
     "test:manual-availability": "node --experimental-strip-types --test src/lib/manual-availability-ledger.test.ts",
     "start": "next start",
     "lint": "next lint"

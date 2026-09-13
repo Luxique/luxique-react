@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { formatBookingDate, formatBookingTime } from '@/lib/booking-date-time'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -8,19 +9,13 @@ const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
-const AMSTERDAM_TIME_ZONE = 'Europe/Amsterdam'
 
 function formatDateEN(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: AMSTERDAM_TIME_ZONE,
-  })
+  return formatBookingDate(iso, 'en-GB')
 }
 
 function formatTimeEN(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-GB', {
-    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: AMSTERDAM_TIME_ZONE,
-  })
+  return formatBookingTime(iso, 'en-GB')
 }
 
 interface BookingData {
