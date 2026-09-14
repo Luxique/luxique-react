@@ -55,6 +55,18 @@ export function extractStoredBlockContent(content: unknown) {
     fileSize: (root?.fileSize ?? root?.file_size ?? nested?.fileSize ?? nested?.file_size) as number | undefined,
     muxAssetId: firstString(root?.mux_asset_id, nested?.mux_asset_id),
     muxPlaybackId: firstString(root?.mux_playback_id, nested?.mux_playback_id),
+    muxPublicPlaybackId: firstString(root?.mux_public_playback_id, nested?.mux_public_playback_id),
+  }
+}
+
+export function getBuilderVideoPlaybackConfig(content: unknown, isFree: boolean) {
+  const stored = extractStoredBlockContent(content)
+
+  return {
+    playbackId: isFree
+      ? stored.muxPublicPlaybackId || stored.muxPlaybackId
+      : stored.muxPlaybackId,
+    signed: !isFree,
   }
 }
 
