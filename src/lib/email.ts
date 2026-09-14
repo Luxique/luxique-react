@@ -1,7 +1,8 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
-import { formatBookingDate, formatBookingTime } from '@/lib/booking-date-time'
+import { formatBookingDate, formatBookingDateOnly, formatBookingTime } from '@/lib/booking-date-time'
+import { renderTrajectoryProgrammeHtml } from '@/lib/trajectory-email-content'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -783,6 +784,7 @@ export async function getBookingWithCustomerFromCal(uid: string): Promise<Bookin
 
 export interface TrajectBoekingMailData {
   boekingId: string
+  cursus_id: string
   cursus_naam: string
   startdatum: string
   blok_dagen: string[]
@@ -794,9 +796,7 @@ export interface TrajectBoekingMailData {
 }
 
 function formatDateNL(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('nl-NL', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
+  return formatBookingDateOnly(iso)
 }
 
 function fmtTime(t?: string | null): string {
@@ -842,11 +842,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
     }
 
     const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
-    const heeftMeerdereDagen = data.blok_dagen.length > 1
-
-    const trajectDagenHtml = heeftMeerdereDagen
-      ? data.blok_dagen.map(d => `<tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(d)}</td></tr>`).join('')
-      : ''
+    const trajectDagenHtml = renderTrajectoryProgrammeHtml(data.cursus_id, data.cursus_naam)
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -881,7 +877,6 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.cursus_naam}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Startdatum</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(data.startdatum)}</td></tr>
-              ${heeftMeerdereDagen ? trajectDagenHtml : ''}
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Starttijd per dag</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${fmtTime(data.starttijd)}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Locatie</td></tr>
@@ -891,6 +886,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
             </table>
           </td></tr>
         </table>
+        ${trajectDagenHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:14px; max-width:440px; margin:0 auto;">Het restbedrag van <strong>${formatBedrag(data.restbedrag_cents)}</strong> voldoe je contant of met pin bij Chiva op de startdag.</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#9a958b; padding-bottom:22px; max-width:440px; margin:0 auto;">Na de wettelijke bedenktijd geldt bij annulering een annuleringsvergoeding van 20% van de cursusprijs. De betaalde aanbetaling wordt daarmee verrekend.</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
@@ -928,6 +924,39 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
   } catch (err) {
     console.error('Traject mail: onverwachte fout:', err)
   }
+}
+
+export async function sendTrajectReminderMail(data: TrajectBoekingMailData) {
+  const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
+  const trajectDagenHtml = renderTrajectoryProgrammeHtml(data.cursus_id, data.cursus_naam)
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: data.klant_email,
+    subject: `Herinnering: ${data.cursus_naam} start binnenkort — LUXIQUE`,
+    html: `<!DOCTYPE html>
+<html lang="nl" xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Je traject start binnenkort</title></head>
+<body style="margin:0;padding:0;background-color:#e8e6e1;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">Je LUXIQUE traject start binnenkort — bekijk je dagprogramma.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#e8e6e1;"><tr><td align="center" style="padding:40px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background-color:#FAF8F4;border-radius:14px;overflow:hidden;">
+<tr><td align="center" style="background-color:#0C0A07;padding:38px 40px 30px;"><img src="https://luxique.nl/lxq-email-logo.png" width="132" alt="LUXIQUE" style="display:block;width:132px;height:auto;border:0;"></td></tr>
+<tr><td style="height:2px;background-color:#C4A265;font-size:0;">&nbsp;</td></tr>
+<tr><td align="center" style="padding:44px 48px 36px;">
+<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#C4A265;padding-bottom:18px;">Herinnering persoonlijk traject</div>
+<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;line-height:42px;color:#0C0A07;padding-bottom:20px;">Bijna zover, ${voornaam}</div>
+<div style="font-family:Arial,sans-serif;font-size:16px;line-height:26px;color:#4a463e;padding-bottom:24px;max-width:440px;margin:0 auto;">Je traject <strong>${data.cursus_naam}</strong> start op <strong>${formatDateNL(data.startdatum)}</strong> om <strong>${fmtTime(data.starttijd)}</strong> bij ${STUDIO_ADDRESS}.</div>
+${trajectDagenHtml}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7;border-radius:10px;margin:0 0 26px;"><tr><td style="padding:24px 28px;">
+<div style="font-family:Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#C4A265;text-align:center;padding-bottom:14px;">Praktische informatie</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Kom goed uitgeslapen naar iedere trajectdag.</td></tr>
+<tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Er is gratis parkeergelegenheid aanwezig.</td></tr>
+<tr><td style="font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Lunch is inbegrepen. Heb je een allergie? Beantwoord deze mail of mail naar <a href="mailto:info@luxique.nl" style="color:#4a463e;text-decoration:underline;">info@luxique.nl</a>.</td></tr>
+</table></td></tr></table>${spamNoticeNL}</td></tr>
+<tr><td align="center" style="padding:26px 48px 34px;border-top:1px solid #e4ddd0;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:18px;color:#C4A265;padding-bottom:14px;">With love, Luxique</div><div style="font-family:Arial,sans-serif;font-size:12px;color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b;">luxique.nl</a></div></td></tr>
+</table></td></tr></table></body></html>`,
+  })
+  if (error) throw new Error(`Traject reminder versturen mislukt: ${error.message}`)
 }
 
 export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) {

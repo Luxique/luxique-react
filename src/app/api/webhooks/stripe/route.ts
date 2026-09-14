@@ -446,6 +446,7 @@ async function handleTrajectDeposit(session: any, stripe: any) {
     const { sendTrajectBevestigingMail, sendTrajectNotificatieChiva } = await import('@/lib/email')
     const mailData = {
       boekingId: insertedBoeking.id,
+      cursus_id,
       cursus_naam,
       startdatum,
       blok_dagen,

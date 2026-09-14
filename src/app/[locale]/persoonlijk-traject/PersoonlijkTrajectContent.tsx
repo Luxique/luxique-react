@@ -712,8 +712,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor de praktijkdagen. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp1ModelWarning')}</p>
                       </div>
                     </div>
                     <div className="incl-block">
@@ -843,8 +843,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor de praktijk. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp2ModelWarning')}</p>
                       </div>
                     </div>
                     <p className="not-incl">{t('dp2Note')}</p>
@@ -994,8 +994,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor de modeldag (dag 2). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp3ModelWarning')}</p>
                       </div>
                     </div>
                     <div className="incl-block">
@@ -1150,8 +1150,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor beide modeldagen (dag 1 en dag 3). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp4ModelWarning')}</p>
                       </div>
                     </div>
                     <div className="incl-block">
