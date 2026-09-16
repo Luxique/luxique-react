@@ -162,7 +162,7 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         style={{ display: 'none' }}
         onChange={handleUpload}
       />
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="grid grid-cols-[repeat(2,max-content)] items-start gap-3 md:grid-cols-[repeat(3,max-content)]">
         {images.map(image => <div key={image.id} className="min-w-[110px] max-w-full flex-none overflow-hidden rounded-xl border bg-white">
           <div className="relative h-[140px] md:h-[180px]"><img src={image.url} alt={image.caption || ''} className="h-full w-auto max-w-[min(70vw,420px)] object-contain" /><div className="absolute right-2 top-2 flex gap-1"><button title="Opnieuw croppen" onClick={() => setPending({ id: image.id, source: image.url })} className="rounded-full bg-white/90 px-2 py-1 text-xs">✎</button><button title="Verwijderen" onClick={() => { const next = images.filter(item => item.id !== image.id); onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' }) }} className="rounded-full bg-white/90 px-2 py-1 text-xs">✕</button></div></div>
           <textarea rows={2} placeholder="Bijschrift (optioneel)" value={image.caption || ''} onChange={e => { const next = images.map(item => item.id === image.id ? { ...item, caption: e.target.value } : item); onUpdate(block.id, { images: next, caption: next[0]?.caption || '' }) }} className="w-full resize-y border-0 border-t px-3 py-2 text-xs outline-none" />
