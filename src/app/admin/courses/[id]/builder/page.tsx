@@ -2883,7 +2883,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                                       isFree={currentLesson.free}
                                     />
                                   </div>
-                                ) : null
+                                ) : (
+                                  <div className="aspect-video rounded-lg bg-[#1a1510] text-[#C4A265] flex items-center justify-center mb-4">
+                                    <span className="text-sm tracking-wide">Video wordt verwerkt of moet nog worden toegevoegd</span>
+                                  </div>
+                                )
                               })()}
 
                               {block.type === 'image' && block.url && (
