@@ -46,6 +46,7 @@ export function extractStoredBlockContent(content: unknown) {
     ) || '',
     url: firstString(root?.url, nested?.url, media?.url),
     caption: firstString(root?.caption, nested?.caption, media?.caption),
+    images: (root?.images ?? nested?.images) as Array<{ id: string; url: string; caption?: string }> | undefined,
     question: firstString(root?.question, nested?.question),
     media,
     optionType: firstString(root?.option_type, nested?.option_type),

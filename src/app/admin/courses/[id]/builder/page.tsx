@@ -72,6 +72,7 @@ interface Block {
   }
   url?: string
   caption?: string
+  images?: Array<{ id: string; url: string; caption?: string }>
   question?: string
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
@@ -247,10 +248,12 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const activeLessonIdRef = useRef<string | null>(null)
   const [lastBlockReorder, setLastBlockReorder] = useState<{ lessonId: string; blocks: Block[] } | null>(null)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
+  const hasUnsavedChangesRef = useRef(false)
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
   const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [blockInsertIndex, setBlockInsertIndex] = useState<number | null>(null)
   const addBlockButtonRef = useRef<HTMLButtonElement>(null)
 
   
@@ -298,6 +301,17 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const markLessonBlocksDirty = useCallback((lessonId?: string) => {
     if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
+    hasUnsavedChangesRef.current = true
+  }, [])
+
+  useEffect(() => {
+    const warnBeforeLeave = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChangesRef.current && dirtyBlockLessonIdsRef.current.size === 0) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warnBeforeLeave)
+    return () => window.removeEventListener('beforeunload', warnBeforeLeave)
   }, [])
 
   const cacheLessonBlocks = useCallback((lessonId: string, lessonBlocks: Block[]) => {
@@ -569,6 +583,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             content: block.content,
             url: block.url,
             caption: block.caption,
+            images: block.images,
             question: block.question,
             option_type: block.option_type,
             options: block.options,
@@ -590,6 +605,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
 
     console.log('[saveCourse] ✅ Save complete!')
+    hasUnsavedChangesRef.current = false
     
     // Update cache met opgeslagen blokken
     if (currentLesson?.id) {
@@ -765,6 +781,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 content: block.content,
                 url: block.url,
                 caption: block.caption,
+                images: block.images,
                 question: block.question,
                 option_type: block.option_type,
                 options: block.options,
@@ -1066,6 +1083,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           } : stored.body,
           url: stored.url,
           caption: stored.caption,
+          images: stored.images,
           question: stored.question,
           media: stored.media as Block['media'],
           option_type: stored.optionType as Block['option_type'],
@@ -1120,20 +1138,24 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
   }, [cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
 
-  const addBlock = (type: BlockType) => {
+  const addBlock = (type: BlockType, insertIndex = blockInsertIndex) => {
     const newBlock: Block = type === 'quiz'
       ? { id: uid(), type, question: '', option_type: 'text', options: [
           { id: uid(), text: '', image_url: '', correct: false },
           { id: uid(), text: '', image_url: '', correct: false },
         ] }
       : { id: uid(), type }
-    setBlocksWithCache([...blocks, newBlock])
+    const next = [...blocks]
+    next.splice(insertIndex ?? next.length, 0, newBlock)
+    setBlocksWithCache(next)
     setPickerOpen(false)
+    setBlockInsertIndex(null)
   }
 
-  const openPicker = () => {
-    if (!addBlockButtonRef.current) return
-    const rect = addBlockButtonRef.current.getBoundingClientRect()
+  const openPicker = (anchor?: HTMLElement | null, insertIndex: number | null = null) => {
+    const target = anchor || addBlockButtonRef.current
+    if (!target) return
+    const rect = target.getBoundingClientRect()
     const pickerHeight = 200
     const pickerWidth = 340
     const openUpward = rect.bottom + pickerHeight > window.innerHeight
@@ -1142,6 +1164,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       top: openUpward ? rect.top - pickerHeight - 8 : rect.bottom + 8,
       left: Math.max(8, Math.min(rect.left, window.innerWidth - pickerWidth - 8)),
     })
+    setBlockInsertIndex(insertIndex)
     setPickerOpen(true)
   }
 
@@ -1248,11 +1271,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | Array<{question: string; answer: string}> | undefined) => {
     if (!course) return
+    hasUnsavedChangesRef.current = true
     setCourse({ ...course, [field]: value })
   }
 
   const updateLessonField = (field: keyof Lesson, value: string | number | boolean | string[] | undefined) => {
     if (!currentLesson) return
+    hasUnsavedChangesRef.current = true
     setCurrentLesson({ ...currentLesson, [field]: value })
   }
 
@@ -2645,8 +2670,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           )}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-              {blocks.map((block) => (
-                <SortableBlock key={block.id} block={block}>
+              {blocks.map((block, blockIndex) => (
+                <div key={block.id}>
+                <SortableBlock block={block}>
                   <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_2px_10px_rgba(30,26,20,0.08)] ml-8">
               <div className="flex items-center justify-between p-2.5 bg-[#F0EDE6] border-b border-[rgba(30,26,20,0.09)]">
                 <div className="flex items-center gap-2">
@@ -2667,7 +2693,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 {renderBlock(block)}
               </div>
             </div>
-          </SortableBlock>
+                </SortableBlock>
+                <button type="button" aria-label={`Blok invoegen na ${blockIndex + 1}`} onClick={event => openPicker(event.currentTarget, blockIndex + 1)} className="group my-1 flex h-6 w-full items-center justify-center text-[rgba(196,162,101,.45)] hover:text-[#C4A265]">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-current bg-[#F0EDE6] text-sm leading-none transition group-hover:scale-110">+</span>
+                </button>
+                </div>
           ))}
           </SortableContext>
           </DndContext>
@@ -2686,7 +2716,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           <div className="relative">
             <button
               ref={addBlockButtonRef}
-              onClick={() => { openPicker() }}
+              onClick={(event) => { openPicker(event.currentTarget, blocks.length) }}
               className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full"
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -2890,19 +2920,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                                 )
                               })()}
 
-                              {block.type === 'image' && block.url && (
-                                <figure className="m-0">
-                                  <img
-                                    src={block.url}
-                                    alt={block.caption || ''}
-                                    className="w-full h-auto rounded-lg"
-                                  />
-                                  {block.caption && (
-                                    <figcaption className="mt-2 text-sm text-[#7A7268] text-center">
-                                      {block.caption}
-                                    </figcaption>
-                                  )}
-                                </figure>
+                              {block.type === 'image' && ((block.images?.length || 0) > 0 || block.url) && (
+                                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                                  {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0" key={image.id}>
+                                    <img src={image.url} alt={image.caption || ''} className="aspect-[4/3] w-full rounded-lg object-cover" />
+                                    {image.caption && <figcaption className="mt-2 text-sm text-[#7A7268] text-center">{image.caption}</figcaption>}
+                                  </figure>)}
+                                </div>
                               )}
                               
                               {block.type === 'text' && (

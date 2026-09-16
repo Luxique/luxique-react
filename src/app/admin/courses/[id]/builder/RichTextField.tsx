@@ -38,6 +38,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
   const [showHighlight, setShowHighlight] = useState(false)
   const [hexInput, setHexInput] = useState('#C4A265')
   const [hexHighlight, setHexHighlight] = useState('#FFF8E7')
+  const [activeFontSize, setActiveFontSize] = useState('')
   const isBlock = variant === 'block'
 
   const editor = useEditor({
@@ -65,6 +66,18 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       editor.commands.setContent(content || '', { emitUpdate: false, parseOptions: { preserveWhitespace: 'full' } })
     }
   }, [content, editor])
+
+  React.useEffect(() => {
+    if (!editor) return
+    const syncFontSize = () => setActiveFontSize(editor.getAttributes('textStyle').fontSize || '')
+    syncFontSize()
+    editor.on('selectionUpdate', syncFontSize)
+    editor.on('transaction', syncFontSize)
+    return () => {
+      editor.off('selectionUpdate', syncFontSize)
+      editor.off('transaction', syncFontSize)
+    }
+  }, [editor])
 
   if (!editor) return null
 
@@ -134,7 +147,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
         >S</button>
         <select
           aria-label="Lettergrootte"
-          value={editor.getAttributes('textStyle').fontSize || ''}
+          value={activeFontSize}
           onChange={(event) => {
             const fontSize = event.target.value
             if (fontSize) editor.chain().focus().setFontSize(fontSize).run()

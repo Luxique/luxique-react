@@ -4,7 +4,7 @@ import test from 'node:test'
 import { shouldHideChatWidget } from './chat-widget-route.ts'
 
 test('hides the widget on admin and localized customer dashboards', () => {
-  for (const pathname of ['/admin', '/admin/customers', '/dashboard', '/nl/dashboard', '/en/dashboard/bookings']) {
+  for (const pathname of ['/admin', '/admin/customers', '/dashboard', '/nl/dashboard', '/en/dashboard/bookings', '/nl/academy/test-course/lesson-1']) {
     assert.equal(shouldHideChatWidget(pathname), true, pathname)
   }
 })

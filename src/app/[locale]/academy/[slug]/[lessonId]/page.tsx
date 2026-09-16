@@ -25,6 +25,7 @@ interface Block {
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
   showTitle?: boolean; showSubtitle?: boolean; showBody?: boolean
+  images?: Array<{ id: string; url: string; caption?: string }>
 }
 interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }
 
@@ -45,6 +46,7 @@ function extractBlockContent(block: Block) {
     media: (stored.media as { type: string; url: string; caption?: string } | null) || block.media,
     imageUrl: stored.url || (stored.media?.url as string | undefined) || block.media?.url,
     caption: stored.caption || (stored.media?.caption as string | undefined) || block.media?.caption,
+    images: stored.images?.length ? stored.images : undefined,
     fileName: block.title || stored.fileName || 'Bestand',
     fileSize: stored.fileSize,
     fileUrl: stored.fileUrl || block.file_url || '#',
@@ -481,10 +483,12 @@ export default function LessonPage() {
 
                     {/* IMAGE */}
                     {block.type === 'image' && (
-                      <>
-                        <div className="photo">{bc.imageUrl ? <img src={bc.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : '⛶'}</div>
-                        {bc.caption && <div className="photo-cap">{bc.caption}</div>}
-                      </>
+                      <div className="photo-grid">
+                        {(bc.images?.length ? bc.images : [{ id: 'legacy', url: bc.imageUrl || '', caption: bc.caption }]).map(image => <figure key={image.id}>
+                          <div className="photo">{image.url ? <img src={image.url} alt={image.caption || ''} /> : '⛶'}</div>
+                          {image.caption && <figcaption className="photo-cap">{image.caption}</figcaption>}
+                        </figure>)}
+                      </div>
                     )}
 
                     {/* DOWNLOAD */}

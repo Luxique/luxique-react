@@ -1,6 +1,7 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import RichTextField from './RichTextField'
+import ImageCropModal from './ImageCropModal'
 
 /* ── Types ── */
 export type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
@@ -18,6 +19,7 @@ export interface Block {
   }
   url?: string
   caption?: string
+  images?: Array<{ id: string; url: string; caption?: string }>
   question?: string
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
@@ -116,19 +118,34 @@ TextBlock.displayName = 'TextBlock'
 /* ── ImageBlock ── */
 export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
   const fileRef = useRef<HTMLInputElement>(null)
+  const [pending, setPending] = useState<{ id: string; source: string } | null>(null)
+  const images = block.images?.length ? block.images : (block.url ? [{ id: 'legacy', url: block.url, caption: block.caption }] : [])
+
+  useEffect(() => () => { if (pending?.source.startsWith('blob:')) URL.revokeObjectURL(pending.source) }, [pending])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const fileName = `${block.id}-${Date.now()}-${file.name}`
+    setPending({ id: crypto.randomUUID(), source: URL.createObjectURL(file) })
+    e.target.value = ''
+  }
+
+  const uploadCropped = async (blob: Blob) => {
+    if (!pending) return
+    const fileName = `${block.id}-${pending.id}.webp`
     const { data, error } = await supabase.storage
       .from('course-images')
-      .upload(fileName, file, { upsert: true })
+      .upload(fileName, blob, { upsert: true, contentType: 'image/webp' })
     if (error) { console.error('Image upload error:', error); return }
     const { data: { publicUrl } } = supabase.storage
       .from('course-images')
       .getPublicUrl(data.path)
-    onUpdate(block.id, { url: publicUrl })
+    const next = images.some(image => image.id === pending.id)
+      ? images.map(image => image.id === pending.id ? { ...image, url: publicUrl } : image)
+      : [...images, { id: pending.id, url: publicUrl, caption: '' }]
+    onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' })
+    URL.revokeObjectURL(pending.source)
+    setPending(null)
   }
 
   return (
@@ -140,26 +157,14 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         style={{ display: 'none' }}
         onChange={handleUpload}
       />
-      <div
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click() }}
-        className="w-full aspect-video bg-[#F0EDE6] rounded-lg flex flex-col items-center justify-center gap-2 p-4 border-1.5 border-dashed border-[rgba(30,26,20,0.12)] cursor-pointer hover:border-[rgba(196,162,101,0.3)] hover:bg-[rgba(196,162,101,0.03)] transition"
-        style={{ borderRadius: 8, overflow: 'hidden' }}
-      >
-        {block.url ? (
-          <img src={block.url} alt={block.caption || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
-        ) : (
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={colors.gold} strokeWidth="1" style={{ opacity: 0.35 }}>
-            <path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
-          </svg>
-        )}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        {images.map(image => <div key={image.id} className="overflow-hidden rounded-xl border bg-white">
+          <div className="relative aspect-[4/3]"><img src={image.url} alt={image.caption || ''} className="h-full w-full object-cover" /><div className="absolute right-2 top-2 flex gap-1"><button title="Opnieuw croppen" onClick={() => setPending({ id: image.id, source: image.url })} className="rounded-full bg-white/90 px-2 py-1 text-xs">✎</button><button title="Verwijderen" onClick={() => { const next = images.filter(item => item.id !== image.id); onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' }) }} className="rounded-full bg-white/90 px-2 py-1 text-xs">✕</button></div></div>
+          <textarea rows={2} placeholder="Bijschrift (optioneel)" value={image.caption || ''} onChange={e => { const next = images.map(item => item.id === image.id ? { ...item, caption: e.target.value } : item); onUpdate(block.id, { images: next, caption: next[0]?.caption || '' }) }} className="w-full resize-y border-0 border-t px-3 py-2 text-xs outline-none" />
+        </div>)}
+        {images.length < 9 && <button onClick={() => fileRef.current?.click()} className="flex aspect-[4/3] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[rgba(196,162,101,.35)] text-sm text-[#9E7E45]"><span className="text-2xl">＋</span>Foto toevoegen<br/><span className="text-[10px]">{images.length}/9</span></button>}
       </div>
-      <textarea
-        rows={3}
-        placeholder="Bijschrift of extra uitleg (optioneel)"
-        value={block.caption || ''}
-        onChange={(e) => onUpdate(block.id, { caption: e.target.value })}
-        className="w-full resize-y rounded-lg border border-[rgba(30,26,20,0.08)] bg-white px-3 py-2 outline-none text-[12px] leading-relaxed text-[#7A7268] mt-1 focus:border-[#C4A265]"
-      />
+      {pending && <ImageCropModal source={pending.source} onCancel={() => { if (pending.source.startsWith('blob:')) URL.revokeObjectURL(pending.source); setPending(null) }} onConfirm={uploadCropped} />}
     </div>
   )
 })
