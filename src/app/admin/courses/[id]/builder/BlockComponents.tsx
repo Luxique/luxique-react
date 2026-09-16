@@ -132,11 +132,17 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
 
   const uploadCropped = async (blob: Blob) => {
     if (!pending) return
-    const fileName = `${block.id}-${pending.id}.webp`
+    // Every crop receives a new object URL. Reusing the same public URL made a
+    // successful recrop invisible to React's dirty comparison and browser/CDN
+    // caches could continue showing the previous crop.
+    const fileName = `${block.id}/${pending.id}-${crypto.randomUUID()}.webp`
     const { data, error } = await supabase.storage
       .from('course-images')
-      .upload(fileName, blob, { upsert: true, contentType: 'image/webp' })
-    if (error) { console.error('Image upload error:', error); return }
+      .upload(fileName, blob, { contentType: 'image/webp' })
+    if (error) {
+      console.error('Image upload error:', error)
+      throw new Error(`Foto opslaan mislukt: ${error.message}`)
+    }
     const { data: { publicUrl } } = supabase.storage
       .from('course-images')
       .getPublicUrl(data.path)
@@ -144,7 +150,6 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
       ? images.map(image => image.id === pending.id ? { ...image, url: publicUrl } : image)
       : [...images, { id: pending.id, url: publicUrl, caption: '' }]
     onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' })
-    URL.revokeObjectURL(pending.source)
     setPending(null)
   }
 
@@ -157,14 +162,14 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         style={{ display: 'none' }}
         onChange={handleUpload}
       />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {images.map(image => <div key={image.id} className="overflow-hidden rounded-xl border bg-white">
-          <div className="relative aspect-[4/3]"><img src={image.url} alt={image.caption || ''} className="h-full w-full object-cover" /><div className="absolute right-2 top-2 flex gap-1"><button title="Opnieuw croppen" onClick={() => setPending({ id: image.id, source: image.url })} className="rounded-full bg-white/90 px-2 py-1 text-xs">✎</button><button title="Verwijderen" onClick={() => { const next = images.filter(item => item.id !== image.id); onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' }) }} className="rounded-full bg-white/90 px-2 py-1 text-xs">✕</button></div></div>
+      <div className="flex max-w-[660px] flex-wrap items-start gap-3">
+        {images.map(image => <div key={image.id} className="min-w-[110px] max-w-full flex-none overflow-hidden rounded-xl border bg-white">
+          <div className="relative h-[140px] md:h-[180px]"><img src={image.url} alt={image.caption || ''} className="h-full w-auto max-w-[min(70vw,420px)] object-contain" /><div className="absolute right-2 top-2 flex gap-1"><button title="Opnieuw croppen" onClick={() => setPending({ id: image.id, source: image.url })} className="rounded-full bg-white/90 px-2 py-1 text-xs">✎</button><button title="Verwijderen" onClick={() => { const next = images.filter(item => item.id !== image.id); onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' }) }} className="rounded-full bg-white/90 px-2 py-1 text-xs">✕</button></div></div>
           <textarea rows={2} placeholder="Bijschrift (optioneel)" value={image.caption || ''} onChange={e => { const next = images.map(item => item.id === image.id ? { ...item, caption: e.target.value } : item); onUpdate(block.id, { images: next, caption: next[0]?.caption || '' }) }} className="w-full resize-y border-0 border-t px-3 py-2 text-xs outline-none" />
         </div>)}
-        {images.length < 9 && <button onClick={() => fileRef.current?.click()} className="flex aspect-[4/3] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[rgba(196,162,101,.35)] text-sm text-[#9E7E45]"><span className="text-2xl">＋</span>Foto toevoegen<br/><span className="text-[10px]">{images.length}/9</span></button>}
+        {images.length < 9 && <button onClick={() => fileRef.current?.click()} className="flex h-[140px] w-[150px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[rgba(196,162,101,.35)] text-sm text-[#9E7E45] md:h-[180px]"><span className="text-2xl">＋</span>Foto toevoegen<br/><span className="text-[10px]">{images.length}/9</span></button>}
       </div>
-      {pending && <ImageCropModal source={pending.source} onCancel={() => { if (pending.source.startsWith('blob:')) URL.revokeObjectURL(pending.source); setPending(null) }} onConfirm={uploadCropped} />}
+      {pending && <ImageCropModal key={`${pending.id}:${pending.source}`} source={pending.source} onCancel={() => setPending(null)} onConfirm={uploadCropped} />}
     </div>
   )
 })
