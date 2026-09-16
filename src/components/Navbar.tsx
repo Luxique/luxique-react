@@ -7,10 +7,12 @@ import { useTranslations } from 'next-intl'
 import { usePreviewMode } from '@/contexts/PreviewContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import { routing } from '@/i18n/routing'
+import { useHydrationSafeLessonRoute } from '@/lib/lesson-route'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
   const pathname = usePathname()
+  const isLessonPage = useHydrationSafeLessonRoute()
   const { isPreview } = usePreviewMode()
   // Safe translation: returns key as fallback if context is missing (admin routes)
   let t: (k: string) => string
@@ -29,8 +31,6 @@ export default function Navbar() {
 
   const isAcademyPage = pathname.includes('/courses') || pathname.includes('/academy')
   const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
-  const isLessonPage = Boolean(pathname?.match(/^\/(?:[a-z]{2}\/)?academy\/[^/]+\/[^/]+(?:\/|$)/))
-
   // Extract current locale from path
   const pathSegments = pathname.split('/')
   const currentLocale = pathSegments[1] && routing.locales.includes(pathSegments[1] as any) ? pathSegments[1] : 'nl'
