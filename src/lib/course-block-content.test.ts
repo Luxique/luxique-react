@@ -48,6 +48,14 @@ test('uses the legacy media object as the image preview fallback', () => {
   assert.equal(stored.caption, 'Legacy caption')
 })
 
+test('preserves a multi-photo gallery with independent captions', () => {
+  const images = [
+    { id: 'one', url: 'https://example.test/one.webp', caption: 'Eerste crop' },
+    { id: 'two', url: 'https://example.test/two.webp', caption: 'Tweede crop' },
+  ]
+  assert.deepEqual(extractStoredBlockContent({ images }).images, images)
+})
+
 test('decodes escaped legacy rich text tags instead of showing raw markup', () => {
   assert.equal(
     normalizeRichTextHtml('&lt;p&gt;&lt;strong&gt;The Wet look&lt;/strong&gt; volledig&lt;/p&gt;'),

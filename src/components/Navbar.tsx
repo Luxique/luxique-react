@@ -29,6 +29,7 @@ export default function Navbar() {
 
   const isAcademyPage = pathname.includes('/courses') || pathname.includes('/academy')
   const isBuilder = pathname?.includes('/admin/courses/') && pathname?.includes('/builder')
+  const isLessonPage = Boolean(pathname?.match(/^\/(?:[a-z]{2}\/)?academy\/[^/]+\/[^/]+(?:\/|$)/))
 
   // Extract current locale from path
   const pathSegments = pathname.split('/')
@@ -110,7 +111,7 @@ export default function Navbar() {
     <>
       <nav className="fixed left-0 right-0 z-50 flex items-center gap-[10px] h-[52px] max-md:h-[48px] shrink-0 px-[14px] max-md:px-[10px]" style={{ top: 'calc(env(safe-area-inset-top) + 14px)' }}>
         {/* Mobile: hamburger circle — FIRST in DOM */}
-        <button onClick={() => setMobileOpen(!mobileOpen)}
+        {!isLessonPage && <button onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Menu sluiten" : "Menu openen"}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
@@ -120,7 +121,7 @@ export default function Navbar() {
             <span className={`w-[18px] h-[1.5px] bg-[#0C0A07] rounded-[2px] transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
             <span className={`w-[18px] h-[1.5px] bg-[#0C0A07] rounded-[2px] transition-all ${mobileOpen ? '-rotate-45 -translate-y-[6px]' : ''}`} />
           </div>
-        </button>
+        </button>}
 
         <div className="relative h-[52px] max-md:h-[48px] max-md:flex-1">
           <div className="h-[52px] max-md:h-[48px] max-md:w-full rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center shrink-0 md:shrink md:flex-none md:px-[26px] max-md:px-4">
@@ -136,7 +137,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop: links pill */}
-        <div className="hidden md:flex h-[52px] flex-1 items-center justify-center px-5 gap-8 rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)]">
+        {!isLessonPage && <div className="hidden md:flex h-[52px] flex-1 items-center justify-center px-5 gap-8 rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)]">
           {navLinks.map(link => (
             <a key={link.href} href={link.href}
               className="relative text-[12px] tracking-[0.05em] text-[#6b6357] hover:text-[#C4A265] transition-colors whitespace-nowrap">
@@ -144,7 +145,8 @@ export default function Navbar() {
               {link.href === '/courses' && academyComingSoon && <span className="absolute -right-[17px] -top-[8px] h-[7px] w-[7px] rounded-full bg-[#C4A265] shadow-[0_0_0_3px_rgba(196,162,101,.18)]" title="Coming soon" />}
             </a>
           ))}
-        </div>
+        </div>}
+        {isLessonPage && <div className="flex-1" />}
 
         {/* Language Switcher — only on locale routes (not admin), desktop only, NOT in preview mode */}
         {!isPreview && !pathname?.startsWith('/admin') && pathname?.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
@@ -215,7 +217,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile menu */}
-      {mobileOpen && (
+      {mobileOpen && !isLessonPage && (
         <div id="mobile-menu" className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
           <div className="absolute left-[14px] w-[260px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] p-6 space-y-1" style={{ top: 'calc(env(safe-area-inset-top) + 76px)' }} onClick={e => e.stopPropagation()}>
             {navLinks.map(l => (

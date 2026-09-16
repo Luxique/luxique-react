@@ -2,8 +2,11 @@
 
 import { useTranslations } from 'next-intl'
 import LanguageSwitcher from './LanguageSwitcher'
+import { usePathname } from 'next/navigation'
 
 export default function Footer() {
+  const pathname = usePathname()
+  const isLessonPage = Boolean(pathname?.match(/^\/(?:[a-z]{2}\/)?academy\/[^/]+\/[^/]+(?:\/|$)/))
   // Safe translation: returns key as fallback if context is missing (admin routes)
   let t: (k: string) => string
   try {
@@ -11,6 +14,8 @@ export default function Footer() {
   } catch {
     t = (k: string) => k
   }
+
+  if (isLessonPage) return null
 
   return (
     <footer className="bg-[var(--dark)] text-white py-16 border-t border-white/5">
