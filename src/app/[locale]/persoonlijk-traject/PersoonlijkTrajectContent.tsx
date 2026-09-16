@@ -156,7 +156,10 @@ export default function PersoonlijkTrajectContent() {
       const isInitiallyVisible = rect.top < window.innerHeight && rect.bottom > 0
 
       if (isInitiallyVisible) el.classList.add('in')
-      else io.observe(el)
+      else {
+        el.classList.add('reveal-armed')
+        io.observe(el)
+      }
     })
 
     const loeniqueHandler = (e: Event) => {
@@ -209,7 +212,8 @@ export default function PersoonlijkTrajectContent() {
         .eyebrow{font-size:.74rem;text-transform:uppercase;letter-spacing:.24em;color:var(--gold);font-weight:500}
         em{font-style:italic}
 
-        .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+        .reveal{opacity:1;transform:none}
+        .reveal.reveal-armed{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
         .reveal.in{opacity:1;transform:none}
         .tracks-grid{min-height:200px}
         .journey{min-height:54px}

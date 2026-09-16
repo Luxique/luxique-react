@@ -35,6 +35,19 @@ test('reads image and text fields from the legacy nested content shape', () => {
   assert.equal(stored.caption, 'Legacy bijschrift')
 })
 
+test('uses the legacy media object as the image preview fallback', () => {
+  const stored = extractStoredBlockContent({
+    media: {
+      type: 'image',
+      url: 'https://example.test/legacy-photo.jpg',
+      caption: 'Legacy caption',
+    },
+  })
+
+  assert.equal(stored.url, 'https://example.test/legacy-photo.jpg')
+  assert.equal(stored.caption, 'Legacy caption')
+})
+
 test('decodes escaped legacy rich text tags instead of showing raw markup', () => {
   assert.equal(
     normalizeRichTextHtml('&lt;p&gt;&lt;strong&gt;The Wet look&lt;/strong&gt; volledig&lt;/p&gt;'),
