@@ -10,6 +10,9 @@ const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
+const STUDIO_EXTERIOR_IMAGE_URL = `${SITE_URL}/images/luxique-studio-exterior.jpg`
+
+const studioExteriorPhotoNL = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0 0;"><tr><td align="center"><img src="${STUDIO_EXTERIOR_IMAGE_URL}" width="504" alt="Het pand van LUXIQUE aan De Overmaat 26 in Arnhem" style="display:block;width:100%;max-width:504px;height:auto;border:0;border-radius:10px;"></td></tr></table>`
 
 function formatDateEN(iso: string): string {
   return formatBookingDate(iso, 'en-GB')
@@ -288,6 +291,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;">Kun je onverhoopt niet? Laat het ons z.s.m. weten via <a href="mailto:info@luxique.nl" style="color:#8a857b; text-decoration:underline;">info@luxique.nl</a>.</div>
         ${availabilityNoticeNL}
         ${spamNoticeNL}
+        ${studioExteriorPhotoNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -952,7 +956,7 @@ ${trajectDagenHtml}
 <tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Kom goed uitgeslapen naar iedere trajectdag.</td></tr>
 <tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Er is gratis parkeergelegenheid aanwezig.</td></tr>
 <tr><td style="font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Lunch is inbegrepen. Heb je een allergie? Beantwoord deze mail of mail naar <a href="mailto:info@luxique.nl" style="color:#4a463e;text-decoration:underline;">info@luxique.nl</a>.</td></tr>
-</table></td></tr></table>${spamNoticeNL}</td></tr>
+</table></td></tr></table>${spamNoticeNL}${studioExteriorPhotoNL}</td></tr>
 <tr><td align="center" style="padding:26px 48px 34px;border-top:1px solid #e4ddd0;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:18px;color:#C4A265;padding-bottom:14px;">With love, Luxique</div><div style="font-family:Arial,sans-serif;font-size:12px;color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b;">luxique.nl</a></div></td></tr>
 </table></td></tr></table></body></html>`,
   })

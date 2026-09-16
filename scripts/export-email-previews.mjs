@@ -26,6 +26,7 @@ const SAMPLES = [
   { match: /within24h \? '#c53c3c' : '#5b8c66'/, value: '#c53c3c' },
   { match: /within24h \? 'GEEN REFUND/, value: 'GEEN REFUND — BINNEN 24U (AV)' },
   { match: /trajectDagenHtml/, value: '<tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:\'Cormorant Garamond\',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">vrijdag 4 september 2026</td></tr><tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:\'Cormorant Garamond\',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">zaterdag 5 september 2026</td></tr>' },
+  { match: /studioExteriorPhotoNL/, value: '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0 0;"><tr><td align="center"><img src="http://localhost:3000/images/luxique-studio-exterior.jpg" width="504" alt="Het pand van LUXIQUE aan De Overmaat 26 in Arnhem" style="display:block;width:100%;max-width:504px;height:auto;border:0;border-radius:10px;"></td></tr></table>' },
   { match: /datumsLijst/, value: 'vrijdag 4 september 2026<br/>zaterdag 5 september 2026' },
   { match: /refundHtml/, value: '<div style="background:rgba(91,140,102,0.06); border:1px solid rgba(91,140,102,0.25); border-radius:10px; padding:16px 20px; max-width:440px; margin:0 auto 24px auto;"><div style="font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:24px; color:#5b8c66;">Je aanbetaling van <strong>&euro;45</strong> wordt gerestitueerd. We verwerken dit zo spoedig mogelijk.</div></div>' },
   { match: /formatDateNL|formatDateEN|date/i, value: 'vrijdag 4 september 2026' },
@@ -76,7 +77,8 @@ const NAMES = [
   '06-klant-annuleringsbevestiging',
   '07-klant-reviewverzoek',
   '08-traject-klant-bevestiging',
-  '09-traject-chiva-notificatie',
+  '09-traject-herinnering',
+  '10-traject-chiva-notificatie',
 ]
 
 mkdirSync(OUT, { recursive: true })
