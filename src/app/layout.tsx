@@ -61,6 +61,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#FAF8F4" />
         <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="preconnect" href="https://osldoolmbpqayxhgmbum.supabase.co" />
+        <link rel="dns-prefetch" href="https://osldoolmbpqayxhgmbum.supabase.co" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {

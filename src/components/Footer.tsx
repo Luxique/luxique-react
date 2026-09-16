@@ -2,10 +2,11 @@
 
 import { useTranslations } from 'next-intl'
 import LanguageSwitcher from './LanguageSwitcher'
-import { useHydrationSafeLessonRoute } from '@/lib/lesson-route'
+import { usePathname } from 'next/navigation'
 
 export default function Footer() {
-  const isLessonPage = useHydrationSafeLessonRoute()
+  const pathname = usePathname()
+  const isLessonPage = Boolean(pathname?.match(/^\/(?:[a-z]{2}\/)?academy\/[^/]+\/[^/]+(?:\/|$)/))
   // Safe translation: returns key as fallback if context is missing (admin routes)
   let t: (k: string) => string
   try {
