@@ -68,6 +68,7 @@ export default function LessonPage() {
   const [enrolled, setEnrolled] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
   const [showConvertModal, setShowConvertModal] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null)
   const convertDismissedRef = useRef(false) // one dismissal per session
   const hasMarkedRef = useRef(false)  // idempotency guard — markComplete fires once per lesson
 
@@ -82,6 +83,15 @@ export default function LessonPage() {
       setRailOpen(localStorage.getItem('lux-rail-open') !== 'closed')
     }
   }, [])
+
+  useEffect(() => {
+    if (!lightboxImage) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLightboxImage(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [lightboxImage])
 
   // Quiz: track attempts per question block
   const [quizAttempts, setQuizAttempts] = useState<Record<string, number>>({})      // blockId → attempt count
@@ -485,7 +495,7 @@ export default function LessonPage() {
                     {block.type === 'image' && (
                       <div className="photo-grid">
                         {(bc.images?.length ? bc.images : [{ id: 'legacy', url: bc.imageUrl || '', caption: bc.caption }]).map(image => <figure key={image.id}>
-                          <div className="photo">{image.url ? <img src={image.url} alt={image.caption || ''} /> : '⛶'}</div>
+                          <button className="photo" type="button" onClick={() => image.url && setLightboxImage({ url: image.url, alt: image.caption || '' })} aria-label={image.caption ? `Vergroot foto: ${image.caption}` : 'Vergroot foto'}>{image.url ? <img src={image.url} alt={image.caption || ''} /> : '⛶'}</button>
                           {image.caption && <figcaption className="photo-cap">{image.caption}</figcaption>}
                         </figure>)}
                       </div>
@@ -622,6 +632,10 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+      {lightboxImage && <div className="photo-lightbox" role="dialog" aria-modal="true" aria-label="Vergrote foto" onClick={() => setLightboxImage(null)}>
+        <button className="photo-lightbox-close" type="button" onClick={() => setLightboxImage(null)} aria-label="Sluiten">✕</button>
+        <img src={lightboxImage.url} alt={lightboxImage.alt} onClick={event => event.stopPropagation()} />
+      </div>}
 
       {/* Conversion modal — after free lesson completion */}
       {showConvertModal && (

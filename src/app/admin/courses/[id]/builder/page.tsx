@@ -2921,9 +2921,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                               })()}
 
                               {block.type === 'image' && ((block.images?.length || 0) > 0 || block.url) && (
-                                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                                <div className="flex flex-wrap items-start gap-3">
                                   {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0" key={image.id}>
-                                    <img src={image.url} alt={image.caption || ''} className="aspect-[4/3] w-full rounded-lg object-cover" />
+                                    <img src={image.url} alt={image.caption || ''} className="h-[140px] w-auto max-w-full rounded-lg object-contain md:h-[180px]" />
                                     {image.caption && <figcaption className="mt-2 text-sm text-[#7A7268] text-center">{image.caption}</figcaption>}
                                   </figure>)}
                                 </div>
