@@ -172,8 +172,23 @@
 .tt .block-title p { margin: 0; }
 .tt .subtitle { color: var(--gold-deep); font-style: italic; font-family: 'Cormorant Garamond',serif; font-size: 16px; margin-bottom: 12px; }
 .tt .subtitle p { margin: 0; }
-.tt .block-body { white-space: break-spaces; }
+.course-rich-content { white-space: break-spaces; tab-size: 4; }
 .tt .block-body p { font-size: 16px; line-height: 1.75; color: #403c34; margin: 0 0 12px; }
+.course-rich-content p { margin: 0 0 12px; }
+.course-rich-content p:last-child { margin-bottom: 0; }
+.course-rich-content p:empty { min-height: 1.75em; }
+.course-rich-content ul { list-style: disc outside; margin: 12px 0; padding-left: 24px; }
+.course-rich-content ol { list-style: decimal outside; margin: 12px 0; padding-left: 24px; }
+.course-rich-content li { margin: 5px 0; }
+.course-rich-content li p { margin: 0; }
+
+.callout {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 18px 20px; border-left: 3px solid var(--gold);
+  border-radius: 0 12px 12px 0; background: rgba(196,162,101,.09);
+  color: #403c34; line-height: 1.7;
+}
+.callout-icon { flex: 0 0 auto; font-size: 18px; line-height: 1.5; }
 
 /* ── Photo ── */
 .photo {

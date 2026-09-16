@@ -93,10 +93,30 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       )}
       <EditorContent
         editor={editor}
+        onKeyDown={(event) => {
+          if (event.key !== 'Tab') return
+          event.preventDefault()
+          editor.chain().focus().insertContent('\t').run()
+        }}
         className={`course-rich-text text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
       />
       <style jsx global>{`
-        .course-rich-text .ProseMirror { white-space: break-spaces; }
+        .course-rich-text .ProseMirror,
+        .course-rich-content { white-space: break-spaces; tab-size: 4; }
+        .course-rich-text .ProseMirror p,
+        .course-rich-content p { margin: 0 0 0.75em; }
+        .course-rich-text .ProseMirror p:last-child,
+        .course-rich-content p:last-child { margin-bottom: 0; }
+        .course-rich-text .ProseMirror p:empty,
+        .course-rich-content p:empty { min-height: 1.5em; }
+        .course-rich-text .ProseMirror ul,
+        .course-rich-content ul { list-style: disc outside; margin: 0.65em 0; padding-left: 1.5em; }
+        .course-rich-text .ProseMirror ol,
+        .course-rich-content ol { list-style: decimal outside; margin: 0.65em 0; padding-left: 1.5em; }
+        .course-rich-text .ProseMirror li,
+        .course-rich-content li { margin: 0.25em 0; }
+        .course-rich-text .ProseMirror li p,
+        .course-rich-content li p { margin: 0; }
       `}</style>
       {/* Toolbar — onder het veld */}
       <div className="flex items-center gap-0.5 border-t border-[rgba(30,26,20,0.08)] pt-1.5 mt-1.5 flex-wrap">

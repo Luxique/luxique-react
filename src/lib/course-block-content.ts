@@ -31,6 +31,7 @@ function firstString(...values: unknown[]): string | undefined {
 export function extractStoredBlockContent(content: unknown) {
   const root = asRecord(content)
   const nested = asRecord(root?.content)
+  const media = (root?.media ?? nested?.media) as UnknownRecord | null | undefined
 
   return {
     title: firstString(root?.title, nested?.title),
@@ -43,10 +44,10 @@ export function extractStoredBlockContent(content: unknown) {
       nested?.content,
       typeof content === 'string' && !root ? content : undefined,
     ) || '',
-    url: firstString(root?.url, nested?.url),
-    caption: firstString(root?.caption, nested?.caption),
+    url: firstString(root?.url, nested?.url, media?.url),
+    caption: firstString(root?.caption, nested?.caption, media?.caption),
     question: firstString(root?.question, nested?.question),
-    media: (root?.media ?? nested?.media) as UnknownRecord | null | undefined,
+    media,
     optionType: firstString(root?.option_type, nested?.option_type),
     options: (root?.options ?? nested?.options) as unknown[] | undefined,
     fileName: firstString(root?.fileName, root?.file_name, nested?.fileName, nested?.file_name),
@@ -55,6 +56,18 @@ export function extractStoredBlockContent(content: unknown) {
     fileSize: (root?.fileSize ?? root?.file_size ?? nested?.fileSize ?? nested?.file_size) as number | undefined,
     muxAssetId: firstString(root?.mux_asset_id, nested?.mux_asset_id),
     muxPlaybackId: firstString(root?.mux_playback_id, nested?.mux_playback_id),
+    muxPublicPlaybackId: firstString(root?.mux_public_playback_id, nested?.mux_public_playback_id),
+  }
+}
+
+export function getBuilderVideoPlaybackConfig(content: unknown, isFree: boolean) {
+  const stored = extractStoredBlockContent(content)
+
+  return {
+    playbackId: isFree
+      ? stored.muxPublicPlaybackId || stored.muxPlaybackId
+      : stored.muxPlaybackId,
+    signed: !isFree,
   }
 }
 

@@ -465,10 +465,18 @@ export default function LessonPage() {
                     {/* TEXT */}
                     {block.type === 'text' && (
                       <div className="tt">
-                        {bc.showTitle !== false && bc.title && <div className="block-title" dangerouslySetInnerHTML={{ __html: bc.title }} />}
-                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle" dangerouslySetInnerHTML={{ __html: bc.subtitle }} />}
-                        {bc.showBody !== false && bc.body && <div className="block-body" dangerouslySetInnerHTML={{ __html: bc.body }} />}
+                        {bc.showTitle !== false && bc.title && <div className="block-title course-rich-content" dangerouslySetInnerHTML={{ __html: bc.title }} />}
+                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle course-rich-content" dangerouslySetInnerHTML={{ __html: bc.subtitle }} />}
+                        {bc.showBody !== false && bc.body && <div className="block-body course-rich-content" dangerouslySetInnerHTML={{ __html: bc.body }} />}
                       </div>
+                    )}
+
+                    {/* CALLOUT / TIP */}
+                    {block.type === 'callout' && bc.body && (
+                      <aside className="callout course-rich-content">
+                        <span className="callout-icon" aria-hidden="true">💡</span>
+                        <div dangerouslySetInnerHTML={{ __html: bc.body }} />
+                      </aside>
                     )}
 
                     {/* IMAGE */}

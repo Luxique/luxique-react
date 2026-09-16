@@ -348,6 +348,7 @@ export const CalloutBlock = React.memo(({ block, onUpdate }: BlockProps) => (
         content={typeof block.content === 'string' ? block.content : ''}
         onChange={(html) => onUpdate(block.id, { content: html })}
         variant="inline"
+        placeholder="Schrijf hier je tip..."
       />
     </div>
   </div>

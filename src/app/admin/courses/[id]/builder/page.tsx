@@ -10,7 +10,7 @@ import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
-import { extractStoredBlockContent } from '@/lib/course-block-content'
+import { extractStoredBlockContent, getBuilderVideoPlaybackConfig } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -67,6 +67,7 @@ interface Block {
   content?: string | {
     mux_asset_id?: string
     mux_playback_id?: string
+    mux_public_playback_id?: string
     [key: string]: unknown
   }
   url?: string
@@ -242,6 +243,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
   const [blocksCache, setBlocksCache] = useState<Record<string, Block[]>>({})  // Per-les cache
+  const blocksCacheRef = useRef<Record<string, Block[]>>({})
+  const activeLessonIdRef = useRef<string | null>(null)
   const [lastBlockReorder, setLastBlockReorder] = useState<{ lessonId: string; blocks: Block[] } | null>(null)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const [lessonNumber, setLessonNumber] = useState(2)
@@ -297,6 +300,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
   }, [])
 
+  const cacheLessonBlocks = useCallback((lessonId: string, lessonBlocks: Block[]) => {
+    blocksCacheRef.current = { ...blocksCacheRef.current, [lessonId]: lessonBlocks }
+    setBlocksCache(blocksCacheRef.current)
+  }, [])
+
   const persistBlockOrder = async (orderedBlocks: Block[]) => {
     const reorderResults = await Promise.all(
       orderedBlocks.map((block, index) =>
@@ -319,14 +327,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
     if (!currentLesson?.id) return
     const lessonId = currentLesson.id
-    setBlocksCache(prev => ({ ...prev, [lessonId]: reordered }))
+    cacheLessonBlocks(lessonId, reordered)
     markLessonBlocksDirty(lessonId)
 
     const reorderError = await persistBlockOrder(reordered)
     if (reorderError) {
       console.error('[handleDragEnd] Block reorder FAILED:', reorderError)
       setBlocks(blocks)
-      setBlocksCache(prev => ({ ...prev, [lessonId]: blocks }))
+      cacheLessonBlocks(lessonId, blocks)
       alert(`Volgorde opslaan mislukt: ${reorderError.message}`)
       return
     }
@@ -339,14 +347,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     const currentOrder = blocks
     const previousOrder = lastBlockReorder.blocks
     setBlocks(previousOrder)
-    setBlocksCache(prev => ({ ...prev, [currentLesson.id]: previousOrder }))
+    cacheLessonBlocks(currentLesson.id, previousOrder)
     markLessonBlocksDirty(currentLesson.id)
 
     const undoError = await persistBlockOrder(previousOrder)
     if (undoError) {
       console.error('[undoLastBlockReorder] Block reorder undo FAILED:', undoError)
       setBlocks(currentOrder)
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: currentOrder }))
+      cacheLessonBlocks(currentLesson.id, currentOrder)
       alert(`Ongedaan maken mislukt: ${undoError.message}`)
       return
     }
@@ -568,6 +576,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             fileDescription: block.fileDescription,
             mux_asset_id: (blockContent as Record<string,unknown>).mux_asset_id,
             mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
+            mux_public_playback_id: (blockContent as Record<string,unknown>).mux_public_playback_id,
           }
         }
         const { error: blockError } = await supabase.from('blocks').upsert(payload)
@@ -584,11 +593,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     
     // Update cache met opgeslagen blokken
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+      cacheLessonBlocks(currentLesson.id, blocks)
     }
     
     alert('Concept opgeslagen! ⏱ Wijzigingen zijn binnen ~1 minuut live op de cursuspagina.')
-  }, [course, currentLesson, blocks, currentContext, blocksCache])
+  }, [blocks, blocksCache, cacheLessonBlocks, course, currentContext, currentLesson])
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [publishing, setPublishing] = useState(false)
@@ -763,6 +772,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 fileDescription: block.fileDescription,
                 mux_asset_id: (blockContent as Record<string,unknown>).mux_asset_id,
                 mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
+                mux_public_playback_id: (blockContent as Record<string,unknown>).mux_public_playback_id,
               }
             })
             if (blockError) throw blockError
@@ -795,7 +805,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
       // Update cache met gepubliceerde blokken
       if (currentLesson?.id) {
-        setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+        cacheLessonBlocks(currentLesson.id, blocks)
       }
       
       alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
@@ -985,9 +995,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
     
-    // Sla huidige blokken EN lesson fields op (als we van een les wisselen)
+    // Block changes are cached at load/edit time. Do not cache `blocks` here:
+    // during a fast lesson switch they can still belong to the previous lesson.
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
       // Sync currentLesson fields (name, duration, etc.) back to course.lessons
       setCourse(prevCourse => {
         if (!prevCourse) return prevCourse
@@ -1001,28 +1011,35 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
     
     if (type === 'lesson' && item && 'free' in item) {
-      setCurrentLesson(item as Lesson)
+      const lesson = item as Lesson
+      activeLessonIdRef.current = lesson.id
+      setCurrentLesson(lesson)
       // Load blocks for this lesson
-      await loadBlocksForLesson((item as Lesson).id)
+      await loadBlocksForLesson(lesson)
     } else if (type === 'quiz' && item && 'type' in item) {
+      activeLessonIdRef.current = null
       setCurrentQuiz(item as Quiz)
       setBlocks((item as Quiz).blocks || [])
     } else {
+      activeLessonIdRef.current = null
       setBlocks([])
     }
   }
 
-  const loadBlocksForLesson = async (lessonId: string) => {
+  const loadBlocksForLesson = async (lesson: Lesson) => {
+    const lessonId = lesson.id
     // Check cache EERST (niet-opgeslagen wijzigingen)
-    if (blocksCache[lessonId]) {
-      setBlocks(blocksCache[lessonId])
+    const cachedBlocks = blocksCacheRef.current[lessonId]
+    if (cachedBlocks) {
+      if (activeLessonIdRef.current === lessonId) setBlocks(cachedBlocks)
       return
     }
     
     // Check lokale state (voor nieuwe cursussen)
     const localLesson = course?.lessons?.find(l => l.id === lessonId)
     if (localLesson?.blocks && localLesson.blocks.length > 0) {
-      setBlocks(localLesson.blocks)
+      cacheLessonBlocks(lessonId, localLesson.blocks)
+      if (activeLessonIdRef.current === lessonId) setBlocks(localLesson.blocks)
       return
     }
     // Dan Supabase (voor bestaande cursussen)
@@ -1032,7 +1049,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       .eq('lesson_id', lessonId)
       .order('sort_order')
     if (data && data.length > 0) {
-      setBlocks(data.map(b => {
+      const loadedBlocks = data.map(b => {
         const stored = extractStoredBlockContent(b.content)
         return {
           id: b.id,
@@ -1042,7 +1059,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           showTitle: stored.showTitle,
           showSubtitle: stored.showSubtitle,
           showBody: stored.showBody,
-          content: stored.body,
+          content: b.type === 'video' ? {
+            mux_asset_id: stored.muxAssetId,
+            mux_playback_id: stored.muxPlaybackId,
+            mux_public_playback_id: stored.muxPublicPlaybackId,
+          } : stored.body,
           url: stored.url,
           caption: stored.caption,
           question: stored.question,
@@ -1052,13 +1073,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           fileName: stored.fileName,
           fileDescription: stored.fileDescription,
         }
-      }))
+      })
+      cacheLessonBlocks(lessonId, loadedBlocks)
+      if (activeLessonIdRef.current === lessonId) setBlocks(loadedBlocks)
     } else {
       // Geen blokken: zet standaard blokken op basis van lesson_type
-      const lessonData = course?.lessons?.find(l => l.id === lessonId)
+      const lessonData = lesson
       if (lessonData?.lesson_type === 'quiz' || lessonData?.lesson_type === 'exam') {
         // Quiz/exam: automatisch één leeg vraag-blok
-        setBlocks([{
+        const defaultBlocks: Block[] = [{
           id: crypto.randomUUID(),
           type: 'quiz' as const,
           question: '',
@@ -1067,12 +1090,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             { id: crypto.randomUUID(), text: '', image_url: '', correct: false },
             { id: crypto.randomUUID(), text: '', image_url: '', correct: false },
           ]
-        }])
+        }]
+        cacheLessonBlocks(lessonId, defaultBlocks)
+        if (activeLessonIdRef.current === lessonId) setBlocks(defaultBlocks)
       } else {
-        setBlocks([
+        const defaultBlocks: Block[] = [
           { id: crypto.randomUUID(), type: 'video' as const },
           { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
-        ])
+        ]
+        cacheLessonBlocks(lessonId, defaultBlocks)
+        if (activeLessonIdRef.current === lessonId) setBlocks(defaultBlocks)
       }
     }
   }
@@ -1088,10 +1115,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const setBlocksWithCache = useCallback((newBlocks: Block[]) => {
     setBlocks(newBlocks)
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: newBlocks }))
+      cacheLessonBlocks(currentLesson.id, newBlocks)
       markLessonBlocksDirty(currentLesson.id)
     }
-  }, [currentLesson, markLessonBlocksDirty])
+  }, [cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
 
   const addBlock = (type: BlockType) => {
     const newBlock: Block = type === 'quiz'
@@ -1126,10 +1153,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     const updated = blocks.map(b => b.id === blockId ? { ...b, ...updates } : b)
     setBlocks(updated)
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: updated }))
+      cacheLessonBlocks(currentLesson.id, updated)
       markLessonBlocksDirty(currentLesson.id)
     }
-  }, [blocks, currentLesson, markLessonBlocksDirty])
+  }, [blocks, cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
 
   // Herindexeer lessen: num = volgorde in de array (doorlopend, inclusief sublessen)
   const reindexLessons = (lessons: Lesson[]): Lesson[] =>
@@ -1207,12 +1234,12 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       const lessons = (prev.lessons || []).filter(l => !idsToRemove.includes(l.id))
       return { ...prev, lessons: reindexLessons(lessons) }
     })
-    setBlocksCache(prev => {
-      const next = { ...prev }
-      idsToRemove.forEach(id => delete next[id])
-      return next
-    })
+    const nextBlocksCache = { ...blocksCacheRef.current }
+    idsToRemove.forEach(id => delete nextBlocksCache[id])
+    blocksCacheRef.current = nextBlocksCache
+    setBlocksCache(nextBlocksCache)
     if (idsToRemove.includes(currentLesson?.id || '')) {
+      activeLessonIdRef.current = null
       setCurrentLesson(null)
       setCurrentContext('global')
       setBlocks([])
@@ -2149,6 +2176,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const renderBlock = (block: Block) => {
     switch (block.type) {
       case 'video':
+        const videoPlayback = getBuilderVideoPlaybackConfig(
+          block.content,
+          currentLesson?.free ?? false,
+        )
         const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0]
           if (!file) return
@@ -2219,14 +2250,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               onChange={handleVideoUpload} 
             />
             
-            {typeof block.content === 'object' && block.content !== null && block.content.mux_playback_id ? (
+            {videoPlayback.playbackId ? (
               // Show video thumbnail/preview
               <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
                 <LuxiqueMuxPlayer
-                  playbackId={block.content.mux_playback_id as string}
+                  playbackId={videoPlayback.playbackId}
                   variant="lesson"
-                  title={block.content.video_title as string || 'Les video'}
-                  signed={currentLesson?.free ?? false}
+                  title={block.title || 'Les video'}
+                  signed={videoPlayback.signed}
                   courseId={course?.id}
                   isFree={currentLesson?.free ?? false}
                 />
@@ -2840,30 +2871,58 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                             return isQuiz ? block.type === 'quiz' : block.type !== 'quiz'
                           }).map((block) => (
                             <div key={block.id} className="bg-white rounded-lg p-6 shadow-sm">
-                              {block.type === 'video' && typeof block.content === 'object' && block.content?.mux_playback_id && (
-                                <div className="aspect-video bg-black rounded-lg mb-4">
-                                  <LuxiqueMuxPlayer
-                                    playbackId={block.content.mux_playback_id as string}
-                                    variant="lesson"
-                                    signed={currentLesson?.free ?? false}
-                                    courseId={course?.id}
-                                    isFree={currentLesson?.free ?? false}
+                              {block.type === 'video' && (() => {
+                                const videoPlayback = getBuilderVideoPlaybackConfig(block.content, currentLesson.free)
+                                return videoPlayback.playbackId ? (
+                                  <div className="aspect-video bg-black rounded-lg mb-4">
+                                    <LuxiqueMuxPlayer
+                                      playbackId={videoPlayback.playbackId}
+                                      variant="lesson"
+                                      signed={videoPlayback.signed}
+                                      courseId={course?.id}
+                                      isFree={currentLesson.free}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="aspect-video rounded-lg bg-[#1a1510] text-[#C4A265] flex items-center justify-center mb-4">
+                                    <span className="text-sm tracking-wide">Video wordt verwerkt of moet nog worden toegevoegd</span>
+                                  </div>
+                                )
+                              })()}
+
+                              {block.type === 'image' && block.url && (
+                                <figure className="m-0">
+                                  <img
+                                    src={block.url}
+                                    alt={block.caption || ''}
+                                    className="w-full h-auto rounded-lg"
                                   />
-                                </div>
+                                  {block.caption && (
+                                    <figcaption className="mt-2 text-sm text-[#7A7268] text-center">
+                                      {block.caption}
+                                    </figcaption>
+                                  )}
+                                </figure>
                               )}
                               
                               {block.type === 'text' && (
                                 <div>
                                   {block.title && (
-                                    <h3 className="text-xl font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
+                                    <h3 className="course-rich-content text-xl font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
                                   )}
                                   {block.subtitle && (
-                                    <h4 className="text-lg text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
+                                    <h4 className="course-rich-content text-lg text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
                                   )}
                                   {block.content && (
-                                    <div className="text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
+                                    <div className="course-rich-content text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
                                   )}
                                 </div>
+                              )}
+                              {block.type === 'callout' && typeof block.content === 'string' && (
+                                <aside className="flex gap-3 items-start rounded-r-lg border-l-[3px] border-[rgba(196,162,101,0.35)] bg-[rgba(196,162,101,0.07)] p-4">
+                                  <span className="text-lg" aria-hidden="true">💡</span>
+                                  <div className="course-rich-content min-w-0 text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content }} />
+                                </aside>
                               )}
                               {block.type === 'quiz' && (() => {
                                 const correctCount = (block.options || []).filter(o => o.correct).length
