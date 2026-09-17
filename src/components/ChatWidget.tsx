@@ -114,11 +114,25 @@ export default function ChatWidget() {
             max-height: calc(70vh - 180px) !important;
           }
           .luxique-chat-btn {
-            bottom: 12px !important;
-            right: 12px !important;
+            bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+            right: 10px !important;
+            width: 48px !important;
+            height: 48px !important;
+            opacity: 0.9;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.24) !important;
+          }
+          .luxique-chat-btn img {
+            width: 42px !important;
+            height: 42px !important;
+          }
+          .luxique-chat-mobile-safe-area {
+            display: block !important;
+            height: calc(72px + env(safe-area-inset-bottom));
           }
         }
       `}</style>
+
+      {!hideOnCurrentRoute && <div className="luxique-chat-mobile-safe-area hidden" aria-hidden="true" />}
 
       {/* Chat button */}
       {!hideOnCurrentRoute && (<button

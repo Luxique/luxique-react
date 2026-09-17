@@ -160,7 +160,7 @@ export default function Navbar() {
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <button onClick={() => setProfileOpen(!profileOpen)}
-              className="w-[52px] h-[52px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">
+              className="w-[52px] h-[52px] max-md:w-[48px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">
               <div className="w-[22px] h-[22px] rounded-full bg-[#C4A265] flex items-center justify-center text-white text-[10px] font-semibold">
                 {firstName ? firstName[0].toUpperCase() : 'U'}
               </div>
@@ -208,7 +208,7 @@ export default function Navbar() {
           </div>
         ) : (
           <a href="/login" title="Inloggen"
-            className="w-[52px] h-[52px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0 group">
+            className="w-[52px] h-[52px] max-md:w-[48px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0 group">
             <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] stroke-[#6b6357] fill-none stroke-[1.5] stroke-linecap-round stroke-linejoin-round group-hover:stroke-[#C4A265] transition-colors">
               <circle cx="12" cy="8" r="4" />
               <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
