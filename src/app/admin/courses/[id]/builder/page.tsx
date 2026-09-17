@@ -2315,14 +2315,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               placeholder="Of plak een Vimeo / YouTube URL"
               className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.4)]"
             />
-            <div className="flex gap-2 flex-wrap">
-              <button className="text-[10.5px] font-medium p-1.5 px-2.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(196,162,101,0.35)] hover:text-[#7A6340] hover:bg-[rgba(196,162,101,0.08)] transition">
-                Autoplay
-              </button>
-              <button className="text-[10.5px] font-medium p-1.5 px-2.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(196,162,101,0.35)] hover:text-[#7A6340] hover:bg-[rgba(196,162,101,0.08)] transition">
-                Ondertitels
-              </button>
-            </div>
           </div>
         )
 
