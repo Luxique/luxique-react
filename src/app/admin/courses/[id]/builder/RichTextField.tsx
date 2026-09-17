@@ -14,6 +14,7 @@ interface RichTextFieldProps {
   variant?: 'inline' | 'block'
   placeholder?: string
   className?: string
+  defaultFontSize?: string
 }
 
 const BRAND_PRESETS = [
@@ -33,12 +34,14 @@ const HIGHLIGHT_PRESETS = [
   { label: 'Soft groen', color: 'rgba(180,255,180,0.25)' },
 ]
 
-export default function RichTextField({ content, onChange, variant = 'block', placeholder, className = '' }: RichTextFieldProps) {
+const FONT_SIZE_OPTIONS = ['11px', '13px', '14px', '16px', '20px', '22px', '24px', '25px', '32px']
+
+export default function RichTextField({ content, onChange, variant = 'block', placeholder, className = '', defaultFontSize = '16px' }: RichTextFieldProps) {
   const [showTextColor, setShowTextColor] = useState(false)
   const [showHighlight, setShowHighlight] = useState(false)
   const [hexInput, setHexInput] = useState('#C4A265')
   const [hexHighlight, setHexHighlight] = useState('#FFF8E7')
-  const [activeFontSize, setActiveFontSize] = useState('')
+  const [activeFontSize, setActiveFontSize] = useState(defaultFontSize)
   const isBlock = variant === 'block'
 
   const editor = useEditor({
@@ -69,7 +72,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
 
   React.useEffect(() => {
     if (!editor) return
-    const syncFontSize = () => setActiveFontSize(editor.getAttributes('textStyle').fontSize || '')
+    const syncFontSize = () => setActiveFontSize(editor.getAttributes('textStyle').fontSize || defaultFontSize)
     syncFontSize()
     editor.on('selectionUpdate', syncFontSize)
     editor.on('transaction', syncFontSize)
@@ -77,7 +80,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       editor.off('selectionUpdate', syncFontSize)
       editor.off('transaction', syncFontSize)
     }
-  }, [editor])
+  }, [defaultFontSize, editor])
 
   if (!editor) return null
 
@@ -111,7 +114,8 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
           event.preventDefault()
           editor.chain().focus().insertContent('\t').run()
         }}
-        className={`course-rich-text text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
+        className={`course-rich-text text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
+        style={{ fontSize: defaultFontSize }}
       />
       <style jsx global>{`
         .course-rich-text .ProseMirror,
@@ -156,13 +160,12 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
           className="h-6 rounded border border-[rgba(30,26,20,0.1)] bg-white px-1 text-[10px] text-[#7A7268] outline-none focus:border-[#C4A265]"
           title="Lettergrootte"
         >
-          <option value="">Grootte</option>
-          <option value="11px">11</option>
-          <option value="13px">13</option>
-          <option value="16px">16</option>
-          <option value="20px">20</option>
-          <option value="24px">24</option>
-          <option value="32px">32</option>
+          {!FONT_SIZE_OPTIONS.includes(activeFontSize) && (
+            <option value={activeFontSize}>{activeFontSize.replace('px', '')}</option>
+          )}
+          {FONT_SIZE_OPTIONS.map(fontSize => (
+            <option key={fontSize} value={fontSize}>{fontSize.replace('px', '')}</option>
+          ))}
         </select>
         {isBlock && (
           <>

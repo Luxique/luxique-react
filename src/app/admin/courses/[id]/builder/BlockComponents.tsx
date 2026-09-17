@@ -73,7 +73,8 @@ export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => {
             onChange={(html) => onUpdate(block.id, { title: html })}
             variant="inline"
             placeholder="Hoofdtitel..."
-            className="font-['Cormorant_Garamond'] text-[22px] font-medium text-[#1E1A14] tracking-[-0.01em]"
+            defaultFontSize="25px"
+            className="font-['Cormorant_Garamond'] font-medium text-[#1E1A14] tracking-[-0.01em]"
           />
         ) : (
           <div className="text-[11px] italic text-[#c9c2b6] py-1">Verborgen voor studenten</div>
@@ -90,7 +91,8 @@ export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => {
             onChange={(html) => onUpdate(block.id, { subtitle: html })}
             variant="inline"
             placeholder="Subtitel of introductie..."
-            className="text-[14px] text-[#7A7268]"
+            defaultFontSize="16px"
+            className="text-[#7A7268]"
           />
         ) : (
           <div className="text-[11px] italic text-[#c9c2b6] py-1">Verborgen voor studenten</div>
@@ -105,6 +107,7 @@ export const TextBlock = React.memo(({ block, onUpdate }: BlockProps) => {
           <RichTextField
             content={typeof block.content === 'string' ? block.content : ''}
             onChange={(html) => onUpdate(block.id, { content: html })}
+            defaultFontSize="16px"
           />
         ) : (
           <div className="text-[11px] italic text-[#c9c2b6] py-1">Verborgen voor studenten</div>
@@ -359,6 +362,7 @@ export const CalloutBlock = React.memo(({ block, onUpdate }: BlockProps) => (
         onChange={(html) => onUpdate(block.id, { content: html })}
         variant="inline"
         placeholder="Schrijf hier je tip..."
+        defaultFontSize="16px"
       />
     </div>
   </div>

@@ -174,7 +174,8 @@
 .tt .subtitle { color: var(--gold-deep); font-style: italic; font-family: 'Cormorant Garamond',serif; font-size: 16px; margin-bottom: 12px; }
 .tt .subtitle p { margin: 0; }
 .course-rich-content { white-space: break-spaces; tab-size: 4; }
-.tt .block-body p { font-size: 16px; line-height: 1.75; color: #403c34; margin: 0 0 12px; }
+.tt .block-body { font-size: 16px; line-height: 1.75; color: #403c34; }
+.tt .block-body p { font-size: inherit; line-height: inherit; color: inherit; margin: 0 0 12px; }
 .course-rich-content p { margin: 0 0 12px; }
 .course-rich-content p:last-child { margin-bottom: 0; }
 .course-rich-content p:empty { min-height: 1.75em; }

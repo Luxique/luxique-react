@@ -4,6 +4,7 @@ import BuilderErrorBoundary from './BuilderErrorBoundary'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { NextIntlClientProvider } from 'next-intl'
 import { PreviewProvider } from '@/contexts/PreviewContext'
 import nlMessages from '../../../../../../messages/nl.json'
@@ -262,6 +263,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const activeLessonIdRef = useRef<string | null>(null)
   const blockHistoryRef = useRef<Record<string, BlockHistory>>({})
   const [historyRevision, setHistoryRevision] = useState(0)
+  const [historyControlsSlot, setHistoryControlsSlot] = useState<HTMLElement | null>(null)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const hasUnsavedChangesRef = useRef(false)
   const [lessonNumber, setLessonNumber] = useState(2)
@@ -327,6 +329,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
     window.addEventListener('beforeunload', warnBeforeLeave)
     return () => window.removeEventListener('beforeunload', warnBeforeLeave)
+  }, [])
+
+  useEffect(() => {
+    setHistoryControlsSlot(document.getElementById('builder-history-controls-slot'))
   }, [])
 
   const cacheLessonBlocks = useCallback((lessonId: string, lessonBlocks: Block[]) => {
@@ -2480,6 +2486,29 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   return (
     <div className="bg-[#F0EDE6] overflow-hidden fixed inset-0" style={{ fontFamily: "'Outfit', sans-serif" }}>
+      {historyControlsSlot && currentContext === 'lesson' && createPortal(
+        <div className="pointer-events-auto flex items-center justify-center gap-1.5 sm:gap-2" aria-label="Wijzigingsgeschiedenis">
+          <button
+            type="button"
+            onClick={undoBlockChange}
+            disabled={activeBlockHistory.past.length === 0}
+            title={`${activeBlockHistory.past.length} stap${activeBlockHistory.past.length === 1 ? '' : 'pen'} beschikbaar`}
+            className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
+          >
+            <span aria-hidden="true">↩</span><span className="hidden sm:inline">Ongedaan maken</span>
+          </button>
+          <button
+            type="button"
+            onClick={redoBlockChange}
+            disabled={activeBlockHistory.future.length === 0}
+            title={`${activeBlockHistory.future.length} stap${activeBlockHistory.future.length === 1 ? '' : 'pen'} opnieuw beschikbaar`}
+            className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
+          >
+            <span aria-hidden="true">↪</span><span className="hidden sm:inline">Opnieuw</span>
+          </button>
+        </div>,
+        historyControlsSlot,
+      )}
       {/* Main App */}
       <div className="flex h-full pt-[50px]">
         {/* Sidebar */}
@@ -2715,28 +2744,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           {/* Content Blocks — only for lesson/quiz context */}
           {currentContext !== 'global' && (
           <>
-          {currentContext === 'lesson' && (
-            <div className="fixed left-1/2 top-[7px] z-[110] flex -translate-x-1/2 items-center justify-center gap-1.5 sm:gap-2" aria-label="Wijzigingsgeschiedenis">
-              <button
-                type="button"
-                onClick={undoBlockChange}
-                disabled={activeBlockHistory.past.length === 0}
-                title={`${activeBlockHistory.past.length} stap${activeBlockHistory.past.length === 1 ? '' : 'pen'} beschikbaar`}
-                className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
-              >
-                <span aria-hidden="true">↩</span><span className="hidden sm:inline">Ongedaan maken</span>
-              </button>
-              <button
-                type="button"
-                onClick={redoBlockChange}
-                disabled={activeBlockHistory.future.length === 0}
-                title={`${activeBlockHistory.future.length} stap${activeBlockHistory.future.length === 1 ? '' : 'pen'} opnieuw beschikbaar`}
-                className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
-              >
-                <span aria-hidden="true">↪</span><span className="hidden sm:inline">Opnieuw</span>
-              </button>
-            </div>
-          )}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
               {blocks.map((block, blockIndex) => (
@@ -3000,13 +3007,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                               {block.type === 'text' && (
                                 <div>
                                   {block.title && (
-                                    <h3 className="course-rich-content text-xl font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
+                                    <h3 className="course-rich-content text-[25px] font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
                                   )}
                                   {block.subtitle && (
-                                    <h4 className="course-rich-content text-lg text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
+                                    <h4 className="course-rich-content text-[16px] text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
                                   )}
                                   {block.content && (
-                                    <div className="course-rich-content text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
+                                    <div className="course-rich-content text-[16px] text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
                                   )}
                                 </div>
                               )}
