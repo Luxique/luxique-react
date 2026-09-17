@@ -141,18 +141,18 @@ export default function AdminCustomersPage() {
     setExtendingId(null)
   }
 
-  const releaseCertificate = async (enrollment: Enrollment) => {
+  const setCertificateRelease = async (enrollment: Enrollment, released: boolean) => {
     setReleasingCertificateId(enrollment.id)
     setCertificateReleaseError(prev => ({ ...prev, [enrollment.id]: '' }))
     const { data: { session } } = await supabase.auth.getSession()
     const response = await fetch('/api/admin/certificate-release', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
-      body: JSON.stringify({ enrollmentId: enrollment.id }),
+      body: JSON.stringify({ enrollmentId: enrollment.id, released }),
     })
     const payload = await response.json().catch(() => ({}))
     if (!response.ok) {
-      setCertificateReleaseError(prev => ({ ...prev, [enrollment.id]: payload.error || 'Vrijgeven mislukt.' }))
+      setCertificateReleaseError(prev => ({ ...prev, [enrollment.id]: payload.error || (released ? 'Vrijgeven mislukt.' : 'Intrekken mislukt.') }))
     } else {
       setEnrollments(prev => prev.map(item => item.id === enrollment.id ? { ...item, certificate_released_at: payload.releasedAt } : item))
     }
@@ -442,10 +442,12 @@ export default function AdminCustomersPage() {
                                       {!e.completed_at ? 'Cursus nog niet volledig afgerond.' : e.certificate_released_at ? `Vrijgegeven op ${fmt(e.certificate_released_at)}` : 'Afgerond — wacht op beoordeling door Chiva.'}
                                     </p>
                                   </div>
-                                  {e.completed_at && !e.certificate_released_at && (
-                                    <button type="button" onClick={() => releaseCertificate(e)} disabled={releasingCertificateId === e.id}
-                                      className="rounded-lg bg-[#0C0A07] px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50">
-                                      {releasingCertificateId === e.id ? 'Vrijgeven…' : 'Certificaat vrijgeven'}
+                                  {e.completed_at && (
+                                    <button type="button" onClick={() => setCertificateRelease(e, !e.certificate_released_at)} disabled={releasingCertificateId === e.id}
+                                      className={`rounded-lg px-3 py-2 text-[11px] font-semibold disabled:opacity-50 ${e.certificate_released_at ? 'border border-[#c9bda7] bg-white text-[#6b5a3d]' : 'bg-[#0C0A07] text-white'}`}>
+                                      {releasingCertificateId === e.id
+                                        ? (e.certificate_released_at ? 'Intrekken…' : 'Vrijgeven…')
+                                        : (e.certificate_released_at ? 'Vrijgave intrekken' : 'Certificaat vrijgeven')}
                                     </button>
                                   )}
                                 </div>
