@@ -133,6 +133,7 @@ export async function createManualCalBooking(input: {
   customerName: string
   customerEmail: string
   customerPhone?: string | null
+  note?: string | null
 }) {
   const data = await calRequest('/bookings', {
     method: 'POST',
@@ -146,7 +147,10 @@ export async function createManualCalBooking(input: {
         language: 'nl',
         ...(input.customerPhone ? { phoneNumber: input.customerPhone } : {}),
       },
-      metadata: { source: 'luxique-manual' },
+      metadata: {
+        source: 'luxique-manual',
+        ...(input.note ? { luxiqueNote: input.note.slice(0, 500) } : {}),
+      },
     }),
   })
 

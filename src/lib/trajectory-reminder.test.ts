@@ -21,14 +21,14 @@ const booking: TrajectoryReminderCandidate = {
 test('multi-day confirmation/reminder programme contains every Medusa day and model warning', () => {
   const html = renderTrajectoryProgrammeHtml(booking.cursus_id, booking.cursus_naam)
   assert.match(html, /Dag 1/)
-  assert.match(html, /Fundering &amp; demonstratie|Fundering & demonstratie/)
+  assert.match(html, /De Medusa techniek/)
   assert.match(html, /Dag 2/)
-  assert.match(html, /Modeldag · praktijk/)
+  assert.match(html, /Van demonstratie naar uitvoering · modeldag/)
   assert.match(html, /Dag 3/)
-  assert.match(html, /Programma volgt/)
-  assert.match(html, /Let op — model vereist/)
-  assert.match(html, /Je regelt zelf een model voor de modeldag \(dag 2\)/)
-  assert.match(html, /De set afwerken en perfectioneren/)
+  assert.match(html, /Zelfstandig Medusa design · modeldag/)
+  assert.match(html, /LET OP — MODEL VEREIST/)
+  assert.match(html, /Je regelt zelf een model voor beide modeldagen, dag 2 en dag 3/)
+  assert.match(html, /Medusa certificaat bij voldoende beheersing/)
 })
 
 test('Amsterdam date selection remains two local calendar days ahead across DST end', () => {

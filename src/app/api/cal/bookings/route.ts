@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
 import { isCancelledCalStatus } from '@/lib/cal-cancellation'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
 import { reconcileManualBookingUids } from '@/lib/manual-booking-reconciliation'
+import { extractCalBookingNote } from '@/lib/booking-notes'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const dynamic = 'force-dynamic'
 const CAL_REQUEST_TIMEOUT_MS = 8_000
@@ -21,7 +23,9 @@ function normalizeCustomerField(value: unknown): string {
   return typeof field.value === 'string' ? field.value.trim() : ''
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return NextResponse.json({ error: auth.error || 'Geen toegang.' }, { status: auth.status || 401 })
   const apiKey = process.env.CAL_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'Missing CAL_API_KEY' }, { status: 500 })
@@ -89,6 +93,7 @@ export async function GET() {
         currency: eventType?.currency || 'eur',
         cancellationReason: b.cancellationReason,
         fromReschedule: b.fromReschedule,
+        note: extractCalBookingNote(b),
       }
     })
 
@@ -128,7 +133,7 @@ export async function GET() {
     // dedicated table so confirmed manual bookings always remain visible in admin.
     const { data: manualRows, error: manualError } = await supabaseAdmin
       .from('manual_bookings')
-      .select('id, cal_booking_uid, event_type_id, treatment_key, slot_start, slot_end, status, user_id')
+      .select('id, cal_booking_uid, event_type_id, treatment_key, slot_start, slot_end, status, user_id, note')
       .in('status', ['confirmed', 'cancellation_pending'])
       .order('slot_start', { ascending: false })
 
@@ -175,6 +180,7 @@ export async function GET() {
         currency: 'eur',
         cancellationReason: null,
         fromReschedule: null,
+        note: row.note || '',
       }
     })
 

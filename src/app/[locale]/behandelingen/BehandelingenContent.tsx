@@ -324,6 +324,10 @@ function BookSection() {
             title="Log in om te boeken"
             subtitle="Zodat we je afspraak aan je account koppelen en je boekingen altijd terugvindt in je dashboard."
           >
+            <div className="mb-4 rounded-[16px] border border-[rgba(176,141,79,0.28)] bg-[#fffaf0] px-5 py-4 text-left">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">Bijzonderheden voor Chiva (optioneel)</p>
+              <p className="mt-1.5 text-[0.88rem] leading-[1.55] text-[#5f574d]">Vermeld in het notitieveld tijdens het boeken gerust relevante bijzonderheden, zoals extreem korte wimpers, sterk gekrulde of juist stijve wimpers, of waterige ogen.</p>
+            </div>
             <div
               style={{
                 background: '#FBF8F2',

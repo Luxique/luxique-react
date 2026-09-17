@@ -28,6 +28,7 @@ type CalendarItem = {
   maxParticipants?: number
   source?: 'online' | 'manual'
   bookingUid?: string
+  note?: string
 }
 type CalBooking = {
   id: number | string
@@ -42,6 +43,7 @@ type CalBooking = {
   eventTypeTitle: string
   source?: 'online' | 'manual'
   paymentStatus?: string | null
+  note?: unknown
 }
 type CustomerResult = { id: string; email: unknown; full_name: unknown }
 type TrajectClass = {
@@ -102,6 +104,9 @@ function longDate(key: string) { return new Intl.DateTimeFormat('nl-NL', { weekd
 function RefreshIcon() {
   return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" /></svg>
 }
+function NoteIcon({ className = '' }: { className?: string }) {
+  return <svg aria-hidden="true" className={className} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path strokeLinecap="round" strokeLinejoin="round" d="M6 3h9l4 4v14H6z"/><path strokeLinecap="round" d="M9 12h6M9 16h6"/><path d="M15 3v5h4"/></svg>
+}
 function defaultEndTime(startTime: string, treatmentKey: TreatmentKey) {
   const [hours, minutes] = startTime.split(':').map(Number)
   if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return ''
@@ -140,6 +145,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [manualTime, setManualTime] = useState('09:00')
   const [manualDepositPaid, setManualDepositPaid] = useState(false)
   const [manualDepositEuros, setManualDepositEuros] = useState('')
+  const [manualNote, setManualNote] = useState('')
   const [manualSearching, setManualSearching] = useState(false)
   const [manualSaving, setManualSaving] = useState(false)
   const [manualError, setManualError] = useState<string | null>(null)
@@ -180,7 +186,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       }
     }
     try {
-      const bookingsRequest = loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.')
+      const bookingsRequest = loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.', true)
         .then(payload => {
           if (!isLatestRequest()) return payload
           setBookings((payload.bookings || []).filter((booking: CalBooking) =>
@@ -288,6 +294,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
         customerPhone,
         source: booking.source,
         bookingUid: booking.uid,
+        note: safeText(booking.note),
       }
     }),
     ...availability.flatMap(treatment => treatment.slots.map(slot => ({
@@ -478,6 +485,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     setManualCustomers([])
     setManualDepositPaid(false)
     setManualDepositEuros('')
+    setManualNote('')
     setManualError(null)
     setManualModalOpen(true)
   }
@@ -502,6 +510,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           start,
           salonDepositStatus: manualDepositPaid ? 'paid' : 'not_recorded',
           salonDepositCents: manualDepositPaid ? Math.round(euros * 100) : null,
+          note: manualNote.trim() || null,
         }),
       })
       const payload = await response.json().catch(() => null)
@@ -569,7 +578,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
                   + Tijdslot
                 </button>
                 <div className="relative z-10 space-y-1 overflow-hidden p-1.5 pt-10 sm:p-2 sm:pt-10 pointer-events-none">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' && item.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`relative rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.note ? 'pr-5' : ''} ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' && item.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span>{item.note && <span className="absolute right-1 top-1" title="Notitie aanwezig"><NoteIcon /></span>}</div>)}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
               </div>
@@ -607,6 +616,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">{selectedItem.kind === 'booking' ? 'Behandeling' : 'Cursus'}</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.kind === 'booking' ? selectedItem.treatmentName || selectedItem.title : selectedItem.courseName || selectedItem.title}</dd></div>
             <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Tijd</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.startTime}–{selectedItem.endTime}</dd></div>
             {selectedItem.kind === 'booking' && (selectedItem.customerEmail || selectedItem.customerPhone) && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Contact</dt><dd className="mt-1 flex flex-col gap-1">{selectedItem.customerEmail && <a href={`mailto:${selectedItem.customerEmail}`} className="break-all text-[#80642e] hover:underline">{selectedItem.customerEmail}</a>}{selectedItem.customerPhone && <a href={`tel:${selectedItem.customerPhone}`} className="text-[#80642e] hover:underline">{selectedItem.customerPhone}</a>}</dd></div>}
+            {selectedItem.kind === 'booking' && selectedItem.note && <div><dt className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]"><NoteIcon /> Notitie</dt><dd className="mt-1 whitespace-pre-wrap rounded-xl border border-[#eadfca] bg-[#fffaf0] px-3 py-2.5 text-[12px] leading-relaxed text-[#4a4034]">{selectedItem.note}</dd></div>}
             {selectedItem.kind === 'traject-day' && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Deelnemers</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.paidCount}/{selectedItem.maxParticipants} betaald</dd></div>}
           </dl>
           {selectedItem.kind === 'booking' && <button type="button" onClick={() => cancelBooking(selectedItem)} disabled={cancelling === selectedItem.id} className="mt-5 w-full rounded-full border border-red-200 bg-red-50 px-4 py-2.5 text-[11px] font-semibold text-red-700 disabled:opacity-50">{cancelling === selectedItem.id ? 'Afspraak annuleren…' : 'Afspraak annuleren'}</button>}
@@ -615,7 +625,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
             <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
-              <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
+              <div className="relative flex-1 min-w-0"><p className={`text-[13px] font-medium truncate ${item.note ? 'pr-6' : ''}`}>{item.title}</p>{item.note && <span className="absolute right-0 top-0 text-[#9a7838]" title="Notitie aanwezig"><NoteIcon /></span>}<p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
               <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' && item.paymentStatus === 'paid' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' && item.paymentStatus === 'paid' ? 'Betaald' : item.source === 'manual' ? 'Handmatige boeking' : item.kind === 'booking' ? 'Niet betaald' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
@@ -651,6 +661,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <div className="grid grid-cols-2 gap-3"><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Datum</label><input type="date" min={todayKey} value={manualDate} onChange={event => setManualDate(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Tijd</label><input type="time" value={manualTime} onChange={event => setManualTime(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div></div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#eee] p-4"><input type="checkbox" checked={manualDepositPaid} onChange={event => setManualDepositPaid(event.target.checked)} className="mt-0.5" /><span><span className="block text-[13px] font-medium">Aanbetaling in de salon geregistreerd</span><span className="block text-[11px] text-[#888]">Er loopt nooit een betaling of refund via de website.</span></span></label>
             {manualDepositPaid && <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Bedrag aanbetaling (€)</label><input inputMode="decimal" value={manualDepositEuros} onChange={event => setManualDepositEuros(event.target.value)} placeholder="50,00" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div>}
+            <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Notitie (optioneel)</label><p className="mb-2 text-[11px] leading-relaxed text-[#999]">Bijvoorbeeld een afwijkende prijsafspraak, benodigde extra tijd of bijzonderheden over de klant.</p><textarea value={manualNote} onChange={event => setManualNote(event.target.value)} maxLength={2000} rows={4} placeholder="Schrijf hier Chiva's notitie…" className="w-full resize-y rounded-xl border border-[#ddd] px-4 py-3 text-[13px] leading-relaxed focus:border-[#C4A265] focus:outline-none" /><p className="mt-1 text-right text-[10px] text-[#aaa]">{manualNote.length}/2000</p></div>
           </div>
           <div className="mt-7 flex gap-3"><button onClick={() => setManualModalOpen(false)} disabled={manualSaving} className="flex-1 rounded-full border border-[#eee] py-3 text-[13px] text-[#888]">Annuleren</button><button onClick={createManualBooking} disabled={!manualCustomer || manualSaving || !manualDate || !manualTime} className="flex-1 rounded-full bg-[#0C0A07] py-3 text-[13px] font-semibold text-white disabled:opacity-45">{manualSaving ? 'Inboeken…' : 'Klant inboeken'}</button></div>
         </div>

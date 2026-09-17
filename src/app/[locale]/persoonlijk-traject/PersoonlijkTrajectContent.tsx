@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Navbar from '@/components/Navbar'
+import { MEDUSA_TRAJECTORY_CONTENT } from '@/lib/medusa-trajectory-content'
 
 // Cursus IDs uit traject_cursussen (actief)
 const CURSUS = {
@@ -939,88 +940,29 @@ export default function PersoonlijkTrajectContent() {
                       </div>
                     </div>
                     <div className="days">
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day1Label')}</span><span className="day-t serif">{t('dp3Day1Title')}</span></div>
-                        <div className="day-d">{t('dp3Day1Desc')}</div>
-                        <div className="day-cols">
-                          <div className="col"><div className="col-h">{t('dp3Day1Group1Title')}</div><ul>
-                            <li>{t('dp3Day1Group1Item1')}</li>
-                            <li>{t('dp3Day1Group1Item2')}</li>
-                            <li>{t('dp3Day1Group1Item3')}</li>
-                            <li>{t('dp3Day1Group1Item4')}</li>
-                            <li>{t('dp3Day1Group1Item5')}</li>
-                            <li>{t('dp3Day1Group1Item6')}</li>
-                          </ul></div>
-                          <div className="col"><div className="col-h">{t('dp3Day1Group2Title')}</div><ul>
-                            <li>{t('dp3Day1Group2Item1')}</li>
-                            <li>{t('dp3Day1Group2Item2')}</li>
-                            <li>{t('dp3Day1Group2Item3')}</li>
-                            <li>{t('dp3Day1Group2Item4')}</li>
-                            <li>{t('dp3Day1Group2Item5')}</li>
-                          </ul></div>
-                        </div>
-                      </div>
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day1bLabel')}</span><span className="day-t serif">{t('dp3Day1bTitle')}</span></div>
-                        <div className="day-cols">
-                          <div className="col"><div className="col-h">{t('dp3Day1bGroup1Item1')}</div><ul>
-                            <li>{t('dp3Day1bGroup1Item2')}</li>
-                            <li>{t('dp3Day1bGroup1Item3')}</li>
-                            <li>{t('dp3Day1bGroup1Item4')}</li>
-                            <li>{t('dp3Day1bGroup1Item5')}</li>
-                          </ul></div>
-                          <div className="col"><div className="col-h">{t('dp3Day1bGroup2Title')}</div><ul>
-                            <li>{t('dp3Day1bGroup2Item1')}</li>
-                            <li>{t('dp3Day1bGroup2Item2')}</li>
-                            <li>{t('dp3Day1bGroup2Item3')}</li>
-                            <li>{t('dp3Day1bGroup2Item4')}</li>
-                          </ul></div>
-                        </div>
-                      </div>
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day2Label')}</span><span className="day-t serif">{t('dp3Day2Title')}</span></div>
-                        <div className="day-d">{t('dp3Day2Desc')}</div>
-                        <div className="day-cols one"><div className="col"><ul>
-                          <li>{t('dp3Day2Item1')}</li>
-                          <li>{t('dp3Day2Item2')}</li>
-                          <li>{t('dp3Day2Item3')}</li>
-                          <li>{t('dp3Day2Item4')}</li>
-                          <li>{t('dp3Day2Item5')}</li>
-                          <li>{t('dp3Day2Item6')}</li>
-                          <li>{t('dp3Day2Item7')}</li>
-                        </ul></div></div>
-                      </div>
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day3Label')}</span><span className="day-t serif">{t('dp3Day3Title')}</span></div>
-                        <div className="day-d">{t('dp3Day3Desc')}</div>
-                      </div>
+                      {MEDUSA_TRAJECTORY_CONTENT.days.map(day => <div className="day" key={day.label}>
+                        <div className="day-h"><span className="day-num">{day.label}</span><span className="day-t serif">{day.title}</span></div>
+                        <div className="day-d">{day.description}</div>
+                        <div className="day-cols">{day.groups.map(group => <div className="col" key={group.title}><div className="col-h">{group.title}</div><ul>{group.items.map(item => <li key={item}>{item}</li>)}</ul></div>)}</div>
+                      </div>)}
                     </div>
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">{t('modelWarningTitle')}</div>
-                        <p>{t('dp3ModelWarning')}</p>
+                        <div className="rt">{MEDUSA_TRAJECTORY_CONTENT.modelWarning.title}</div>
+                        <p>{MEDUSA_TRAJECTORY_CONTENT.modelWarning.text}</p>
                       </div>
                     </div>
                     <div className="incl-block">
                       <div>
-                        <h4 className="serif">{t('dp3InclTitle')}</h4>
-                        <ul className="incl-grid">
-                          <li>{t('dp3Incl1')}</li>
-                          <li>{t('dp3Incl2')}</li>
-                          <li>{t('dp3Incl3')}</li>
-                          <li>{t('dp3Incl4')}</li>
-                          <li>{t('dp3Incl5')}</li>
-                          <li>{t('dp3Incl6')}</li>
-                          <li>{t('dp3Incl7')}</li>
-                          <li>{t('dp3Incl8')}</li>
-                        </ul>
+                        <h4 className="serif">{MEDUSA_TRAJECTORY_CONTENT.included.title}</h4>
+                        <ul className="incl-grid">{MEDUSA_TRAJECTORY_CONTENT.included.items.map(item => <li key={item}>{item}</li>)}</ul>
                       </div>
                       <div className="invest">
-                        <div className="lab">{t('dp3InvestTitle')}</div>
-                        <div className="amt serif">{t('dp3InvestPrice')}</div>
-                        <div className="vat">{t('dp3InvestPriceLabel')}</div>
-                        <div className="pay">{t('dp3Outro')}</div>
+                        <div className="lab">{MEDUSA_TRAJECTORY_CONTENT.investment.title}</div>
+                        <div className="amt serif">{MEDUSA_TRAJECTORY_CONTENT.investment.price}</div>
+                        <div className="vat">{MEDUSA_TRAJECTORY_CONTENT.investment.priceLabel}</div>
+                        <div className="pay">{MEDUSA_TRAJECTORY_CONTENT.investment.certificate}</div>
                       </div>
                     </div>
                     <div className="btn-row">

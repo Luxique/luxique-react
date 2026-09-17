@@ -1,4 +1,5 @@
 import nlMessages from '../../messages/nl.json' with { type: 'json' }
+import { MEDUSA_TRAJECTORY_CONTENT } from './medusa-trajectory-content.ts'
 
 const copy = nlMessages.PersoonlijkTraject as Record<string, string>
 
@@ -24,6 +25,8 @@ export interface TrajectoryProgrammeDay {
 export interface TrajectoryProgramme {
   days: TrajectoryProgrammeDay[]
   modelWarning?: { title: string; text: string }
+  included?: { title: string; items: string[] }
+  investment?: { title: string; price: string; priceLabel: string; certificate: string }
 }
 
 const values = (...keys: string[]) => keys.map((key) => copy[key])
@@ -53,22 +56,10 @@ const programmes: Record<string, TrajectoryProgramme> = {
     modelWarning: { title: copy.modelWarningTitle, text: copy.dp2ModelWarning },
   },
   [TRAJECT_COURSE_IDS.medusa]: {
-    days: [
-      {
-        label: copy.dp3Day1Label,
-        title: copy.dp3Day1Title,
-        description: copy.dp3Day1Desc,
-        groups: [
-          { title: copy.dp3Day1Group1Title, items: numberedValues('dp3Day1Group1Item', 6) },
-          { title: copy.dp3Day1Group2Title, items: numberedValues('dp3Day1Group2Item', 5) },
-          { title: copy.dp3Day1bGroup1Item1, items: numberedValues('dp3Day1bGroup1Item', 5).slice(1) },
-          { title: copy.dp3Day1bGroup2Title, items: numberedValues('dp3Day1bGroup2Item', 4) },
-        ],
-      },
-      { label: copy.dp3Day2Label, title: copy.dp3Day2Title, description: copy.dp3Day2Desc, groups: [{ items: numberedValues('dp3Day2Item', 7) }] },
-      { label: copy.dp3Day3Label, title: copy.dp3Day3Title, description: copy.dp3Day3Desc, groups: [] },
-    ],
-    modelWarning: { title: copy.modelWarningTitle, text: copy.dp3ModelWarning },
+    days: MEDUSA_TRAJECTORY_CONTENT.days.map(day => ({ ...day, groups: day.groups.map(group => ({ ...group, items: [...group.items] })) })),
+    modelWarning: { ...MEDUSA_TRAJECTORY_CONTENT.modelWarning },
+    included: { ...MEDUSA_TRAJECTORY_CONTENT.included, items: [...MEDUSA_TRAJECTORY_CONTENT.included.items] },
+    investment: { ...MEDUSA_TRAJECTORY_CONTENT.investment },
   },
   [TRAJECT_COURSE_IDS.techToArtist]: {
     days: [

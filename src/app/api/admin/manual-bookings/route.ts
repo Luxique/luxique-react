@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
   const depositCents = depositStatus === 'paid' && Number.isInteger(body?.salonDepositCents)
     ? Number(body.salonDepositCents)
     : null
+  const note = typeof body?.note === 'string' ? body.note.trim() : ''
 
   if (!userId || !isManualTreatmentKey(body?.treatmentKey) || !start) {
     return json({ error: 'Klant, behandeling, datum en tijd zijn verplicht.' }, 400)
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
   if (depositStatus === 'paid' && (depositCents == null || depositCents < 0)) {
     return json({ error: 'Vul een geldig aanbetalingsbedrag in.' }, 400)
   }
+  if (note.length > 2000) return json({ error: 'De notitie mag maximaal 2000 tekens bevatten.' }, 400)
 
   const customer = await accountFor(userId)
   if (!customer) return json({ error: 'Dit account bestaat niet meer of heeft geen e-mailadres.' }, 404)
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
+      note: note || null,
     })
     const slotStart = calBooking.start
     const slotEnd = calBooking.end || addMinutes(slotStart, treatment.durationMinutes)
@@ -137,6 +140,7 @@ export async function POST(request: NextRequest) {
         salon_deposit_cents: depositCents,
         salon_deposit_status: depositStatus,
         sync_status: 'synced',
+        note: note || null,
         updated_at: new Date().toISOString(),
       })
       .select('*')
