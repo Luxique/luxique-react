@@ -47,8 +47,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const course = await getCourse(slug)
   if (!course) return { title: 'Cursus niet gevonden' }
+  const title = `${course.hero_title || course.title} — Luxique Academy`
+  const description = course.hero_tagline || course.description || ''
+  const image = course.hero_image_url || course.thumbnail_url || '/images/hero-bg.jpg'
+
   return {
-    title: `${course.hero_title || course.title} — Luxique Academy`,
-    description: course.hero_tagline || course.description || '',
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `https://www.luxique.nl/cursus/${slug}`,
+      images: [{ url: image, alt: course.hero_title || course.title }],
+    },
   }
 }

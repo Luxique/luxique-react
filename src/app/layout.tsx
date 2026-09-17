@@ -38,6 +38,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.luxique.nl'),
   title: 'LXQ Academy — The Art of Lashes, Perfected',
   description: 'Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland\'s #1 lash educator.',
   icons: {
@@ -47,6 +48,12 @@ export const metadata: Metadata = {
     title: 'LXQ Academy — The Art of Lashes, Perfected',
     description: 'Opleidingen voor de nieuwe lichting lash artists — door Nederland\'s #1 lash educator.',
     type: 'website',
+    images: [
+      {
+        url: '/images/hero-bg.jpg',
+        alt: 'LXQ Academy — The Art of Lashes, Perfected',
+      },
+    ],
   },
 }
 
