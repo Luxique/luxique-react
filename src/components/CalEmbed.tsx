@@ -98,7 +98,7 @@ export default function CalEmbed({
           backdrop-filter: blur(8px);
         }
         .cal-embed-back--visible {
-          opacity: .64;
+          opacity: .30;
           transform: translateY(0);
           pointer-events: auto;
         }

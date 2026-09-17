@@ -88,6 +88,20 @@ interface Block {
   showBody?: boolean
 }
 
+interface BlockHistory {
+  past: Block[][]
+  future: Block[][]
+  lastMutationKey?: string
+  lastMutationAt?: number
+}
+
+const MAX_BLOCK_HISTORY = 5
+const BLOCK_EDIT_COALESCE_MS = 800
+
+function cloneBlocksSnapshot(blocks: Block[]): Block[] {
+  return structuredClone(blocks)
+}
+
 interface Lesson {
   id: string
   num: number
@@ -246,7 +260,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [blocksCache, setBlocksCache] = useState<Record<string, Block[]>>({})  // Per-les cache
   const blocksCacheRef = useRef<Record<string, Block[]>>({})
   const activeLessonIdRef = useRef<string | null>(null)
-  const [lastBlockReorder, setLastBlockReorder] = useState<{ lessonId: string; blocks: Block[] } | null>(null)
+  const blockHistoryRef = useRef<Record<string, BlockHistory>>({})
+  const [historyRevision, setHistoryRevision] = useState(0)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const hasUnsavedChangesRef = useRef(false)
   const [lessonNumber, setLessonNumber] = useState(2)
@@ -319,6 +334,36 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     setBlocksCache(blocksCacheRef.current)
   }, [])
 
+  const recordBlockHistory = useCallback((
+    lessonId: string,
+    previousBlocks: Block[],
+    mutationKey: string,
+    coalesce = false,
+  ) => {
+    const now = Date.now()
+    const current = blockHistoryRef.current[lessonId] || { past: [], future: [] }
+    const shouldCoalesce = coalesce
+      && current.lastMutationKey === mutationKey
+      && typeof current.lastMutationAt === 'number'
+      && now - current.lastMutationAt < BLOCK_EDIT_COALESCE_MS
+
+    blockHistoryRef.current[lessonId] = {
+      past: shouldCoalesce
+        ? current.past
+        : [...current.past, cloneBlocksSnapshot(previousBlocks)].slice(-MAX_BLOCK_HISTORY),
+      future: [],
+      lastMutationKey: mutationKey,
+      lastMutationAt: now,
+    }
+    setHistoryRevision(revision => revision + 1)
+  }, [])
+
+  const applyHistorySnapshot = useCallback((lessonId: string, nextBlocks: Block[]) => {
+    setBlocks(nextBlocks)
+    cacheLessonBlocks(lessonId, nextBlocks)
+    markLessonBlocksDirty(lessonId)
+  }, [cacheLessonBlocks, markLessonBlocksDirty])
+
   const persistBlockOrder = async (orderedBlocks: Block[]) => {
     const reorderResults = await Promise.all(
       orderedBlocks.map((block, index) =>
@@ -335,45 +380,58 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     const oldIndex = blocks.findIndex(b => b.id === active.id)
     const newIndex = blocks.findIndex(b => b.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
-
-    const reordered = arrayMove(blocks, oldIndex, newIndex)
-    setBlocks(reordered)
-
     if (!currentLesson?.id) return
+
     const lessonId = currentLesson.id
+    const historyBeforeReorder = blockHistoryRef.current[lessonId]
+    const reordered = arrayMove(blocks, oldIndex, newIndex)
+    recordBlockHistory(lessonId, blocks, 'reorder')
+    setBlocks(reordered)
     cacheLessonBlocks(lessonId, reordered)
     markLessonBlocksDirty(lessonId)
 
     const reorderError = await persistBlockOrder(reordered)
     if (reorderError) {
       console.error('[handleDragEnd] Block reorder FAILED:', reorderError)
+      if (historyBeforeReorder) blockHistoryRef.current[lessonId] = historyBeforeReorder
+      else delete blockHistoryRef.current[lessonId]
+      setHistoryRevision(revision => revision + 1)
       setBlocks(blocks)
       cacheLessonBlocks(lessonId, blocks)
       alert(`Volgorde opslaan mislukt: ${reorderError.message}`)
       return
     }
-    setLastBlockReorder({ lessonId, blocks })
   };
 
-  const undoLastBlockReorder = async () => {
-    if (!currentLesson?.id || lastBlockReorder?.lessonId !== currentLesson.id) return
+  const undoBlockChange = useCallback(() => {
+    if (!currentLesson?.id) return
+    const lessonId = currentLesson.id
+    const history = blockHistoryRef.current[lessonId]
+    if (!history?.past.length) return
 
-    const currentOrder = blocks
-    const previousOrder = lastBlockReorder.blocks
-    setBlocks(previousOrder)
-    cacheLessonBlocks(currentLesson.id, previousOrder)
-    markLessonBlocksDirty(currentLesson.id)
-
-    const undoError = await persistBlockOrder(previousOrder)
-    if (undoError) {
-      console.error('[undoLastBlockReorder] Block reorder undo FAILED:', undoError)
-      setBlocks(currentOrder)
-      cacheLessonBlocks(currentLesson.id, currentOrder)
-      alert(`Ongedaan maken mislukt: ${undoError.message}`)
-      return
+    const previousBlocks = cloneBlocksSnapshot(history.past[history.past.length - 1])
+    blockHistoryRef.current[lessonId] = {
+      past: history.past.slice(0, -1),
+      future: [cloneBlocksSnapshot(blocks), ...history.future].slice(0, MAX_BLOCK_HISTORY),
     }
-    setLastBlockReorder(null)
-  }
+    applyHistorySnapshot(lessonId, previousBlocks)
+    setHistoryRevision(revision => revision + 1)
+  }, [applyHistorySnapshot, blocks, currentLesson])
+
+  const redoBlockChange = useCallback(() => {
+    if (!currentLesson?.id) return
+    const lessonId = currentLesson.id
+    const history = blockHistoryRef.current[lessonId]
+    if (!history?.future.length) return
+
+    const nextBlocks = cloneBlocksSnapshot(history.future[0])
+    blockHistoryRef.current[lessonId] = {
+      past: [...history.past, cloneBlocksSnapshot(blocks)].slice(-MAX_BLOCK_HISTORY),
+      future: history.future.slice(1),
+    }
+    applyHistorySnapshot(lessonId, nextBlocks)
+    setHistoryRevision(revision => revision + 1)
+  }, [applyHistorySnapshot, blocks, currentLesson])
 
   const toSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -1124,19 +1182,30 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const isQuizLesson = currentLesson?.lesson_type === 'quiz' || currentLesson?.lesson_type === 'exam'
   const builderLessonDisplays = getLessonDisplays((course?.lessons || []).map(l => ({ id: l.id, title: l.name, lesson_type: l.lesson_type || 'content', parent_lesson_id: l.parentId || null })))
+  const activeBlockHistory = currentLesson?.id
+    ? blockHistoryRef.current[currentLesson.id] || { past: [], future: [] }
+    : { past: [], future: [] }
+  void historyRevision
 
   const contentBlockTypes: BlockType[] = ['video', 'text', 'image', 'callout', 'download', 'divider']
   const quizBlockTypes: BlockType[] = ['quiz']
   const availableBlockTypes = isQuizLesson ? quizBlockTypes : contentBlockTypes
 
   // Helper om blocks en cache te updaten (zodat les-wissel blokken behoudt)
-  const setBlocksWithCache = useCallback((newBlocks: Block[]) => {
+  const setBlocksWithCache = useCallback((
+    newBlocks: Block[],
+    mutationKey = 'blocks',
+    coalesce = false,
+  ) => {
+    if (currentLesson?.id) {
+      recordBlockHistory(currentLesson.id, blocks, mutationKey, coalesce)
+    }
     setBlocks(newBlocks)
     if (currentLesson?.id) {
       cacheLessonBlocks(currentLesson.id, newBlocks)
       markLessonBlocksDirty(currentLesson.id)
     }
-  }, [cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
+  }, [blocks, cacheLessonBlocks, currentLesson, markLessonBlocksDirty, recordBlockHistory])
 
   const addBlock = (type: BlockType, insertIndex = blockInsertIndex) => {
     const newBlock: Block = type === 'quiz'
@@ -1147,7 +1216,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       : { id: uid(), type }
     const next = [...blocks]
     next.splice(insertIndex ?? next.length, 0, newBlock)
-    setBlocksWithCache(next)
+    setBlocksWithCache(next, `add:${newBlock.id}`)
     setPickerOpen(false)
     setBlockInsertIndex(null)
   }
@@ -1169,17 +1238,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   }
 
   const deleteBlock = (id: string) => {
-    setBlocksWithCache(blocks.filter(b => b.id !== id))
+    setBlocksWithCache(blocks.filter(b => b.id !== id), `delete:${id}`)
   }
 
   const updateBlock = useCallback((blockId: string, updates: Partial<Block>) => {
     const updated = blocks.map(b => b.id === blockId ? { ...b, ...updates } : b)
-    setBlocks(updated)
-    if (currentLesson?.id) {
-      cacheLessonBlocks(currentLesson.id, updated)
-      markLessonBlocksDirty(currentLesson.id)
-    }
-  }, [blocks, cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
+    const fields = Object.keys(updates).sort().join(',')
+    setBlocksWithCache(updated, `update:${blockId}:${fields}`, true)
+  }, [blocks, setBlocksWithCache])
 
   // Herindexeer lessen: num = volgorde in de array (doorlopend, inclusief sublessen)
   const reindexLessons = (lessons: Lesson[]): Lesson[] =>
@@ -2649,14 +2715,25 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           {/* Content Blocks — only for lesson/quiz context */}
           {currentContext !== 'global' && (
           <>
-          {lastBlockReorder?.lessonId === currentLesson?.id && (
-            <div className="mb-3 flex justify-end">
+          {currentContext === 'lesson' && (
+            <div className="mb-3 flex justify-end gap-2" aria-label="Wijzigingsgeschiedenis">
               <button
                 type="button"
-                onClick={undoLastBlockReorder}
-                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)]"
+                onClick={undoBlockChange}
+                disabled={activeBlockHistory.past.length === 0}
+                title={`${activeBlockHistory.past.length} stap${activeBlockHistory.past.length === 1 ? '' : 'pen'} beschikbaar`}
+                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)] disabled:cursor-not-allowed disabled:opacity-35"
               >
-                ↩ Laatste reorder ongedaan maken
+                ↩ Ongedaan maken
+              </button>
+              <button
+                type="button"
+                onClick={redoBlockChange}
+                disabled={activeBlockHistory.future.length === 0}
+                title={`${activeBlockHistory.future.length} stap${activeBlockHistory.future.length === 1 ? '' : 'pen'} opnieuw beschikbaar`}
+                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                ↪ Opnieuw
               </button>
             </div>
           )}
