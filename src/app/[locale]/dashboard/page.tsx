@@ -52,6 +52,8 @@ type CourseProgress = {
   isDone: boolean
   examPassed: boolean
   hasExam: boolean
+  certificateReviewRequired: boolean
+  certificateAvailable: boolean
 }
 
 function formatDateNL(iso: string) {
@@ -130,8 +132,11 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/certificate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, courseId }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ courseId }),
       })
       if (!res.ok) {
         console.error('Certificate API failed:', await res.text())
@@ -201,6 +206,17 @@ export default function DashboardPage() {
       ;(allProgress || []).forEach((p: ProgressRow) => progressMap.set(p.lesson_id, p.completed))
 
       // Compute per-course progress
+      const { data: { session } } = await supabase.auth.getSession()
+      const statuses = new Map<string, { reviewRequired: boolean; certificateAvailable: boolean }>()
+      if (session?.access_token) {
+        await Promise.all(courses.map(async course => {
+          const response = await fetch(`/api/academy/certificate-status?courseId=${encodeURIComponent(course.id)}`, {
+            headers: { Authorization: `Bearer ${session.access_token}` }, cache: 'no-store',
+          })
+          if (response.ok) statuses.set(course.id, await response.json())
+        }))
+      }
+
       const cp: CourseProgress[] = courses.map(course => {
         const cLessons = allLessons.filter(l => l.course_id === course.id && (l.lesson_type || 'content') !== 'exam')
         const examLesson = allLessons.find(l => l.course_id === course.id && l.lesson_type === 'exam')
@@ -213,7 +229,9 @@ export default function DashboardPage() {
         return {
           course, totalLessons: cLessons.length, completedLessons: completedCount,
           pct, nextLesson: next, nextLessonNumber: nextNum, isDone: pct === 100,
-          examPassed, hasExam: !!examLesson
+          examPassed, hasExam: !!examLesson,
+          certificateReviewRequired: statuses.get(course.id)?.reviewRequired || false,
+          certificateAvailable: statuses.get(course.id)?.certificateAvailable ?? examPassed,
         }
       })
 
@@ -727,6 +745,11 @@ export default function DashboardPage() {
                         <div style={{ marginTop:'auto', paddingTop:20, display:'flex', gap:10, flexWrap:'wrap' }}>
                           {cp.examPassed ? (
                             <>
+                            {cp.certificateReviewRequired && !cp.certificateAvailable ? (
+                              <div style={{ width:'100%', padding:'12px 14px', borderRadius:12, background:'rgba(201,168,106,.1)', border:'1px solid rgba(201,168,106,.24)', color:'#665333', fontSize:'.8rem', lineHeight:1.5 }}>
+                                Mail je praktijkwerk naar <a href="mailto:info@luxique.nl" style={{ color:'#7A6340', fontWeight:600 }}>info@luxique.nl</a>. Na Chiva&apos;s beoordeling wordt je certificaat vrijgegeven.
+                              </div>
+                            ) : (
                             <button
                               onClick={() => handleDownloadCertificate(cp.course.id, cp.course.title)}
                               disabled={downloadingCert === cp.course.id}
@@ -740,6 +763,7 @@ export default function DashboardPage() {
                             >
                               {downloadingCert === cp.course.id ? 'PDF genereren...' : '⬇ Download certificaat'}
                             </button>
+                            )}
                             {certError && downloadingCert === null && (
                               <div style={{ fontSize:'.78rem', color:'#ef4444', marginTop:6, width:'100%' }}>{certError}</div>
                             )}

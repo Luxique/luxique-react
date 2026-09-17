@@ -24,6 +24,7 @@ interface ExamBlock {
 }
 
 type ExamScreen = 'start' | 'question' | 'pass' | 'fail'
+type CertificateStatus = { reviewRequired: boolean; released: boolean; certificateAvailable: boolean }
 
 /* ── Design tokens from mockup ── */
 const colors = {
@@ -65,6 +66,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const [certError, setCertError] = useState<string | null>(null)
   const [completedDate, setCompletedDate] = useState<string>('')
   const [reviewMode, setReviewMode] = useState(false)
+  const [certificateStatus, setCertificateStatus] = useState<CertificateStatus | null>(null)
 
   // Fetch exam blocks
   useEffect(() => {
@@ -137,6 +139,18 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     }
     checkPrevious()
   }, [user, lessonId])
+
+  useEffect(() => {
+    if (!user || screen !== 'pass') return
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.access_token) return
+      const response = await fetch(`/api/academy/certificate-status?courseId=${encodeURIComponent(courseId)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
+      })
+      if (response.ok) setCertificateStatus(await response.json())
+    })
+  }, [courseId, screen, user])
 
   const handleStart = () => {
     if (isRetake && wrongQuestionIds.length > 0) {
@@ -226,11 +240,11 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
       // 1. Fetch certificate metadata from API
       const res = await fetch('/api/certificate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          courseId,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({ courseId }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
@@ -534,7 +548,12 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
           </div>
         </div>
 
-        <button
+        {certificateStatus?.reviewRequired && !certificateStatus.certificateAvailable ? (
+          <div style={{ padding: '18px 20px', borderRadius: 12, background: colors.goldSoft, border: `1px solid ${colors.goldBorder}`, color: colors.goldLight, fontSize: 14, lineHeight: 1.6, fontFamily: '"Jost", sans-serif' }}>
+            <strong style={{ display: 'block', color: colors.white, marginBottom: 6 }}>Je toets is behaald — beoordeling volgt</strong>
+            Mail je praktijkwerk (foto&apos;s en/of video&apos;s) naar <a href="mailto:info@luxique.nl" style={{ color: colors.goldLight }}>info@luxique.nl</a>. Chiva beoordeelt je werk en geeft daarna je certificaat vrij.
+          </div>
+        ) : certificateStatus?.certificateAvailable ? <button
           onClick={handleDownloadCertificate}
           disabled={generatingPdf}
           style={{
@@ -550,7 +569,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
           }}
         >
           {generatingPdf ? 'PDF wordt gegenereerd...' : 'Download certificaat (PDF)'}
-        </button>
+        </button> : null}
         {certError && (
           <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#f87171', fontSize: 13, fontFamily: '"Jost", sans-serif', textAlign: 'center' }}>
             ⚠️ {certError}

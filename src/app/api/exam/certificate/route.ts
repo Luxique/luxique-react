@@ -1,27 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import PDFDocument from 'pdfkit'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { certificateIsAvailable } from '@/lib/certificate-release'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, courseId, courseTitle } = await request.json()
-    if (!userId || !courseId || !courseTitle) {
+    const authorization = request.headers.get('authorization')
+    if (!authorization?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authorization.slice(7))
+    if (authError || !user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+
+    const { courseId } = await request.json()
+    if (!courseId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    const [{ data: course }, { data: enrollment }] = await Promise.all([
+      supabaseAdmin.from('courses').select('title, certificate_review_required').eq('id', courseId).maybeSingle(),
+      supabaseAdmin.from('enrollments').select('completed_at, certificate_released_at').eq('user_id', user.id).eq('course_id', courseId).maybeSingle(),
+    ])
+    if (!course || !enrollment || !certificateIsAvailable({
+      courseCompletedAt: enrollment.completed_at,
+      reviewRequired: Boolean(course.certificate_review_required),
+      releasedAt: enrollment.certificate_released_at,
+    })) return NextResponse.json({ error: 'Certificate unavailable' }, { status: 403 })
+
+    const userId = user.id
+    const courseTitle = course.title
+
     // Fetch user name from Supabase
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     let userName = 'Student'
     try {
-      const authRes = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
-        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-      })
-      if (authRes.ok) {
-        const userData = await authRes.json()
-        userName = userData?.user_metadata?.full_name || userData?.email?.split('@')[0] || 'Student'
-      }
+      const { data } = await supabaseAdmin.auth.admin.getUserById(userId)
+      userName = data.user?.user_metadata?.full_name || data.user?.email?.split('@')[0] || 'Student'
     } catch {
       // Fallback
     }

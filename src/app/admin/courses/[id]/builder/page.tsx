@@ -147,6 +147,7 @@ interface Course {
   introVideo?: boolean
   finalQuizRequired?: boolean
   certificate?: boolean
+  certificateReviewRequired?: boolean
   lessons?: Lesson[]
   quizzes?: Quiz[]
   // v3 fields
@@ -505,6 +506,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       intro_video: courseToSave.introVideo || false,
       final_quiz_required: courseToSave.finalQuizRequired || false,
       certificate: courseToSave.certificate || false,
+      certificate_review_required: courseToSave.certificateReviewRequired || false,
       status: 'draft',
       // v3 fields
       hero_badge_text: courseToSave.heroBadgeText || null,
@@ -733,6 +735,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         intro_video: courseToSave.introVideo || false,
         final_quiz_required: courseToSave.finalQuizRequired || false,
         certificate: courseToSave.certificate || false,
+        certificate_review_required: courseToSave.certificateReviewRequired || false,
         // v3 fields
         hero_badge_text: courseToSave.heroBadgeText || null,
         short_description: courseToSave.shortDescription || null,
@@ -932,6 +935,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         introVideo: true,
         finalQuizRequired: false,
         certificate: true,
+        certificateReviewRequired: false,
         lessons: [
           { id: crypto.randomUUID(), num: 1, name: 'Introductie', free: true, reflectionQuestions: [], blocks: [
             { id: crypto.randomUUID(), type: 'video' as const },
@@ -984,6 +988,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         introVideo: courseData.intro_video || false,
         finalQuizRequired: courseData.final_quiz_required || false,
         certificate: courseData.certificate || false,
+        certificateReviewRequired: courseData.certificate_review_required || false,
         lessons: [],
         quizzes: [],
         // v3 field mappings
@@ -2100,7 +2105,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                     { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
                     { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
                     { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
-                    { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
+                    { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course },
+                    { label: 'Certificaat pas na handmatige beoordeling', field: 'certificateReviewRequired' as keyof Course }
                   ] as const
                 ).map((item) => (
                   <div key={item.field} className="flex items-center justify-between py-1">

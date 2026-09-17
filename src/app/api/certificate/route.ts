@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase-admin'
+import { certificateIsAvailable } from '@/lib/certificate-release'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,17 +11,21 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(request: NextRequest) {
   try {
-    const { userId, courseId } = await request.json()
+    const authorization = request.headers.get('authorization')
+    if (!authorization?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authorization.slice(7))
+    if (authError || !user) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
 
-    if (!userId || !courseId) {
-      return NextResponse.json({ error: 'Missing userId or courseId' }, { status: 400 })
+    const { courseId } = await request.json()
+    const userId = user.id
+
+    if (!courseId) {
+      return NextResponse.json({ error: 'Missing courseId' }, { status: 400 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-    const supabase = createClient(supabaseUrl, serviceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
-    })
+    const supabase = supabaseAdmin
 
     // 1. Fetch user name
     let recipientName = 'Student'
@@ -36,10 +41,30 @@ export async function POST(request: NextRequest) {
     // 2. Fetch course title
     const { data: course } = await supabase
       .from('courses')
-      .select('title')
+      .select('title, certificate_review_required')
       .eq('id', courseId)
       .single()
     const courseTitle = course?.title || 'LUXIQUE Academy Course'
+
+    const { data: enrollment } = await supabase
+      .from('enrollments')
+      .select('completed_at, certificate_released_at')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .maybeSingle()
+
+    if (!enrollment || !certificateIsAvailable({
+      courseCompletedAt: enrollment.completed_at,
+      reviewRequired: Boolean(course?.certificate_review_required),
+      releasedAt: enrollment.certificate_released_at,
+    })) {
+      return NextResponse.json({
+        error: course?.certificate_review_required && enrollment?.completed_at
+          ? 'Certificate awaiting manual review'
+          : 'Course not completed yet',
+        code: course?.certificate_review_required && enrollment?.completed_at ? 'certificate_review_pending' : 'course_incomplete',
+      }, { status: 403 })
+    }
 
     // 3. Check exam status
     const { data: examLesson } = await supabase
@@ -49,7 +74,7 @@ export async function POST(request: NextRequest) {
       .eq('lesson_type', 'exam')
       .single()
 
-    let completedAt = new Date().toISOString()
+    let completedAt = enrollment.completed_at
 
     if (examLesson) {
       const { data: progress } = await supabase

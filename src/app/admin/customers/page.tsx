@@ -19,7 +19,8 @@ type Enrollment = {
   id: string; course_id: string; status: string; payment_method: string | null;
   payment_amount: number | null; paid_at: string | null; enrolled_at: string; access_expires_at: string | null;
   granted_by: string | null; stripe_payment_intent_id: string | null;
-  courses: { title: string } | { title: string }[] | null
+  completed_at: string | null; certificate_released_at: string | null;
+  courses: { title: string; certificate_review_required: boolean } | { title: string; certificate_review_required: boolean }[] | null
 }
 
 type LessonProgress = {
@@ -64,6 +65,8 @@ export default function AdminCustomersPage() {
   const [extensionDates, setExtensionDates] = useState<Record<string, string>>({})
   const [extendingId, setExtendingId] = useState<string | null>(null)
   const [extensionError, setExtensionError] = useState<Record<string, string>>({})
+  const [releasingCertificateId, setReleasingCertificateId] = useState<string | null>(null)
+  const [certificateReleaseError, setCertificateReleaseError] = useState<Record<string, string>>({})
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading && !user) router.push('/login') }, [user, loading])
@@ -138,6 +141,24 @@ export default function AdminCustomersPage() {
     setExtendingId(null)
   }
 
+  const releaseCertificate = async (enrollment: Enrollment) => {
+    setReleasingCertificateId(enrollment.id)
+    setCertificateReleaseError(prev => ({ ...prev, [enrollment.id]: '' }))
+    const { data: { session } } = await supabase.auth.getSession()
+    const response = await fetch('/api/admin/certificate-release', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+      body: JSON.stringify({ enrollmentId: enrollment.id }),
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      setCertificateReleaseError(prev => ({ ...prev, [enrollment.id]: payload.error || 'Vrijgeven mislukt.' }))
+    } else {
+      setEnrollments(prev => prev.map(item => item.id === enrollment.id ? { ...item, certificate_released_at: payload.releasedAt } : item))
+    }
+    setReleasingCertificateId(null)
+  }
+
   useEffect(() => {
     if (!selectedId) return
     const sel = profiles.find(p => p.id === selectedId)
@@ -149,7 +170,7 @@ export default function AdminCustomersPage() {
 
     // Fetch enrollments
     supabase.from('enrollments')
-      .select('id, course_id, status, payment_method, payment_amount, paid_at, enrolled_at, access_expires_at, granted_by, stripe_payment_intent_id, courses(title)')
+      .select('id, course_id, status, payment_method, payment_amount, paid_at, enrolled_at, access_expires_at, granted_by, stripe_payment_intent_id, completed_at, certificate_released_at, courses(title, certificate_review_required)')
       .eq('user_id', selectedId).order('enrolled_at', { ascending: false })
       .then(({ data }) => {
         const enrolled = (data || []) as Enrollment[]
@@ -346,6 +367,8 @@ export default function AdminCustomersPage() {
                         const daysLeft = expiryDate ? Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null
                         const isExpired = daysLeft !== null && daysLeft < 0
                         const monthsLeft = daysLeft === null ? null : Math.floor(Math.abs(daysLeft) / 30)
+                        const courseInfo = Array.isArray(e.courses) ? e.courses[0] : e.courses
+                        const reviewRequired = Boolean(courseInfo?.certificate_review_required)
 
                         return (
                           <div key={e.id} className="border border-[#f0f0f0] rounded-xl p-4">
@@ -407,6 +430,26 @@ export default function AdminCustomersPage() {
                                 <div className="h-2 bg-[#f0f0f0] rounded-full overflow-hidden">
                                   <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : pct > 0 ? 'bg-[#C4A265]' : 'bg-transparent'}`} style={{ width: `${pct}%` }} />
                                 </div>
+                              </div>
+                            )}
+
+                            {reviewRequired && (
+                              <div className="mb-3 rounded-lg border border-[#eadfc8] bg-[#fffaf0] p-3">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div>
+                                    <p className="text-[11px] font-semibold text-[#7A6340]">Handmatige certificaatbeoordeling</p>
+                                    <p className="mt-0.5 text-[11px] text-[#8a7c65]">
+                                      {!e.completed_at ? 'Cursus nog niet volledig afgerond.' : e.certificate_released_at ? `Vrijgegeven op ${fmt(e.certificate_released_at)}` : 'Afgerond — wacht op beoordeling door Chiva.'}
+                                    </p>
+                                  </div>
+                                  {e.completed_at && !e.certificate_released_at && (
+                                    <button type="button" onClick={() => releaseCertificate(e)} disabled={releasingCertificateId === e.id}
+                                      className="rounded-lg bg-[#0C0A07] px-3 py-2 text-[11px] font-semibold text-white disabled:opacity-50">
+                                      {releasingCertificateId === e.id ? 'Vrijgeven…' : 'Certificaat vrijgeven'}
+                                    </button>
+                                  )}
+                                </div>
+                                {certificateReleaseError[e.id] && <p className="mt-2 text-[11px] text-red-500">{certificateReleaseError[e.id]}</p>}
                               </div>
                             )}
 
