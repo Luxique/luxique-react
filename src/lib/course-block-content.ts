@@ -1,5 +1,7 @@
 type UnknownRecord = Record<string, unknown>
 
+export type CourseImageSize = 'small' | 'medium' | 'large' | 'full'
+
 function asRecord(value: unknown): UnknownRecord | null {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     return value as UnknownRecord
@@ -47,6 +49,7 @@ export function extractStoredBlockContent(content: unknown) {
     url: firstString(root?.url, nested?.url, media?.url),
     caption: firstString(root?.caption, nested?.caption, media?.caption),
     images: (root?.images ?? nested?.images) as Array<{ id: string; url: string; caption?: string }> | undefined,
+    imageSize: firstString(root?.imageSize, root?.image_size, nested?.imageSize, nested?.image_size) as CourseImageSize | undefined,
     question: firstString(root?.question, nested?.question),
     media,
     optionType: firstString(root?.option_type, nested?.option_type),

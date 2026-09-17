@@ -194,6 +194,10 @@
 
 /* ── Photo ── */
 .photo-grid { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 14px; width: 100%; max-width: 900px; margin-inline: auto; }
+.photo-grid[data-size="small"] { max-width: 320px; }
+.photo-grid[data-size="medium"] { max-width: 480px; }
+.photo-grid[data-size="large"] { max-width: 680px; }
+.photo-grid[data-size="full"] { max-width: 900px; }
 .photo-grid figure { margin: 0; min-width: 0; max-width: 100%; }
 .photo-grid[data-count="1"] figure { flex: 1 1 100%; width: 100%; }
 .photo-grid[data-count="1"] .photo { width: 100%; height: auto; }
