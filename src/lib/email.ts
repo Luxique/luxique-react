@@ -325,7 +325,6 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
-        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:14px;">With love, Luxique</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#9a958b; padding-bottom:10px;"><a href="https://www.luxique.nl/voorwaarden#annulering" style="color:#9a958b; text-decoration:underline;">Annuleringsbeleid</a> &nbsp;&middot;&nbsp; <a href="https://www.luxique.nl/voorwaarden#voorwaarden" style="color:#9a958b; text-decoration:underline;">Algemene voorwaarden</a></div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b; text-decoration:underline;">luxique.nl</a></div>
       </td></tr>
@@ -876,7 +875,6 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
       return
     }
 
-    const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
     const trajectDagenHtml = renderTrajectoryProgrammeHtml(data.cursus_id, data.cursus_naam)
 
     const { error } = await resend.emails.send({
@@ -903,8 +901,9 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Traject bevestigd</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Je bent ingepland, ${voornaam}</div>
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Je traject is bevestigd — we kijken uit naar je komst. Hieronder vind je alle details:</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Heyy hey,</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:12px; max-width:440px; margin:0 auto;">Wat leuk dat je hebt gekozen voor <strong>${data.cursus_naam}</strong> bij Luxique Academy!</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Hieronder vind je alle informatie over jouw traject, inclusief het volledige programma per dag. Neem gerust de tijd om alles goed door te lezen.</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -934,6 +933,9 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
             </table>
           </td></tr>
         </table>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:10px; max-width:440px; margin:0 auto;">Heb je nog vragen? Ik hoor het graag!</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:6px; max-width:440px; margin:0 auto;">Ik kijk ernaar uit om met jou aan de slag te gaan.</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-size:19px; line-height:26px; color:#0C0A07; padding-bottom:24px; max-width:440px; margin:0 auto;">Groetjes,<br>Chiva</div>
         ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
@@ -962,7 +964,6 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
 }
 
 export async function sendTrajectReminderMail(data: TrajectBoekingMailData) {
-  const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
   const trajectDagenHtml = renderTrajectoryProgrammeHtml(data.cursus_id, data.cursus_naam)
   const { error } = await resend.emails.send({
     from: FROM,
@@ -978,8 +979,9 @@ export async function sendTrajectReminderMail(data: TrajectBoekingMailData) {
 <tr><td style="height:2px;background-color:#C4A265;font-size:0;">&nbsp;</td></tr>
 <tr><td align="center" style="padding:44px 48px 36px;">
 <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#C4A265;padding-bottom:18px;">Herinnering persoonlijk traject</div>
-<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;line-height:42px;color:#0C0A07;padding-bottom:20px;">Bijna zover, ${voornaam}</div>
-<div style="font-family:Arial,sans-serif;font-size:16px;line-height:26px;color:#4a463e;padding-bottom:24px;max-width:440px;margin:0 auto;">Je traject <strong>${data.cursus_naam}</strong> start op <strong>${formatDateNL(data.startdatum)}</strong> om <strong>${fmtTime(data.starttijd)}</strong> bij ${STUDIO_ADDRESS}.</div>
+<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;line-height:42px;color:#0C0A07;padding-bottom:20px;">Heyy hey,</div>
+<div style="font-family:Arial,sans-serif;font-size:16px;line-height:26px;color:#4a463e;padding-bottom:12px;max-width:440px;margin:0 auto;">Nog even en dan start jouw traject bij Luxique Academy! Ik kan niet wachten om met je aan de slag te gaan.</div>
+<div style="font-family:Arial,sans-serif;font-size:16px;line-height:26px;color:#4a463e;padding-bottom:24px;max-width:440px;margin:0 auto;">Hieronder nog even het volledige programma op een rij, zodat je precies weet wat je te wachten staat.</div>
 ${trajectDagenHtml}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7;border-radius:10px;margin:0 0 26px;"><tr><td style="padding:24px 28px;">
 <div style="font-family:Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#C4A265;text-align:center;padding-bottom:14px;">Praktische informatie</div>
@@ -987,8 +989,11 @@ ${trajectDagenHtml}
 <tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Kom goed uitgeslapen naar iedere trajectdag.</td></tr>
 <tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Er is gratis parkeergelegenheid aanwezig.</td></tr>
 <tr><td style="font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Lunch is inbegrepen. Heb je een allergie? Beantwoord deze mail of mail naar <a href="mailto:info@luxique.nl" style="color:#4a463e;text-decoration:underline;">info@luxique.nl</a>.</td></tr>
-</table></td></tr></table>${spamNoticeNL}${studioExteriorPhotoNL}</td></tr>
-<tr><td align="center" style="padding:26px 48px 34px;border-top:1px solid #e4ddd0;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:18px;color:#C4A265;padding-bottom:14px;">With love, Luxique</div><div style="font-family:Arial,sans-serif;font-size:12px;color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b;">luxique.nl</a></div></td></tr>
+</table></td></tr></table>
+<div style="font-family:Arial,sans-serif;font-size:16px;line-height:26px;color:#4a463e;padding-bottom:6px;max-width:440px;margin:0 auto;">Tot snel!</div>
+<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;line-height:26px;color:#0C0A07;padding-bottom:24px;max-width:440px;margin:0 auto;">Groetjes,<br>Chiva</div>
+${spamNoticeNL}${studioExteriorPhotoNL}</td></tr>
+<tr><td align="center" style="padding:26px 48px 34px;border-top:1px solid #e4ddd0;"><div style="font-family:Arial,sans-serif;font-size:12px;color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b;">luxique.nl</a></div></td></tr>
 </table></td></tr></table></body></html>`,
   })
   if (error) throw new Error(`Traject reminder versturen mislukt: ${error.message}`)
