@@ -6,7 +6,8 @@
   --green:#5E8463; --green-bright:#7BA081; --green-soft:#EAF0EA; --red:#B5635C; --red-bright:#C97B72;
   --line:rgba(12,10,7,.09);
   --rail-collapsed:78px; --rail-expanded:290px;
-  --nav-h:66px; --nav-h-mobile:58px;
+  --nav-h:66px; --nav-h-mobile:62px;
+  --nav-clearance:14px;
 }
 
 /* ── Shell ── */
@@ -19,9 +20,9 @@
   flex: 0 0 var(--rail-collapsed); width: var(--rail-collapsed);
   background: var(--paper); border-right: 1px solid var(--line);
   transition: flex-basis .26s cubic-bezier(.4,0,.2,1), width .26s cubic-bezier(.4,0,.2,1);
-  position: sticky; top: calc(env(safe-area-inset-top) + var(--nav-h)); height: calc(100vh - env(safe-area-inset-top) - var(--nav-h));
+  position: sticky; top: calc(env(safe-area-inset-top) + var(--nav-h) + var(--nav-clearance)); height: calc(100vh - env(safe-area-inset-top) - var(--nav-h) - var(--nav-clearance));
   display: flex; flex-direction: column; overflow: hidden; z-index: 30;
-  margin-top: calc(env(safe-area-inset-top) + var(--nav-h));
+  margin-top: calc(env(safe-area-inset-top) + var(--nav-h) + var(--nav-clearance));
 }
 .lp-rail.expanded { flex-basis: var(--rail-expanded); width: var(--rail-expanded); }
 
@@ -124,8 +125,8 @@
 .lp-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 30px; border-bottom: 1px solid var(--line);
-  background: var(--paper); position: sticky; top: calc(env(safe-area-inset-top) + var(--nav-h)); z-index: 20;
-  margin-top: calc(env(safe-area-inset-top) + var(--nav-h));
+  background: var(--paper); position: sticky; top: calc(env(safe-area-inset-top) + var(--nav-h) + var(--nav-clearance)); z-index: 20;
+  margin-top: calc(env(safe-area-inset-top) + var(--nav-h) + var(--nav-clearance));
 }
 
 .back {
@@ -193,6 +194,15 @@
 /* ── Photo ── */
 .photo-grid { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; max-width: 900px; }
 .photo-grid figure { margin: 0; min-width: 0; max-width: 100%; }
+.photo-grid[data-count="1"] figure { flex: 1 1 100%; width: 100%; }
+.photo-grid[data-count="1"] .photo { width: 100%; height: auto; }
+.photo-grid[data-count="1"] .photo img { width: 100%; height: auto; }
+.photo-grid[data-count="2"] figure { flex: var(--photo-ratio, 1) 1 0; }
+.photo-grid[data-count="2"] .photo { width: 100%; }
+.photo-grid:not([data-count="1"]):not([data-count="2"]) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.photo-grid:not([data-count="1"]):not([data-count="2"]) figure { max-width: none; }
+.photo-grid:not([data-count="1"]):not([data-count="2"]) .photo { width: 100%; }
+.photo-grid:not([data-count="1"]):not([data-count="2"]) .photo img { width: 100%; }
 .photo {
   appearance: none; border: 0; padding: 0; cursor: zoom-in;
   border-radius: 14px; overflow: hidden;
@@ -201,14 +211,20 @@
   color: #b3a892; font-size: 30px;
 }
 .photo img { width: auto; max-width: 100%; height: 100%; object-fit: contain; border-radius: 14px; }
-.photo-cap { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 8px; text-align: center; }
+.photo-meta { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; text-align: center; }
+.photo-cap { font-size: 12px; color: var(--muted); font-style: italic; }
+.photo-zoom-hint { font-size: 10px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
 .photo-lightbox { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.88); cursor: zoom-out; }
 .photo-lightbox img { max-width: min(94vw, 1500px); max-height: 90vh; object-fit: contain; border-radius: 10px; box-shadow: 0 20px 80px rgba(0,0,0,.45); }
 .photo-lightbox-close { position: fixed; top: 18px; right: 22px; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; background: rgba(0,0,0,.35); color: white; font-size: 18px; cursor: pointer; }
 @media (max-width: 680px) {
   .photo-grid { gap: 10px; max-width: 100%; }
   .photo-grid figure { max-width: calc(50% - 5px); }
+  .photo-grid[data-count="1"] figure { max-width: 100%; }
+  .photo-grid[data-count="2"] figure { max-width: none; }
+  .photo-grid:not([data-count="1"]):not([data-count="2"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .photo { height: 150px; }
+  .photo-grid[data-count="1"] .photo { height: auto; }
   .photo-lightbox { padding: 12px; }
 }
 

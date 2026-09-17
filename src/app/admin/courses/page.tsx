@@ -421,11 +421,11 @@ export default function CoursesOverviewPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center pt-[50px]"><div className="text-[#888] text-[14px]">Laden...</div></div>
+    return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center pt-[80px]"><div className="text-[#888] text-[14px]">Laden...</div></div>
   }
 
   if (!user || role !== 'admin') {
-    return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center flex-col gap-4 pt-[50px]"><div className="text-[#888] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
+    return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center flex-col gap-4 pt-[80px]"><div className="text-[#888] text-[14px]">Geen toegang.</div><a href="/admin" className="text-[13px] text-[#C4A265]">← Admin</a></div>
   }
 
   const filteredCourses = getFilteredCourses()
@@ -439,7 +439,7 @@ export default function CoursesOverviewPage() {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
+      <div className="min-h-screen bg-[#F5F5F4] pt-[80px]">
         <AdminDashboardMobileNav active="courses" />
 
         <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">

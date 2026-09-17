@@ -95,6 +95,28 @@ export default function DashboardPage() {
   const [certError, setCertError] = useState<string | null>(null)
   const revealRef = useRef<IntersectionObserver | null>(null)
 
+  const openEnrolledCourse = async (event: React.MouseEvent<HTMLAnchorElement>, course: Course) => {
+    event.preventDefault()
+    const academyUrl = lpath(`/academy/${course.slug}`)
+    const landerUrl = `/cursus/${course.slug}`
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        window.location.href = landerUrl
+        return
+      }
+      const response = await fetch(`/api/academy/course-access?slug=${encodeURIComponent(course.slug)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
+      })
+      const result = response.ok ? await response.json() : { hasAccess: false }
+      window.location.href = result.hasAccess ? academyUrl : landerUrl
+    } catch {
+      window.location.href = landerUrl
+    }
+  }
+
   useEffect(() => {
     if (!user) return
     supabase.from('profiles').select('first_name').eq('id', user.id).single()
@@ -878,7 +900,7 @@ export default function DashboardPage() {
             {courseProgress.length > 0 ? (
               <div className="space-y-3">
                 {courseProgress.map(cp => (
-                  <a key={cp.course.id} href={lpath(`/academy/${cp.course.slug}`)} style={{ display:'flex', alignItems:'center', gap:20, background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', textDecoration:'none', transition:'border-color .2s' }}
+                  <a key={cp.course.id} href={lpath(`/academy/${cp.course.slug}`)} onClick={(event) => openEnrolledCourse(event, cp.course)} style={{ display:'flex', alignItems:'center', gap:20, background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', textDecoration:'none', transition:'border-color .2s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor='#B08D4F'}
                     onMouseLeave={e => e.currentTarget.style.borderColor='rgba(28,24,20,.13)'}>
                     <div style={{ width:64, height:64, borderRadius:14, background:'#f5f5f5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, flexShrink:0 }}>🎬</div>

@@ -493,10 +493,13 @@ export default function LessonPage() {
 
                     {/* IMAGE */}
                     {block.type === 'image' && (
-                      <div className="photo-grid">
-                        {(bc.images?.length ? bc.images : [{ id: 'legacy', url: bc.imageUrl || '', caption: bc.caption }]).map(image => <figure key={image.id}>
-                          <button className="photo" type="button" onClick={() => image.url && setLightboxImage({ url: image.url, alt: image.caption || '' })} aria-label={image.caption ? `Vergroot foto: ${image.caption}` : 'Vergroot foto'}>{image.url ? <img src={image.url} alt={image.caption || ''} /> : '⛶'}</button>
-                          {image.caption && <figcaption className="photo-cap">{image.caption}</figcaption>}
+                      <div className="photo-grid" data-count={bc.images?.length || (bc.imageUrl ? 1 : 0)}>
+                        {(bc.images?.length ? bc.images : [{ id: 'legacy', url: bc.imageUrl || '', caption: bc.caption }]).map(image => <figure key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
+                          <button className="photo" type="button" onClick={() => image.url && setLightboxImage({ url: image.url, alt: image.caption || '' })} aria-label={image.caption ? `Vergroot foto: ${image.caption}` : 'Vergroot foto'}>{image.url ? <img src={image.url} alt={image.caption || ''} onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} /> : '⛶'}</button>
+                          <figcaption className="photo-meta">
+                            {image.caption && <span className="photo-cap">{image.caption}</span>}
+                            <span className="photo-zoom-hint">Klik om te vergroten</span>
+                          </figcaption>
                         </figure>)}
                       </div>
                     )}

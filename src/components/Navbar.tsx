@@ -149,7 +149,7 @@ export default function Navbar() {
         {isLessonPage && <div className="flex-1" />}
 
         {/* Language Switcher — only on locale routes (not admin), desktop only, NOT in preview mode */}
-        {!isPreview && !pathname?.startsWith('/admin') && pathname?.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
+        {!isLessonPage && !isPreview && !pathname?.startsWith('/admin') && pathname?.match(/^\/(nl|en|es|fr|de|it)(\/|$)/) && (
           <div className="hidden md:block">
             <LanguageSwitcher />
           </div>
