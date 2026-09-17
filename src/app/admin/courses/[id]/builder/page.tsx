@@ -2716,24 +2716,24 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           {currentContext !== 'global' && (
           <>
           {currentContext === 'lesson' && (
-            <div className="mb-3 flex justify-end gap-2" aria-label="Wijzigingsgeschiedenis">
+            <div className="fixed left-1/2 top-[7px] z-[110] flex -translate-x-1/2 items-center justify-center gap-1.5 sm:gap-2" aria-label="Wijzigingsgeschiedenis">
               <button
                 type="button"
                 onClick={undoBlockChange}
                 disabled={activeBlockHistory.past.length === 0}
                 title={`${activeBlockHistory.past.length} stap${activeBlockHistory.past.length === 1 ? '' : 'pen'} beschikbaar`}
-                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)] disabled:cursor-not-allowed disabled:opacity-35"
+                className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
               >
-                ↩ Ongedaan maken
+                <span aria-hidden="true">↩</span><span className="hidden sm:inline">Ongedaan maken</span>
               </button>
               <button
                 type="button"
                 onClick={redoBlockChange}
                 disabled={activeBlockHistory.future.length === 0}
                 title={`${activeBlockHistory.future.length} stap${activeBlockHistory.future.length === 1 ? '' : 'pen'} opnieuw beschikbaar`}
-                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)] disabled:cursor-not-allowed disabled:opacity-35"
+                className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
               >
-                ↪ Opnieuw
+                <span aria-hidden="true">↪</span><span className="hidden sm:inline">Opnieuw</span>
               </button>
             </div>
           )}
@@ -2989,9 +2989,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                               })()}
 
                               {block.type === 'image' && ((block.images?.length || 0) > 0 || block.url) && (
-                                <div className="builder-photo-preview flex max-w-[680px] flex-wrap items-start gap-3" data-count={block.images?.length || (block.url ? 1 : 0)}>
+                                <div className="builder-photo-preview mx-auto flex w-full max-w-[680px] flex-wrap items-start justify-center gap-3" data-count={block.images?.length || (block.url ? 1 : 0)}>
                                   {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0 min-w-0 max-w-full" key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
-                                    <img src={image.url} alt={image.caption || ''} className="builder-photo-preview-image h-[140px] w-auto max-w-full rounded-lg object-contain md:h-[180px]" onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} />
+                                    <img src={image.url} alt={image.caption || ''} className="builder-photo-preview-image block h-[140px] w-full rounded-lg object-cover md:h-[180px]" onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} />
                                     {image.caption && <figcaption className="mt-2 text-sm text-[#7A7268] text-center">{image.caption}</figcaption>}
                                   </figure>)}
                                 </div>
