@@ -2846,8 +2846,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           >
             <div style={{ position: 'relative', overflow: 'hidden' }}>
             <div style={{ 
-              transform: previewDevice === 'mobile' ? `scale(${previewWidth / 375})` : `scale(${previewWidth / 1100})`,
-              transformOrigin: 'top left',
+              zoom: previewDevice === 'mobile' ? previewWidth / 375 : previewWidth / 1100,
               width: previewDevice === 'mobile' ? '375px' : '1100px',
             }}>
               {/* Context-based preview rendering */}
@@ -2921,9 +2920,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                               })()}
 
                               {block.type === 'image' && ((block.images?.length || 0) > 0 || block.url) && (
-                                <div className="flex max-w-[680px] flex-wrap items-start gap-3">
-                                  {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0" key={image.id}>
-                                    <img src={image.url} alt={image.caption || ''} className="h-[140px] w-auto max-w-full rounded-lg object-contain md:h-[180px]" />
+                                <div className="builder-photo-preview flex max-w-[680px] flex-wrap items-start gap-3" data-count={block.images?.length || (block.url ? 1 : 0)}>
+                                  {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0 min-w-0 max-w-full" key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
+                                    <img src={image.url} alt={image.caption || ''} className="builder-photo-preview-image h-[140px] w-auto max-w-full rounded-lg object-contain md:h-[180px]" onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} />
                                     {image.caption && <figcaption className="mt-2 text-sm text-[#7A7268] text-center">{image.caption}</figcaption>}
                                   </figure>)}
                                 </div>
@@ -3037,6 +3036,18 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             </div>
             </div> {/* end overflow wrapper */}
           </div>
+          <style jsx>{`
+            .builder-photo-preview[data-count='1'] figure { flex: 1 1 100%; width: 100%; }
+            .builder-photo-preview[data-count='1'] .builder-photo-preview-image { width: 100%; height: auto; }
+            .builder-photo-preview[data-count='2'] figure { flex: var(--photo-ratio, 1) 1 0; }
+            .builder-photo-preview[data-count='2'] .builder-photo-preview-image { width: 100%; }
+            .builder-photo-preview:not([data-count='1']):not([data-count='2']) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .builder-photo-preview:not([data-count='1']):not([data-count='2']) figure { max-width: none; }
+            .builder-photo-preview:not([data-count='1']):not([data-count='2']) .builder-photo-preview-image { width: 100%; }
+            @media (max-width: 680px) {
+              .builder-photo-preview:not([data-count='1']):not([data-count='2']) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            }
+          `}</style>
         </div>
       </div>
     </div>

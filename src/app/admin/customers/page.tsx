@@ -221,7 +221,7 @@ export default function AdminCustomersPage() {
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 
   return (
-    <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
+    <div className="min-h-screen bg-[#F5F5F4] pt-[80px]">
       <AdminDashboardMobileNav active="customers" />
 
       <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
