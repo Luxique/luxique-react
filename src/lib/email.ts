@@ -12,6 +12,7 @@ const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
 const STUDIO_EXTERIOR_IMAGE_URL = `${SITE_URL}/images/luxique-studio-exterior.jpg`
+export const GOOGLE_REVIEW_URL = 'https://search.google.com/local/writereview?placeid=ChIJqwSMZ9Gnx0cR_1laVkvccp0'
 
 const studioExteriorPhotoNL = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0 0;"><tr><td align="center"><img src="${STUDIO_EXTERIOR_IMAGE_URL}" width="504" alt="Het pand van LUXIQUE aan De Overmaat 26 in Arnhem" style="display:block;width:100%;max-width:504px;height:auto;border:0;border-radius:10px;"></td></tr></table>`
 
@@ -705,28 +706,10 @@ function generateICS(booking: BookingData): Buffer {
 }
 
 // ============================================================
-// MAIL 7: KLANT — review aanvraag (dag NA afspraak)
+// MAIL 7: KLANT — review aanvraag (ochtend NA afspraak)
 // ============================================================
-export async function sendReviewRequestEmail(booking: BookingData) {
-  try {
-    if (await isMailAlreadySent(booking.id!, 'review_request_sent_at')) {
-      console.log(`Mail: review request already sent for ${booking.cal_booking_uid}, skipping`)
-      return
-    }
-
-    // Send to ACCOUNT email (via user_id), never the Cal-typed email
-    const accountEmail = await getAccountEmail(booking.user_id, booking.customer_email)
-    if (!accountEmail) {
-      console.error('Mail: no account email for review request', booking.cal_booking_uid)
-      return
-    }
-
-    const firstName = booking.customer_name?.split(' ')[0] || 'je'
-    const { error } = await resend.emails.send({
-      from: FROM,
-      to: accountEmail,
-      subject: 'Hoe waren je nieuwe lashes? ✨',
-      html: `<!DOCTYPE html>
+export function renderReviewRequestHtml(firstName: string): string {
+  return `<!DOCTYPE html>
 <html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8">
@@ -752,8 +735,8 @@ export async function sendReviewRequestEmail(booking: BookingData) {
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
           <tr>
             <td align="center" bgcolor="#C4A265" style="border-radius:9px; background:linear-gradient(180deg,#D8B978,#C4A265);">
-              <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://www.google.nl/search?q=Lashed+by+Chiva" style="height:52px;v-text-anchor:middle;width:300px;" arcsize="17%" fillcolor="#C4A265" stroke="f"><center style="color:#0C0A07;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Laat een review achter</center></v:roundrect><![endif]-->
-              <!--[if !mso]><!--><a href="https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D" target="_blank" rel="noopener noreferrer" style="display:inline-block; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; letter-spacing:.5px; color:#0C0A07; text-decoration:none; padding:17px 44px; border-radius:9px;">Laat een review achter &rarr;</a><!--<![endif]-->
+              <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${GOOGLE_REVIEW_URL}" style="height:52px;v-text-anchor:middle;width:300px;" arcsize="17%" fillcolor="#C4A265" stroke="f"><center style="color:#0C0A07;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Laat een review achter</center></v:roundrect><![endif]-->
+              <!--[if !mso]><!--><a href="${GOOGLE_REVIEW_URL}" target="_blank" rel="noopener noreferrer" style="display:inline-block; font-family:Arial, Helvetica, sans-serif; font-size:15px; font-weight:bold; letter-spacing:.5px; color:#0C0A07; text-decoration:none; padding:17px 44px; border-radius:9px;">Laat een review achter &rarr;</a><!--<![endif]-->
             </td>
           </tr>
         </table>
@@ -768,19 +751,23 @@ export async function sendReviewRequestEmail(booking: BookingData) {
   </td></tr>
 </table>
 </body>
-</html>`,
-    })
+</html>`
+}
 
-    if (error) {
-      console.error(`Mail: review request FAILED for ${booking.cal_booking_uid}:`, error)
-      return
-    }
+export async function sendReviewRequestEmail(booking: BookingData) {
+  const account = await getAccountIdentity(booking)
+  if (!account.email) throw new Error(`Geen accountmail voor reviewverzoek ${booking.cal_booking_uid}`)
 
-    await markMailSent(booking.id!, 'review_request_sent_at')
-    console.log(`Mail: review request sent for ${booking.cal_booking_uid}`)
-  } catch (err) {
-    console.error(`Mail: review request error for ${booking.cal_booking_uid}:`, err)
-  }
+  const firstName = account.name.split(' ')[0] || 'je'
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: account.email,
+    subject: 'Hoe waren je nieuwe lashes? ✨',
+    html: renderReviewRequestHtml(firstName),
+  })
+
+  if (error) throw new Error(error.message)
+  console.log(`Mail: review request sent for ${booking.cal_booking_uid}`)
 }
 
 // Helper to fetch booking + customer info from Cal API
