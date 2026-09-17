@@ -1,69 +1,73 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
+
+function json(body: Record<string, unknown>, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: { 'Cache-Control': 'private, no-store, max-age=0' },
+  })
+}
 
 export async function POST(request: NextRequest) {
   // ── AUTH: exact same pattern as my-bookings ──
   const authHeader = request.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return json({ error: 'Unauthorized' }, 401)
   }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
 
   // Get user from JWT
   const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+  const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
   if (userError || !user) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    return json({ error: 'Invalid token' }, 401)
   }
 
   // ── PARSE BODY ──
   const { bookingId, newStart } = await request.json()
   if (!bookingId || !newStart) {
-    return NextResponse.json({ error: 'bookingId and newStart are required' }, { status: 400 })
+    return json({ error: 'bookingId and newStart are required' }, 400)
   }
+  const requestedStart = new Date(newStart)
+  if (!Number.isFinite(requestedStart.getTime())) return json({ error: 'newStart must be a valid date' }, 400)
 
   // ── GET BOOKING — must belong to this user ──
-  const { data: booking, error: bookingError } = await supabase
+  const { data: booking, error: bookingError } = await supabaseAdmin
     .from('pending_bookings')
     .select('id, cal_booking_uid, slot_start, status, user_id, amount_cents')
     .eq('id', bookingId)
     .single()
 
   if (bookingError || !booking) {
-    return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    return json({ error: 'Booking not found' }, 404)
   }
 
   // Authorization: session user must own this booking
   if (booking.user_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return json({ error: 'Forbidden' }, 403)
   }
 
   // Must be paid and upcoming
   if (booking.status !== 'paid') {
-    return NextResponse.json({ error: 'Only paid bookings can be rescheduled' }, { status: 400 })
+    return json({ error: 'Only paid bookings can be rescheduled' }, 400)
   }
 
   // ── 24h CHECK ──
   const now = Date.now()
   const slotTime = new Date(booking.slot_start).getTime()
-  const newStartTime = new Date(newStart).getTime()
+  const newStartTime = requestedStart.getTime()
   const hoursUntilCurrent = (slotTime - now) / (1000 * 60 * 60)
 
   if (hoursUntilCurrent < 24) {
-    return NextResponse.json({
+    return json({
       error: 'Rescheduling is only possible until 24 hours before your appointment'
-    }, { status: 400 })
+    }, 400)
   }
 
   if (newStartTime < now) {
-    return NextResponse.json({ error: 'Cannot reschedule to a past date' }, { status: 400 })
+    return json({ error: 'Cannot reschedule to a past date' }, 400)
   }
 
   // ── CALL CAL.COM ──
@@ -83,29 +87,42 @@ export async function POST(request: NextRequest) {
   const calData = await calRes.json()
 
   if (!calRes.ok) {
-    return NextResponse.json({
+    return json({
       error: calData?.error?.message || 'Failed to reschedule via Cal.com'
-    }, { status: calRes.status })
+    }, calRes.status)
   }
 
-  const newUid = calData?.data?.uid
+  const calBooking = calData?.data?.booking || calData?.data
+  const newUid = calBooking?.uid
+  const confirmedStart = calBooking?.startTime || requestedStart.toISOString()
+  if (!newUid || !Number.isFinite(new Date(confirmedStart).getTime())) {
+    console.error('[reschedule] Cal.com returned an incomplete booking:', calData)
+    return json({ error: 'Cal.com returned an incomplete reschedule confirmation' }, 502)
+  }
 
   // ── UPDATE DB ──
-  const { error: updateError } = await supabase
+  const { data: updatedBooking, error: updateError } = await supabaseAdmin
     .from('pending_bookings')
     .update({
-      slot_start: newStart,
+      slot_start: confirmedStart,
       cal_booking_uid: newUid,
     })
     .eq('id', bookingId)
+    .eq('user_id', user.id)
+    .select('id, slot_start, cal_booking_uid')
+    .single()
 
-  if (updateError) {
+  if (updateError || !updatedBooking) {
     console.error('[reschedule] DB update failed:', updateError)
+    return json({
+      error: 'De afspraak is bij Cal.com verplaatst, maar de dashboardgegevens konden niet direct worden bijgewerkt. Neem contact op met LUXIQUE.',
+      syncPending: true,
+    }, 502)
   }
 
-  return NextResponse.json({
+  return json({
     success: true,
     newUid,
-    newStart,
+    newStart: updatedBooking.slot_start,
   })
 }

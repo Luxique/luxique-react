@@ -14,6 +14,10 @@ import ReviewsSection from '@/components/ReviewsSection'
 import FAQ from '@/components/FAQ'
 import EmailConfirmHandler from '@/components/EmailConfirmHandler'
 import Reveal from '@/components/Reveal'
+import { createPageMetadata } from './layout-metadata'
+
+export const generateMetadata = createPageMetadata('home')
+
 export default function Home() {
   return (
     <div className="bg-[#F3EEE6] min-h-screen">

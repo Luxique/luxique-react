@@ -186,10 +186,10 @@ export default function Hero() {
                 </div>
               </a>
 
-              <h1 className="font-['Outfit'] font-medium leading-[1.02] mb-[20px] max-w-[900px]">
+              <div className="font-['Outfit'] font-medium leading-[1.02] mb-[20px] max-w-[900px]">
                 <span className="block text-[clamp(40px,6vw,80px)] text-[#1A1815] tracking-[-0.02em]">{t('titleLine1')}</span>
                 <span className="block text-[clamp(40px,6vw,80px)] font-['Cormorant_Garamond'] italic font-normal text-[#C4A265]">{t('titleLine2')}</span>
-              </h1>
+              </div>
 
               <p className="text-[17px] text-[#7A7268] leading-[1.6] mb-[30px] max-w-[560px]">
                 {t('subtitle')}

@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+
 /* Compact horizontal-scroll nav for mobile and tablet.
    The desktop sidebar takes over at xl widths. */
 
@@ -11,7 +13,7 @@ export type AdminNavItem = {
   icon?: string        // emoji prefix
 }
 
-export default function AdminMobileNav({ items }: { items: AdminNavItem[] }) {
+export default function AdminMobileNav({ items, belowNav }: { items: AdminNavItem[]; belowNav?: ReactNode }) {
   const cls = (active?: boolean) =>
     `shrink-0 text-[12px] font-medium px-3.5 py-1.5 rounded-full border whitespace-nowrap transition ${
       active
@@ -34,6 +36,7 @@ export default function AdminMobileNav({ items }: { items: AdminNavItem[] }) {
           )
         )}
       </div>
+      {belowNav}
     </div>
   )
 }

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { TextStyle } from '@tiptap/extension-text-style'
+import { FontSize, TextStyle } from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 
@@ -38,6 +38,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
   const [showHighlight, setShowHighlight] = useState(false)
   const [hexInput, setHexInput] = useState('#C4A265')
   const [hexHighlight, setHexHighlight] = useState('#FFF8E7')
+  const [activeFontSize, setActiveFontSize] = useState('')
   const isBlock = variant === 'block'
 
   const editor = useEditor({
@@ -48,10 +49,12 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
         listItem: isBlock ? {} : false,
       }),
       TextStyle,
+      FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
     ],
     content,
+    parseOptions: { preserveWhitespace: 'full' },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
@@ -60,9 +63,21 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
   // Sync external content changes
   React.useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content || '', { emitUpdate: false })
+      editor.commands.setContent(content || '', { emitUpdate: false, parseOptions: { preserveWhitespace: 'full' } })
     }
   }, [content, editor])
+
+  React.useEffect(() => {
+    if (!editor) return
+    const syncFontSize = () => setActiveFontSize(editor.getAttributes('textStyle').fontSize || '')
+    syncFontSize()
+    editor.on('selectionUpdate', syncFontSize)
+    editor.on('transaction', syncFontSize)
+    return () => {
+      editor.off('selectionUpdate', syncFontSize)
+      editor.off('transaction', syncFontSize)
+    }
+  }, [editor])
 
   if (!editor) return null
 
@@ -91,8 +106,31 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       )}
       <EditorContent
         editor={editor}
-        className={`text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
+        onKeyDown={(event) => {
+          if (event.key !== 'Tab') return
+          event.preventDefault()
+          editor.chain().focus().insertContent('\t').run()
+        }}
+        className={`course-rich-text text-[13px] text-[#7A7268] leading-relaxed outline-none ${isBlock ? 'min-h-[80px]' : 'min-h-[32px]'}`}
       />
+      <style jsx global>{`
+        .course-rich-text .ProseMirror,
+        .course-rich-content { white-space: break-spaces; tab-size: 4; }
+        .course-rich-text .ProseMirror p,
+        .course-rich-content p { margin: 0 0 0.75em; }
+        .course-rich-text .ProseMirror p:last-child,
+        .course-rich-content p:last-child { margin-bottom: 0; }
+        .course-rich-text .ProseMirror p:empty,
+        .course-rich-content p:empty { min-height: 1.5em; }
+        .course-rich-text .ProseMirror ul,
+        .course-rich-content ul { list-style: disc outside; margin: 0.65em 0; padding-left: 1.5em; }
+        .course-rich-text .ProseMirror ol,
+        .course-rich-content ol { list-style: decimal outside; margin: 0.65em 0; padding-left: 1.5em; }
+        .course-rich-text .ProseMirror li,
+        .course-rich-content li { margin: 0.25em 0; }
+        .course-rich-text .ProseMirror li p,
+        .course-rich-content li p { margin: 0; }
+      `}</style>
       {/* Toolbar — onder het veld */}
       <div className="flex items-center gap-0.5 border-t border-[rgba(30,26,20,0.08)] pt-1.5 mt-1.5 flex-wrap">
         <button
@@ -107,6 +145,25 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={`px-1.5 py-0.5 rounded text-[10px] line-through ${editor.isActive('strike') ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
         >S</button>
+        <select
+          aria-label="Lettergrootte"
+          value={activeFontSize}
+          onChange={(event) => {
+            const fontSize = event.target.value
+            if (fontSize) editor.chain().focus().setFontSize(fontSize).run()
+            else editor.chain().focus().unsetFontSize().run()
+          }}
+          className="h-6 rounded border border-[rgba(30,26,20,0.1)] bg-white px-1 text-[10px] text-[#7A7268] outline-none focus:border-[#C4A265]"
+          title="Lettergrootte"
+        >
+          <option value="">Grootte</option>
+          <option value="11px">11</option>
+          <option value="13px">13</option>
+          <option value="16px">16</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="32px">32</option>
+        </select>
         {isBlock && (
           <>
             <div className="w-px h-3 bg-[rgba(30,26,20,0.1)] mx-0.5" />

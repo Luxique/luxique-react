@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * Daily reminder cron — sends reminders for paid and manual bookings ~24h before appointment.
+ * Daily reminder cron — sends reminders for paid and manual bookings within 32h of the appointment.
  *
  * Trigger: Vercel Cron once daily at 09:00 AM CET.
  * Schedule: "0 7 * * *" (UTC 7 = CET 8/9 depending on DST)
  *
  * Logic:
- * 1. Find paid bookings where slot_start is between 20-32 hours from now
- *    (covers 09:00 run → reminders for next day 05:00-17:00 appointments)
+ * 1. Find every future paid or confirmed manual booking within 32 hours.
  * 2. Send reminder email if not already sent.
  */
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   )
 
   const now = Date.now()
-  const in20h = new Date(now + 20 * 60 * 60 * 1000).toISOString()
+  const nowIso = new Date(now).toISOString()
   const in32h = new Date(now + 32 * 60 * 60 * 1000).toISOString()
 
   const [{ data: bookings, error }, { data: manualBookings, error: manualError }] = await Promise.all([
@@ -40,14 +40,14 @@ export async function GET(request: NextRequest) {
       .from('pending_bookings')
       .select('*')
       .eq('status', 'paid')
-      .gte('slot_start', in20h)
+      .gt('slot_start', nowIso)
       .lte('slot_start', in32h)
       .is('reminder_sent_at', null),
     supabase
       .from('manual_bookings')
       .select('*')
       .eq('status', 'confirmed')
-      .gte('slot_start', in20h)
+      .gt('slot_start', nowIso)
       .lte('slot_start', in32h)
       .is('reminder_sent_at', null),
   ])
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         supabase.auth.admin.getUserById(booking.user_id),
         supabase.from('profiles').select('email, full_name').eq('id', booking.user_id).maybeSingle(),
       ])
-      const customerEmail = authData?.user?.email || profile?.email
+      const customerEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: authData?.user?.email })
       const customerName = profile?.full_name
         || authData?.user?.user_metadata?.full_name
         || customerEmail?.split('@')[0]

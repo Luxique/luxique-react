@@ -38,6 +38,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.luxique.nl'),
   title: 'LXQ Academy — The Art of Lashes, Perfected',
   description: 'Behandelingen in Arnhem. Opleidingen voor de nieuwe lichting lash artists — door Nederland\'s #1 lash educator.',
   icons: {
@@ -47,6 +48,12 @@ export const metadata: Metadata = {
     title: 'LXQ Academy — The Art of Lashes, Perfected',
     description: 'Opleidingen voor de nieuwe lichting lash artists — door Nederland\'s #1 lash educator.',
     type: 'website',
+    images: [
+      {
+        url: '/images/hero-bg.jpg',
+        alt: 'LXQ Academy — The Art of Lashes, Perfected',
+      },
+    ],
   },
 }
 
@@ -61,6 +68,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#FAF8F4" />
         <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="preconnect" href="https://osldoolmbpqayxhgmbum.supabase.co" />
+        <link rel="dns-prefetch" href="https://osldoolmbpqayxhgmbum.supabase.co" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {

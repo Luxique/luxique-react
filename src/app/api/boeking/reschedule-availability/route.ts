@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isValidLocalDate, TREATMENTS } from '@/lib/cal-admin-availability'
+import { normalizeCalAvailabilitySlots } from '@/lib/cal-slots'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -90,16 +91,17 @@ export async function GET(request: NextRequest) {
     return noStore({ error: slotsPayload?.error?.message || 'Cal.com availability could not be loaded' }, 502)
   }
 
-  const starts = Array.isArray(slotsPayload.data[date]) ? slotsPayload.data[date] : []
-  const slots = starts.map((start: string) => ({
-    start,
-    time: new Intl.DateTimeFormat('nl-NL', {
-      timeZone: CAL_TIME_ZONE,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(new Date(start)),
-  }))
+  let slots
+  try {
+    slots = normalizeCalAvailabilitySlots(slotsPayload.data[date], CAL_TIME_ZONE)
+  } catch (error) {
+    console.error('[reschedule-availability] Ongeldige Cal.com slots:', error)
+    return noStore({
+      error: error instanceof Error
+        ? error.message
+        : 'Cal.com beschikbaarheid kon niet worden verwerkt.',
+    }, 502)
+  }
 
   return noStore({ treatmentKey: treatment.key, eventTypeId, date, slots })
 }

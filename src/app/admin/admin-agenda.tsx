@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   getCalendarNow,
   isPastTimeslot,
@@ -19,6 +19,7 @@ type CalendarItem = {
   treatmentName?: string
   treatmentKey?: TreatmentKey
   status?: string
+  paymentStatus?: string | null
   customer?: string
   customerEmail?: string
   customerPhone?: string
@@ -26,6 +27,8 @@ type CalendarItem = {
   paidCount?: number
   maxParticipants?: number
   source?: 'online' | 'manual'
+  bookingUid?: string
+  note?: string
 }
 type CalBooking = {
   id: number | string
@@ -33,14 +36,16 @@ type CalBooking = {
   status: string
   startTime: string
   endTime: string
-  customerName: string
-  customerEmail: string
-  customerPhone?: string
+  customerName: unknown
+  customerEmail: unknown
+  customerPhone?: unknown
   eventTypeId: number
   eventTypeTitle: string
   source?: 'online' | 'manual'
+  paymentStatus?: string | null
+  note?: unknown
 }
-type CustomerResult = { id: string; email: string | null; full_name: string | null }
+type CustomerResult = { id: string; email: unknown; full_name: unknown }
 type TrajectClass = {
   id: string
   blok_dagen: string[]
@@ -57,6 +62,7 @@ type TreatmentAvailability = {
   name: string
   durationMinutes: number
   overrides: Array<{ date: string; startTime: string; endTime: string }>
+  slots: Array<{ date: string; start: string; end: string; startTime: string; endTime: string }>
 }
 
 const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }> = {
@@ -65,8 +71,22 @@ const TREATMENT_LABELS: Record<TreatmentKey, { name: string; duration: number }>
 }
 
 const TRAJECT_BLOK_DAG_EVENT_TYPE_ID = 6195439
+const AGENDA_REQUEST_TIMEOUT_MS = 10_000
+const AGENDA_REFRESH_INTERVAL_MS = 45_000
 
 function pad(value: number) { return String(value).padStart(2, '0') }
+function safeText(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value.trim() || fallback
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (!value || Array.isArray(value) || typeof value !== 'object') return fallback
+
+  const field = value as Record<string, unknown>
+  const firstName = typeof field.firstName === 'string' ? field.firstName.trim() : ''
+  const lastName = typeof field.lastName === 'string' ? field.lastName.trim() : ''
+  const fullName = [firstName, lastName].filter(Boolean).join(' ')
+  if (fullName) return fullName
+  return typeof field.value === 'string' ? field.value.trim() || fallback : fallback
+}
 function dateKey(date: Date) { return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` }
 function addDays(date: Date, amount: number) { const next = new Date(date); next.setDate(next.getDate() + amount); return next }
 function startOfWeek(date: Date) { const next = new Date(date); next.setHours(0, 0, 0, 0); next.setDate(next.getDate() - ((next.getDay() + 6) % 7)); return next }
@@ -83,6 +103,9 @@ function monthTitle(date: Date) { return new Intl.DateTimeFormat('nl-NL', { mont
 function longDate(key: string) { return new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${key}T12:00:00`)) }
 function RefreshIcon() {
   return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" /></svg>
+}
+function NoteIcon({ className = '' }: { className?: string }) {
+  return <svg aria-hidden="true" className={className} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path strokeLinecap="round" strokeLinejoin="round" d="M6 3h9l4 4v14H6z"/><path strokeLinecap="round" d="M9 12h6M9 16h6"/><path d="M15 3v5h4"/></svg>
 }
 function defaultEndTime(startTime: string, treatmentKey: TreatmentKey) {
   const [hours, minutes] = startTime.split(':').map(Number)
@@ -122,47 +145,107 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [manualTime, setManualTime] = useState('09:00')
   const [manualDepositPaid, setManualDepositPaid] = useState(false)
   const [manualDepositEuros, setManualDepositEuros] = useState('')
+  const [manualNote, setManualNote] = useState('')
   const [manualSearching, setManualSearching] = useState(false)
   const [manualSaving, setManualSaving] = useState(false)
   const [manualError, setManualError] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState<string | null>(null)
+  const agendaRequestGeneration = useRef(0)
+  const activeAgendaController = useRef<AbortController | null>(null)
 
   const loadAgenda = useCallback(async () => {
     if (!sessionToken) return
+    activeAgendaController.current?.abort()
+    const controller = new AbortController()
+    const requestGeneration = ++agendaRequestGeneration.current
+    activeAgendaController.current = controller
+    const isLatestRequest = () => agendaRequestGeneration.current === requestGeneration
+    const timeout = window.setTimeout(() => controller.abort(), AGENDA_REQUEST_TIMEOUT_MS)
+
     setLoading(true)
     setError(null)
-    try {
-      const cacheBust = Date.now()
-      const [bookingsResponse, availabilityResponse, trajectResponse] = await Promise.all([
-        fetch(`/api/cal/bookings?t=${cacheBust}`, { cache: 'no-store' }),
-        fetch(`/api/admin/cal-availability?t=${cacheBust}`, {
+    const cacheBust = Date.now()
+    const rangeStartDate = view === 'week' ? startOfWeek(cursor) : startOfMonthGrid(cursor)
+    const rangeStart = dateKey(rangeStartDate)
+    const rangeEnd = dateKey(addDays(rangeStartDate, view === 'week' ? 7 : 42))
+    const loadJson = async (url: string, fallbackError: string, authenticated = false) => {
+      try {
+        const response = await fetch(url, {
           cache: 'no-store',
-          headers: { Authorization: `Bearer ${sessionToken}` },
-        }),
-        fetch(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${sessionToken}` },
-        }),
-      ])
-      const [bookingsPayload, availabilityPayload, trajectPayload] = await Promise.all([
-        bookingsResponse.json(), availabilityResponse.json(), trajectResponse.json(),
-      ])
-      if (!bookingsResponse.ok) throw new Error(bookingsPayload.error || 'Afspraken laden mislukt.')
-      if (!availabilityResponse.ok) throw new Error(availabilityPayload.error || 'Beschikbaarheid laden mislukt.')
-      if (!trajectResponse.ok) throw new Error(trajectPayload.error || 'Traject-dagen laden mislukt.')
-      setBookings((bookingsPayload.bookings || []).filter((booking: CalBooking) =>
-        booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
-        && booking.status?.toLowerCase() !== 'cancelled'
-      ))
-      setAvailability(availabilityPayload.treatments || [])
-      setTrajectClasses(trajectPayload.trajectDagen || [])
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Agenda laden mislukt.')
-    } finally {
-      setLoading(false)
+          signal: controller.signal,
+          headers: authenticated ? { Authorization: `Bearer ${sessionToken}` } : undefined,
+        })
+        const payload = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(payload?.error || fallbackError)
+        return payload
+      } catch (reason) {
+        if (reason instanceof DOMException && reason.name === 'AbortError') {
+          throw new Error(`${fallbackError} De server reageerde niet op tijd; probeer Vernieuwen.`)
+        }
+        throw reason
+      }
     }
-  }, [sessionToken])
+    try {
+      const bookingsRequest = loadJson(`/api/cal/bookings?t=${cacheBust}`, 'Afspraken laden mislukt.', true)
+        .then(payload => {
+          if (!isLatestRequest()) return payload
+          setBookings((payload.bookings || []).filter((booking: CalBooking) =>
+            booking.eventTypeId !== TRAJECT_BLOK_DAG_EVENT_TYPE_ID
+            && !['cancelled', 'canceled'].includes(safeText(booking.status).toLowerCase())
+          ))
+          return payload
+        })
+      const availabilityRequest = loadJson(
+        `/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`,
+        'Beschikbaarheid laden mislukt.',
+        true,
+      ).then(payload => {
+        if (!isLatestRequest()) return payload
+        setAvailability(payload.treatments || [])
+        return payload
+      })
+      const trajectRequest = loadJson(`/api/admin/agenda-traject-dagen?t=${cacheBust}`, 'Traject-dagen laden mislukt.', true)
+        .then(payload => {
+          if (!isLatestRequest()) return payload
+          setTrajectClasses(payload.trajectDagen || [])
+          return payload
+        })
 
-  useEffect(() => { loadAgenda() }, [loadAgenda])
+      const [bookingsResult, availabilityResult, trajectResult] = await Promise.allSettled([
+        bookingsRequest,
+        availabilityRequest,
+        trajectRequest,
+      ])
+
+      const failures = [bookingsResult, availabilityResult, trajectResult]
+        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+        .map(result => result.reason instanceof Error ? result.reason.message : 'Agenda-data laden mislukt.')
+      if (isLatestRequest() && failures.length > 0) setError(failures.join(' '))
+    } finally {
+      window.clearTimeout(timeout)
+      if (isLatestRequest()) {
+        activeAgendaController.current = null
+        setLoading(false)
+      }
+    }
+  }, [cursor, sessionToken, view])
+
+  useEffect(() => {
+    loadAgenda()
+    return () => {
+      agendaRequestGeneration.current += 1
+      activeAgendaController.current?.abort()
+      activeAgendaController.current = null
+    }
+  }, [loadAgenda])
+
+  useEffect(() => {
+    const refreshVisibleAgenda = () => {
+      if (document.visibilityState === 'visible') void loadAgenda()
+    }
+    const intervalId = window.setInterval(refreshVisibleAgenda, AGENDA_REFRESH_INTERVAL_MS)
+    return () => window.clearInterval(intervalId)
+  }, [loadAgenda])
 
   useEffect(() => {
     if (!manualModalOpen || manualCustomer || manualCustomerQuery.trim().length < 2) {
@@ -190,28 +273,36 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   }, [manualCustomer, manualCustomerQuery, manualModalOpen, sessionToken])
 
   const items = useMemo<CalendarItem[]>(() => [
-    ...bookings.map(booking => ({
-      id: `booking-${booking.uid || booking.id}`,
-      kind: 'booking' as const,
-      date: localDateFromIso(booking.startTime),
-      startTime: localTimeFromIso(booking.startTime),
-      endTime: localTimeFromIso(booking.endTime),
-      title: booking.source === 'manual'
-        ? `Handmatige boeking — ${booking.customerName || booking.customerEmail || 'Klant'}`
-        : booking.eventTypeTitle,
-      treatmentName: booking.eventTypeTitle,
-      status: booking.status,
-      customer: booking.customerName || booking.customerEmail,
-      customerEmail: booking.customerEmail,
-      customerPhone: booking.customerPhone,
-      source: booking.source,
-    })),
-    ...availability.flatMap(treatment => treatment.overrides.map(override => ({
-      id: `override-${treatment.key}-${override.date}-${override.startTime}`,
+    ...bookings.map(booking => {
+      const customerName = safeText(booking.customerName)
+      const customerEmail = safeText(booking.customerEmail)
+      const customerPhone = safeText(booking.customerPhone)
+      return {
+        id: `booking-${booking.uid || booking.id}`,
+        kind: 'booking' as const,
+        date: localDateFromIso(booking.startTime),
+        startTime: localTimeFromIso(booking.startTime),
+        endTime: localTimeFromIso(booking.endTime),
+        title: booking.source === 'manual'
+          ? `Handmatige boeking — ${customerName || customerEmail || 'Onbekend'}`
+          : safeText(booking.eventTypeTitle, 'Onbekende behandeling'),
+        treatmentName: safeText(booking.eventTypeTitle, 'Onbekende behandeling'),
+        status: safeText(booking.status, 'Geboekt'),
+        paymentStatus: booking.paymentStatus,
+        customer: customerName || customerEmail || 'Onbekend',
+        customerEmail,
+        customerPhone,
+        source: booking.source,
+        bookingUid: booking.uid,
+        note: safeText(booking.note),
+      }
+    }),
+    ...availability.flatMap(treatment => treatment.slots.map(slot => ({
+      id: `override-${treatment.key}-${slot.date}-${slot.start}`,
       kind: 'override' as const,
-      date: override.date,
-      startTime: override.startTime,
-      endTime: override.endTime,
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
       title: treatment.name,
       treatmentKey: treatment.key,
     }))),
@@ -355,6 +446,37 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     }
   }
 
+  const cancelBooking = async (item: CalendarItem) => {
+    if (item.kind !== 'booking' || !item.bookingUid || cancelling) return
+    if (!window.confirm(`Afspraak van ${item.customer || 'deze klant'} op ${longDate(item.date)} om ${item.startTime} annuleren? Er wordt geen automatische Stripe-refund uitgevoerd.`)) return
+    setCancelling(item.id)
+    setError(null)
+    setSuccess(null)
+    try {
+      const response = await fetch('/api/admin/bookings/cancel', {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ uid: item.bookingUid, source: item.source || 'online' }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload?.success) throw new Error(payload?.error || 'Annuleren mislukt.')
+      setSelectedItemId(null)
+      // Cal's list endpoint can lag after a confirmed cancellation. Remove the
+      // booking immediately; loadAgenda then reconciles it without depending on
+      // availability or trajectory endpoints succeeding.
+      setBookings(current => current.filter(booking => booking.uid !== item.bookingUid))
+      setSuccess(payload.warnings?.length
+        ? `Afspraak geannuleerd. ${payload.warnings.join(' ')}`
+        : 'Afspraak is in Cal.com geannuleerd, het tijdslot is vrijgegeven en de e-mails zijn verzonden.')
+      await loadAgenda()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Annuleren mislukt.')
+      await loadAgenda()
+    } finally {
+      setCancelling(null)
+    }
+  }
+
   const openManualBooking = (date = selectedDate) => {
     setManualDate(date)
     setManualTime('09:00')
@@ -363,6 +485,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     setManualCustomers([])
     setManualDepositPaid(false)
     setManualDepositEuros('')
+    setManualNote('')
     setManualError(null)
     setManualModalOpen(true)
   }
@@ -387,6 +510,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           start,
           salonDepositStatus: manualDepositPaid ? 'paid' : 'not_recorded',
           salonDepositCents: manualDepositPaid ? Math.round(euros * 100) : null,
+          note: manualNote.trim() || null,
         }),
       })
       const payload = await response.json().catch(() => null)
@@ -394,7 +518,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       setManualModalOpen(false)
       setSuccess(payload?.emailSent === false
         ? 'De afspraak is ingepland. Let op: de bevestigingsmail kon niet worden verzonden.'
-        : `${manualCustomer.full_name || manualCustomer.email || 'De klant'} is handmatig ingepland en heeft de bevestigingsmail ontvangen.`)
+        : `${safeText(manualCustomer.full_name) || safeText(manualCustomer.email) || 'De klant'} is handmatig ingepland en heeft de bevestigingsmail ontvangen.`)
       await loadAgenda()
     } catch (reason) {
       setManualError(reason instanceof Error ? reason.message : 'Klant inboeken mislukt.')
@@ -454,7 +578,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
                   + Tijdslot
                 </button>
                 <div className="relative z-10 space-y-1 overflow-hidden p-1.5 pt-10 sm:p-2 sm:pt-10 pointer-events-none">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.source === 'manual' ? 'bg-blue-50 text-blue-700 border border-blue-200' : item.kind === 'booking' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span></div>)}
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`relative rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.note ? 'pr-5' : ''} ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${item.kind === 'booking' && item.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span>{item.note && <span className="absolute right-1 top-1" title="Notitie aanwezig"><NoteIcon /></span>}</div>)}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
               </div>
@@ -492,15 +616,17 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">{selectedItem.kind === 'booking' ? 'Behandeling' : 'Cursus'}</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.kind === 'booking' ? selectedItem.treatmentName || selectedItem.title : selectedItem.courseName || selectedItem.title}</dd></div>
             <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Tijd</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.startTime}–{selectedItem.endTime}</dd></div>
             {selectedItem.kind === 'booking' && (selectedItem.customerEmail || selectedItem.customerPhone) && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Contact</dt><dd className="mt-1 flex flex-col gap-1">{selectedItem.customerEmail && <a href={`mailto:${selectedItem.customerEmail}`} className="break-all text-[#80642e] hover:underline">{selectedItem.customerEmail}</a>}{selectedItem.customerPhone && <a href={`tel:${selectedItem.customerPhone}`} className="text-[#80642e] hover:underline">{selectedItem.customerPhone}</a>}</dd></div>}
+            {selectedItem.kind === 'booking' && selectedItem.note && <div><dt className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]"><NoteIcon /> Notitie</dt><dd className="mt-1 whitespace-pre-wrap rounded-xl border border-[#eadfca] bg-[#fffaf0] px-3 py-2.5 text-[12px] leading-relaxed text-[#4a4034]">{selectedItem.note}</dd></div>}
             {selectedItem.kind === 'traject-day' && <div><dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#999]">Deelnemers</dt><dd className="mt-0.5 text-[13px] text-[#333]">{selectedItem.paidCount}/{selectedItem.maxParticipants} betaald</dd></div>}
           </dl>
+          {selectedItem.kind === 'booking' && <button type="button" onClick={() => cancelBooking(selectedItem)} disabled={cancelling === selectedItem.id} className="mt-5 w-full rounded-full border border-red-200 bg-red-50 px-4 py-2.5 text-[11px] font-semibold text-red-700 disabled:opacity-50">{cancelling === selectedItem.id ? 'Afspraak annuleren…' : 'Afspraak annuleren'}</button>}
         </div>}
         {loading ? <div className="p-8 text-center text-[13px] text-[#888]">Agenda laden…</div> : selectedItems.length === 0 ? <div className="p-8 text-center text-[13px] text-[#888]">Deze dag is leeg.</div> : (
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
             <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
-              <div className="flex-1 min-w-0"><p className="text-[13px] font-medium truncate">{item.title}</p><p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
-              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.source === 'manual' ? 'border-blue-200 bg-blue-50 text-blue-700' : item.kind === 'booking' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.source === 'manual' ? 'Handmatige boeking' : item.kind === 'booking' ? 'Afspraak' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
+              <div className="relative flex-1 min-w-0"><p className={`text-[13px] font-medium truncate ${item.note ? 'pr-6' : ''}`}>{item.title}</p>{item.note && <span className="absolute right-0 top-0 text-[#9a7838]" title="Notitie aanwezig"><NoteIcon /></span>}<p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
+              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' && item.paymentStatus === 'paid' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' && item.paymentStatus === 'paid' ? 'Betaald' : item.source === 'manual' ? 'Handmatige boeking' : item.kind === 'booking' ? 'Niet betaald' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
           ))}</div>
@@ -530,11 +656,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="mb-6 flex items-start justify-between"><div><h4 className="font-['Cormorant_Garamond'] text-[27px]">+ Klant inboeken</h4><p className="mt-1 text-[11px] text-[#999]">Alleen voor klanten met een bestaand LUXIQUE-account.</p></div><button onClick={() => setManualModalOpen(false)} disabled={manualSaving} className="text-[#999]">✕</button></div>
           {manualError && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] text-red-700">⚠️ {manualError}</div>}
           <div className="space-y-4">
-            <div className="relative"><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Klant zoeken</label>{manualCustomer ? <div className="flex items-center justify-between rounded-xl border border-[#C4A265]/40 bg-[#fffaf0] px-4 py-3"><div><p className="text-[13px] font-medium">{manualCustomer.full_name || 'Naam onbekend'}</p><p className="text-[11px] text-[#888]">{manualCustomer.email}</p></div><button type="button" onClick={() => { setManualCustomer(null); setManualCustomerQuery('') }} className="text-[11px] text-[#80642e]">Wijzigen</button></div> : <><input value={manualCustomerQuery} onChange={event => { setManualCustomerQuery(event.target.value); setManualError(null) }} placeholder="Naam of e-mailadres" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" />{manualSearching && <p className="mt-2 text-[11px] text-[#999]">Zoeken…</p>}{!manualSearching && manualCustomerQuery.trim().length >= 2 && manualCustomers.length === 0 && <p className="mt-2 text-[11px] text-[#9a6b3f]">Geen bestaand account gevonden. Laat de klant eerst een account aanmaken.</p>}{manualCustomers.length > 0 && <div className="mt-2 overflow-hidden rounded-xl border border-[#eee] bg-white shadow-lg">{manualCustomers.map(customer => <button type="button" key={customer.id} onClick={() => { setManualCustomer(customer); setManualCustomers([]); setManualError(null) }} className="block w-full border-b border-[#f2f2f2] px-4 py-3 text-left last:border-0 hover:bg-[#faf9f7]"><span className="block text-[13px] font-medium">{customer.full_name || 'Naam onbekend'}</span><span className="block text-[11px] text-[#888]">{customer.email}</span></button>)}</div>}</>}</div>
+            <div className="relative"><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Klant zoeken</label>{manualCustomer ? <div className="flex items-center justify-between rounded-xl border border-[#C4A265]/40 bg-[#fffaf0] px-4 py-3"><div><p className="text-[13px] font-medium">{safeText(manualCustomer.full_name, 'Naam onbekend')}</p><p className="text-[11px] text-[#888]">{safeText(manualCustomer.email)}</p></div><button type="button" onClick={() => { setManualCustomer(null); setManualCustomerQuery('') }} className="text-[11px] text-[#80642e]">Wijzigen</button></div> : <><input value={manualCustomerQuery} onChange={event => { setManualCustomerQuery(event.target.value); setManualError(null) }} placeholder="Naam of e-mailadres" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" />{manualSearching && <p className="mt-2 text-[11px] text-[#999]">Zoeken…</p>}{!manualSearching && manualCustomerQuery.trim().length >= 2 && manualCustomers.length === 0 && <p className="mt-2 text-[11px] text-[#9a6b3f]">Geen bestaand account gevonden. Laat de klant eerst een account aanmaken.</p>}{manualCustomers.length > 0 && <div className="mt-2 overflow-hidden rounded-xl border border-[#eee] bg-white shadow-lg">{manualCustomers.map(customer => <button type="button" key={customer.id} onClick={() => { setManualCustomer(customer); setManualCustomers([]); setManualError(null) }} className="block w-full border-b border-[#f2f2f2] px-4 py-3 text-left last:border-0 hover:bg-[#faf9f7]"><span className="block text-[13px] font-medium">{safeText(customer.full_name, 'Naam onbekend')}</span><span className="block text-[11px] text-[#888]">{safeText(customer.email)}</span></button>)}</div>}</>}</div>
             <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Behandeling</label><select value={manualTreatmentKey} onChange={event => setManualTreatmentKey(event.target.value as TreatmentKey)} className="w-full rounded-xl border border-[#ddd] bg-white px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none"><option value="new_lash_set">New Lash Set · 180 min</option><option value="fill_lash_set">Fill Lash Set · 120 min</option></select></div>
             <div className="grid grid-cols-2 gap-3"><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Datum</label><input type="date" min={todayKey} value={manualDate} onChange={event => setManualDate(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div><div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Tijd</label><input type="time" value={manualTime} onChange={event => setManualTime(event.target.value)} className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div></div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#eee] p-4"><input type="checkbox" checked={manualDepositPaid} onChange={event => setManualDepositPaid(event.target.checked)} className="mt-0.5" /><span><span className="block text-[13px] font-medium">Aanbetaling in de salon geregistreerd</span><span className="block text-[11px] text-[#888]">Er loopt nooit een betaling of refund via de website.</span></span></label>
             {manualDepositPaid && <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Bedrag aanbetaling (€)</label><input inputMode="decimal" value={manualDepositEuros} onChange={event => setManualDepositEuros(event.target.value)} placeholder="50,00" className="w-full rounded-xl border border-[#ddd] px-4 py-3 text-[13px] focus:border-[#C4A265] focus:outline-none" /></div>}
+            <div><label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#888]">Notitie (optioneel)</label><p className="mb-2 text-[11px] leading-relaxed text-[#999]">Bijvoorbeeld een afwijkende prijsafspraak, benodigde extra tijd of bijzonderheden over de klant.</p><textarea value={manualNote} onChange={event => setManualNote(event.target.value)} maxLength={2000} rows={4} placeholder="Schrijf hier Chiva's notitie…" className="w-full resize-y rounded-xl border border-[#ddd] px-4 py-3 text-[13px] leading-relaxed focus:border-[#C4A265] focus:outline-none" /><p className="mt-1 text-right text-[10px] text-[#aaa]">{manualNote.length}/2000</p></div>
           </div>
           <div className="mt-7 flex gap-3"><button onClick={() => setManualModalOpen(false)} disabled={manualSaving} className="flex-1 rounded-full border border-[#eee] py-3 text-[13px] text-[#888]">Annuleren</button><button onClick={createManualBooking} disabled={!manualCustomer || manualSaving || !manualDate || !manualTime} className="flex-1 rounded-full bg-[#0C0A07] py-3 text-[13px] font-semibold text-white disabled:opacity-45">{manualSaving ? 'Inboeken…' : 'Klant inboeken'}</button></div>
         </div>

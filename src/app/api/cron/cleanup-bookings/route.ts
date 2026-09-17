@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { cancelCalBookingVerified } from '@/lib/cal-cancellation'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
   // Step 1: Find candidates
   const graceAgo = new Date(Date.now() - GRACE_MINUTES * 60 * 1000).toISOString()
 
-  const { data: candidates, error: fetchError } = await supabase
+  const { data: pendingCandidates, error: fetchError } = await supabase
     .from('pending_bookings')
     .select('*')
     .eq('status', 'pending')
@@ -51,7 +52,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'DB fetch failed' }, { status: 500 })
   }
 
-  if (!candidates || candidates.length === 0) {
+  // Retry future expired rows as well. Older cleanup versions marked a row
+  // expired even when Cal rejected the cancellation, permanently orphaning the
+  // active Cal booking and blocking its slot.
+  const { data: expiredCandidates, error: expiredFetchError } = await supabase
+    .from('pending_bookings')
+    .select('*')
+    .eq('status', 'expired')
+    .gte('slot_start', new Date().toISOString())
+
+  if (expiredFetchError) {
+    console.error('Cron: failed to fetch expired cleanup retries:', expiredFetchError)
+    return NextResponse.json({ error: 'DB retry fetch failed' }, { status: 500 })
+  }
+
+  const candidates = [...(pendingCandidates || []), ...(expiredCandidates || [])]
+  if (candidates.length === 0) {
     return NextResponse.json({ dryRun: DRY_RUN, processed: 0, message: 'No stale bookings' })
   }
 
@@ -64,13 +80,14 @@ export async function GET(request: NextRequest) {
 
   for (const booking of candidates) {
     const result: any = { uid: booking.cal_booking_uid, event: booking.event_type, action: 'unknown' }
+    const alreadyExpired = booking.status === 'expired'
 
     try {
       // Step 2: Check Stripe for active payment
       let stripePaid = false
       let stripeActive = false
 
-      if (booking.stripe_session_id) {
+      if (!alreadyExpired && booking.stripe_session_id) {
         const session = await stripe.checkout.sessions.retrieve(booking.stripe_session_id)
 
         if (session.payment_status === 'paid') {
@@ -86,7 +103,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Also check by metadata (in case webhook created a different session)
-      if (!stripeActive && !stripePaid) {
+      if (!alreadyExpired && !stripeActive && !stripePaid) {
         const sessions = await stripe.checkout.sessions.list({
           limit: 10,
           expand: ['data.payment_intent'],
@@ -156,46 +173,37 @@ export async function GET(request: NextRequest) {
       }
 
       // Step 3: No active payment — cancel Cal booking
-      result.action = DRY_RUN ? 'would_cancel' : 'cancelled'
+      result.action = DRY_RUN ? 'would_cancel' : 'cancelling'
       result.reason = 'expired without payment'
 
       if (!DRY_RUN) {
-        // Cancel in Cal.com
-        const calRes = await fetch(`https://api.cal.com/v2/bookings/${booking.cal_booking_uid}/cancel`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${process.env.CAL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            reason: 'Payment expired — automatic cancellation',
-            allRemainingBookings: true,
-          }),
-        })
+        // Cal v2 expects `cancellationReason`. Verify the provider state before
+        // marking a pending row expired; failures remain eligible for the next run.
+        await cancelCalBookingVerified(
+          booking.cal_booking_uid,
+          'Payment expired — automatic cancellation',
+        )
+        result.action = 'cancelled'
+        result.calCancelled = true
+        console.log(`Cron: Cal booking ${booking.cal_booking_uid} cancelled and verified`)
 
-        if (calRes.ok) {
-          result.calCancelled = true
-          console.log(`Cron: Cal booking ${booking.cal_booking_uid} cancelled`)
-        } else {
-          result.calCancelled = false
-          result.calError = await calRes.text()
-          console.error(`Cron: Cal cancel failed for ${booking.cal_booking_uid}:`, result.calError)
+        if (!alreadyExpired) {
+          await supabase
+            .from('pending_bookings')
+            .update({ status: 'expired' })
+            .eq('id', booking.id)
         }
-
-        // Mark as expired in DB (even if Cal cancel fails — don't retry forever)
-        await supabase
-          .from('pending_bookings')
-          .update({ status: 'expired' })
-          .eq('id', booking.id)
 
         console.log(`Cron: marked ${booking.cal_booking_uid} as expired`)
         
         // Send Chiva expired notification (non-blocking, error-safe)
-        try {
-          const { sendExpiredNotification } = await import('@/lib/email')
-          await sendExpiredNotification(booking)
-        } catch (mailErr) {
-          console.error('Cron: expired mail failed (non-fatal):', mailErr)
+        if (!alreadyExpired) {
+          try {
+            const { sendExpiredNotification } = await import('@/lib/email')
+            await sendExpiredNotification(booking)
+          } catch (mailErr) {
+            console.error('Cron: expired mail failed (non-fatal):', mailErr)
+          }
         }
       } else {
         console.log(`Cron [DRY-RUN]: would cancel ${booking.cal_booking_uid} (${booking.event_type}, expired ${booking.expires_at})`)

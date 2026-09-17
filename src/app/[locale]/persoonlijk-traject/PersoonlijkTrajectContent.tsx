@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import Navbar from '@/components/Navbar'
+import { MEDUSA_TRAJECTORY_CONTENT } from '@/lib/medusa-trajectory-content'
 
 // Cursus IDs uit traject_cursussen (actief)
 const CURSUS = {
@@ -32,27 +33,30 @@ interface KlasInfo {
   weergave_beschrijving: string | null
 }
 
-const NL_DAYS = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za']
-const NL_MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
-
 function fmtTime(t?: string | null): string {
   if (!t) return ''
   const parts = t.split(':')
   return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : t
 }
 
-function formatDateRange(klas: KlasInfo): string {
+function formatDateRange(klas: KlasInfo, locale: string): string {
   const days = klas.blok_dagen?.length ? klas.blok_dagen : [klas.startdatum]
+  const formatDay = (date: Date, includeMonth = true) => new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    ...(includeMonth ? { month: 'short' as const } : {}),
+  }).format(date)
+
   if (days.length === 1) {
     const d = new Date(days[0] + 'T00:00:00')
-    return `${NL_DAYS[d.getDay()]} ${d.getDate()} ${NL_MONTHS[d.getMonth()]}`
+    return formatDay(d)
   }
   const first = new Date(days[0] + 'T00:00:00')
   const last = new Date(days[days.length - 1] + 'T00:00:00')
   if (first.getMonth() === last.getMonth()) {
-    return `${NL_DAYS[first.getDay()]} ${first.getDate()} t/m ${NL_DAYS[last.getDay()]} ${last.getDate()} ${NL_MONTHS[last.getMonth()]}`
+    return `${formatDay(first, false)} – ${formatDay(last)}`
   }
-  return `${NL_DAYS[first.getDay()]} ${first.getDate()} ${NL_MONTHS[first.getMonth()]} t/m ${NL_DAYS[last.getDay()]} ${last.getDate()} ${NL_MONTHS[last.getMonth()]}`
+  return `${formatDay(first)} – ${formatDay(last)}`
 }
 
 export default function PersoonlijkTrajectContent() {
@@ -62,6 +66,7 @@ export default function PersoonlijkTrajectContent() {
   const detailRef = useRef<HTMLDivElement>(null)
   const [openDetail, setOpenDetail] = useState<string | null>(null)
   const [klassen, setKlassen] = useState<KlasInfo[]>([])
+  const [selectedKlasByCursus, setSelectedKlasByCursus] = useState<Record<string, string>>({})
 
   const openKlassenFor = (cursusId: string) => klassen.filter(k => k.cursus_id === cursusId && !k.vol && k.plekken_over > 0)
   const customKlassen = klassen.filter(k => k.weergave_titel)
@@ -72,17 +77,63 @@ export default function PersoonlijkTrajectContent() {
   const techKlassen = openKlassenFor(CURSUS.techToArtist)
   const workshopKlassen = openKlassenFor(CURSUS.workshop)
 
-  // Backward-compat: first available klas per cursus (for detail panels & workshop link)
-  const beginnerKlas = beginnerKlassen[0]
-  const wispyKlas = wispyKlassen[0]
-  const medusaKlas = medusaKlassen[0]
-  const techKlas = techKlassen[0]
+  // The workshop keeps its direct link; trajectory detail panels use an explicit choice below.
   const workshopKlas = workshopKlassen[0]
 
   const boekUrl = (cursusId: string, klasId?: string) =>
     klasId
       ? `/${locale}/traject-boeken?klas=${klasId}`
       : `/${locale}/traject-boeken?cursus=${cursusId}`
+
+  const renderDetailBooking = (cursusId: string, availableKlassen: KlasInfo[]) => {
+    if (availableKlassen.length === 0) {
+      return <a href="mailto:info@luxique.nl" className="btn">{t('dateChoiceContact')}</a>
+    }
+
+    if (availableKlassen.length === 1) {
+      return <a href={boekUrl(cursusId, availableKlassen[0].id)} className="btn">{t('bookCta')}</a>
+    }
+
+    const selectedId = selectedKlasByCursus[cursusId]
+
+    return (
+      <fieldset className="date-choice">
+        <legend>{t('dateChoiceTitle')}</legend>
+        <div className="date-options">
+          {availableKlassen.map(klas => {
+            const selected = selectedId === klas.id
+            const timeRange = [fmtTime(klas.starttijd), fmtTime(klas.eindtijd)].filter(Boolean).join('–')
+
+            return (
+              <label key={klas.id} className={`date-option${selected ? ' selected' : ''}`}>
+                <input
+                  type="radio"
+                  name={`trajectory-date-${cursusId}`}
+                  value={klas.id}
+                  checked={selected}
+                  onChange={() => setSelectedKlasByCursus(current => ({ ...current, [cursusId]: klas.id }))}
+                />
+                <span className="date-radio" aria-hidden="true" />
+                <span className="date-copy">
+                  <strong>{formatDateRange(klas, locale)}</strong>
+                  {timeRange && <span>{timeRange}</span>}
+                </span>
+                <span className="date-spots">{t('spotsRemaining', { count: klas.plekken_over })}</span>
+              </label>
+            )
+          })}
+        </div>
+        <a
+          href={selectedId ? boekUrl(cursusId, selectedId) : undefined}
+          className={`btn date-book${selectedId ? '' : ' disabled'}`}
+          aria-disabled={!selectedId}
+          onClick={event => { if (!selectedId) event.preventDefault() }}
+        >
+          {t('bookSelectedDate')}
+        </a>
+      </fieldset>
+    )
+  }
 
   // Fetch klassen on mount
   useEffect(() => {
@@ -92,15 +143,25 @@ export default function PersoonlijkTrajectContent() {
       .catch(() => {})
   }, [])
 
-  // Reveal on scroll + loenique handler
-  useEffect(() => {
+  // Reveal content already in the viewport before the first paint; observe the rest.
+  useLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
 
     const io = new IntersectionObserver(es => es.forEach(e => {
       if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
     }), { threshold: 0.01, rootMargin: '0px 0px -8% 0px' })
-    root.querySelectorAll('.reveal').forEach(el => io.observe(el))
+
+    root.querySelectorAll('.reveal').forEach(el => {
+      const rect = el.getBoundingClientRect()
+      const isInitiallyVisible = rect.top < window.innerHeight && rect.bottom > 0
+
+      if (isInitiallyVisible) el.classList.add('in')
+      else {
+        el.classList.add('reveal-armed')
+        io.observe(el)
+      }
+    })
 
     const loeniqueHandler = (e: Event) => {
       const target = (e.target as HTMLElement).closest('[data-loenique]')
@@ -152,7 +213,8 @@ export default function PersoonlijkTrajectContent() {
         .eyebrow{font-size:.74rem;text-transform:uppercase;letter-spacing:.24em;color:var(--gold);font-weight:500}
         em{font-style:italic}
 
-        .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+        .reveal{opacity:1;transform:none}
+        .reveal.reveal-armed{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
         .reveal.in{opacity:1;transform:none}
         .tracks-grid{min-height:200px}
         .journey{min-height:54px}
@@ -185,6 +247,7 @@ export default function PersoonlijkTrajectContent() {
         .start-meta .m{display:flex;flex-direction:column;gap:2px}
         .start-meta .m .k{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright)}
         .start-meta .m .v{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600}
+        .start-deposit{font-size:.82rem!important;line-height:1.5;color:var(--gold-bright)!important;margin:-12px 0 24px!important}
         .start-r{position:relative;background:rgba(246,241,231,.04);border-left:1px solid rgba(246,241,231,.1);
           padding:46px 40px;display:flex;flex-direction:column;justify-content:center}
         .start-r h3{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright);margin-bottom:16px;font-weight:600}
@@ -369,6 +432,20 @@ export default function PersoonlijkTrajectContent() {
         .detail .btn-row{display:flex;gap:14px;flex-wrap:wrap}
         .detail .btn{width:auto;padding:15px 32px}
         .detail .btn.ghost{color:var(--on-dark);border-color:rgba(246,241,231,.3)}
+        .date-choice{width:100%;border:0;padding:0;margin:0 0 8px}
+        .date-choice legend{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright);font-weight:600;margin-bottom:12px}
+        .date-options{display:grid;gap:10px;margin-bottom:14px}
+        .date-option{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:13px;padding:14px 16px;border:1px solid rgba(216,185,122,.25);border-radius:12px;background:rgba(176,141,79,.06);cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
+        .date-option:hover,.date-option.selected{border-color:var(--gold-bright);background:rgba(176,141,79,.13)}
+        .date-option input{position:absolute;opacity:0;pointer-events:none}
+        .date-radio{width:18px;height:18px;border:1px solid rgba(216,185,122,.7);border-radius:50%;display:grid;place-items:center}
+        .date-radio::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold-bright);transform:scale(0);transition:transform .18s}
+        .date-option.selected .date-radio::after{transform:scale(1)}
+        .date-copy{display:flex;flex-direction:column;gap:3px;min-width:0;color:var(--on-dark-soft);font-size:.82rem}
+        .date-copy strong{font-family:'Cormorant Garamond',serif;color:var(--on-dark);font-size:1.08rem;font-weight:600}
+        .date-spots{font-size:.72rem;color:var(--gold-bright);background:rgba(216,185,122,.12);border-radius:100px;padding:5px 10px;white-space:nowrap}
+        .detail .btn.date-book{display:inline-flex;justify-content:center;min-width:220px}
+        .detail .btn.date-book.disabled{opacity:.42;cursor:not-allowed}
         .close-d{display:inline-flex;align-items:center;gap:8px;background:none;border:0;color:var(--gold-bright);cursor:pointer;font-family:'Jost';font-size:.86rem;margin-top:24px;letter-spacing:.02em}
         .aanvraag-note{margin-top:18px;font-size:.86rem;color:var(--on-dark-soft);font-style:italic}
         .aanvraag-note a{color:var(--gold-bright)}
@@ -451,6 +528,9 @@ export default function PersoonlijkTrajectContent() {
         @media(max-width:620px){
           .tracks-grid.four{max-width:420px}
           .t-sub{min-height:0}
+          .date-option{grid-template-columns:auto minmax(0,1fr)}
+          .date-spots{grid-column:2;justify-self:start}
+          .detail .btn.date-book{width:100%}
         }
       `}</style>
 
@@ -478,6 +558,7 @@ export default function PersoonlijkTrajectContent() {
                 <div className="m"><span className="k">{t('workshopMetaFormLabel')}</span><span className="v serif">{t('workshopMetaFormValue')}</span></div>
                 <div className="m"><span className="k">{t('workshopMetaLevelLabel')}</span><span className="v serif">{t('workshopMetaLevelValue')}</span></div>
               </div>
+              <p className="start-deposit">{t('dp1InvestNote')}</p>
               <div className="start-btns">
                 <a href={boekUrl(CURSUS.workshop, workshopKlas?.id)} className="btn">{t('workshopBookCta')}</a>
                 <button className="btn ghost" data-loenique>{t('workshopAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
@@ -565,8 +646,8 @@ export default function PersoonlijkTrajectContent() {
                 <div className="klas-info klas-open">
                   {beginnerKlassen.map(klas => (
                     <div key={klas.id} className="klas-row multi">
-                      <span className="klas-datum">{formatDateRange(klas)}</span>
-                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <span className="klas-datum">{formatDateRange(klas, locale)}</span>
+                      <span className="klas-plekken">{t('spotsRemaining', { count: klas.plekken_over })}</span>
                       <a className="btn boek" href={boekUrl(CURSUS.beginner, klas.id)}>{t('bookCta')}</a>
                     </div>
                   ))}
@@ -638,8 +719,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor de praktijkdagen. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp1ModelWarning')}</p>
                       </div>
                     </div>
                     <div className="incl-block">
@@ -662,7 +743,7 @@ export default function PersoonlijkTrajectContent() {
                       </div>
                     </div>
                     <div className="btn-row">
-                      <a href={boekUrl(CURSUS.beginner, beginnerKlas?.id)} className="btn">{t('bookCta')}</a>
+                      {renderDetailBooking(CURSUS.beginner, beginnerKlassen)}
                       <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
                     </div>
                     <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -701,8 +782,8 @@ export default function PersoonlijkTrajectContent() {
                 <div className="klas-info klas-open">
                   {wispyKlassen.map(klas => (
                     <div key={klas.id} className="klas-row multi">
-                      <span className="klas-datum">{formatDateRange(klas)}</span>
-                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <span className="klas-datum">{formatDateRange(klas, locale)}</span>
+                      <span className="klas-plekken">{t('spotsRemaining', { count: klas.plekken_over })}</span>
                       <a className="btn boek" href={boekUrl(CURSUS.wispy, klas.id)}>{t('bookCta')}</a>
                     </div>
                   ))}
@@ -769,8 +850,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor de praktijk. Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp2ModelWarning')}</p>
                       </div>
                     </div>
                     <p className="not-incl">{t('dp2Note')}</p>
@@ -789,11 +870,12 @@ export default function PersoonlijkTrajectContent() {
                         <div className="lab">{t('dp2InvestTitle')}</div>
                         <div className="amt serif">{t('dp2InvestPrice')}</div>
                         <div className="vat">{t('dp2InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
                         <div className="pay">{t('dp2Outro')}</div>
                       </div>
                     </div>
                     <div className="btn-row">
-                      <a href={boekUrl(CURSUS.wispy, wispyKlas?.id)} className="btn">{t('bookCta')}</a>
+                      {renderDetailBooking(CURSUS.wispy, wispyKlassen)}
                       <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
                     </div>
                     <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -832,8 +914,8 @@ export default function PersoonlijkTrajectContent() {
                 <div className="klas-info klas-open">
                   {medusaKlassen.map(klas => (
                     <div key={klas.id} className="klas-row multi">
-                      <span className="klas-datum">{formatDateRange(klas)}</span>
-                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <span className="klas-datum">{formatDateRange(klas, locale)}</span>
+                      <span className="klas-plekken">{t('spotsRemaining', { count: klas.plekken_over })}</span>
                       <a className="btn boek" href={boekUrl(CURSUS.medusa, klas.id)}>{t('bookCta')}</a>
                     </div>
                   ))}
@@ -861,92 +943,34 @@ export default function PersoonlijkTrajectContent() {
                       </div>
                     </div>
                     <div className="days">
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day1Label')}</span><span className="day-t serif">{t('dp3Day1Title')}</span></div>
-                        <div className="day-d">{t('dp3Day1Desc')}</div>
-                        <div className="day-cols">
-                          <div className="col"><div className="col-h">{t('dp3Day1Group1Title')}</div><ul>
-                            <li>{t('dp3Day1Group1Item1')}</li>
-                            <li>{t('dp3Day1Group1Item2')}</li>
-                            <li>{t('dp3Day1Group1Item3')}</li>
-                            <li>{t('dp3Day1Group1Item4')}</li>
-                            <li>{t('dp3Day1Group1Item5')}</li>
-                            <li>{t('dp3Day1Group1Item6')}</li>
-                          </ul></div>
-                          <div className="col"><div className="col-h">{t('dp3Day1Group2Title')}</div><ul>
-                            <li>{t('dp3Day1Group2Item1')}</li>
-                            <li>{t('dp3Day1Group2Item2')}</li>
-                            <li>{t('dp3Day1Group2Item3')}</li>
-                            <li>{t('dp3Day1Group2Item4')}</li>
-                            <li>{t('dp3Day1Group2Item5')}</li>
-                          </ul></div>
-                        </div>
-                      </div>
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day1bLabel')}</span><span className="day-t serif">{t('dp3Day1bTitle')}</span></div>
-                        <div className="day-cols">
-                          <div className="col"><div className="col-h">{t('dp3Day1bGroup1Item1')}</div><ul>
-                            <li>{t('dp3Day1bGroup1Item2')}</li>
-                            <li>{t('dp3Day1bGroup1Item3')}</li>
-                            <li>{t('dp3Day1bGroup1Item4')}</li>
-                            <li>{t('dp3Day1bGroup1Item5')}</li>
-                          </ul></div>
-                          <div className="col"><div className="col-h">{t('dp3Day1bGroup2Title')}</div><ul>
-                            <li>{t('dp3Day1bGroup2Item1')}</li>
-                            <li>{t('dp3Day1bGroup2Item2')}</li>
-                            <li>{t('dp3Day1bGroup2Item3')}</li>
-                            <li>{t('dp3Day1bGroup2Item4')}</li>
-                          </ul></div>
-                        </div>
-                      </div>
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day2Label')}</span><span className="day-t serif">{t('dp3Day2Title')}</span></div>
-                        <div className="day-d">{t('dp3Day2Desc')}</div>
-                        <div className="day-cols one"><div className="col"><ul>
-                          <li>{t('dp3Day2Item1')}</li>
-                          <li>{t('dp3Day2Item2')}</li>
-                          <li>{t('dp3Day2Item3')}</li>
-                          <li>{t('dp3Day2Item4')}</li>
-                          <li>{t('dp3Day2Item5')}</li>
-                          <li>{t('dp3Day2Item6')}</li>
-                          <li>{t('dp3Day2Item7')}</li>
-                        </ul></div></div>
-                      </div>
-                      <div className="day">
-                        <div className="day-h"><span className="day-num">{t('dp3Day3Label')}</span><span className="day-t serif">{t('dp3Day3Title')}</span></div>
-                        <div className="day-d">{t('dp3Day3Desc')}</div>
-                      </div>
+                      {MEDUSA_TRAJECTORY_CONTENT.days.map(day => <div className="day" key={day.label}>
+                        <div className="day-h"><span className="day-num">{day.label}</span><span className="day-t serif">{day.title}</span></div>
+                        <div className="day-d">{day.description}</div>
+                        <div className="day-cols">{day.groups.map(group => <div className="col" key={group.title}><div className="col-h">{group.title}</div><ul>{group.items.map(item => <li key={item}>{item}</li>)}</ul></div>)}</div>
+                      </div>)}
                     </div>
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor de modeldag (dag 2). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{MEDUSA_TRAJECTORY_CONTENT.modelWarning.title}</div>
+                        <p>{MEDUSA_TRAJECTORY_CONTENT.modelWarning.text}</p>
                       </div>
                     </div>
                     <div className="incl-block">
                       <div>
-                        <h4 className="serif">{t('dp3InclTitle')}</h4>
-                        <ul className="incl-grid">
-                          <li>{t('dp3Incl1')}</li>
-                          <li>{t('dp3Incl2')}</li>
-                          <li>{t('dp3Incl3')}</li>
-                          <li>{t('dp3Incl4')}</li>
-                          <li>{t('dp3Incl5')}</li>
-                          <li>{t('dp3Incl6')}</li>
-                          <li>{t('dp3Incl7')}</li>
-                          <li>{t('dp3Incl8')}</li>
-                        </ul>
+                        <h4 className="serif">{MEDUSA_TRAJECTORY_CONTENT.included.title}</h4>
+                        <ul className="incl-grid">{MEDUSA_TRAJECTORY_CONTENT.included.items.map(item => <li key={item}>{item}</li>)}</ul>
                       </div>
                       <div className="invest">
-                        <div className="lab">{t('dp3InvestTitle')}</div>
-                        <div className="amt serif">{t('dp3InvestPrice')}</div>
-                        <div className="vat">{t('dp3InvestPriceLabel')}</div>
-                        <div className="pay">{t('dp3Outro')}</div>
+                        <div className="lab">{MEDUSA_TRAJECTORY_CONTENT.investment.title}</div>
+                        <div className="amt serif">{MEDUSA_TRAJECTORY_CONTENT.investment.price}</div>
+                        <div className="vat">{MEDUSA_TRAJECTORY_CONTENT.investment.priceLabel}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
+                        <div className="pay">{MEDUSA_TRAJECTORY_CONTENT.investment.certificate}</div>
                       </div>
                     </div>
                     <div className="btn-row">
-                      <a href={boekUrl(CURSUS.medusa, medusaKlas?.id)} className="btn">{t('bookCta')}</a>
+                      {renderDetailBooking(CURSUS.medusa, medusaKlassen)}
                       <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
                     </div>
                     <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -986,8 +1010,8 @@ export default function PersoonlijkTrajectContent() {
                 <div className="klas-info klas-open">
                   {techKlassen.map(klas => (
                     <div key={klas.id} className="klas-row multi">
-                      <span className="klas-datum">{formatDateRange(klas)}</span>
-                      <span className="klas-plekken">Nog {klas.plekken_over} {klas.plekken_over === 1 ? 'plek' : 'plekken'}</span>
+                      <span className="klas-datum">{formatDateRange(klas, locale)}</span>
+                      <span className="klas-plekken">{t('spotsRemaining', { count: klas.plekken_over })}</span>
                       <a className="btn boek" href={boekUrl(CURSUS.techToArtist, klas.id)}>{t('bookCta')}</a>
                     </div>
                   ))}
@@ -1076,8 +1100,8 @@ export default function PersoonlijkTrajectContent() {
                     <div className="model-note">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                       <div>
-                        <div className="rt">Let op — model vereist</div>
-                        <p>Je regelt zelf een model voor beide modeldagen (dag 1 en dag 3). Zonder model is er die dag geen praktijkoefening mogelijk en kan het certificaat niet behaald worden. Het niet meebrengen van een model komt volledig voor jouw rekening en risico.</p>
+                        <div className="rt">{t('modelWarningTitle')}</div>
+                        <p>{t('dp4ModelWarning')}</p>
                       </div>
                     </div>
                     <div className="incl-block">
@@ -1097,11 +1121,12 @@ export default function PersoonlijkTrajectContent() {
                         <div className="lab">{t('dp4InvestTitle')}</div>
                         <div className="amt serif">{t('dp4InvestPrice')}</div>
                         <div className="vat">{t('dp4InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
                         <div className="pay">{t('dp4Outro')}</div>
                       </div>
                     </div>
                     <div className="btn-row">
-                      <a href={boekUrl(CURSUS.techToArtist, techKlas?.id)} className="btn">{t('bookCta')}</a>
+                      {renderDetailBooking(CURSUS.techToArtist, techKlassen)}
                       <button className="btn ghost" data-loenique>{t('dpAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
                     </div>
                     <p className="aanvraag-note">{t('dpFootnotePre')} <a href="mailto:info@luxique.nl">info@luxique.nl</a> {t('dpFootnotePost')}</p>
@@ -1120,7 +1145,7 @@ export default function PersoonlijkTrajectContent() {
           <div className="combo-card reveal">
             <div className="combo-l">
               <span className="eyebrow">{t('comboEyebrow')}</span>
-              <h3 className="serif">{t('comboTitlePre')} <em>{t('comboTitleEm')}</em>{t('comboTitlePost')}</h3>
+              <h3 className="serif">{t('comboTitlePre')} <em>{t('comboTitleEm')}</em>{' '}{t('comboTitlePost')}</h3>
               <p>{t('comboText')}</p>
             </div>
             <div className="combo-r">
@@ -1149,7 +1174,7 @@ export default function PersoonlijkTrajectContent() {
                   <div className="cc-meta">
                     <div className="cc-row">
                       <span className="lab">Datum</span>
-                      <span className="val">{formatDateRange(klas)}</span>
+                      <span className="val">{formatDateRange(klas, locale)}</span>
                     </div>
                     <div className="cc-row">
                       <span className="lab">Starttijd</span>

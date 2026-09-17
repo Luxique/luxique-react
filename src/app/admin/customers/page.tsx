@@ -2,9 +2,10 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { AdminDashboardMobileNav, AdminDashboardSidebar } from '@/components/AdminDashboardNav'
+import { courseGrantErrorMessage, withCourseGrantTimeout } from '@/lib/course-grant'
 
 /* ── types ── */
 type Profile = {
@@ -49,6 +50,7 @@ export default function AdminCustomersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [enrollments, setEnrollments] = useState<Enrollment[]>([])
   const [bookings, setBookings] = useState<PendingBooking[]>([])
+  const [bookingsLoading, setBookingsLoading] = useState(false)
   const [progress, setProgress] = useState<LessonProgress[]>([])
   const [lessonsByCourse, setLessonsByCourse] = useState<Record<string, Lesson[]>>({})
   const [courses, setCourses] = useState<CourseOption[]>([])
@@ -58,6 +60,7 @@ export default function AdminCustomersPage() {
   const [grantSearch, setGrantSearch] = useState('')
   const [grantSearchFocused, setGrantSearchFocused] = useState(false)
   const [granting, setGranting] = useState(false)
+  const [grantFeedback, setGrantFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [extensionDates, setExtensionDates] = useState<Record<string, string>>({})
   const [extendingId, setExtendingId] = useState<string | null>(null)
   const [extensionError, setExtensionError] = useState<Record<string, string>>({})
@@ -74,19 +77,35 @@ export default function AdminCustomersPage() {
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return
     setGranting(true)
-    await supabase.from('enrollments').upsert({
-      user_id: grantUserId, course_id: grantCourseId, status: 'active',
-      payment_method: 'manual', paid_at: new Date().toISOString(),
-      enrolled_at: new Date().toISOString(), granted_by: user?.id,
-      access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-    }, { onConflict: 'user_id,course_id' })
-    setShowGrant(false); setGrantUserId(''); setGrantCourseId(''); setGrantSearch('')
-    if (selectedId) {
-      // refresh detail van geselecteerde klant
-      setSelectedId(null)
-      setTimeout(() => setSelectedId(selectedId), 50)
+    setGrantFeedback(null)
+    try {
+      const { error } = await withCourseGrantTimeout(
+        supabase.from('enrollments').upsert({
+          user_id: grantUserId, course_id: grantCourseId, status: 'active',
+          payment_method: 'manual', paid_at: new Date().toISOString(),
+          enrolled_at: new Date().toISOString(), granted_by: user?.id,
+          access_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        }, { onConflict: 'user_id,course_id' }),
+      )
+      if (error) throw error
+
+      setGrantFeedback({ type: 'success', message: 'Cursus is succesvol toegewezen.' })
+      if (selectedId) {
+        // refresh detail van geselecteerde klant
+        setSelectedId(null)
+        setTimeout(() => setSelectedId(selectedId), 50)
+      }
+    } catch (error) {
+      console.error('[admin-customers] Course grant failed:', error)
+      setGrantFeedback({ type: 'error', message: courseGrantErrorMessage(error) })
+    } finally {
+      setGranting(false)
     }
-    setGranting(false)
+  }
+
+  const closeGrantModal = () => {
+    setShowGrant(false)
+    setGrantFeedback(null)
   }
 
   const extendAccess = async (enrollment: Enrollment) => {
@@ -123,6 +142,10 @@ export default function AdminCustomersPage() {
     if (!selectedId) return
     const sel = profiles.find(p => p.id === selectedId)
     const email = sel?.email
+    const controller = new AbortController()
+
+    setBookings([])
+    setBookingsLoading(true)
 
     // Fetch enrollments
     supabase.from('enrollments')
@@ -154,18 +177,35 @@ export default function AdminCustomersPage() {
       .eq('user_id', selectedId)
       .then(({ data }) => setProgress((data || []) as LessonProgress[]))
 
-    // Fetch bookings from pending_bookings (cal.com) — match by email or user_id
-    let bookingQuery = supabase.from('pending_bookings')
-      .select('id, event_type, slot_start, status, customer_name, customer_email, amount_cents')
-      .order('slot_start', { ascending: false })
+    // Paid treatments must be read server-side: browser RLS only exposes the
+    // logged-in admin's own pending_bookings rows.
+    const params = new URLSearchParams({ userId: selectedId })
+    if (email) params.set('email', email)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.access_token || controller.signal.aborted) return
+      fetch(`/api/admin/customer-appointments?${params.toString()}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        signal: controller.signal,
+      })
+        .then(async response => {
+          const payload = await response.json().catch(() => ({}))
+          if (!response.ok) throw new Error(payload.error || 'Afspraken laden mislukt.')
+          return payload
+        })
+        .then(payload => {
+          if (!controller.signal.aborted) setBookings((payload.bookings || []) as PendingBooking[])
+        })
+        .catch(error => {
+          if (error instanceof DOMException && error.name === 'AbortError') return
+          console.error('[admin-customers] Afspraken laden mislukt:', error)
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setBookingsLoading(false)
+        })
+    })
 
-    if (email) {
-      bookingQuery = bookingQuery.or(`customer_email.eq.${email},user_id.eq.${selectedId}`)
-    } else {
-      bookingQuery = bookingQuery.eq('user_id', selectedId)
-    }
-
-    bookingQuery.then(({ data }) => setBookings((data || []) as PendingBooking[]))
+    return () => controller.abort()
   }, [selectedId, profiles])
 
   if (loading) return <div className="min-h-screen bg-[#F5F5F4] flex items-center justify-center"><div className="text-[#888] text-[14px]">Laden...</div></div>
@@ -177,10 +217,11 @@ export default function AdminCustomersPage() {
   )
 
   const selected = selectedId ? profiles.find(p => p.id === selectedId) : null
+  const selectedIndex = selectedId ? filtered.findIndex(profile => profile.id === selectedId) : -1
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
 
   return (
-    <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
+    <div className="min-h-screen bg-[#F5F5F4] pt-[80px]">
       <AdminDashboardMobileNav active="customers" />
 
       <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
@@ -188,26 +229,28 @@ export default function AdminCustomersPage() {
 
         {/* ── Main content ── */}
         <div className="flex-1 min-w-0">
-          <div className="grid lg:grid-cols-[340px_1fr] gap-5">
+          <div className="mobile-customer-flow grid lg:grid-cols-[340px_1fr] gap-5">
             {/* LEFT: Customer list */}
-            <div>
+            <div className="mobile-customer-list-column">
               <button
-                onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setShowGrant(true) }}
-                className="w-full mb-3 px-4 py-3 rounded-xl bg-[#C4A265] text-[#0C0A07] text-[13px] font-bold hover:brightness-95 transition flex items-center justify-center gap-2"
+                onClick={() => { setGrantUserId(''); setGrantCourseId(''); setGrantSearch(''); setGrantFeedback(null); setShowGrant(true) }}
+                className="mobile-customer-static w-full mb-3 px-4 py-3 rounded-xl bg-[#C4A265] text-[#0C0A07] text-[13px] font-bold hover:brightness-95 transition flex items-center justify-center gap-2"
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Cursus toewijzen
               </button>
               <input
                 type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Zoek op naam of email..."
-                className="w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[14px] focus:outline-none focus:border-[#C4A265] mb-3"
+                className="mobile-customer-static w-full px-4 py-3 rounded-xl border border-[#ddd] bg-white text-[14px] focus:outline-none focus:border-[#C4A265] mb-3"
               />
-              <div className="bg-white rounded-2xl border border-[#eee] overflow-hidden">
+              <div className="mobile-customer-list bg-white rounded-2xl border border-[#eee] overflow-hidden">
                 {filtered.length === 0 ? (
                   <div className="p-8 text-center text-[13px] text-[#888]">Geen klanten gevonden</div>
-                ) : filtered.map(p => (
+                ) : filtered.map((p, index) => (
                   <button key={p.id} onClick={() => setSelectedId(p.id)}
-                    className={`w-full text-left px-5 py-4 border-b border-[#f5f5f5] hover:bg-[#fafafa] transition ${selectedId === p.id ? 'bg-[#C4A265]/5 border-l-2 border-l-[#C4A265]' : ''}`}>
+                    style={{ '--customer-row': index } as CSSProperties}
+                    aria-expanded={selectedId === p.id}
+                    className={`mobile-customer-row w-full text-left px-5 py-4 border-b border-[#f5f5f5] hover:bg-[#fafafa] transition ${selectedId === p.id ? 'bg-[#C4A265]/5 border-l-2 border-l-[#C4A265]' : ''}`}>
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-[#f5f5f5] flex items-center justify-center text-[13px] font-semibold text-[#888] shrink-0">
                         {(p.first_name || p.full_name || '?')[0].toUpperCase()}
@@ -220,12 +263,15 @@ export default function AdminCustomersPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-[#aaa] mt-2">{filtered.length} klanten</p>
+              <p className="mobile-customer-count text-[11px] text-[#aaa] mt-2">{filtered.length} klanten</p>
             </div>
 
             {/* RIGHT: Customer detail */}
             {selected ? (
-              <div className="space-y-4">
+              <div
+                className="mobile-customer-detail space-y-4"
+                style={{ '--selected-customer-row': Math.max(selectedIndex, 0) } as CSSProperties}
+              >
                 {/* Header */}
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                   <div className="flex items-start justify-between">
@@ -396,9 +442,13 @@ export default function AdminCustomersPage() {
                 <div className="bg-white rounded-2xl p-6 border border-[#eee]">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888]">Behandelingen</h3>
-                    <span className="text-[11px] bg-[#f5f5f5] text-[#888] px-2 py-0.5 rounded-full font-medium">{bookings.length} afspraken</span>
+                    <span className="text-[11px] bg-[#f5f5f5] text-[#888] px-2 py-0.5 rounded-full font-medium">
+                      {bookingsLoading ? 'Laden…' : `${bookings.length} geboekte afspraken`}
+                    </span>
                   </div>
-                  {bookings.length > 0 ? (
+                  {bookingsLoading ? (
+                    <p className="text-[13px] text-[#888] py-2">Afspraken laden…</p>
+                  ) : bookings.length > 0 ? (
                     <div className="space-y-2">
                       {bookings.map(b => (
                         <div key={b.id} className="flex items-center justify-between py-3 border-b border-[#f5f5f5] last:border-0">
@@ -408,7 +458,7 @@ export default function AdminCustomersPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             {b.amount_cents != null && b.amount_cents > 0 && (
-                              <span className="text-[11px] text-[#666]">€{(b.amount_cents / 100).toFixed(2)}</span>
+                              <span className="text-[11px] text-[#666]">€{(b.amount_cents / 100).toFixed(2)} aanbetaald</span>
                             )}
                             <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
                               b.status === 'paid' ? 'bg-green-50 text-green-600' :
@@ -438,7 +488,7 @@ export default function AdminCustomersPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl p-16 border border-[#eee] text-center">
+              <div className="hidden bg-white rounded-2xl p-16 border border-[#eee] text-center lg:block">
                 <div className="text-4xl mb-4">👤</div>
                 <p className="text-[14px] text-[#888]">Selecteer een klant om details te bekijken</p>
               </div>
@@ -449,8 +499,14 @@ export default function AdminCustomersPage() {
 
       {/* Grant modal */}
       {showGrant && (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setShowGrant(false)}>
-          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full sm:w-[400px] sm:max-w-[92vw] shadow-2xl border border-[#eee] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={closeGrantModal}>
+          <div className="relative bg-white rounded-2xl p-6 sm:p-8 w-full sm:w-[400px] sm:max-w-[92vw] shadow-2xl border border-[#eee] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={closeGrantModal}
+              aria-label="Sluit cursus toewijzen"
+              className="sticky top-0 float-right -mt-2 -mr-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl text-[#777] shadow-sm border border-[#eee] hover:text-[#0C0A07]"
+            >×</button>
             <h3 className="font-['Cormorant_Garamond'] text-[24px] mb-6">Cursus toewijzen</h3>
             <div className="space-y-4">
               <div>
@@ -493,10 +549,44 @@ export default function AdminCustomersPage() {
                 className="w-full py-3 rounded-xl bg-[#0C0A07] text-white text-[14px] font-semibold hover:bg-[#333] transition disabled:opacity-40">
                 {granting ? 'Toekennen…' : 'Toewijzen'}
               </button>
+              {grantFeedback && (
+                <div
+                  role={grantFeedback.type === 'error' ? 'alert' : 'status'}
+                  className={`rounded-xl px-4 py-3 text-[13px] ${grantFeedback.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                >
+                  {grantFeedback.message}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+      <style jsx>{`
+        @media (max-width: 1023px) {
+          .mobile-customer-flow {
+            display: flex;
+            flex-direction: column;
+          }
+          .mobile-customer-list-column,
+          .mobile-customer-list {
+            display: contents;
+          }
+          .mobile-customer-static {
+            order: -2;
+          }
+          .mobile-customer-row {
+            order: calc(var(--customer-row) * 2);
+            background-color: white;
+          }
+          .mobile-customer-detail {
+            order: calc(var(--selected-customer-row) * 2 + 1);
+            margin: 0.5rem 0 1rem;
+          }
+          .mobile-customer-count {
+            order: 9999;
+          }
+        }
+      `}</style>
     </div>
   )
 }

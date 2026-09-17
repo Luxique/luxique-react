@@ -14,6 +14,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Preserve the former public URL while sending visitors to the canonical legal page.
+  if (pathname === '/policies') {
+    return NextResponse.redirect(new URL('/nl/voorwaarden', request.url), 308)
+  }
+
   // For admin routes, apply security headers only (no intl processing)
   // /cursus/ is outside [locale]/ — skip intl redirect to avoid 404
   if (pathname.startsWith('/admin') || pathname.startsWith('/cursus')) {

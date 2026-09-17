@@ -7,6 +7,8 @@ import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import ExamPlayer from '@/components/ExamPlayer'
 import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
+import { checkEnrollmentCompletion } from '@/lib/academy-completion'
+import { extractStoredBlockContent, normalizeRichTextHtml } from '@/lib/course-block-content'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -23,30 +25,31 @@ interface Block {
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
   showTitle?: boolean; showSubtitle?: boolean; showBody?: boolean
+  images?: Array<{ id: string; url: string; caption?: string }>
 }
 interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }
 
 /* ── Helpers ───────────────────────────────────── */
 function extractBlockContent(block: Block) {
-  const c = typeof block.content === 'object' ? block.content as Record<string, unknown> : null
-  const nestedC = typeof c?.content === 'object' && c.content !== null ? c.content as Record<string, unknown> : null
+  const stored = extractStoredBlockContent(block.content)
   return {
-    title: (c?.title as string) || block.title,
-    subtitle: (c?.subtitle as string) || block.subtitle,
-    showTitle: (c?.showTitle as boolean | undefined) ?? block.showTitle,
-    showSubtitle: (c?.showSubtitle as boolean | undefined) ?? block.showSubtitle,
-    showBody: (c?.showBody as boolean | undefined) ?? block.showBody,
-    body: typeof c?.content === 'string' ? c.content : (typeof block.content === 'string' ? block.content : ''),
-    muxPlaybackId: (nestedC?.mux_playback_id as string) || (c?.mux_playback_id as string) || undefined,
-    question: (c?.question as string) || block.question,
-    options: (c?.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
-    optionType: (c?.option_type as string) || block.option_type || ((c?.options as Array<{ image_url?: string }>)?.some((o: { image_url?: string }) => o.image_url) ? 'image' : 'text'),
-    media: (c?.media as { type: string; url: string; caption?: string } | null) || block.media,
-    imageUrl: (c?.url as string) || block.media?.url,
-    caption: (c?.caption as string) || block.media?.caption,
-    fileName: (block.title || (c?.file_name as string)) || 'Bestand',
-    fileSize: c?.file_size as number | undefined,
-    fileUrl: (c?.file_url as string) || block.file_url || '#',
+    title: normalizeRichTextHtml(stored.title || block.title),
+    subtitle: normalizeRichTextHtml(stored.subtitle || block.subtitle),
+    showTitle: stored.showTitle ?? block.showTitle,
+    showSubtitle: stored.showSubtitle ?? block.showSubtitle,
+    showBody: stored.showBody ?? block.showBody,
+    body: normalizeRichTextHtml(stored.body),
+    muxPlaybackId: stored.muxPlaybackId,
+    question: stored.question || block.question,
+    options: (stored.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
+    optionType: stored.optionType || block.option_type || ((stored.options as Array<{ image_url?: string }> | undefined)?.some(o => o.image_url) ? 'image' : 'text'),
+    media: (stored.media as { type: string; url: string; caption?: string } | null) || block.media,
+    imageUrl: stored.url || (stored.media?.url as string | undefined) || block.media?.url,
+    caption: stored.caption || (stored.media?.caption as string | undefined) || block.media?.caption,
+    images: stored.images?.length ? stored.images : undefined,
+    fileName: block.title || stored.fileName || 'Bestand',
+    fileSize: stored.fileSize,
+    fileUrl: stored.fileUrl || block.file_url || '#',
   }
 }
 
@@ -65,6 +68,7 @@ export default function LessonPage() {
   const [enrolled, setEnrolled] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
   const [showConvertModal, setShowConvertModal] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null)
   const convertDismissedRef = useRef(false) // one dismissal per session
   const hasMarkedRef = useRef(false)  // idempotency guard — markComplete fires once per lesson
 
@@ -79,6 +83,15 @@ export default function LessonPage() {
       setRailOpen(localStorage.getItem('lux-rail-open') !== 'closed')
     }
   }, [])
+
+  useEffect(() => {
+    if (!lightboxImage) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLightboxImage(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [lightboxImage])
 
   // Quiz: track attempts per question block
   const [quizAttempts, setQuizAttempts] = useState<Record<string, number>>({})      // blockId → attempt count
@@ -224,6 +237,7 @@ export default function LessonPage() {
       setVideoCompleted(false)
     } else {
       console.log('[completion] upsert OK — completed=true for', targetId)
+      await checkEnrollmentCompletion(lesson.course_id)
       // Show conversion modal if: free lesson, user logged in, not enrolled, not admin, not already dismissed
       if (isFreeLesson && !hasAccess && !convertDismissedRef.current) {
         setTimeout(() => setShowConvertModal(true), 800)
@@ -463,18 +477,31 @@ export default function LessonPage() {
                     {/* TEXT */}
                     {block.type === 'text' && (
                       <div className="tt">
-                        {bc.showTitle !== false && bc.title && <h2>{bc.title}</h2>}
-                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle">{bc.subtitle}</div>}
-                        {bc.showBody !== false && bc.body && <div dangerouslySetInnerHTML={{ __html: bc.body }} />}
+                        {bc.showTitle !== false && bc.title && <div className="block-title course-rich-content" dangerouslySetInnerHTML={{ __html: bc.title }} />}
+                        {bc.showSubtitle !== false && bc.subtitle && <div className="subtitle course-rich-content" dangerouslySetInnerHTML={{ __html: bc.subtitle }} />}
+                        {bc.showBody !== false && bc.body && <div className="block-body course-rich-content" dangerouslySetInnerHTML={{ __html: bc.body }} />}
                       </div>
+                    )}
+
+                    {/* CALLOUT / TIP */}
+                    {block.type === 'callout' && bc.body && (
+                      <aside className="callout course-rich-content">
+                        <span className="callout-icon" aria-hidden="true">💡</span>
+                        <div dangerouslySetInnerHTML={{ __html: bc.body }} />
+                      </aside>
                     )}
 
                     {/* IMAGE */}
                     {block.type === 'image' && (
-                      <>
-                        <div className="photo">{bc.imageUrl ? <img src={bc.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : '⛶'}</div>
-                        {bc.caption && <div className="photo-cap">{bc.caption}</div>}
-                      </>
+                      <div className="photo-grid" data-count={bc.images?.length || (bc.imageUrl ? 1 : 0)}>
+                        {(bc.images?.length ? bc.images : [{ id: 'legacy', url: bc.imageUrl || '', caption: bc.caption }]).map(image => <figure key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
+                          <button className="photo" type="button" onClick={() => image.url && setLightboxImage({ url: image.url, alt: image.caption || '' })} aria-label={image.caption ? `Vergroot foto: ${image.caption}` : 'Vergroot foto'}>{image.url ? <img src={image.url} alt={image.caption || ''} onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} /> : '⛶'}</button>
+                          <figcaption className="photo-meta">
+                            {image.caption && <span className="photo-cap">{image.caption}</span>}
+                            <span className="photo-zoom-hint">Klik om te vergroten</span>
+                          </figcaption>
+                        </figure>)}
+                      </div>
                     )}
 
                     {/* DOWNLOAD */}
@@ -608,6 +635,10 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+      {lightboxImage && <div className="photo-lightbox" role="dialog" aria-modal="true" aria-label="Vergrote foto" onClick={() => setLightboxImage(null)}>
+        <button className="photo-lightbox-close" type="button" onClick={() => setLightboxImage(null)} aria-label="Sluiten">✕</button>
+        <img src={lightboxImage.url} alt={lightboxImage.alt} onClick={event => event.stopPropagation()} />
+      </div>}
 
       {/* Conversion modal — after free lesson completion */}
       {showConvertModal && (

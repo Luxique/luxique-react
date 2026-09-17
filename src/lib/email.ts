@@ -1,5 +1,9 @@
 import { Resend } from 'resend'
 import { createClient } from '@supabase/supabase-js'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { formatBookingDate, formatBookingDateOnly, formatBookingTime } from '@/lib/booking-date-time'
+import { renderTrajectoryProgrammeHtml } from '@/lib/trajectory-email-content'
+import { extractCalBookingNote, renderBookingNoteEmailHtml } from '@/lib/booking-notes'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -7,19 +11,16 @@ const FROM = 'LUXIQUE <noreply@luxique.nl>'
 const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
-const AMSTERDAM_TIME_ZONE = 'Europe/Amsterdam'
+const STUDIO_EXTERIOR_IMAGE_URL = `${SITE_URL}/images/luxique-studio-exterior.jpg`
+
+const studioExteriorPhotoNL = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0 0;"><tr><td align="center"><img src="${STUDIO_EXTERIOR_IMAGE_URL}" width="504" alt="Het pand van LUXIQUE aan De Overmaat 26 in Arnhem" style="display:block;width:100%;max-width:504px;height:auto;border:0;border-radius:10px;"></td></tr></table>`
 
 function formatDateEN(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    timeZone: AMSTERDAM_TIME_ZONE,
-  })
+  return formatBookingDate(iso, 'en-GB')
 }
 
 function formatTimeEN(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-GB', {
-    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: AMSTERDAM_TIME_ZONE,
-  })
+  return formatBookingTime(iso, 'en-GB')
 }
 
 interface BookingData {
@@ -32,17 +33,67 @@ interface BookingData {
   customer_name?: string | null
   customer_email?: string | null
   user_id?: string | null
+  stripe_session_id?: string | null
+  cancellation_refund_eligible?: boolean
+  customer_note?: string | null
 }
 
-async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
-  if (!userId) return fallback || null
+const bookingNoteCache = new Map<string, Promise<string>>()
+
+async function getBookingNote(booking: BookingData): Promise<string> {
+  const suppliedNote = booking.customer_note?.trim()
+  if (suppliedNote) return suppliedNote
+  if (!booking.cal_booking_uid || !process.env.CAL_API_KEY) return ''
+
+  let request = bookingNoteCache.get(booking.cal_booking_uid)
+  if (!request) {
+    request = fetch(`https://api.cal.com/v2/bookings?uid=${encodeURIComponent(booking.cal_booking_uid)}`, {
+      cache: 'no-store',
+      headers: {
+        Authorization: `Bearer ${process.env.CAL_API_KEY}`,
+        'cal-api-version': '2024-09-10',
+      },
+    }).then(async response => {
+      if (!response.ok) return ''
+      const payload = await response.json() as { data?: { bookings?: Array<Record<string, unknown>> } }
+      return extractCalBookingNote(payload.data?.bookings?.[0] || {})
+    }).catch(() => '')
+    bookingNoteCache.set(booking.cal_booking_uid, request)
+  }
+  return request
+}
+
+async function getAccountIdentity(booking: BookingData): Promise<{ name: string; email: string }> {
+  let name = booking.customer_name?.trim() || ''
+  let email = canonicalCustomerEmail({ bookingEmail: booking.customer_email }) || ''
+  if (!booking.user_id) return { name: name || email.split('@')[0] || 'Klant', email }
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  const { data: authUser } = await supabase.auth.admin.getUserById(userId)
-  return authUser?.user?.email || fallback || null
+  const [{ data: authUser }, { data: profile }] = await Promise.all([
+    supabase.auth.admin.getUserById(booking.user_id),
+    supabase.from('profiles').select('full_name, email').eq('id', booking.user_id).maybeSingle(),
+  ])
+  // profiles.email is the canonical customer-facing address. Cal.com may store
+  // an @sms.cal.com gateway address and auth metadata can lag behind a profile edit.
+  email = canonicalCustomerEmail({
+    profileEmail: profile?.email,
+    authEmail: authUser?.user?.email,
+    bookingEmail: email,
+  }) || ''
+  name = profile?.full_name || authUser?.user?.user_metadata?.full_name || name
+  return { name: name.trim() || email.split('@')[0] || 'Klant', email }
 }
+
+async function getAccountEmail(userId: string | null | undefined, fallback: string | null | undefined): Promise<string | null> {
+  return (await getAccountIdentity({ cal_booking_uid: '', event_type: '', slot_start: '', amount_cents: 0, user_id: userId, customer_email: fallback })).email || null
+}
+
+const spamNoticeNL = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;"><strong style="color:#4a463e;">Kwam deze mail in je ongewenste mail / spam terecht?</strong> Verplaats 'm dan even naar je normale inbox, zodat je onze berichten voortaan meteen goed ontvangt.</div>`
+const spamNoticeEN = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;"><strong style="color:#4a463e;">Did this email land in your junk or spam folder?</strong> Please move it to your regular inbox so our future messages reach you straight away.</div>`
+const availabilityNoticeNL = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#4a463e; padding:14px 18px; max-width:430px; margin:18px auto 0; background:#f3efe7; border-left:3px solid #C4A265; text-align:left;"><strong style="color:#0C0A07;">Let op:</strong> we zijn bereikbaar op werkdagen van 09:00 tot 16:00. Berichten die daarbuiten binnenkomen, beantwoorden we op de eerstvolgende werkdag.</div>`
+const availabilityNoticeEN = `<div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#4a463e; padding:14px 18px; max-width:430px; margin:18px auto 0; background:#f3efe7; border-left:3px solid #C4A265; text-align:left;"><strong style="color:#0C0A07;">Please note:</strong> we are available on working days from 09:00 to 16:00. Messages received outside these hours will be answered on the next working day.</div>`
 
 async function markMailSent(bookingId: string, column: string) {
   const supabase = createClient(
@@ -91,7 +142,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
     const date = formatDateEN(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
-    const remainder = deposit // 50/50 split
+    const noteHtml = renderBookingNoteEmailHtml(await getBookingNote(booking), 'Your note')
 
     // Build manage booking URL (dashboard with bookings tab)
     const manageUrl = `${SITE_URL}/dashboard?tab=boekingen`
@@ -136,6 +187,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
             </table>
           </td></tr>
         </table>
+        ${noteHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">The remaining 50% is paid in the studio after your treatment.</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;"><strong>Need to reschedule or cancel?</strong> Log in to your dashboard to manage your appointment. Please note: changes within 24 hours of your appointment mean your deposit is non-refundable.</div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
@@ -147,6 +199,8 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
           </tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:6px; max-width:430px; margin:0 auto;">A calendar invite (.ics) is attached so you can add it to your calendar.</div>
+        ${availabilityNoticeEN}
+        ${spamNoticeEN}
       </td></tr>
       <tr><td style="padding:0 40px 8px 40px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px;">
@@ -209,24 +263,25 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       return
     }
 
-    const date = formatDateEN(booking.slot_start)
+    const date = formatDateNL(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
+    const noteHtml = renderBookingNoteEmailHtml(await getBookingNote(booking), 'Jouw notitie')
 
     const { error } = await resend.emails.send({
       from: FROM,
       to: accountEmail,
-      subject: 'Tot morgen bij LUXIQUE 💫',
+      subject: `Herinnering: je afspraak op ${date} om ${time}`,
       html: `<!DOCTYPE html>
 <html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Tot morgen bij LUXIQUE</title>
+<title>Afspraakherinnering van LUXIQUE</title>
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 </head>
 <body style="margin:0; padding:0; background-color:#e8e6e1; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
-<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">Morgen is het zover — je LUXIQUE afspraak.</div>
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">Je LUXIQUE afspraak is op ${date} om ${time}.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#e8e6e1;">
   <tr><td align="center" style="padding:40px 16px;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#FAF8F4; border-radius:14px; overflow:hidden;">
@@ -236,8 +291,8 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Herinnering</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Tot morgen bij LUXIQUE 💫</div>
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">We kijken ernaar uit om je te verwelkomen. Hier is een korte herinnering met alle details:</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Je afspraak komt eraan 💫</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">We kijken ernaar uit om je op ${date} om ${time} te verwelkomen. Hieronder vind je alle details:</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -246,12 +301,13 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Datum</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${date}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Tijd</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${time} uur</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${time}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Locatie</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${STUDIO_ADDRESS}</td></tr>
             </table>
           </td></tr>
         </table>
+        ${noteHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:10px;">Kleine voorbereiding</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:28px; max-width:440px; margin:0 auto;">Kom met schone wimpers — zonder mascara of olie-producten rond de ogen.</div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
@@ -263,6 +319,9 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
           </tr>
         </table>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; padding-top:18px; max-width:430px; margin:0 auto;">Kun je onverhoopt niet? Laat het ons z.s.m. weten via <a href="mailto:info@luxique.nl" style="color:#8a857b; text-decoration:underline;">info@luxique.nl</a>.</div>
+        ${availabilityNoticeNL}
+        ${spamNoticeNL}
+        ${studioExteriorPhotoNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -294,10 +353,12 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
 // ============================================================
 export async function sendNewBookingNotification(booking: BookingData) {
   try {
+    const customer = await getAccountIdentity(booking)
     const date = formatDateEN(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const remainder = deposit
+    const noteHtml = renderBookingNoteEmailHtml(await getBookingNote(booking), 'Notitie van de klant')
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -323,15 +384,15 @@ export async function sendNewBookingNotification(booking: BookingData) {
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Nieuwe boeking</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${booking.customer_name || 'Onbekend'}</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${customer.name}</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Er is een nieuwe betaalde boeking binnengekomen:</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Klant</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${booking.customer_name || 'Onbekend'}</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${customer.name}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">E-mail</td></tr>
-              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;"><a href="mailto:${booking.customer_email || ''}" style="color:#0C0A07; text-decoration:none;">${booking.customer_email || 'Onbekend'}</a></td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${customer.email ? `<a href="mailto:${customer.email}" style="color:#0C0A07; text-decoration:none;">${customer.email}</a>` : 'Onbekend'}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Behandeling</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${booking.event_type}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Wanneer</td></tr>
@@ -343,6 +404,7 @@ export async function sendNewBookingNotification(booking: BookingData) {
             </table>
           </td></tr>
         </table>
+        ${noteHtml}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -441,13 +503,19 @@ export async function sendExpiredNotification(booking: BookingData) {
 // ============================================================
 export async function sendCancellationNotification(booking: BookingData & { cancelled_within_24h?: boolean }) {
   try {
+    const customer = await getAccountIdentity(booking)
     const date = formatDateEN(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const within24h = booking.cancelled_within_24h
+    const refundEligible = booking.cancellation_refund_eligible ?? (booking.status === 'paid' && !within24h && booking.amount_cents > 0)
+    if (!within24h && !refundEligible) {
+      console.log(`Mail: no refund notification needed for unpaid booking ${booking.cal_booking_uid}`)
+      return
+    }
     const subject = within24h
-      ? `CANCELLED • NO REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
-      : `CANCELLED • REFUND • ${booking.customer_name || 'Klant'} • ${date} • ${booking.event_type}`
+      ? `CANCELLED • NO REFUND • ${customer.name} • ${date} • ${booking.event_type}`
+      : `REFUND ${customer.name} • ${date} • €${deposit} • GELDIGE ANNULERING`
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -473,7 +541,7 @@ export async function sendCancellationNotification(booking: BookingData & { canc
       <tr><td style="height:2px; line-height:2px; font-size:0; background-color:#C4A265;">&nbsp;</td></tr>
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Annulering</div>
-        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${booking.customer_name || 'Klant'}</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">${customer.name}</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">De volgende afspraak is geannuleerd${within24h ? ' — <strong>binnen 24 uur</strong>' : ''}:</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:22px 26px;">
@@ -484,11 +552,16 @@ export async function sendCancellationNotification(booking: BookingData & { canc
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${date} om ${time} uur</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Aanbetaling</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">&euro;${deposit}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Klant</td></tr>
+              <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 4px 0;">${customer.name}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:14px; color:#4a463e; padding:0 0 14px 0;">${customer.email || 'Geen e-mailadres geregistreerd'}</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Stripe checkout session</td></tr>
+              <tr><td style="font-family:Arial,sans-serif; font-size:13px; line-height:20px; color:#0C0A07; word-break:break-all;">${booking.stripe_session_id || 'Niet geregistreerd'}</td></tr>
             </table>
           </td></tr>
         </table>
         <div style="background:${within24h ? 'rgba(197,60,60,0.08)' : 'rgba(91,140,102,0.08)'}; border:1px solid ${within24h ? 'rgba(197,60,60,0.25)' : 'rgba(91,140,102,0.25)'}; border-radius:10px; padding:14px 20px; max-width:440px; margin:0 auto;">
-          <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:.5px; color:${within24h ? '#c53c3c' : '#5b8c66'};">${within24h ? 'GEEN REFUND — BINNEN 24U (AV)' : 'REFUND NODIG'}</div>
+          <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:.5px; color:${within24h ? '#c53c3c' : '#5b8c66'};">${within24h ? 'GEEN REFUND — BINNEN 24U (AV)' : `GELDIGE ANNULERING BUITEN 24U — betaal de aanbetaling van &euro;${deposit} handmatig terug in Stripe.`}</div>
         </div>
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
@@ -505,12 +578,13 @@ export async function sendCancellationNotification(booking: BookingData & { canc
 
     if (error) {
       console.error(`Mail: cancellation notification FAILED:`, error)
-      return
+      throw new Error(error.message)
     }
 
     console.log(`Mail: Chiva notified of cancellation ${booking.cal_booking_uid} (within24h: ${within24h})`)
   } catch (err) {
     console.error(`Mail: cancellation notification error:`, err)
+    throw err
   }
 }
 
@@ -563,6 +637,7 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:24px; max-width:440px; margin:0 auto;">Je afspraak voor <strong>${booking.event_type}</strong> op ${date} om ${time} uur is succesvol geannuleerd.</div>
         ${refundHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8a857b; max-width:430px; margin:0 auto;">Vragen? Mail ons via <a href="mailto:info@luxique.nl" style="color:#8a857b; text-decoration:underline;">info@luxique.nl</a>.</div>
+        ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -579,12 +654,13 @@ export async function sendCustomerCancellationEmail(booking: BookingData & { can
 
     if (error) {
       console.error(`Mail: customer cancellation FAILED:`, error)
-      return
+      throw new Error(error.message)
     }
 
     console.log(`Mail: customer cancellation sent for ${booking.cal_booking_uid}`)
   } catch (err) {
     console.error(`Mail: customer cancellation error:`, err)
+    throw err
   }
 }
 
@@ -647,8 +723,6 @@ export async function sendReviewRequestEmail(booking: BookingData) {
     }
 
     const firstName = booking.customer_name?.split(' ')[0] || 'je'
-    const date = formatDateEN(booking.slot_start)
-
     const { error } = await resend.emails.send({
       from: FROM,
       to: accountEmail,
@@ -732,6 +806,7 @@ export async function getBookingWithCustomerFromCal(uid: string): Promise<Bookin
       amount_cents: 0,
       customer_name: responses.name || attendee.name || null,
       customer_email: responses.email || attendee.email || null,
+      customer_note: extractCalBookingNote(b),
     }
   } catch {
     return null
@@ -744,6 +819,7 @@ export async function getBookingWithCustomerFromCal(uid: string): Promise<Bookin
 
 export interface TrajectBoekingMailData {
   boekingId: string
+  cursus_id: string
   cursus_naam: string
   startdatum: string
   blok_dagen: string[]
@@ -755,9 +831,7 @@ export interface TrajectBoekingMailData {
 }
 
 function formatDateNL(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('nl-NL', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
+  return formatBookingDateOnly(iso)
 }
 
 function fmtTime(t?: string | null): string {
@@ -803,11 +877,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
     }
 
     const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
-    const heeftMeerdereDagen = data.blok_dagen.length > 1
-
-    const trajectDagenHtml = heeftMeerdereDagen
-      ? data.blok_dagen.map(d => `<tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Trajectdag</td></tr><tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(d)}</td></tr>`).join('')
-      : ''
+    const trajectDagenHtml = renderTrajectoryProgrammeHtml(data.cursus_id, data.cursus_naam)
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -842,7 +912,6 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${data.cursus_naam}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Startdatum</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${formatDateNL(data.startdatum)}</td></tr>
-              ${heeftMeerdereDagen ? trajectDagenHtml : ''}
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Starttijd per dag</td></tr>
               <tr><td style="font-family:'Cormorant Garamond',Georgia,serif; font-size:19px; color:#0C0A07; padding:0 0 14px 0;">${fmtTime(data.starttijd)}</td></tr>
               <tr><td style="font-family:Arial,sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#9a958b; padding:0 0 3px 0;">Locatie</td></tr>
@@ -852,8 +921,9 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
             </table>
           </td></tr>
         </table>
+        ${trajectDagenHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:14px; max-width:440px; margin:0 auto;">Het restbedrag van <strong>${formatBedrag(data.restbedrag_cents)}</strong> voldoe je contant of met pin bij Chiva op de startdag.</div>
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#9a958b; padding-bottom:22px; max-width:440px; margin:0 auto;">Let op: de aanbetaling (20%) is onder geen enkele omstandigheid restitueerbaar.</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px; color:#9a958b; padding-bottom:22px; max-width:440px; margin:0 auto;">Na de wettelijke bedenktijd geldt bij annulering een annuleringsvergoeding van 20% van de cursusprijs. De betaalde aanbetaling wordt daarmee verrekend.</div>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7; border-radius:10px; margin:0 0 26px 0;">
           <tr><td style="padding:24px 28px;">
             <div style="font-family:Arial,sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; color:#C4A265; text-align:center; padding-bottom:14px;">Praktische informatie</div>
@@ -864,6 +934,7 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
             </table>
           </td></tr>
         </table>
+        ${spamNoticeNL}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -888,6 +959,39 @@ export async function sendTrajectBevestigingMail(data: TrajectBoekingMailData) {
   } catch (err) {
     console.error('Traject mail: onverwachte fout:', err)
   }
+}
+
+export async function sendTrajectReminderMail(data: TrajectBoekingMailData) {
+  const voornaam = data.klant_naam.split(' ')[0] || data.klant_naam
+  const trajectDagenHtml = renderTrajectoryProgrammeHtml(data.cursus_id, data.cursus_naam)
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: data.klant_email,
+    subject: `Herinnering: ${data.cursus_naam} start binnenkort — LUXIQUE`,
+    html: `<!DOCTYPE html>
+<html lang="nl" xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Je traject start binnenkort</title></head>
+<body style="margin:0;padding:0;background-color:#e8e6e1;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">Je LUXIQUE traject start binnenkort — bekijk je dagprogramma.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#e8e6e1;"><tr><td align="center" style="padding:40px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background-color:#FAF8F4;border-radius:14px;overflow:hidden;">
+<tr><td align="center" style="background-color:#0C0A07;padding:38px 40px 30px;"><img src="https://luxique.nl/lxq-email-logo.png" width="132" alt="LUXIQUE" style="display:block;width:132px;height:auto;border:0;"></td></tr>
+<tr><td style="height:2px;background-color:#C4A265;font-size:0;">&nbsp;</td></tr>
+<tr><td align="center" style="padding:44px 48px 36px;">
+<div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#C4A265;padding-bottom:18px;">Herinnering persoonlijk traject</div>
+<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;line-height:42px;color:#0C0A07;padding-bottom:20px;">Bijna zover, ${voornaam}</div>
+<div style="font-family:Arial,sans-serif;font-size:16px;line-height:26px;color:#4a463e;padding-bottom:24px;max-width:440px;margin:0 auto;">Je traject <strong>${data.cursus_naam}</strong> start op <strong>${formatDateNL(data.startdatum)}</strong> om <strong>${fmtTime(data.starttijd)}</strong> bij ${STUDIO_ADDRESS}.</div>
+${trajectDagenHtml}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe7;border-radius:10px;margin:0 0 26px;"><tr><td style="padding:24px 28px;">
+<div style="font-family:Arial,sans-serif;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#C4A265;text-align:center;padding-bottom:14px;">Praktische informatie</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Kom goed uitgeslapen naar iedere trajectdag.</td></tr>
+<tr><td style="padding:0 0 10px;font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Er is gratis parkeergelegenheid aanwezig.</td></tr>
+<tr><td style="font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#4a463e;"><span style="color:#C4A265;">&#9670;</span>&nbsp; Lunch is inbegrepen. Heb je een allergie? Beantwoord deze mail of mail naar <a href="mailto:info@luxique.nl" style="color:#4a463e;text-decoration:underline;">info@luxique.nl</a>.</td></tr>
+</table></td></tr></table>${spamNoticeNL}${studioExteriorPhotoNL}</td></tr>
+<tr><td align="center" style="padding:26px 48px 34px;border-top:1px solid #e4ddd0;"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:18px;color:#C4A265;padding-bottom:14px;">With love, Luxique</div><div style="font-family:Arial,sans-serif;font-size:12px;color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b;">luxique.nl</a></div></td></tr>
+</table></td></tr></table></body></html>`,
+  })
+  if (error) throw new Error(`Traject reminder versturen mislukt: ${error.message}`)
 }
 
 export async function sendTrajectNotificatieChiva(data: TrajectBoekingMailData) {

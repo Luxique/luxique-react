@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,24 +11,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
   // Get user from JWT
   const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+  const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
   if (userError || !user) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
   }
 
-  // Fetch all bookings for this user — ONLY via user_id (never email)
-  // user_id is stamped when the user lands on the betalen page while logged in
-  const { data: bookings, error } = await supabase
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('email, phone')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const phoneDigits = String(profile?.phone || '').replace(/\D/g, '').replace(/^00/, '')
+  const normalizedPhone = phoneDigits.startsWith('0') ? `31${phoneDigits.slice(1)}` : phoneDigits
+  const smsGatewayEmail = normalizedPhone ? `${normalizedPhone}@sms.cal.com` : null
+  const accountEmail = profile?.email?.trim().toLowerCase() || user.email?.trim().toLowerCase() || null
+
+  // user_id is authoritative. Exact account email/phone-gateway matches recover
+  // bookings created before the best-effort link request completed.
+  const ownershipFilters = [`user_id.eq.${user.id}`]
+  if (accountEmail) ownershipFilters.push(`customer_email.eq.${accountEmail}`)
+  if (smsGatewayEmail) ownershipFilters.push(`customer_email.eq.${smsGatewayEmail}`)
+
+  const { data: bookings, error } = await supabaseAdmin
     .from('pending_bookings')
     .select('*')
-    .eq('user_id', user.id)
+    .or(ownershipFilters.join(','))
+    .eq('status', 'paid')
     .not('stripe_session_id', 'is', null)
     .order('slot_start', { ascending: false })
 
@@ -35,5 +47,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'DB error' }, { status: 500 })
   }
 
-  return NextResponse.json({ bookings: bookings || [] })
+  const canonicalEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: user.email })
+  return NextResponse.json({
+    bookings: (bookings || []).map(booking => ({
+      ...booking,
+      customer_email: canonicalCustomerEmail({
+        profileEmail: canonicalEmail,
+        bookingEmail: booking.customer_email,
+      }),
+    })),
+  }, { headers: { 'Cache-Control': 'private, no-store, max-age=0' } })
 }

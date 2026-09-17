@@ -173,7 +173,7 @@ export default function LuxKnowledgePage() {
         <span style={{ fontSize: '1.3rem' }}>✓</span>
         <span>{toast.msg}</span>
       </div>
-      <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
+      <div className="min-h-screen bg-[#F5F5F4] pt-[80px]">
         <AdminDashboardMobileNav active="knowledge" />
         <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
           <AdminDashboardSidebar active="knowledge" />

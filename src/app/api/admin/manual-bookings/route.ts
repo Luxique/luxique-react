@@ -10,11 +10,13 @@ import {
   isManualTreatmentKey,
   MANUAL_TREATMENTS,
   normalizePhoneNumber,
+  restoreConsumedPublicAvailability,
   type ManualDepositStatus,
   type ManualTreatmentKey,
 } from '@/lib/manual-bookings'
 import { findManualBookingConflict } from '@/lib/manual-booking-conflicts'
 import { sendManualBookingConfirmation } from '@/lib/manual-booking-email'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -30,7 +32,7 @@ async function accountFor(userId: string) {
     supabaseAdmin.auth.admin.getUserById(userId),
   ])
   if (!profile || !authData?.user) return null
-  const email = authData.user.email || profile.email
+  const email = canonicalCustomerEmail({ profileEmail: profile.email, authEmail: authData.user.email })
   if (!email) return null
   return {
     id: profile.id,
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
   const depositCents = depositStatus === 'paid' && Number.isInteger(body?.salonDepositCents)
     ? Number(body.salonDepositCents)
     : null
+  const note = typeof body?.note === 'string' ? body.note.trim() : ''
 
   if (!userId || !isManualTreatmentKey(body?.treatmentKey) || !start) {
     return json({ error: 'Klant, behandeling, datum en tijd zijn verplicht.' }, 400)
@@ -83,6 +86,7 @@ export async function POST(request: NextRequest) {
   if (depositStatus === 'paid' && (depositCents == null || depositCents < 0)) {
     return json({ error: 'Vul een geldig aanbetalingsbedrag in.' }, 400)
   }
+  if (note.length > 2000) return json({ error: 'De notitie mag maximaal 2000 tekens bevatten.' }, 400)
 
   const customer = await accountFor(userId)
   if (!customer) return json({ error: 'Dit account bestaat niet meer of heeft geen e-mailadres.' }, 404)
@@ -110,6 +114,7 @@ export async function POST(request: NextRequest) {
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
+      note: note || null,
     })
     const slotStart = calBooking.start
     const slotEnd = calBooking.end || addMinutes(slotStart, treatment.durationMinutes)
@@ -135,6 +140,7 @@ export async function POST(request: NextRequest) {
         salon_deposit_cents: depositCents,
         salon_deposit_status: depositStatus,
         sync_status: 'synced',
+        note: note || null,
         updated_at: new Date().toISOString(),
       })
       .select('*')
@@ -147,9 +153,22 @@ export async function POST(request: NextRequest) {
       return json({ error: `Boeking kon niet worden opgeslagen: ${insertError?.message || 'onbekende fout'}` }, 500)
     }
 
+    let consumedAvailability
     try {
-      await consumePublicAvailability(slotStart, slotEnd)
+      consumedAvailability = await consumePublicAvailability(slotStart, slotEnd, treatmentKey)
+      const { error: ledgerError } = await supabaseAdmin.from('manual_bookings').update({
+        availability_restoration_ledger: consumedAvailability.restorationLedger,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id)
+      if (ledgerError) {
+        throw new Error(`Hersteladministratie kon niet worden opgeslagen: ${ledgerError.message}`)
+      }
     } catch (availabilityError) {
+      if (consumedAvailability) {
+        await restoreConsumedPublicAvailability(consumedAvailability).catch(restoreError => {
+          console.error('[manual-bookings] schedule rollback after ledger failure failed:', restoreError)
+        })
+      }
       await supabaseAdmin.from('manual_bookings').delete().eq('id', booking.id)
       await cancelManualCalBooking(calBooking.uid, 'Public availability could not be consumed').catch(cleanupError => {
         console.error('[manual-bookings] Cal rollback after availability failure failed:', cleanupError)

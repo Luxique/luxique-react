@@ -9,6 +9,8 @@ import { PreviewProvider } from '@/contexts/PreviewContext'
 import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
+import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
+import { extractStoredBlockContent, getBuilderVideoPlaybackConfig } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -65,10 +67,12 @@ interface Block {
   content?: string | {
     mux_asset_id?: string
     mux_playback_id?: string
+    mux_public_playback_id?: string
     [key: string]: unknown
   }
   url?: string
   caption?: string
+  images?: Array<{ id: string; url: string; caption?: string }>
   question?: string
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
@@ -240,10 +244,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [currentQuiz, setCurrentQuiz] = useState<Quiz | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
   const [blocksCache, setBlocksCache] = useState<Record<string, Block[]>>({})  // Per-les cache
+  const blocksCacheRef = useRef<Record<string, Block[]>>({})
+  const activeLessonIdRef = useRef<string | null>(null)
+  const [lastBlockReorder, setLastBlockReorder] = useState<{ lessonId: string; blocks: Block[] } | null>(null)
+  const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
+  const hasUnsavedChangesRef = useRef(false)
   const [lessonNumber, setLessonNumber] = useState(2)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
   const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [blockInsertIndex, setBlockInsertIndex] = useState<number | null>(null)
   const addBlockButtonRef = useRef<HTMLButtonElement>(null)
 
   
@@ -289,25 +299,81 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const markLessonBlocksDirty = useCallback((lessonId?: string) => {
+    if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
+    hasUnsavedChangesRef.current = true
+  }, [])
+
+  useEffect(() => {
+    const warnBeforeLeave = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChangesRef.current && dirtyBlockLessonIdsRef.current.size === 0) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', warnBeforeLeave)
+    return () => window.removeEventListener('beforeunload', warnBeforeLeave)
+  }, [])
+
+  const cacheLessonBlocks = useCallback((lessonId: string, lessonBlocks: Block[]) => {
+    blocksCacheRef.current = { ...blocksCacheRef.current, [lessonId]: lessonBlocks }
+    setBlocksCache(blocksCacheRef.current)
+  }, [])
+
+  const persistBlockOrder = async (orderedBlocks: Block[]) => {
+    const reorderResults = await Promise.all(
+      orderedBlocks.map((block, index) =>
+        supabase.from('blocks').update({ sort_order: index }).eq('id', block.id)
+      )
+    )
+    return reorderResults.find(result => result.error)?.error || null
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    
-    setBlocks(prev => {
-      const oldIndex = prev.findIndex(b => b.id === active.id);
-      const newIndex = prev.findIndex(b => b.id === over.id);
-      const reordered = arrayMove(prev, oldIndex, newIndex);
-      // Persist order to Supabase
-      reordered.forEach((block, index) => {
-        supabase.from('blocks').update({ order: index }).eq('id', block.id).then(() => {});
-      });
-      return reordered;
-    });
-    // Update cache
-    if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }));
+
+    const oldIndex = blocks.findIndex(b => b.id === active.id)
+    const newIndex = blocks.findIndex(b => b.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(blocks, oldIndex, newIndex)
+    setBlocks(reordered)
+
+    if (!currentLesson?.id) return
+    const lessonId = currentLesson.id
+    cacheLessonBlocks(lessonId, reordered)
+    markLessonBlocksDirty(lessonId)
+
+    const reorderError = await persistBlockOrder(reordered)
+    if (reorderError) {
+      console.error('[handleDragEnd] Block reorder FAILED:', reorderError)
+      setBlocks(blocks)
+      cacheLessonBlocks(lessonId, blocks)
+      alert(`Volgorde opslaan mislukt: ${reorderError.message}`)
+      return
     }
+    setLastBlockReorder({ lessonId, blocks })
   };
+
+  const undoLastBlockReorder = async () => {
+    if (!currentLesson?.id || lastBlockReorder?.lessonId !== currentLesson.id) return
+
+    const currentOrder = blocks
+    const previousOrder = lastBlockReorder.blocks
+    setBlocks(previousOrder)
+    cacheLessonBlocks(currentLesson.id, previousOrder)
+    markLessonBlocksDirty(currentLesson.id)
+
+    const undoError = await persistBlockOrder(previousOrder)
+    if (undoError) {
+      console.error('[undoLastBlockReorder] Block reorder undo FAILED:', undoError)
+      setBlocks(currentOrder)
+      cacheLessonBlocks(currentLesson.id, currentOrder)
+      alert(`Ongedaan maken mislukt: ${undoError.message}`)
+      return
+    }
+    setLastBlockReorder(null)
+  }
 
   const toSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -467,31 +533,35 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       }
       console.log(`[saveCourse] Lesson "${lesson.name}" upsert OK`)
 
+      if (!shouldSyncLessonBlocks(dirtyBlockLessonIdsRef.current, lesson.id)) {
+        console.log(`[saveCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
+        continue
+      }
+
       // 3. Sync blokken voor deze les — delete alleen wat echt verwijderd is
       const lessonBlocks = lesson.blocks || []
       console.log(`[saveCourse] Syncing ${lessonBlocks.length} blocks for lesson "${lesson.name}"`)
-      
-      // Eerst: haal huidige blokken uit DB
-      const { data: existingBlocks } = await supabase
+
+      const { data: existingBlocks, error: existingBlocksError } = await supabase
         .from('blocks')
         .select('id')
         .eq('lesson_id', lesson.id)
-      const existingBlockIds = new Set(existingBlocks?.map(b => b.id) || [])
-      const newBlockIds = new Set(lessonBlocks.map(b => b.id))
-      
-      // Verwijder blokken die in DB maar NIET meer in de builder staan
-      const blocksToDelete = Array.from(existingBlockIds).filter(id => !newBlockIds.has(id))
+      if (existingBlocksError) {
+        console.error('[saveCourse] Existing blocks fetch FAILED:', existingBlocksError)
+        alert(`Fout bij ophalen blokken: ${existingBlocksError.message}`)
+        return
+      }
+      const blocksToDelete = getBlockIdsToDelete(
+        existingBlocks?.map(b => b.id) || [],
+        lessonBlocks.map(b => b.id),
+      )
       if (blocksToDelete.length > 0) {
-        console.log(`[saveCourse] Deleting ${blocksToDelete.length} removed blocks for lesson "${lesson.name}"`)
-        const { error: deleteError } = await supabase
-          .from('blocks')
-          .delete()
-          .in('id', Array.from(blocksToDelete))
-          if (deleteError) {
-            console.error('[saveCourse] Block delete FAILED:', deleteError)
-            alert(`Fout bij verwijderen oude blokken: ${deleteError.message}`)
-            return
-          }
+        const { error: deleteError } = await supabase.from('blocks').delete().in('id', blocksToDelete)
+        if (deleteError) {
+          console.error('[saveCourse] Block delete FAILED:', deleteError)
+          alert(`Fout bij verwijderen oude blokken: ${deleteError.message}`)
+          return
+        }
       }
       
       // Dan: upsert nieuwe/gewijzigde blokken
@@ -513,12 +583,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             content: block.content,
             url: block.url,
             caption: block.caption,
+            images: block.images,
             question: block.question,
+            option_type: block.option_type,
             options: block.options,
             fileName: block.fileName,
             fileDescription: block.fileDescription,
             mux_asset_id: (blockContent as Record<string,unknown>).mux_asset_id,
             mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
+            mux_public_playback_id: (blockContent as Record<string,unknown>).mux_public_playback_id,
           }
         }
         const { error: blockError } = await supabase.from('blocks').upsert(payload)
@@ -528,17 +601,19 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           return
         }
       }
+      dirtyBlockLessonIdsRef.current.delete(lesson.id)
     }
 
     console.log('[saveCourse] ✅ Save complete!')
+    hasUnsavedChangesRef.current = false
     
     // Update cache met opgeslagen blokken
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+      cacheLessonBlocks(currentLesson.id, blocks)
     }
     
     alert('Concept opgeslagen! ⏱ Wijzigingen zijn binnen ~1 minuut live op de cursuspagina.')
-  }, [course, currentLesson, blocks, currentContext, blocksCache])
+  }, [blocks, blocksCache, cacheLessonBlocks, course, currentContext, currentLesson])
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [publishing, setPublishing] = useState(false)
@@ -667,25 +742,31 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           })
           if (lessonError) console.error('Lesson upsert failed:', lessonError)
 
+          if (!shouldSyncLessonBlocks(dirtyBlockLessonIdsRef.current, lesson.id)) {
+            console.log(`[publishCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
+            continue
+          }
+
           const lessonBlocks = lesson.blocks || []
-          
-          // Sync blocks — delete only removed ones
-          const { data: existingBlocks } = await supabase
+
+          const { data: existingBlocks, error: existingBlocksError } = await supabase
             .from('blocks')
             .select('id')
             .eq('lesson_id', lesson.id)
-          const existingBlockIds = new Set(existingBlocks?.map(b => b.id) || [])
-          const newBlockIds = new Set(lessonBlocks.map(b => b.id))
-          
-          const blocksToDelete = Array.from(existingBlockIds).filter(id => !newBlockIds.has(id))
+          if (existingBlocksError) throw existingBlocksError
+          const blocksToDelete = getBlockIdsToDelete(
+            existingBlocks?.map(b => b.id) || [],
+            lessonBlocks.map(b => b.id),
+          )
           if (blocksToDelete.length > 0) {
-            await supabase.from('blocks').delete().in('id', Array.from(blocksToDelete))
+            const { error: deleteError } = await supabase.from('blocks').delete().in('id', blocksToDelete)
+            if (deleteError) throw deleteError
           }
           
           for (let i = 0; i < lessonBlocks.length; i++) {
             const block = lessonBlocks[i]
             const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
-            await supabase.from('blocks').upsert({
+            const { error: blockError } = await supabase.from('blocks').upsert({
               id: block.id,
               lesson_id: lesson.id,
               course_id: courseToSave.id,
@@ -700,15 +781,20 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 content: block.content,
                 url: block.url,
                 caption: block.caption,
+                images: block.images,
                 question: block.question,
+                option_type: block.option_type,
                 options: block.options,
                 fileName: block.fileName,
                 fileDescription: block.fileDescription,
                 mux_asset_id: (blockContent as Record<string,unknown>).mux_asset_id,
                 mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
+                mux_public_playback_id: (blockContent as Record<string,unknown>).mux_public_playback_id,
               }
             })
+            if (blockError) throw blockError
           }
+          dirtyBlockLessonIdsRef.current.delete(lesson.id)
         }
       }
 
@@ -736,7 +822,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
       // Update cache met gepubliceerde blokken
       if (currentLesson?.id) {
-        setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
+        cacheLessonBlocks(currentLesson.id, blocks)
       }
       
       alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
@@ -926,9 +1012,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const switchContext = async (type: ContextType, item?: Lesson | Quiz) => {
     setCurrentContext(type)
     
-    // Sla huidige blokken EN lesson fields op (als we van een les wisselen)
+    // Block changes are cached at load/edit time. Do not cache `blocks` here:
+    // during a fast lesson switch they can still belong to the previous lesson.
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: blocks }))
       // Sync currentLesson fields (name, duration, etc.) back to course.lessons
       setCourse(prevCourse => {
         if (!prevCourse) return prevCourse
@@ -942,28 +1028,35 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     }
     
     if (type === 'lesson' && item && 'free' in item) {
-      setCurrentLesson(item as Lesson)
+      const lesson = item as Lesson
+      activeLessonIdRef.current = lesson.id
+      setCurrentLesson(lesson)
       // Load blocks for this lesson
-      await loadBlocksForLesson((item as Lesson).id)
+      await loadBlocksForLesson(lesson)
     } else if (type === 'quiz' && item && 'type' in item) {
+      activeLessonIdRef.current = null
       setCurrentQuiz(item as Quiz)
       setBlocks((item as Quiz).blocks || [])
     } else {
+      activeLessonIdRef.current = null
       setBlocks([])
     }
   }
 
-  const loadBlocksForLesson = async (lessonId: string) => {
+  const loadBlocksForLesson = async (lesson: Lesson) => {
+    const lessonId = lesson.id
     // Check cache EERST (niet-opgeslagen wijzigingen)
-    if (blocksCache[lessonId]) {
-      setBlocks(blocksCache[lessonId])
+    const cachedBlocks = blocksCacheRef.current[lessonId]
+    if (cachedBlocks) {
+      if (activeLessonIdRef.current === lessonId) setBlocks(cachedBlocks)
       return
     }
     
     // Check lokale state (voor nieuwe cursussen)
     const localLesson = course?.lessons?.find(l => l.id === lessonId)
     if (localLesson?.blocks && localLesson.blocks.length > 0) {
-      setBlocks(localLesson.blocks)
+      cacheLessonBlocks(lessonId, localLesson.blocks)
+      if (activeLessonIdRef.current === lessonId) setBlocks(localLesson.blocks)
       return
     }
     // Dan Supabase (voor bestaande cursussen)
@@ -973,27 +1066,40 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       .eq('lesson_id', lessonId)
       .order('sort_order')
     if (data && data.length > 0) {
-      setBlocks(data.map(b => ({
-        id: b.id,
-        type: b.type as BlockType,
-        title: b.content?.title,
-        subtitle: b.content?.subtitle,
-        showTitle: b.content?.showTitle,
-        showSubtitle: b.content?.showSubtitle,
-        showBody: b.content?.showBody,
-        content: b.content?.content,
-        url: b.content?.url,
-        question: b.content?.question,
-        media: b.content?.media,
-        option_type: b.content?.option_type,
-        options: b.content?.options,
-      })))
+      const loadedBlocks = data.map(b => {
+        const stored = extractStoredBlockContent(b.content)
+        return {
+          id: b.id,
+          type: b.type as BlockType,
+          title: stored.title,
+          subtitle: stored.subtitle,
+          showTitle: stored.showTitle,
+          showSubtitle: stored.showSubtitle,
+          showBody: stored.showBody,
+          content: b.type === 'video' ? {
+            mux_asset_id: stored.muxAssetId,
+            mux_playback_id: stored.muxPlaybackId,
+            mux_public_playback_id: stored.muxPublicPlaybackId,
+          } : stored.body,
+          url: stored.url,
+          caption: stored.caption,
+          images: stored.images,
+          question: stored.question,
+          media: stored.media as Block['media'],
+          option_type: stored.optionType as Block['option_type'],
+          options: stored.options as Block['options'],
+          fileName: stored.fileName,
+          fileDescription: stored.fileDescription,
+        }
+      })
+      cacheLessonBlocks(lessonId, loadedBlocks)
+      if (activeLessonIdRef.current === lessonId) setBlocks(loadedBlocks)
     } else {
       // Geen blokken: zet standaard blokken op basis van lesson_type
-      const lessonData = course?.lessons?.find(l => l.id === lessonId)
+      const lessonData = lesson
       if (lessonData?.lesson_type === 'quiz' || lessonData?.lesson_type === 'exam') {
         // Quiz/exam: automatisch één leeg vraag-blok
-        setBlocks([{
+        const defaultBlocks: Block[] = [{
           id: crypto.randomUUID(),
           type: 'quiz' as const,
           question: '',
@@ -1002,12 +1108,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             { id: crypto.randomUUID(), text: '', image_url: '', correct: false },
             { id: crypto.randomUUID(), text: '', image_url: '', correct: false },
           ]
-        }])
+        }]
+        cacheLessonBlocks(lessonId, defaultBlocks)
+        if (activeLessonIdRef.current === lessonId) setBlocks(defaultBlocks)
       } else {
-        setBlocks([
+        const defaultBlocks: Block[] = [
           { id: crypto.randomUUID(), type: 'video' as const },
           { id: crypto.randomUUID(), type: 'text' as const, title: '', subtitle: '', content: '' },
-        ])
+        ]
+        cacheLessonBlocks(lessonId, defaultBlocks)
+        if (activeLessonIdRef.current === lessonId) setBlocks(defaultBlocks)
       }
     }
   }
@@ -1023,24 +1133,29 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const setBlocksWithCache = useCallback((newBlocks: Block[]) => {
     setBlocks(newBlocks)
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: newBlocks }))
+      cacheLessonBlocks(currentLesson.id, newBlocks)
+      markLessonBlocksDirty(currentLesson.id)
     }
-  }, [currentLesson])
+  }, [cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
 
-  const addBlock = (type: BlockType) => {
+  const addBlock = (type: BlockType, insertIndex = blockInsertIndex) => {
     const newBlock: Block = type === 'quiz'
       ? { id: uid(), type, question: '', option_type: 'text', options: [
           { id: uid(), text: '', image_url: '', correct: false },
           { id: uid(), text: '', image_url: '', correct: false },
         ] }
       : { id: uid(), type }
-    setBlocksWithCache([...blocks, newBlock])
+    const next = [...blocks]
+    next.splice(insertIndex ?? next.length, 0, newBlock)
+    setBlocksWithCache(next)
     setPickerOpen(false)
+    setBlockInsertIndex(null)
   }
 
-  const openPicker = () => {
-    if (!addBlockButtonRef.current) return
-    const rect = addBlockButtonRef.current.getBoundingClientRect()
+  const openPicker = (anchor?: HTMLElement | null, insertIndex: number | null = null) => {
+    const target = anchor || addBlockButtonRef.current
+    if (!target) return
+    const rect = target.getBoundingClientRect()
     const pickerHeight = 200
     const pickerWidth = 340
     const openUpward = rect.bottom + pickerHeight > window.innerHeight
@@ -1049,6 +1164,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       top: openUpward ? rect.top - pickerHeight - 8 : rect.bottom + 8,
       left: Math.max(8, Math.min(rect.left, window.innerWidth - pickerWidth - 8)),
     })
+    setBlockInsertIndex(insertIndex)
     setPickerOpen(true)
   }
 
@@ -1060,9 +1176,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     const updated = blocks.map(b => b.id === blockId ? { ...b, ...updates } : b)
     setBlocks(updated)
     if (currentLesson?.id) {
-      setBlocksCache(prev => ({ ...prev, [currentLesson.id]: updated }))
+      cacheLessonBlocks(currentLesson.id, updated)
+      markLessonBlocksDirty(currentLesson.id)
     }
-  }, [blocks, currentLesson])
+  }, [blocks, cacheLessonBlocks, currentLesson, markLessonBlocksDirty])
 
   // Herindexeer lessen: num = volgorde in de array (doorlopend, inclusief sublessen)
   const reindexLessons = (lessons: Lesson[]): Lesson[] =>
@@ -1092,6 +1209,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       reflectionQuestions: [],
       blocks: defaultBlocks
     }
+    dirtyBlockLessonIdsRef.current.add(newLesson.id)
 
     setCourse(prev => {
       if (!prev) return prev
@@ -1139,12 +1257,12 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       const lessons = (prev.lessons || []).filter(l => !idsToRemove.includes(l.id))
       return { ...prev, lessons: reindexLessons(lessons) }
     })
-    setBlocksCache(prev => {
-      const next = { ...prev }
-      idsToRemove.forEach(id => delete next[id])
-      return next
-    })
+    const nextBlocksCache = { ...blocksCacheRef.current }
+    idsToRemove.forEach(id => delete nextBlocksCache[id])
+    blocksCacheRef.current = nextBlocksCache
+    setBlocksCache(nextBlocksCache)
     if (idsToRemove.includes(currentLesson?.id || '')) {
+      activeLessonIdRef.current = null
       setCurrentLesson(null)
       setCurrentContext('global')
       setBlocks([])
@@ -1153,11 +1271,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | Array<{question: string; answer: string}> | undefined) => {
     if (!course) return
+    hasUnsavedChangesRef.current = true
     setCourse({ ...course, [field]: value })
   }
 
   const updateLessonField = (field: keyof Lesson, value: string | number | boolean | string[] | undefined) => {
     if (!currentLesson) return
+    hasUnsavedChangesRef.current = true
     setCurrentLesson({ ...currentLesson, [field]: value })
   }
 
@@ -2081,6 +2201,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const renderBlock = (block: Block) => {
     switch (block.type) {
       case 'video':
+        const videoPlayback = getBuilderVideoPlaybackConfig(
+          block.content,
+          currentLesson?.free ?? false,
+        )
         const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0]
           if (!file) return
@@ -2151,14 +2275,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               onChange={handleVideoUpload} 
             />
             
-            {typeof block.content === 'object' && block.content !== null && block.content.mux_playback_id ? (
+            {videoPlayback.playbackId ? (
               // Show video thumbnail/preview
               <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden' }}>
                 <LuxiqueMuxPlayer
-                  playbackId={block.content.mux_playback_id as string}
+                  playbackId={videoPlayback.playbackId}
                   variant="lesson"
-                  title={block.content.video_title as string || 'Les video'}
-                  signed={currentLesson?.free ?? false}
+                  title={block.title || 'Les video'}
+                  signed={videoPlayback.signed}
                   courseId={course?.id}
                   isFree={currentLesson?.free ?? false}
                 />
@@ -2191,14 +2315,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               placeholder="Of plak een Vimeo / YouTube URL"
               className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12px] outline-none focus:border-[rgba(196,162,101,0.4)]"
             />
-            <div className="flex gap-2 flex-wrap">
-              <button className="text-[10.5px] font-medium p-1.5 px-2.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(196,162,101,0.35)] hover:text-[#7A6340] hover:bg-[rgba(196,162,101,0.08)] transition">
-                Autoplay
-              </button>
-              <button className="text-[10.5px] font-medium p-1.5 px-2.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:border-[rgba(196,162,101,0.35)] hover:text-[#7A6340] hover:bg-[rgba(196,162,101,0.08)] transition">
-                Ondertitels
-              </button>
-            </div>
           </div>
         )
 
@@ -2532,10 +2648,23 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
           {/* Content Blocks — only for lesson/quiz context */}
           {currentContext !== 'global' && (
+          <>
+          {lastBlockReorder?.lessonId === currentLesson?.id && (
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={undoLastBlockReorder}
+                className="rounded-lg border border-[rgba(196,162,101,0.28)] bg-[rgba(196,162,101,0.08)] px-3 py-1.5 text-[11px] font-semibold text-[#7A6340] transition hover:bg-[rgba(196,162,101,0.16)]"
+              >
+                ↩ Laatste reorder ongedaan maken
+              </button>
+            </div>
+          )}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-              {blocks.map((block) => (
-                <SortableBlock key={block.id} block={block}>
+              {blocks.map((block, blockIndex) => (
+                <div key={block.id}>
+                <SortableBlock block={block}>
                   <div className="bg-[#FAF8F4] border border-[rgba(30,26,20,0.09)] rounded-[14px] overflow-hidden transition-all hover:border-[rgba(196,162,101,0.3)] hover:shadow-[0_2px_10px_rgba(30,26,20,0.08)] ml-8">
               <div className="flex items-center justify-between p-2.5 bg-[#F0EDE6] border-b border-[rgba(30,26,20,0.09)]">
                 <div className="flex items-center gap-2">
@@ -2556,10 +2685,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 {renderBlock(block)}
               </div>
             </div>
-          </SortableBlock>
+                </SortableBlock>
+                <button type="button" aria-label={`Blok invoegen na ${blockIndex + 1}`} onClick={event => openPicker(event.currentTarget, blockIndex + 1)} className="group my-1 flex h-6 w-full items-center justify-center text-[rgba(196,162,101,.45)] hover:text-[#C4A265]">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-current bg-[#F0EDE6] text-sm leading-none transition group-hover:scale-110">+</span>
+                </button>
+                </div>
           ))}
           </SortableContext>
           </DndContext>
+          </>
           )}
 
           {/* Global context: Course landing form in main canvas */}
@@ -2574,7 +2708,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           <div className="relative">
             <button
               ref={addBlockButtonRef}
-              onClick={() => { openPicker() }}
+              onClick={(event) => { openPicker(event.currentTarget, blocks.length) }}
               className="flex items-center justify-center gap-2 p-3 rounded-[14px] border-1.5 border-dashed border-[rgba(196,162,101,0.2)] bg-transparent cursor-pointer text-[rgba(196,162,101,0.5)] text-[12px] hover:border-[rgba(196,162,101,0.45)] hover:text-[#C4A265] hover:bg-[rgba(196,162,101,0.04)] transition w-full"
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -2704,8 +2838,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           >
             <div style={{ position: 'relative', overflow: 'hidden' }}>
             <div style={{ 
-              transform: previewDevice === 'mobile' ? `scale(${previewWidth / 375})` : `scale(${previewWidth / 1100})`,
-              transformOrigin: 'top left',
+              zoom: previewDevice === 'mobile' ? previewWidth / 375 : previewWidth / 1100,
               width: previewDevice === 'mobile' ? '375px' : '1100px',
             }}>
               {/* Context-based preview rendering */}
@@ -2759,30 +2892,52 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                             return isQuiz ? block.type === 'quiz' : block.type !== 'quiz'
                           }).map((block) => (
                             <div key={block.id} className="bg-white rounded-lg p-6 shadow-sm">
-                              {block.type === 'video' && typeof block.content === 'object' && block.content?.mux_playback_id && (
-                                <div className="aspect-video bg-black rounded-lg mb-4">
-                                  <LuxiqueMuxPlayer
-                                    playbackId={block.content.mux_playback_id as string}
-                                    variant="lesson"
-                                    signed={currentLesson?.free ?? false}
-                                    courseId={course?.id}
-                                    isFree={currentLesson?.free ?? false}
-                                  />
+                              {block.type === 'video' && (() => {
+                                const videoPlayback = getBuilderVideoPlaybackConfig(block.content, currentLesson.free)
+                                return videoPlayback.playbackId ? (
+                                  <div className="aspect-video bg-black rounded-lg mb-4">
+                                    <LuxiqueMuxPlayer
+                                      playbackId={videoPlayback.playbackId}
+                                      variant="lesson"
+                                      signed={videoPlayback.signed}
+                                      courseId={course?.id}
+                                      isFree={currentLesson.free}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="aspect-video rounded-lg bg-[#1a1510] text-[#C4A265] flex items-center justify-center mb-4">
+                                    <span className="text-sm tracking-wide">Video wordt verwerkt of moet nog worden toegevoegd</span>
+                                  </div>
+                                )
+                              })()}
+
+                              {block.type === 'image' && ((block.images?.length || 0) > 0 || block.url) && (
+                                <div className="builder-photo-preview flex max-w-[680px] flex-wrap items-start gap-3" data-count={block.images?.length || (block.url ? 1 : 0)}>
+                                  {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0 min-w-0 max-w-full" key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
+                                    <img src={image.url} alt={image.caption || ''} className="builder-photo-preview-image h-[140px] w-auto max-w-full rounded-lg object-contain md:h-[180px]" onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} />
+                                    {image.caption && <figcaption className="mt-2 text-sm text-[#7A7268] text-center">{image.caption}</figcaption>}
+                                  </figure>)}
                                 </div>
                               )}
                               
                               {block.type === 'text' && (
                                 <div>
                                   {block.title && (
-                                    <h3 className="text-xl font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
+                                    <h3 className="course-rich-content text-xl font-semibold text-[#1E1A14] mb-3" dangerouslySetInnerHTML={{ __html: block.title as string }} />
                                   )}
                                   {block.subtitle && (
-                                    <h4 className="text-lg text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
+                                    <h4 className="course-rich-content text-lg text-[#7A6340] mb-3" dangerouslySetInnerHTML={{ __html: block.subtitle as string }} />
                                   )}
                                   {block.content && (
-                                    <div className="text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
+                                    <div className="course-rich-content text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content as string }} />
                                   )}
                                 </div>
+                              )}
+                              {block.type === 'callout' && typeof block.content === 'string' && (
+                                <aside className="flex gap-3 items-start rounded-r-lg border-l-[3px] border-[rgba(196,162,101,0.35)] bg-[rgba(196,162,101,0.07)] p-4">
+                                  <span className="text-lg" aria-hidden="true">💡</span>
+                                  <div className="course-rich-content min-w-0 text-[#1E1A14] leading-relaxed" dangerouslySetInnerHTML={{ __html: block.content }} />
+                                </aside>
                               )}
                               {block.type === 'quiz' && (() => {
                                 const correctCount = (block.options || []).filter(o => o.correct).length
@@ -2873,6 +3028,18 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             </div>
             </div> {/* end overflow wrapper */}
           </div>
+          <style jsx>{`
+            .builder-photo-preview[data-count='1'] figure { flex: 1 1 100%; width: 100%; }
+            .builder-photo-preview[data-count='1'] .builder-photo-preview-image { width: 100%; height: auto; }
+            .builder-photo-preview[data-count='2'] figure { flex: var(--photo-ratio, 1) 1 0; }
+            .builder-photo-preview[data-count='2'] .builder-photo-preview-image { width: 100%; }
+            .builder-photo-preview:not([data-count='1']):not([data-count='2']) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .builder-photo-preview:not([data-count='1']):not([data-count='2']) figure { max-width: none; }
+            .builder-photo-preview:not([data-count='1']):not([data-count='2']) .builder-photo-preview-image { width: 100%; }
+            @media (max-width: 680px) {
+              .builder-photo-preview:not([data-count='1']):not([data-count='2']) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            }
+          `}</style>
         </div>
       </div>
     </div>

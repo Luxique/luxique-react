@@ -2,6 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase-client'
 
 interface BookingInfo {
   event_type: string
@@ -13,9 +15,17 @@ interface BookingInfo {
 
 function BevestigdContent() {
   const searchParams = useSearchParams()
+  const { user } = useAuth()
   const uid = searchParams.get('uid') || searchParams.get('bookingUid')
   const [booking, setBooking] = useState<BookingInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [accountEmail, setAccountEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('profiles').select('email').eq('id', user.id).maybeSingle()
+      .then(({ data }) => setAccountEmail(data?.email || user.email || null))
+  }, [user])
 
   useEffect(() => {
     if (!uid) {
@@ -101,10 +111,10 @@ function BevestigdContent() {
             <div className="payment-info">
               <p>Aanbetaling van <strong>€{deposit}</strong> ontvangen ✅<br/>Resterend in de studio: <strong>€{remainder}</strong> — direct na je behandeling.</p>
             </div>
-            {booking.customer_email && (
+            {accountEmail && (
               <div className="email-info" role="status">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5b8c66" strokeWidth="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6" strokeLinecap="round" strokeLinejoin="round"/><path d="m16.5 17.5 1.5 1.5 3-3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                <p>We hebben je afspraakbevestiging naar <strong>{booking.customer_email}</strong> gestuurd. Het kan tot 30 minuten duren voordat je die ontvangt — check ook je spam.</p>
+                <p>We hebben je afspraakbevestiging naar <strong>{accountEmail}</strong> gestuurd. Het kan tot 30 minuten duren voordat je die ontvangt — check ook je spam.</p>
               </div>
             )}
             <a className="map-link" href="https://maps.google.com/?q=De+Overmaat+26,+6831+AH+Arnhem" target="_blank" rel="noopener">

@@ -2,6 +2,8 @@
 
 import './academy-redesign.css'
 import { useTranslations } from 'next-intl'
+import AcademyComingSoonGate from '@/components/AcademyComingSoonGate'
+import { supabase } from '@/lib/supabase-client'
 
 /* ═══════════════════════════════════════════════════════
    AcademySection — Redesigned portrait card grid
@@ -44,6 +46,28 @@ function formatPrice(cents: number | null): string {
 
 export default function AcademySection({ courses, loading }: Props) {
   const t = useTranslations('Academy')
+
+  const openCourse = async (event: React.MouseEvent<HTMLAnchorElement>, course: Course) => {
+    event.preventDefault()
+    const landerUrl = `/cursus/${course.slug}`
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        window.location.href = landerUrl
+        return
+      }
+
+      const response = await fetch(`/api/academy/course-access?slug=${encodeURIComponent(course.slug)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
+      })
+      const result = response.ok ? await response.json() : { hasAccess: false }
+      window.location.href = result.hasAccess ? `/academy/${course.slug}` : landerUrl
+    } catch {
+      window.location.href = landerUrl
+    }
+  }
 
   return (
     <div style={{ width: '100%', minHeight: '100vh', background: '#0c100d', paddingBottom: 64 }}>
@@ -97,7 +121,8 @@ export default function AcademySection({ courses, loading }: Props) {
         </section>
 
         {/* ══ CURSUSSEN ══ */}
-        <main id="cursussen">
+        <AcademyComingSoonGate scope="section">
+          <main id="cursussen">
           <div className="lxq-section-head">
             <div>
               <div className="lxq-eyebrow">{t('coursesEyebrow')}</div>
@@ -156,7 +181,7 @@ export default function AcademySection({ courses, loading }: Props) {
                           </span>
                           <span className="lxq-price-terms">{t('cardPriceLabel')}</span>
                         </div>
-                        <a href={`/cursus/${course.slug}`} className="lxq-btn-primary lxq-btn-full">{t('cardCta')}</a>
+                        <a href={`/cursus/${course.slug}`} onClick={(event) => openCourse(event, course)} className="lxq-btn-primary lxq-btn-full">{t('cardCta')}</a>
                         <span className="lxq-micro">{t('cardFootnote')}</span>
                       </div>
                     </div>
@@ -176,7 +201,8 @@ export default function AcademySection({ courses, loading }: Props) {
             </div>
             <a href="/register" className="lxq-btn-primary">{t('ctaCreate')}</a>
           </section>
-        </main>
+          </main>
+        </AcademyComingSoonGate>
       </div>
     </div>
   )

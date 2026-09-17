@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
 import { LoginGate } from '@/components/LoginGate'
@@ -126,9 +126,8 @@ function Tarieven() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
           {/* New Set */}
-          <a
-            href="#boeken"
-            className="reveal block no-underline text-[#1C1814] bg-[#FBF8F2] border border-[rgba(28,24,20,0.13)] rounded-[18px] px-[28px] py-[26px] transition-all hover:-translate-y-[3px] hover:shadow-[0_22px_50px_-28px_rgba(28,24,20,0.4)] hover:border-[rgba(176,141,79,0.4)]"
+          <article
+            className="reveal text-[#1C1814] bg-[#FBF8F2] border border-[rgba(28,24,20,0.13)] rounded-[18px] px-[28px] py-[26px]"
           >
             <div className="flex justify-between items-baseline mb-[8px]">
               <span className="font-['Cormorant_Garamond'] font-semibold text-[1.5rem]">{t('newSetTitle')}</span>
@@ -137,13 +136,11 @@ function Tarieven() {
             <div className="font-['Cormorant_Garamond'] font-semibold text-[2.8rem] leading-[1] text-[#B08D4F] mb-[10px]">
               <sup className="text-[1.1rem] align-super opacity-80">€</sup>{PRICING.newSet.price}
             </div>
-            <p className="text-[0.9rem] text-[#46403A] leading-[1.5] mb-[16px]">{t('newSetDesc')}</p>
-            <span className="text-[0.88rem] font-medium border-b border-[#B08D4F] pb-[2px]">{t('newSetCta')}</span>
-          </a>
+            <p className="text-[0.9rem] text-[#46403A] leading-[1.5]">{t('newSetDesc')}</p>
+          </article>
           {/* Refill */}
-          <a
-            href="#boeken"
-            className="reveal block no-underline text-[#1C1814] bg-[#FBF8F2] border border-[rgba(28,24,20,0.13)] rounded-[18px] px-[28px] py-[26px] transition-all hover:-translate-y-[3px] hover:shadow-[0_22px_50px_-28px_rgba(28,24,20,0.4)] hover:border-[rgba(176,141,79,0.4)]"
+          <article
+            className="reveal text-[#1C1814] bg-[#FBF8F2] border border-[rgba(28,24,20,0.13)] rounded-[18px] px-[28px] py-[26px]"
           >
             <div className="flex justify-between items-baseline mb-[8px]">
               <span className="font-['Cormorant_Garamond'] font-semibold text-[1.5rem]">{t('refillTitle')}</span>
@@ -152,12 +149,14 @@ function Tarieven() {
             <div className="font-['Cormorant_Garamond'] font-semibold text-[2.8rem] leading-[1] text-[#B08D4F] mb-[10px]">
               <sup className="text-[1.1rem] align-super opacity-80">€</sup>{PRICING.refill.price}
             </div>
-            <p className="text-[0.9rem] text-[#46403A] leading-[1.5] mb-[16px]">{t('refillDesc')}</p>
-            <span className="text-[0.88rem] font-medium border-b border-[#B08D4F] pb-[2px]">{t('refillCta')}</span>
-          </a>
+            <p className="text-[0.9rem] text-[#46403A] leading-[1.5]">{t('refillDesc')}</p>
+          </article>
         </div>
         <p className="reveal text-center mt-[28px] text-[0.9rem] text-[#46403A]">
           {t('pricesNote')}
+        </p>
+        <p className="reveal text-center mt-[14px] text-[0.9rem] font-medium text-[#B08D4F]">
+          {t('bookingInstruction')} <span aria-hidden="true">↓</span>
         </p>
       </div>
     </section>
@@ -240,6 +239,7 @@ function ClosingCTA() {
 /* ─── FASE 5: WIDGET + SHOWCASE ─── */
 function BookSection() {
   const t = useTranslations('Behandelingen')
+  const locale = useLocale()
   const { user } = useAuth()
   const [profileName, setProfileName] = useState<string | null>(null)
 
@@ -259,7 +259,7 @@ function BookSection() {
   const attendeeName = profileName || ''
 
   return (
-    <section id="boeken" className="relative py-[clamp(100px,12vw,140px)] overflow-hidden" style={{ scrollMarginTop: '80px' }}>
+    <section id="boeken" className="relative py-[clamp(100px,12vw,140px)] overflow-x-clip" style={{ scrollMarginTop: '80px' }}>
       {/* Showcase strip — behind widget */}
       <div
         className="absolute top-1/2 left-0 w-full flex gap-[26px] z-[1] pointer-events-none md:opacity-90 opacity-85 hidden md:flex"
@@ -325,6 +325,10 @@ function BookSection() {
             title="Log in om te boeken"
             subtitle="Zodat we je afspraak aan je account koppelen en je boekingen altijd terugvindt in je dashboard."
           >
+            <div className="mb-4 rounded-[16px] border border-[rgba(176,141,79,0.28)] bg-[#fffaf0] px-5 py-4 text-left">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">Bijzonderheden voor Chiva (optioneel)</p>
+              <p className="mt-1.5 text-[0.88rem] leading-[1.55] text-[#5f574d]">Vermeld tijdens het boeken bijzonderheden zoals zeer korte, gekrulde of stijve wimpers of waterige ogen.</p>
+            </div>
             <div
               style={{
                 background: '#FBF8F2',
@@ -340,6 +344,7 @@ function BookSection() {
                 email={userEmail}
                 theme="light"
                 layout="month_view"
+                locale={locale}
               />
             </div>
           </LoginGate>

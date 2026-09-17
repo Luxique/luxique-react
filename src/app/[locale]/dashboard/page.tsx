@@ -3,8 +3,10 @@
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
+import { isActiveCustomerBooking } from '@/lib/customer-booking-visibility'
+import { formatBookingDate, formatBookingTime } from '@/lib/booking-date-time'
 
 type Course = { id: string; title: string; slug: string; short_description: string; thumbnail_url?: string }
 type Booking = { id: string; treatment_name: string; appointment_date: string; status: string; notes: string }
@@ -53,10 +55,10 @@ type CourseProgress = {
 }
 
 function formatDateNL(iso: string) {
-  return new Date(iso).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return formatBookingDate(iso, 'nl-NL')
 }
 function formatTimeNL(iso: string) {
-  return new Date(iso).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+  return formatBookingTime(iso, 'nl-NL')
 }
 function isWithin24h(slotStart: string) {
   const diff = new Date(slotStart).getTime() - Date.now()
@@ -92,6 +94,28 @@ export default function DashboardPage() {
   const [downloadingCert, setDownloadingCert] = useState<string | null>(null)
   const [certError, setCertError] = useState<string | null>(null)
   const revealRef = useRef<IntersectionObserver | null>(null)
+
+  const openEnrolledCourse = async (event: React.MouseEvent<HTMLAnchorElement>, course: Course) => {
+    event.preventDefault()
+    const academyUrl = lpath(`/academy/${course.slug}`)
+    const landerUrl = `/cursus/${course.slug}`
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        window.location.href = landerUrl
+        return
+      }
+      const response = await fetch(`/api/academy/course-access?slug=${encodeURIComponent(course.slug)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
+      })
+      const result = response.ok ? await response.json() : { hasAccess: false }
+      window.location.href = result.hasAccess ? academyUrl : landerUrl
+    } catch {
+      window.location.href = landerUrl
+    }
+  }
 
   useEffect(() => {
     if (!user) return
@@ -212,9 +236,9 @@ export default function DashboardPage() {
   }, [user])
 
   // Fetch the existing online bookings and isolated manual bookings, then normalize for display.
-  useEffect(() => {
+  const loadAccountBookings = useCallback(async () => {
     if (!user) return
-    supabase.auth.getSession().then(async ({ data }) => {
+    const { data } = await supabase.auth.getSession()
       if (!data.session?.access_token) {
         console.warn('[dashboard] No session token for my-bookings fetch')
         return
@@ -222,8 +246,8 @@ export default function DashboardPage() {
       const headers = { Authorization: `Bearer ${data.session.access_token}` }
       try {
         const [onlineResponse, manualResponse] = await Promise.all([
-          fetch('/api/boeking/my-bookings', { headers }),
-          fetch('/api/boeking/manual/my-bookings', { headers }),
+          fetch('/api/boeking/my-bookings', { headers, cache: 'no-store' }),
+          fetch('/api/boeking/manual/my-bookings', { headers, cache: 'no-store' }),
         ])
         if (!onlineResponse.ok) console.error('[dashboard] my-bookings API error:', onlineResponse.status)
         if (!manualResponse.ok) console.error('[dashboard] manual my-bookings API error:', manualResponse.status)
@@ -232,12 +256,27 @@ export default function DashboardPage() {
           manualResponse.ok ? manualResponse.json() : Promise.resolve({ bookings: [] }),
         ])
         const online = (onlinePayload?.bookings || []).map((booking: Omit<PendingBooking, 'source'>) => ({ ...booking, source: 'online' as const }))
-        setPendingBookings([...online, ...(manualPayload?.bookings || [])])
+        const visibleBookings = [...online, ...(manualPayload?.bookings || [])]
+          .filter(booking => isActiveCustomerBooking(booking.source, booking.status))
+        setPendingBookings(visibleBookings)
       } catch (err) {
         console.error('[dashboard] bookings fetch failed:', err)
       }
-    })
   }, [user])
+
+  useEffect(() => {
+    loadAccountBookings()
+  }, [loadAccountBookings])
+
+  useEffect(() => {
+    if (activeTab === 'boekingen') loadAccountBookings()
+  }, [activeTab, loadAccountBookings])
+
+  useEffect(() => {
+    const refresh = () => loadAccountBookings()
+    window.addEventListener('focus', refresh)
+    return () => window.removeEventListener('focus', refresh)
+  }, [loadAccountBookings])
 
   // Fetch my trajecten (traject_boekingen)
   useEffect(() => {
@@ -321,14 +360,18 @@ export default function DashboardPage() {
       const cancelPath = selectedBooking.source === 'manual' ? '/api/boeking/manual/cancel' : '/api/boeking/cancel'
       const res = await fetch(cancelPath, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
-        body: JSON.stringify({ bookingId: selectedBooking.id, within24h: isWithin24h(selectedBooking.slot_start) }),
+        body: JSON.stringify({ bookingId: selectedBooking.id }),
       })
       const result = await res.json()
       if (result.success) {
         setPendingBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancelled' } : b))
         setSelectedBooking(null); setCancelMode(false); setCancelAgreed(false); setCancelError('')
       } else {
-        setCancelError('Annuleren is niet gelukt. Probeer het nogmaals.')
+        if (result.pending) {
+          setPendingBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancellation_pending' } : b))
+          setSelectedBooking(prev => prev ? { ...prev, status: 'cancellation_pending' } : prev)
+        }
+        setCancelError(result.error || 'Annuleren is niet gelukt. Probeer het nogmaals.')
       }
     } catch (err) {
       console.error('Cancel failed:', err)
@@ -340,15 +383,14 @@ export default function DashboardPage() {
 
   const handleRescheduleBooking = async () => {
     if (!selectedBooking || !rescheduleDate || !rescheduleTime || !user) return
+    const selectedSlot = rescheduleSlots.find(slot => slot.time === rescheduleTime)
+    if (!selectedSlot) {
+      setRescheduleError('Kies opnieuw een beschikbaar tijdstip.')
+      return
+    }
     setRescheduling(true)
     setRescheduleError('')
     try {
-      // Build ISO timestamp from date + time, Amsterdam timezone
-      const dateStr = `${rescheduleDate}T${rescheduleTime}:00`
-      const dt = new Date(dateStr)
-      // Adjust for Amsterdam timezone offset (the server expects UTC)
-      const isoStart = dt.toISOString()
-
       // Get session from Supabase directly (same pattern as my-bookings fetch)
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session?.access_token) {
@@ -361,16 +403,17 @@ export default function DashboardPage() {
       const res = await fetch(reschedulePath, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session.access_token}` },
-        body: JSON.stringify({ bookingId: selectedBooking.id, newStart: isoStart }),
+        body: JSON.stringify({ bookingId: selectedBooking.id, newStart: selectedSlot.start }),
       })
       const result = await res.json()
       if (result.success) {
         // Update local state with new slot_start
         setPendingBookings(prev => prev.map(b =>
           b.id === selectedBooking.id
-            ? { ...b, slot_start: isoStart }
+            ? { ...b, slot_start: result.newStart }
             : b
         ))
+        await loadAccountBookings()
         setSelectedBooking(null)
         setRescheduleMode(false)
         setRescheduleDate('')
@@ -453,8 +496,8 @@ export default function DashboardPage() {
 
   const tabs = [
     { key: 'overview' as const, label: 'Overzicht' },
-    { key: 'academy' as const, label: 'Academy' },
     { key: 'boekingen' as const, label: 'Boekingen' },
+    { key: 'academy' as const, label: 'Academy' },
   ]
 
   return (
@@ -490,6 +533,62 @@ export default function DashboardPage() {
         {/* ==================== OVERVIEW TAB ==================== */}
         {activeTab === 'overview' && (
           <div className="space-y-10">
+
+            {/* MIJN AFSPRAKEN */}
+            {sortedBookings.length > 0 && (
+              <div>
+                <div className="dash-reveal" style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:24, gap:18, flexWrap:'wrap' }}>
+                  <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814' }}>Mijn afspraken</h3>
+                  <a href="/behandelingen" style={{ textDecoration:'none', color:'#46403A', fontSize:'.88rem', borderBottom:'1px solid rgba(28,24,20,.13)', paddingBottom:2 }}>Afspraak plannen</a>
+                </div>
+                <div className="dash-reveal" style={{ background:'#FBF8F2', border:'1px solid rgba(28,24,20,.13)', borderRadius:20, overflow:'hidden' }}>
+                  {sortedBookings.map((b) => {
+                    const isPast = new Date(b.slot_start) < new Date()
+                    const isCancelled = b.status === 'cancelled' || b.status === 'expired'
+                    const isCancellationPending = b.status === 'cancellation_pending'
+                    const dt = new Date(b.slot_start)
+                    return (
+                      <button key={b.id} onClick={() => { setSelectedBooking(b); setActiveTab('boekingen') }}
+                        style={{
+                          display:'grid', gridTemplateColumns:'72px 1fr auto', gap:18, alignItems:'center', width:'100%', textAlign:'left',
+                          padding:'20px 26px', borderBottom:'1px solid rgba(28,24,20,.07)', background:'transparent', border:'none',
+                          borderBottomWidth: sortedBookings[sortedBookings.length-1].id === b.id ? 0 : 1,
+                          cursor:'pointer', opacity: isCancelled ? .55 : 1, transition:'background .2s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,24,20,.02)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        {/* Date chip */}
+                        <div style={{ textAlign:'center', border:'1px solid rgba(28,24,20,.13)', borderRadius:13, padding:'8px 0', background:'#F3EFE7' }}>
+                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.6rem', fontWeight:600, lineHeight:1, color:'#1C1814' }}>{dt.getDate()}</div>
+                          <div style={{ fontSize:'.64rem', textTransform:'uppercase', letterSpacing:'.14em', color:'#888', marginTop:3 }}>{dt.toLocaleDateString('nl-NL',{month:'short'})}</div>
+                        </div>
+                        {/* Info */}
+                        <div>
+                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                            <h5 className="font-['Cormorant_Garamond']" style={{ fontWeight:600, fontSize:'1.25rem', lineHeight:1.1, color:'#1C1814', textDecoration: isCancelled ? 'line-through' : 'none' }}>{b.event_type}</h5>
+                            {b.source === 'manual' && <span style={{fontSize:'.62rem',padding:'3px 8px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34',border:'1px solid rgba(176,141,79,.28)'}}>Handmatig</span>}
+                          </div>
+                          <p style={{ fontSize:'.82rem', color:'#888', marginTop:3 }}>{formatTimeNL(b.slot_start)} uur · Lashed by Chiva, Arnhem</p>
+                        </div>
+                        {/* Pay */}
+                        <div style={{ textAlign:'right' }}>
+                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.3rem', fontWeight:600, color:'#1C1814' }}>{b.source === 'manual' ? 'Handmatig' : `€${(b.amount_cents/100).toFixed(0)}`}</div>
+                          <span style={{
+                            display:'inline-block', marginTop:6, fontSize:'.68rem', letterSpacing:'.05em',
+                            padding:'4px 11px', borderRadius:100, fontWeight:500,
+                            ...(isCancelled ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
+                              : isPast ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
+                              : { background:'rgba(176,141,79,.14)', color:'#B08D4F', border:'1px solid rgba(176,141,79,.3)' })
+                          }}>
+                            {isCancellationPending ? 'Annulering in behandeling' : isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* B) RESUME CARD — LIGHT */}
             {progressLoading ? (
@@ -686,61 +785,6 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* E) MIJN AFSPRAKEN */}
-            {sortedBookings.length > 0 && (
-              <div>
-                <div className="dash-reveal" style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:24, gap:18, flexWrap:'wrap' }}>
-                  <h3 className="font-['Cormorant_Garamond']" style={{ fontWeight:500, fontSize:'clamp(1.6rem,3vw,2rem)', color:'#1C1814' }}>Mijn afspraken</h3>
-                  <a href="/behandelingen" style={{ textDecoration:'none', color:'#46403A', fontSize:'.88rem', borderBottom:'1px solid rgba(28,24,20,.13)', paddingBottom:2 }}>Afspraak plannen</a>
-                </div>
-                <div className="dash-reveal" style={{ background:'#FBF8F2', border:'1px solid rgba(28,24,20,.13)', borderRadius:20, overflow:'hidden' }}>
-                  {sortedBookings.map((b) => {
-                    const isPast = new Date(b.slot_start) < new Date()
-                    const isCancelled = b.status === 'cancelled' || b.status === 'expired'
-                    const dt = new Date(b.slot_start)
-                    return (
-                      <button key={b.id} onClick={() => { setSelectedBooking(b); setActiveTab('boekingen') }}
-                        style={{
-                          display:'grid', gridTemplateColumns:'72px 1fr auto', gap:18, alignItems:'center', width:'100%', textAlign:'left',
-                          padding:'20px 26px', borderBottom:'1px solid rgba(28,24,20,.07)', background:'transparent', border:'none',
-                          borderBottomWidth: sortedBookings[sortedBookings.length-1].id === b.id ? 0 : 1,
-                          cursor:'pointer', opacity: isCancelled ? .55 : 1, transition:'background .2s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(28,24,20,.02)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        {/* Date chip */}
-                        <div style={{ textAlign:'center', border:'1px solid rgba(28,24,20,.13)', borderRadius:13, padding:'8px 0', background:'#F3EFE7' }}>
-                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.6rem', fontWeight:600, lineHeight:1, color:'#1C1814' }}>{dt.getDate()}</div>
-                          <div style={{ fontSize:'.64rem', textTransform:'uppercase', letterSpacing:'.14em', color:'#888', marginTop:3 }}>{dt.toLocaleDateString('nl-NL',{month:'short'})}</div>
-                        </div>
-                        {/* Info */}
-                        <div>
-                          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                            <h5 className="font-['Cormorant_Garamond']" style={{ fontWeight:600, fontSize:'1.25rem', lineHeight:1.1, color:'#1C1814', textDecoration: isCancelled ? 'line-through' : 'none' }}>{b.event_type}</h5>
-                            {b.source === 'manual' && <span style={{fontSize:'.62rem',padding:'3px 8px',borderRadius:100,background:'rgba(176,141,79,.12)',color:'#8a6b34',border:'1px solid rgba(176,141,79,.28)'}}>Handmatig</span>}
-                          </div>
-                          <p style={{ fontSize:'.82rem', color:'#888', marginTop:3 }}>{formatTimeNL(b.slot_start)} uur · Lashed by Chiva, Arnhem</p>
-                        </div>
-                        {/* Pay */}
-                        <div style={{ textAlign:'right' }}>
-                          <div className="font-['Cormorant_Garamond']" style={{ fontSize:'1.3rem', fontWeight:600, color:'#1C1814' }}>{b.source === 'manual' ? 'Handmatig' : `€${(b.amount_cents/100).toFixed(0)}`}</div>
-                          <span style={{
-                            display:'inline-block', marginTop:6, fontSize:'.68rem', letterSpacing:'.05em',
-                            padding:'4px 11px', borderRadius:100, fontWeight:500,
-                            ...(isCancelled ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
-                              : isPast ? { background:'rgba(28,24,20,.07)', color:'#888', border:'1px solid rgba(28,24,20,.13)' }
-                              : { background:'rgba(176,141,79,.14)', color:'#B08D4F', border:'1px solid rgba(176,141,79,.3)' })
-                          }}>
-                            {isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Voltooid' : b.source === 'manual' ? 'Bevestigd' : 'Aanbetaling voldaan'}
-                          </span>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
           </div>
         )}
 
@@ -856,7 +900,7 @@ export default function DashboardPage() {
             {courseProgress.length > 0 ? (
               <div className="space-y-3">
                 {courseProgress.map(cp => (
-                  <a key={cp.course.id} href={lpath(`/academy/${cp.course.slug}`)} style={{ display:'flex', alignItems:'center', gap:20, background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', textDecoration:'none', transition:'border-color .2s' }}
+                  <a key={cp.course.id} href={lpath(`/academy/${cp.course.slug}`)} onClick={(event) => openEnrolledCourse(event, cp.course)} style={{ display:'flex', alignItems:'center', gap:20, background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', textDecoration:'none', transition:'border-color .2s' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor='#B08D4F'}
                     onMouseLeave={e => e.currentTarget.style.borderColor='rgba(28,24,20,.13)'}>
                     <div style={{ width:64, height:64, borderRadius:14, background:'#f5f5f5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, flexShrink:0 }}>🎬</div>
@@ -908,6 +952,11 @@ export default function DashboardPage() {
                 {selectedBooking.status === 'cancelled' && !selectedBooking.cancelled_within_24h && (
                   <div style={{ background:'rgba(176,141,79,.08)', border:'1px solid rgba(176,141,79,.2)', borderRadius:12, padding:16, marginBottom:16, fontSize:'.85rem', color:'#B08D4F' }}>
                     {selectedBooking.source === 'manual' ? 'Geannuleerd — er is via de website geen betaling of terugbetaling verwerkt.' : 'Geannuleerd — restitutie wordt door LUXIQUE verwerkt.'}
+                  </div>
+                )}
+                {selectedBooking.status === 'cancellation_pending' && (
+                  <div style={{ background:'rgba(176,141,79,.08)', border:'1px solid rgba(176,141,79,.2)', borderRadius:12, padding:16, marginBottom:16, fontSize:'.85rem', color:'#8a6b34' }}>
+                    Annulering in behandeling — Cal.com heeft de annulering nog niet bevestigd. LUXIQUE probeert dit automatisch opnieuw.
                   </div>
                 )}
 
@@ -1044,6 +1093,7 @@ export default function DashboardPage() {
                     {sortedBookings.map(b => {
                       const isPast = new Date(b.slot_start) < new Date()
                       const isCancelled = b.status === 'cancelled' || b.status === 'expired'
+                      const isCancellationPending = b.status === 'cancellation_pending'
                       return (
                         <button key={b.id} onClick={() => setSelectedBooking(b)}
                           style={{ width:'100%', textAlign:'left', background:'#FBF8F2', borderRadius:16, padding:20, border:'1px solid rgba(28,24,20,.13)', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', opacity:isCancelled?.6:1, transition:'border-color .2s' }}
@@ -1058,7 +1108,7 @@ export default function DashboardPage() {
                               : isPast ? { background:'rgba(28,24,20,.07)', color:'#888' }
                               : { background:'rgba(176,141,79,.14)', color:'#B08D4F' })
                           }}>
-                            {isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Afgelopen' : 'Bevestigd'}
+                            {isCancellationPending ? 'Annulering in behandeling' : isCancelled ? (b.status === 'expired' ? 'Verlopen' : 'Geannuleerd') : isPast ? 'Afgelopen' : 'Bevestigd'}
                           </span>
                         </button>
                       )

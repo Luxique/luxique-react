@@ -129,12 +129,8 @@ async function handleBookingCreated(payload: any, supabase: any) {
     return NextResponse.json({ error: 'Missing uid or startTime' }, { status: 400 })
   }
 
-  // TEMP TEST: override with TEST_DEPOSIT_CENTS env var if set
-  const TEST_DEPOSIT_RAW = process.env.TEST_DEPOSIT_CENTS
-  const TEST_DEPOSIT = TEST_DEPOSIT_RAW ? parseInt(TEST_DEPOSIT_RAW) : null
-  // HARDCODED FALLBACK FOR TESTING — remove after test
-  const depositAmount = TEST_DEPOSIT ?? 100 // TODO: revert to Math.round(eventConfig.priceCents / 2)
-  console.log(`Webhook deposit calc: TEST_DEPOSIT_CENTS=${TEST_DEPOSIT_RAW}, parsed=${TEST_DEPOSIT}, final=${depositAmount}`)
+  const depositAmount = Math.round(eventConfig.priceCents / 2)
+  console.log(`Webhook deposit calc: total=${eventConfig.priceCents}, deposit=${depositAmount}`)
 
   // Set expires_at to 10 minutes from now
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()

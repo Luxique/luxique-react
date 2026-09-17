@@ -2,12 +2,13 @@
 
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import TrajectInstellingenPaneel from './traject-settings'
 import KlassenAdmin from './klassen-admin'
 import AdminAgenda from './admin-agenda'
 import { AdminDashboardMobileNav, AdminDashboardSidebar, type AdminDashboardNavKey } from '@/components/AdminDashboardNav'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
 
 /* ── types ── */
 type Profile = { id: string; email: string; full_name: string; role: string; created_at: string }
@@ -27,14 +28,18 @@ type TrajectBoeking = {
   bevestiging_mail_verzonden_op: string | null
 }
 type PendingBookingRow = {
-  id: string; event_type: string; slot_start: string; status: string;
-  amount_cents: number | null; customer_name: string | null; customer_email: string | null
+  id: string; user_id: string | null; event_type: string; slot_start: string; status: string;
+  amount_cents: number | null; customer_name: string | null; customer_email: string | null;
+  created_at: string; agreed_at: string | null
 }
 
 /* ── icons ── */
 function IconPlus() { return <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg> }
 
 type Tab = 'overview' | 'customers' | 'courses' | 'calendar' | 'finance' | 'traject' | 'klassen'
+const OVERVIEW_REFRESH_INTERVAL_MS = 45_000
+const SALES_PER_PAGE = 15
+const UPCOMING_APPOINTMENTS_LIMIT = 15
 
 export default function AdminPage() {
   const { user, session, role, loading } = useAuth()
@@ -46,12 +51,14 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [trajectBoekingen, setTrajectBoekingen] = useState<TrajectBoeking[]>([])
   const [paidBookings, setPaidBookings] = useState<PendingBookingRow[]>([])
+  const [salesPage, setSalesPage] = useState(0)
   const [showGrant, setShowGrant] = useState(false)
   const [grantUserId, setGrantUserId] = useState('')
   const [grantCourseId, setGrantCourseId] = useState('')
   const [granting, setGranting] = useState(false)
   const [grantSearch, setGrantSearch] = useState('')
   const [grantSearchFocused, setGrantSearchFocused] = useState(false)
+  const paidBookingsRefreshInFlight = useRef(false)
 
   // Auth guard
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +70,24 @@ export default function AdminPage() {
       setTab(requestedTab as Tab)
     }
   }, [])
+
+  const refreshPaidBookings = useCallback(async () => {
+    if (role !== 'admin' || !session?.access_token || paidBookingsRefreshInFlight.current) return
+    paidBookingsRefreshInFlight.current = true
+    try {
+      const response = await fetch('/api/admin/dashboard-sales', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(payload.error || 'Betaalde behandelingen laden mislukt.')
+      setPaidBookings(payload.paidBookings || [])
+    } catch (error) {
+      console.error('[admin-dashboard] Paid bookings laden mislukt:', error)
+    } finally {
+      paidBookingsRefreshInFlight.current = false
+    }
+  }, [role, session?.access_token])
 
   const refresh = useCallback(() => {
     if (role !== 'admin') return
@@ -77,14 +102,32 @@ export default function AdminPage() {
       .select('id, cursus_naam, klant_naam, klant_email, startdatum, starttijd, blok_dagen, aanbetaling_cents, restbedrag_cents, aanbetaling_status, bevestiging_mail_verzonden_op')
       .order('startdatum', { ascending: false })
       .then(({ data }) => setTrajectBoekingen(data || []))
-    supabase.from('pending_bookings')
-      .select('id, event_type, slot_start, status, amount_cents, customer_name, customer_email')
-      .order('slot_start', { ascending: false })
-      .then(({ data }) => setPaidBookings(data || []))
-  }, [role])
+    void refreshPaidBookings()
+  }, [refreshPaidBookings, role])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { refresh() }, [role])
+  useEffect(() => { refresh() }, [refresh])
+
+  useEffect(() => {
+    if (role !== 'admin') return
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
+  }, [refresh, role])
+
+  useEffect(() => {
+    if (role !== 'admin' || tab !== 'overview') return
+    const refreshVisiblePaidBookings = () => {
+      if (document.visibilityState === 'visible') void refreshPaidBookings()
+    }
+    const intervalId = window.setInterval(refreshVisiblePaidBookings, OVERVIEW_REFRESH_INTERVAL_MS)
+    return () => window.clearInterval(intervalId)
+  }, [refreshPaidBookings, role, tab])
 
   const grantAccess = async () => {
     if (!grantUserId || !grantCourseId) return
@@ -118,8 +161,6 @@ export default function AdminPage() {
   // ── Computed stats ──
   const now = new Date()
   const activeStudents = new Set(enrollments.filter(e => e.status === 'active').map(e => e.user_id)).size
-  const upcomingBookings = bookings.filter(b => new Date(b.appointment_date) >= now && b.status !== 'cancelled').slice(0, 5)
-
   // ── Unified sales feed: cursussen + trajecten + behandelingen ──
   // PostgREST levert een to-one embed als OBJECT (profiles: {...}), geen array — normaliseren.
   const enrCustomer = (e: Enrollment) => {
@@ -129,6 +170,12 @@ export default function AdminPage() {
   const enrCourseTitle = (e: Enrollment) => {
     const c = Array.isArray(e.courses) ? e.courses[0] : e.courses
     return c?.title || '—'
+  }
+  const pendingCustomer = (booking: PendingBookingRow) => {
+    const profile = profiles.find(candidate => candidate.id === booking.user_id)
+    return booking.customer_name
+      || canonicalCustomerEmail({ profileEmail: profile?.email, bookingEmail: booking.customer_email })
+      || '—'
   }
   type Sale = { key: string; kind: 'Cursus' | 'Traject' | 'Behandeling'; who: string; what: string; amount: number; date: string; note?: string }
   const salesAll: Sale[] = [
@@ -150,10 +197,10 @@ export default function AdminPage() {
     })),
     ...paidBookings.filter(b => b.status === 'paid').map(b => ({
       key: 'b-' + b.id, kind: 'Behandeling' as const,
-      who: b.customer_name || b.customer_email || '—',
+      who: pendingCustomer(b),
       what: b.event_type,
       amount: (b.amount_cents || 0) / 100,
-      date: b.slot_start,
+      date: b.agreed_at || b.created_at,
       note: 'aanbetaling (50%)',
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -161,19 +208,51 @@ export default function AdminPage() {
   const totalRevenueAll = salesAll.reduce((s, x) => s + x.amount, 0)
   const monthSales = salesAll.filter(x => { const d = new Date(x.date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() })
   const monthlyRevenueAll = monthSales.reduce((s, x) => s + x.amount, 0)
+  const salesPageCount = Math.max(1, Math.ceil(salesAll.length / SALES_PER_PAGE))
+  const visibleSalesPage = Math.min(salesPage, salesPageCount - 1)
+  const visibleSales = salesAll.slice(
+    visibleSalesPage * SALES_PER_PAGE,
+    (visibleSalesPage + 1) * SALES_PER_PAGE,
+  )
 
   // ── Upcoming: behandelingen (pending_bookings paid) + trajecten + legacy bookings ──
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0)
-  const upcomingTreatments = paidBookings
+  type UpcomingAppointment = {
+    key: string; kind: 'Behandeling' | 'Traject' | 'Legacy'; date: string;
+    title: string; subtitle: string; badge: string
+  }
+  const upcomingAll: UpcomingAppointment[] = [
+    ...paidBookings
     .filter(b => b.status === 'paid' && new Date(b.slot_start) >= now)
-    .sort((a, b) => new Date(a.slot_start).getTime() - new Date(b.slot_start).getTime())
-    .slice(0, 6)
-  const upcomingTrajecten = trajectBoekingen
+    .map(b => ({
+      key: `treatment-${b.id}`, kind: 'Behandeling' as const, date: b.slot_start,
+      title: b.event_type,
+      subtitle: `${pendingCustomer(b).trim()} · ${new Date(b.slot_start).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`,
+      badge: 'betaald',
+    })),
+    ...trajectBoekingen
     .filter(t => t.aanbetaling_status === 'betaald' && new Date(t.startdatum) >= startOfToday)
-    .slice(0, 6)
-  const upcomingTotal = upcomingTreatments.length + upcomingTrajecten.length + upcomingBookings.length
+    .map(t => ({
+      key: `traject-${t.id}`, kind: 'Traject' as const,
+      date: `${t.startdatum}T${t.starttijd || '00:00:00'}`,
+      title: t.cursus_naam,
+      subtitle: `${(t.klant_naam || t.klant_email || '—').trim()}${t.starttijd ? ` · ${t.starttijd.slice(0, 5)}` : ''}`,
+      badge: 'traject',
+    })),
+    ...bookings
+    .filter(b => new Date(b.appointment_date) >= now && b.status !== 'cancelled')
+    .map(b => ({
+      key: `legacy-${b.id}`, kind: 'Legacy' as const, date: b.appointment_date,
+      title: b.treatment_name, subtitle: '', badge: b.status,
+    })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const upcomingAppointments = upcomingAll.slice(0, UPCOMING_APPOINTMENTS_LIMIT)
+  const upcomingTotal = upcomingAll.length
 
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) : '—'
+  const salesDateRange = visibleSales.length > 0
+    ? `${fmt(visibleSales[visibleSales.length - 1].date)} - ${fmt(visibleSales[0].date)}`
+    : ''
 
   if (loading) return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Laden...</div></div>
   if (!user) return <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center"><div className="text-[#888] text-[14px]">Doorverwijzen...</div></div>
@@ -183,7 +262,7 @@ export default function AdminPage() {
   const activeNav = tab === 'traject' ? undefined : tab as AdminDashboardNavKey
 
   return (
-    <div className="min-h-screen bg-[#F5F5F4] pt-[50px]">
+    <div className="min-h-screen bg-[#F5F5F4] pt-[80px]">
       <AdminDashboardMobileNav active={activeNav} />
 
       <div className="mx-auto flex w-full max-w-none flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8 xl:flex-row xl:gap-6">
@@ -214,10 +293,11 @@ export default function AdminPage() {
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5">
                 {/* Recent sales — cursussen + trajecten + behandelingen */}
                 <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
-                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente verkopen</h3>
+                  <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Recente verkopen{salesDateRange ? ` (${salesDateRange})` : ''}</h3>
                   {salesAll.length > 0 ? (
-                    <div className="space-y-3">
-                      {salesAll.slice(0, 8).map(s => (
+                    <div>
+                      <div className="space-y-3">
+                      {visibleSales.map(s => (
                         <div key={s.key} className="flex items-center justify-between py-2 border-b border-[#f5f5f5] last:border-0">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
@@ -232,6 +312,14 @@ export default function AdminPage() {
                           </div>
                         </div>
                       ))}
+                      </div>
+                      {salesPageCount > 1 && (
+                        <div className="flex items-center justify-between gap-3 pt-4 mt-2 border-t border-[#eee]">
+                          <button type="button" onClick={() => setSalesPage(Math.max(0, visibleSalesPage - 1))} disabled={visibleSalesPage === 0} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#888] disabled:text-[#d2d2d2] disabled:cursor-not-allowed hover:text-[#C4A265] transition">Vorige pagina</button>
+                          <span className="text-[11px] text-[#aaa]">{visibleSalesPage + 1} / {salesPageCount}</span>
+                          <button type="button" onClick={() => setSalesPage(Math.min(salesPageCount - 1, visibleSalesPage + 1))} disabled={visibleSalesPage === salesPageCount - 1} className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#888] disabled:text-[#d2d2d2] disabled:cursor-not-allowed hover:text-[#C4A265] transition">Volgende pagina</button>
+                        </div>
+                      )}
                     </div>
                   ) : <p className="text-[13px] text-[#888]">Nog geen verkopen</p>}
                 </div>
@@ -239,44 +327,19 @@ export default function AdminPage() {
                 {/* Upcoming bookings / mini calendar */}
                 <div className="bg-white rounded-2xl border border-[#eee] p-4 sm:p-5">
                   <h3 className="text-[12px] font-semibold tracking-[0.1em] uppercase text-[#888] mb-4">Aankomende afspraken</h3>
-                  {(upcomingTreatments.length > 0 || upcomingTrajecten.length > 0 || upcomingBookings.length > 0) ? (
+                  {upcomingAppointments.length > 0 ? (
                     <div className="space-y-3">
-                      {upcomingTreatments.map(b => (
-                        <div key={b.id} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
-                          <div className="w-10 h-10 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
-                            <span className="text-[10px] font-semibold leading-none">{new Date(b.slot_start).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
-                            <span className="text-[14px] font-bold leading-none">{new Date(b.slot_start).getDate()}</span>
+                      {upcomingAppointments.map(appointment => (
+                        <div key={appointment.key} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
+                          <div className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0 ${appointment.kind === 'Traject' ? 'bg-[#C4A265] text-[#0C0A07]' : 'bg-[#0C0A07] text-white'}`}>
+                            <span className="text-[10px] font-semibold leading-none">{new Date(appointment.date).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
+                            <span className="text-[14px] font-bold leading-none">{new Date(appointment.date).getDate()}</span>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium truncate">{b.event_type}</p>
-                            <p className="text-[11px] text-[#888] truncate">{(b.customer_name || b.customer_email || '—').trim()} · {new Date(b.slot_start).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</p>
+                            <p className="text-[13px] font-medium truncate">{appointment.title}</p>
+                            {appointment.subtitle && <p className="text-[11px] text-[#888] truncate">{appointment.subtitle}</p>}
                           </div>
-                          <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium bg-green-50 text-green-600 shrink-0">betaald</span>
-                        </div>
-                      ))}
-                      {upcomingTrajecten.map(t => (
-                        <div key={t.id} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
-                          <div className="w-10 h-10 rounded-xl bg-[#C4A265] flex flex-col items-center justify-center text-[#0C0A07] shrink-0">
-                            <span className="text-[10px] font-semibold leading-none">{new Date(t.startdatum + 'T00:00:00').toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
-                            <span className="text-[14px] font-bold leading-none">{new Date(t.startdatum + 'T00:00:00').getDate()}</span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-[13px] font-medium truncate">{t.cursus_naam}</p>
-                            <p className="text-[11px] text-[#888] truncate">{(t.klant_naam || t.klant_email || '—').trim()}{t.starttijd ? ` · ${t.starttijd.slice(0, 5)}` : ''}</p>
-                          </div>
-                          <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#C4A265]/15 text-[#8a6d3b] shrink-0">traject</span>
-                        </div>
-                      ))}
-                      {upcomingBookings.map(b => (
-                        <div key={b.id} className="flex items-center gap-3 py-2 border-b border-[#f5f5f5] last:border-0">
-                          <div className="w-10 h-10 rounded-xl bg-[#0C0A07] flex flex-col items-center justify-center text-white shrink-0">
-                            <span className="text-[10px] font-semibold leading-none">{new Date(b.appointment_date).toLocaleDateString('nl-NL', { weekday: 'short' })}</span>
-                            <span className="text-[14px] font-bold leading-none">{new Date(b.appointment_date).getDate()}</span>
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-medium">{b.treatment_name}</p>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${b.status === 'confirmed' ? 'bg-green-50 text-green-600' : 'bg-[#f5f5f5] text-[#888]'}`}>{b.status}</span>
-                          </div>
+                          <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${appointment.kind === 'Traject' ? 'bg-[#C4A265]/15 text-[#8a6d3b]' : appointment.badge === 'paid' || appointment.badge === 'betaald' || appointment.badge === 'confirmed' ? 'bg-green-50 text-green-600' : 'bg-[#f5f5f5] text-[#888]'}`}>{appointment.badge}</span>
                         </div>
                       ))}
                     </div>
