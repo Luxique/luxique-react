@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import RichTextField from './RichTextField'
 import ImageCropModal from './ImageCropModal'
+import type { CourseImageSize } from '@/lib/course-block-content'
 
 /* ── Types ── */
 export type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
@@ -20,6 +21,7 @@ export interface Block {
   url?: string
   caption?: string
   images?: Array<{ id: string; url: string; caption?: string }>
+  imageSize?: CourseImageSize
   question?: string
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
@@ -123,6 +125,7 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
   const fileRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<{ id: string; source: string } | null>(null)
   const images = block.images?.length ? block.images : (block.url ? [{ id: 'legacy', url: block.url, caption: block.caption }] : [])
+  const imageSize = block.imageSize || 'full'
 
   useEffect(() => () => { if (pending?.source.startsWith('blob:')) URL.revokeObjectURL(pending.source) }, [pending])
 
@@ -165,6 +168,20 @@ export const ImageBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         style={{ display: 'none' }}
         onChange={handleUpload}
       />
+      <label className="flex max-w-[220px] flex-col gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7A7268]">
+        Weergavegrootte
+        <select
+          aria-label="Grootte van fotoblok"
+          value={imageSize}
+          onChange={event => onUpdate(block.id, { imageSize: event.target.value as CourseImageSize })}
+          className="h-9 rounded-lg border border-[rgba(30,26,20,0.12)] bg-white px-3 text-[12px] font-normal normal-case tracking-normal text-[#1E1A14] outline-none focus:border-[#C4A265]"
+        >
+          <option value="small">Klein</option>
+          <option value="medium">Middel</option>
+          <option value="large">Groot</option>
+          <option value="full">Volledige breedte</option>
+        </select>
+      </label>
       <div className="flex max-w-[660px] flex-wrap items-start gap-3">
         {images.map(image => <div key={image.id} className="min-w-[110px] max-w-full flex-none overflow-hidden rounded-xl border bg-white">
           <div className="relative h-[140px] md:h-[180px]"><img src={image.url} alt={image.caption || ''} className="h-full w-auto max-w-[min(70vw,420px)] object-contain" /><div className="absolute right-2 top-2 flex gap-1"><button title="Opnieuw croppen" onClick={() => setPending({ id: image.id, source: image.url })} className="rounded-full bg-white/90 px-2 py-1 text-xs">✎</button><button title="Verwijderen" onClick={() => { const next = images.filter(item => item.id !== image.id); onUpdate(block.id, { images: next, url: next[0]?.url || '', caption: next[0]?.caption || '' }) }} className="rounded-full bg-white/90 px-2 py-1 text-xs">✕</button></div></div>

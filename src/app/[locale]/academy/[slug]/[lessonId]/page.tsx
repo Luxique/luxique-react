@@ -8,7 +8,7 @@ import ExamPlayer from '@/components/ExamPlayer'
 import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { checkEnrollmentCompletion } from '@/lib/academy-completion'
-import { extractStoredBlockContent, normalizeRichTextHtml } from '@/lib/course-block-content'
+import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize } from '@/lib/course-block-content'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -26,6 +26,7 @@ interface Block {
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
   showTitle?: boolean; showSubtitle?: boolean; showBody?: boolean
   images?: Array<{ id: string; url: string; caption?: string }>
+  imageSize?: CourseImageSize
 }
 interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }
 
@@ -47,6 +48,7 @@ function extractBlockContent(block: Block) {
     imageUrl: stored.url || (stored.media?.url as string | undefined) || block.media?.url,
     caption: stored.caption || (stored.media?.caption as string | undefined) || block.media?.caption,
     images: stored.images?.length ? stored.images : undefined,
+    imageSize: stored.imageSize,
     fileName: block.title || stored.fileName || 'Bestand',
     fileSize: stored.fileSize,
     fileUrl: stored.fileUrl || block.file_url || '#',
@@ -493,7 +495,7 @@ export default function LessonPage() {
 
                     {/* IMAGE */}
                     {block.type === 'image' && (
-                      <div className="photo-grid" data-count={bc.images?.length || (bc.imageUrl ? 1 : 0)}>
+                      <div className="photo-grid" data-count={bc.images?.length || (bc.imageUrl ? 1 : 0)} data-size={bc.imageSize || 'full'}>
                         {(bc.images?.length ? bc.images : [{ id: 'legacy', url: bc.imageUrl || '', caption: bc.caption }]).map(image => <figure key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
                           <button className="photo" type="button" onClick={() => image.url && setLightboxImage({ url: image.url, alt: image.caption || '' })} aria-label={image.caption ? `Vergroot foto: ${image.caption}` : 'Vergroot foto'}>{image.url ? <img src={image.url} alt={image.caption || ''} onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} /> : '⛶'}</button>
                           <figcaption className="photo-meta">

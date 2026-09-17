@@ -11,7 +11,7 @@ import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
-import { extractStoredBlockContent, getBuilderVideoPlaybackConfig } from '@/lib/course-block-content'
+import { extractStoredBlockContent, getBuilderVideoPlaybackConfig, type CourseImageSize } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -74,6 +74,7 @@ interface Block {
   url?: string
   caption?: string
   images?: Array<{ id: string; url: string; caption?: string }>
+  imageSize?: CourseImageSize
   question?: string
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
@@ -648,6 +649,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             url: block.url,
             caption: block.caption,
             images: block.images,
+            imageSize: block.imageSize,
             question: block.question,
             option_type: block.option_type,
             options: block.options,
@@ -846,6 +848,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 url: block.url,
                 caption: block.caption,
                 images: block.images,
+                imageSize: block.imageSize,
                 question: block.question,
                 option_type: block.option_type,
                 options: block.options,
@@ -1148,6 +1151,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           url: stored.url,
           caption: stored.caption,
           images: stored.images,
+          imageSize: stored.imageSize,
           question: stored.question,
           media: stored.media as Block['media'],
           option_type: stored.optionType as Block['option_type'],
@@ -2996,7 +3000,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                               })()}
 
                               {block.type === 'image' && ((block.images?.length || 0) > 0 || block.url) && (
-                                <div className="builder-photo-preview mx-auto flex w-full max-w-[680px] flex-wrap items-start justify-center gap-3" data-count={block.images?.length || (block.url ? 1 : 0)}>
+                                <div className="builder-photo-preview mx-auto flex w-full flex-wrap items-start justify-center gap-3" data-count={block.images?.length || (block.url ? 1 : 0)} data-size={block.imageSize || 'full'}>
                                   {(block.images?.length ? block.images : [{ id: 'legacy', url: block.url!, caption: block.caption }]).map(image => <figure className="m-0 min-w-0 max-w-full" key={image.id} style={{ '--photo-ratio': 1 } as React.CSSProperties}>
                                     <img src={image.url} alt={image.caption || ''} className="builder-photo-preview-image block h-[140px] w-full rounded-lg object-cover md:h-[180px]" onLoad={event => event.currentTarget.closest('figure')?.style.setProperty('--photo-ratio', String(event.currentTarget.naturalWidth / event.currentTarget.naturalHeight))} />
                                     {image.caption && <figcaption className="mt-2 text-sm text-[#7A7268] text-center">{image.caption}</figcaption>}
@@ -3114,6 +3118,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           </div>
           <style jsx>{`
             .builder-photo-preview[data-count='1'] figure { flex: 1 1 100%; width: 100%; }
+            .builder-photo-preview[data-size='small'] { max-width: 320px; }
+            .builder-photo-preview[data-size='medium'] { max-width: 480px; }
+            .builder-photo-preview[data-size='large'] { max-width: 680px; }
+            .builder-photo-preview[data-size='full'] { max-width: 900px; }
             .builder-photo-preview[data-count='1'] .builder-photo-preview-image { width: 100%; height: auto; }
             .builder-photo-preview[data-count='2'] figure { flex: var(--photo-ratio, 1) 1 0; }
             .builder-photo-preview[data-count='2'] .builder-photo-preview-image { width: 100%; }

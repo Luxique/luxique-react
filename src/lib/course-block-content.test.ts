@@ -56,6 +56,11 @@ test('preserves a multi-photo gallery with independent captions', () => {
   assert.deepEqual(extractStoredBlockContent({ images }).images, images)
 })
 
+test('reads the photo size preset from current and legacy block shapes', () => {
+  assert.equal(extractStoredBlockContent({ imageSize: 'small' }).imageSize, 'small')
+  assert.equal(extractStoredBlockContent({ content: { image_size: 'large' } }).imageSize, 'large')
+})
+
 test('decodes escaped legacy rich text tags instead of showing raw markup', () => {
   assert.equal(
     normalizeRichTextHtml('&lt;p&gt;&lt;strong&gt;The Wet look&lt;/strong&gt; volledig&lt;/p&gt;'),
