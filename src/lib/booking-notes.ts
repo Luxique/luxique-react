@@ -32,3 +32,25 @@ export function extractCalBookingNote(booking: Record<string, unknown>): string 
   }
   return ''
 }
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;')
+}
+
+/** Returns no markup at all when the customer did not submit a note. */
+export function renderBookingNoteEmailHtml(note: string | null | undefined, label = 'Jouw notitie'): string {
+  const cleanNote = note?.trim()
+  if (!cleanNote) return ''
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fffaf0; border:1px solid rgba(196,162,101,.35); border-radius:10px; margin:0 0 26px 0;">
+    <tr><td style="padding:20px 24px; text-align:left;">
+      <div style="font-family:Arial,sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#C4A265; padding-bottom:8px;">${escapeHtml(label)}</div>
+      <div style="font-family:Arial,sans-serif; font-size:15px; line-height:23px; color:#4a463e; white-space:pre-wrap; overflow-wrap:anywhere;">${escapeHtml(cleanNote)}</div>
+    </td></tr>
+  </table>`
+}
