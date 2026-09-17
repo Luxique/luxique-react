@@ -82,6 +82,11 @@ export default function Navbar() {
             ADMIN
           </span>
         </div>
+
+        <div
+          id="builder-history-controls-slot"
+          className="pointer-events-none absolute left-1/2 top-1/2 z-[1] -translate-x-1/2 -translate-y-1/2"
+        />
         
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5 mr-2">
