@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase-client'
 import { LoginGate } from '@/components/LoginGate'
@@ -239,6 +239,7 @@ function ClosingCTA() {
 /* ─── FASE 5: WIDGET + SHOWCASE ─── */
 function BookSection() {
   const t = useTranslations('Behandelingen')
+  const locale = useLocale()
   const { user } = useAuth()
   const [profileName, setProfileName] = useState<string | null>(null)
 
@@ -258,7 +259,7 @@ function BookSection() {
   const attendeeName = profileName || ''
 
   return (
-    <section id="boeken" className="relative py-[clamp(100px,12vw,140px)] overflow-hidden" style={{ scrollMarginTop: '80px' }}>
+    <section id="boeken" className="relative py-[clamp(100px,12vw,140px)] overflow-x-clip" style={{ scrollMarginTop: '80px' }}>
       {/* Showcase strip — behind widget */}
       <div
         className="absolute top-1/2 left-0 w-full flex gap-[26px] z-[1] pointer-events-none md:opacity-90 opacity-85 hidden md:flex"
@@ -327,6 +328,7 @@ function BookSection() {
             <div className="mb-4 rounded-[16px] border border-[rgba(176,141,79,0.28)] bg-[#fffaf0] px-5 py-4 text-left">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">Bijzonderheden voor Chiva (optioneel)</p>
               <p className="mt-1.5 text-[0.88rem] leading-[1.55] text-[#5f574d]">Vermeld in het notitieveld tijdens het boeken gerust relevante bijzonderheden, zoals extreem korte wimpers, sterk gekrulde of juist stijve wimpers, of waterige ogen.</p>
+              <p className="mt-2 text-[0.82rem] leading-[1.5] text-[#776d60]">Momenteel geen beschikbare data in de getoonde maanden? Probeer de volgende maand of neem gerust contact op via <a className="underline decoration-[#B08D4F] underline-offset-2" href="mailto:info@luxique.nl">info@luxique.nl</a>.</p>
             </div>
             <div
               style={{
@@ -343,6 +345,7 @@ function BookSection() {
                 email={userEmail}
                 theme="light"
                 layout="month_view"
+                locale={locale}
               />
             </div>
           </LoginGate>

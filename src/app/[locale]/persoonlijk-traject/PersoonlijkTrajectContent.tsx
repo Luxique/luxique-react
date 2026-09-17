@@ -247,6 +247,7 @@ export default function PersoonlijkTrajectContent() {
         .start-meta .m{display:flex;flex-direction:column;gap:2px}
         .start-meta .m .k{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright)}
         .start-meta .m .v{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600}
+        .start-deposit{font-size:.82rem!important;line-height:1.5;color:var(--gold-bright)!important;margin:-12px 0 24px!important}
         .start-r{position:relative;background:rgba(246,241,231,.04);border-left:1px solid rgba(246,241,231,.1);
           padding:46px 40px;display:flex;flex-direction:column;justify-content:center}
         .start-r h3{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-bright);margin-bottom:16px;font-weight:600}
@@ -557,6 +558,7 @@ export default function PersoonlijkTrajectContent() {
                 <div className="m"><span className="k">{t('workshopMetaFormLabel')}</span><span className="v serif">{t('workshopMetaFormValue')}</span></div>
                 <div className="m"><span className="k">{t('workshopMetaLevelLabel')}</span><span className="v serif">{t('workshopMetaLevelValue')}</span></div>
               </div>
+              <p className="start-deposit">{t('dp1InvestNote')}</p>
               <div className="start-btns">
                 <a href={boekUrl(CURSUS.workshop, workshopKlas?.id)} className="btn">{t('workshopBookCta')}</a>
                 <button className="btn ghost" data-loenique>{t('workshopAskLoenique')}<img className="loenique-ic" src="https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/chatbot-avatar.webp?width=80&quality=80&resize=contain" alt="" /></button>
@@ -868,6 +870,7 @@ export default function PersoonlijkTrajectContent() {
                         <div className="lab">{t('dp2InvestTitle')}</div>
                         <div className="amt serif">{t('dp2InvestPrice')}</div>
                         <div className="vat">{t('dp2InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
                         <div className="pay">{t('dp2Outro')}</div>
                       </div>
                     </div>
@@ -962,6 +965,7 @@ export default function PersoonlijkTrajectContent() {
                         <div className="lab">{MEDUSA_TRAJECTORY_CONTENT.investment.title}</div>
                         <div className="amt serif">{MEDUSA_TRAJECTORY_CONTENT.investment.price}</div>
                         <div className="vat">{MEDUSA_TRAJECTORY_CONTENT.investment.priceLabel}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
                         <div className="pay">{MEDUSA_TRAJECTORY_CONTENT.investment.certificate}</div>
                       </div>
                     </div>
@@ -1117,6 +1121,7 @@ export default function PersoonlijkTrajectContent() {
                         <div className="lab">{t('dp4InvestTitle')}</div>
                         <div className="amt serif">{t('dp4InvestPrice')}</div>
                         <div className="vat">{t('dp4InvestPriceLabel')}</div>
+                        <div className="pay">{t('dp1InvestNote')}</div>
                         <div className="pay">{t('dp4Outro')}</div>
                       </div>
                     </div>

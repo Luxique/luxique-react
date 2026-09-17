@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
 import { formatBookingDate, formatBookingDateOnly, formatBookingTime } from '@/lib/booking-date-time'
 import { renderTrajectoryProgrammeHtml } from '@/lib/trajectory-email-content'
+import { extractCalBookingNote, renderBookingNoteEmailHtml } from '@/lib/booking-notes'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -34,6 +35,32 @@ interface BookingData {
   user_id?: string | null
   stripe_session_id?: string | null
   cancellation_refund_eligible?: boolean
+  customer_note?: string | null
+}
+
+const bookingNoteCache = new Map<string, Promise<string>>()
+
+async function getBookingNote(booking: BookingData): Promise<string> {
+  const suppliedNote = booking.customer_note?.trim()
+  if (suppliedNote) return suppliedNote
+  if (!booking.cal_booking_uid || !process.env.CAL_API_KEY) return ''
+
+  let request = bookingNoteCache.get(booking.cal_booking_uid)
+  if (!request) {
+    request = fetch(`https://api.cal.com/v2/bookings?uid=${encodeURIComponent(booking.cal_booking_uid)}`, {
+      cache: 'no-store',
+      headers: {
+        Authorization: `Bearer ${process.env.CAL_API_KEY}`,
+        'cal-api-version': '2024-09-10',
+      },
+    }).then(async response => {
+      if (!response.ok) return ''
+      const payload = await response.json() as { data?: { bookings?: Array<Record<string, unknown>> } }
+      return extractCalBookingNote(payload.data?.bookings?.[0] || {})
+    }).catch(() => '')
+    bookingNoteCache.set(booking.cal_booking_uid, request)
+  }
+  return request
 }
 
 async function getAccountIdentity(booking: BookingData): Promise<{ name: string; email: string }> {
@@ -115,7 +142,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
     const date = formatDateEN(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
-    const remainder = deposit // 50/50 split
+    const noteHtml = renderBookingNoteEmailHtml(await getBookingNote(booking), 'Your note')
 
     // Build manage booking URL (dashboard with bookings tab)
     const manageUrl = `${SITE_URL}/dashboard?tab=boekingen`
@@ -160,6 +187,7 @@ export async function sendConfirmationEmail(bookingId: string, booking: BookingD
             </table>
           </td></tr>
         </table>
+        ${noteHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">The remaining 50% is paid in the studio after your treatment.</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;"><strong>Need to reschedule or cancel?</strong> Log in to your dashboard to manage your appointment. Please note: changes within 24 hours of your appointment mean your deposit is non-refundable.</div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
@@ -237,6 +265,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
 
     const date = formatDateNL(booking.slot_start)
     const time = formatTimeEN(booking.slot_start)
+    const noteHtml = renderBookingNoteEmailHtml(await getBookingNote(booking), 'Jouw notitie')
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -278,6 +307,7 @@ export async function sendReminderEmail(bookingId: string, booking: BookingData)
             </table>
           </td></tr>
         </table>
+        ${noteHtml}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:10px;">Kleine voorbereiding</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:28px; max-width:440px; margin:0 auto;">Kom met schone wimpers — zonder mascara of olie-producten rond de ogen.</div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
@@ -328,6 +358,7 @@ export async function sendNewBookingNotification(booking: BookingData) {
     const time = formatTimeEN(booking.slot_start)
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const remainder = deposit
+    const noteHtml = renderBookingNoteEmailHtml(await getBookingNote(booking), 'Notitie van de klant')
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -373,6 +404,7 @@ export async function sendNewBookingNotification(booking: BookingData) {
             </table>
           </td></tr>
         </table>
+        ${noteHtml}
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
@@ -691,8 +723,6 @@ export async function sendReviewRequestEmail(booking: BookingData) {
     }
 
     const firstName = booking.customer_name?.split(' ')[0] || 'je'
-    const date = formatDateEN(booking.slot_start)
-
     const { error } = await resend.emails.send({
       from: FROM,
       to: accountEmail,
@@ -776,6 +806,7 @@ export async function getBookingWithCustomerFromCal(uid: string): Promise<Bookin
       amount_cents: 0,
       customer_name: responses.name || attendee.name || null,
       customer_email: responses.email || attendee.email || null,
+      customer_note: extractCalBookingNote(b),
     }
   } catch {
     return null

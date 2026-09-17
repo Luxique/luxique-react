@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import CalEmbedRaw from '@calcom/embed-react'
 
 const CALENDAR_TIME_ZONE = 'Europe/Amsterdam'
@@ -23,16 +24,28 @@ export default function CalEmbed({
   email,
   theme = 'light',
   layout = 'month_view',
+  locale = 'nl',
 }: {
   calLink: string
   name?: string
   email?: string
   theme?: string
   layout?: string
+  locale?: string
 }) {
+  const [embedKey, setEmbedKey] = useState(0)
+  const [showBackButton, setShowBackButton] = useState(false)
+
+  useEffect(() => {
+    setShowBackButton(false)
+    const timer = window.setTimeout(() => setShowBackButton(true), 3_000)
+    return () => window.clearTimeout(timer)
+  }, [embedKey])
+
   const config: Record<string, string | string[] | Record<string, string>> = {
     layout,
     theme,
+    locale,
     timeZone: CALENDAR_TIME_ZONE,
   }
 
@@ -42,12 +55,65 @@ export default function CalEmbed({
   if (email) config.email = email
 
   return (
-    <div className="w-full h-full">
+    <div className="cal-embed-shell relative w-full min-h-[680px] md:min-h-[600px]">
+      <button
+        type="button"
+        className={`cal-embed-back ${showBackButton ? 'cal-embed-back--visible' : ''}`}
+        aria-label="Terug naar de keuze van behandelingen"
+        onClick={() => {
+          const scrollY = window.scrollY
+          setEmbedKey(current => current + 1)
+          requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'auto' }))
+        }}
+      >
+        <span aria-hidden="true">←</span> Andere behandeling
+      </button>
       <CalEmbedRaw
+        key={embedKey}
         calLink={calLink}
-        style={{ width: '100%', height: '100%', border: 0, borderRadius: '12px' }}
+        style={{ width: '100%', minHeight: '680px', height: '100%', border: 0, borderRadius: '12px' }}
         config={config}
       />
+      <style jsx>{`
+        .cal-embed-back {
+          position: absolute;
+          z-index: 20;
+          top: 12px;
+          left: 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          border: 1px solid rgba(176, 141, 79, .34);
+          border-radius: 999px;
+          padding: 9px 14px;
+          background: rgba(251, 248, 242, .94);
+          box-shadow: 0 8px 24px rgba(28, 24, 20, .12);
+          color: #554a3d;
+          font: 600 12px/1.2 Jost, sans-serif;
+          cursor: pointer;
+          opacity: 0;
+          transform: translateY(-5px);
+          pointer-events: none;
+          transition: opacity .45s ease, transform .45s ease, border-color .2s ease;
+          backdrop-filter: blur(8px);
+        }
+        .cal-embed-back--visible {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: auto;
+        }
+        .cal-embed-back:hover { border-color: rgba(176, 141, 79, .72); }
+        @media (min-width: 768px) {
+          .cal-embed-shell { min-height: 600px; }
+          .cal-embed-shell :global(iframe) { min-height: 600px !important; }
+        }
+        @media (max-width: 767px) {
+          .cal-embed-shell :global(iframe) { min-height: 680px !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .cal-embed-back { transition: none; }
+        }
+      `}</style>
     </div>
   )
 }
