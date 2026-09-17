@@ -48,6 +48,12 @@ export async function generateMetadata({ params }: Props) {
       description,
       type: 'website',
       url: `${BASE_URL}/${locale}`,
+      images: [
+        {
+          url: `${BASE_URL}/images/hero-bg.jpg`,
+          alt: 'LXQ Academy — The Art of Lashes, Perfected',
+        },
+      ],
     }
   }
 }
