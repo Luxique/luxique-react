@@ -79,30 +79,36 @@ export default function CalEmbed({
           position: absolute;
           z-index: 20;
           top: 12px;
-          left: 12px;
+          right: 12px;
           display: inline-flex;
           align-items: center;
           gap: 7px;
           border: 1px solid rgba(176, 141, 79, .34);
           border-radius: 999px;
           padding: 9px 14px;
-          background: rgba(251, 248, 242, .94);
-          box-shadow: 0 8px 24px rgba(28, 24, 20, .12);
+          background: rgba(251, 248, 242, .72);
+          box-shadow: 0 6px 18px rgba(28, 24, 20, .08);
           color: #554a3d;
           font: 600 12px/1.2 Jost, sans-serif;
           cursor: pointer;
           opacity: 0;
           transform: translateY(-5px);
           pointer-events: none;
-          transition: opacity .45s ease, transform .45s ease, border-color .2s ease;
+          transition: opacity .45s ease, transform .45s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
           backdrop-filter: blur(8px);
         }
         .cal-embed-back--visible {
-          opacity: 1;
+          opacity: .64;
           transform: translateY(0);
           pointer-events: auto;
         }
-        .cal-embed-back:hover { border-color: rgba(176, 141, 79, .72); }
+        .cal-embed-back:hover,
+        .cal-embed-back:focus-visible {
+          opacity: .96;
+          background: rgba(251, 248, 242, .96);
+          border-color: rgba(176, 141, 79, .72);
+          box-shadow: 0 8px 24px rgba(28, 24, 20, .13);
+        }
         @media (min-width: 768px) {
           .cal-embed-shell { min-height: 600px; }
           .cal-embed-shell :global(iframe) { min-height: 600px !important; }

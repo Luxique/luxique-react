@@ -327,8 +327,7 @@ function BookSection() {
           >
             <div className="mb-4 rounded-[16px] border border-[rgba(176,141,79,0.28)] bg-[#fffaf0] px-5 py-4 text-left">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">Bijzonderheden voor Chiva (optioneel)</p>
-              <p className="mt-1.5 text-[0.88rem] leading-[1.55] text-[#5f574d]">Vermeld in het notitieveld tijdens het boeken gerust relevante bijzonderheden, zoals extreem korte wimpers, sterk gekrulde of juist stijve wimpers, of waterige ogen.</p>
-              <p className="mt-2 text-[0.82rem] leading-[1.5] text-[#776d60]">Momenteel geen beschikbare data in de getoonde maanden? Probeer de volgende maand of neem gerust contact op via <a className="underline decoration-[#B08D4F] underline-offset-2" href="mailto:info@luxique.nl">info@luxique.nl</a>.</p>
+              <p className="mt-1.5 text-[0.88rem] leading-[1.55] text-[#5f574d]">Vermeld tijdens het boeken bijzonderheden zoals zeer korte, gekrulde of stijve wimpers of waterige ogen.</p>
             </div>
             <div
               style={{
