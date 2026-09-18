@@ -13,6 +13,7 @@ const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
 const STUDIO_EXTERIOR_IMAGE_URL = `${SITE_URL}/images/luxique-studio-exterior.jpg`
+const REVIEW_LASH_IMAGE_URL = `${SITE_URL}/images/hero-bg.jpg`
 export const GOOGLE_REVIEW_URL = GOOGLE_REVIEW_WRITE_URL
 
 const studioExteriorPhotoNL = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0 0;"><tr><td align="center"><img src="${STUDIO_EXTERIOR_IMAGE_URL}" width="504" alt="Het pand van LUXIQUE aan De Overmaat 26 in Arnhem" style="display:block;width:100%;max-width:504px;height:auto;border:0;border-radius:10px;"></td></tr></table>`
@@ -731,9 +732,16 @@ export function renderReviewRequestHtml(firstName: string): string {
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Review</div>
         <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Hoe waren je nieuwe lashes? ✨</div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+          <tr><td align="center">
+            <img src="${REVIEW_LASH_IMAGE_URL}" width="504" alt="Lashresultaat bij LUXIQUE" style="display:block; width:100%; max-width:504px; height:auto; border:0; border-radius:10px;">
+          </td></tr>
+        </table>
         ${renderEmailReviewProof()}
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Hi ${firstName}, bedankt dat je bij LUXIQUE was! We hopen dat je helemaal blij bent met je set.</div>
-        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Zou je 1 minuutje willen nemen om een review achter te laten op Google? Het helpt ons enorm — en een foto van je lashes erbij maakt het compleet.</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Heyy hey ${firstName},</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Wat leuk dat je bij LUXIQUE bent geweest. Ik hoop dat je nog steeds helemaal blij bent met je nieuwe lashes en met een fijn gevoel terugkijkt op je afspraak.</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Zou je misschien één minuutje willen nemen om jouw ervaring op Google te delen? Jouw review helpt anderen om met vertrouwen voor LUXIQUE te kiezen en betekent ontzettend veel voor mij.</div>
+        <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Als je een mooie foto van je lashes hebt, zou ik het extra leuk vinden als je die bij je review toevoegt. Alvast heel erg bedankt voor je tijd en lieve woorden!</div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
           <tr>
             <td align="center" bgcolor="#C4A265" style="border-radius:9px; background:linear-gradient(180deg,#D8B978,#C4A265);">
@@ -746,7 +754,8 @@ export function renderReviewRequestHtml(firstName: string): string {
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
       <tr><td align="center" style="padding:26px 48px 34px 48px;">
-        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:14px;">With love, Luxique</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:8px;">Liefs,</div>
+        <div style="font-family:'Cormorant Garamond', Georgia, serif; font-style:italic; font-size:18px; color:#C4A265; padding-bottom:14px;">Chiva</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#9a958b;">Luxique &middot; <a href="https://www.luxique.nl" style="color:#9a958b; text-decoration:underline;">luxique.nl</a></div>
       </td></tr>
     </table>
