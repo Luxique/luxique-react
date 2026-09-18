@@ -4,22 +4,12 @@ import { useEffect, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import './hero-v2.css'
 import { GoogleIcon } from './ReviewsSection'
+import { GOOGLE_REVIEWS_PROFILE_URL, REVIEW_SOCIAL_PROOF } from '@/lib/review-social-proof'
 
 const IMG_ORIG = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/hero-bg.webp?width=1400&quality=75&resize=contain'
 const IMG_1 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header1.webp?width=1400&quality=75&resize=contain'
 const IMG_2 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header2.webp?width=1400&quality=75&resize=contain'
 const IMG_3 = 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/header4.webp?width=1400&quality=75&resize=contain'
-
-const GOOGLE_REVIEWS_URL = 'https://www.google.nl/search?q=Lashed+by+Chiva&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOXnNn9cjqmnpbyGwwilPiiFoL9NRN9JMEJIRkgOBDP-1dimnJRkrkciqpSFldaZS9zcFoZM%3D'
-
-const GOOGLE_RATING = { stars: 5, count: 47, display: '5.0' }
-
-// Placeholder avatars for pill (using real photos from behandelingen)
-const AVATARS = [
-  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-1.webp?width=80&quality=75&resize=contain' },
-  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-2.webp?width=80&quality=75&resize=contain' },
-  { photo: 'https://osldoolmbpqayxhgmbum.supabase.co/storage/v1/render/image/public/images/het-werk-3.webp?width=80&quality=75&resize=contain' },
-]
 
 // Review texts stay hardcoded — these are real customer reviews (dynamic content)
 const SLIDE_REVIEWS = [
@@ -96,14 +86,14 @@ export default function Hero() {
           {/* Centered light frosted glass box */}
           <div className="hero-v2-glass" key={`glass-${animKey}`}>
             {/* Google reviews pill with avatars */}
-            <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer"
+            <a href={GOOGLE_REVIEWS_PROFILE_URL} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-[5px] bg-white border border-[rgba(30,26,20,0.08)] rounded-full px-[14px] py-[5px] mb-6 hover:bg-[#F3EEE7] transition-colors">
               {/* Overlapping avatar circles with photos and border */}
               <div className="flex -space-x-[4px]">
-                {AVATARS.map((avatar, i) => (
+                {REVIEW_SOCIAL_PROOF.avatars.map((avatar, i) => (
                   <img
                     key={i}
-                    src={avatar.photo}
+                    src={avatar}
                     alt="Customer"
                     className="w-[28px] h-[28px] rounded-full object-cover border-[2px] border-white"
                   />
@@ -112,8 +102,8 @@ export default function Hero() {
               {/* Google logo + stars + rating */}
               <div className="flex items-center gap-[4px]">
                 <GoogleIcon />
-                <span className="text-[9px] tracking-[0.5px]">{'★'.repeat(GOOGLE_RATING.stars)}</span>
-                <span className="text-[12px] font-medium text-[#1A1815]">{GOOGLE_RATING.display} · {GOOGLE_RATING.count} reviews</span>
+                <span className="text-[9px] tracking-[0.5px]">{'★'.repeat(REVIEW_SOCIAL_PROOF.stars)}</span>
+                <span className="text-[12px] font-medium text-[#1A1815]">{REVIEW_SOCIAL_PROOF.rating} · {REVIEW_SOCIAL_PROOF.count} reviews</span>
               </div>
             </a>
 
@@ -165,14 +155,14 @@ export default function Hero() {
 
             <div>
               {/* Google reviews pill with avatars */}
-              <a href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer"
+              <a href={GOOGLE_REVIEWS_PROFILE_URL} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-[5px] bg-white border border-[rgba(30,26,20,0.08)] rounded-full px-[12px] py-[4px] mb-5 hover:bg-[#F3EEE7] transition-colors">
                 {/* Overlapping avatar circles with photos and border */}
                 <div className="flex -space-x-[4px]">
-                  {AVATARS.map((avatar, i) => (
+                  {REVIEW_SOCIAL_PROOF.avatars.map((avatar, i) => (
                     <img
                       key={i}
-                      src={avatar.photo}
+                      src={avatar}
                       alt="Customer"
                       className="w-[26px] h-[26px] rounded-full object-cover border-[2px] border-white"
                     />
@@ -181,8 +171,8 @@ export default function Hero() {
                 {/* Google logo + stars + rating */}
                 <div className="flex items-center gap-[3px]">
                   <GoogleIcon />
-                  <span className="text-[9px] tracking-[0.5px]">{'★'.repeat(GOOGLE_RATING.stars)}</span>
-                  <span className="text-[11px] font-medium text-[#1A1815]">{GOOGLE_RATING.display} · {GOOGLE_RATING.count} reviews</span>
+                  <span className="text-[9px] tracking-[0.5px]">{'★'.repeat(REVIEW_SOCIAL_PROOF.stars)}</span>
+                  <span className="text-[11px] font-medium text-[#1A1815]">{REVIEW_SOCIAL_PROOF.rating} · {REVIEW_SOCIAL_PROOF.count} reviews</span>
                 </div>
               </a>
 

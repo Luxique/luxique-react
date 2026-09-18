@@ -4,6 +4,7 @@ import { canonicalCustomerEmail } from '@/lib/customer-email'
 import { formatBookingDate, formatBookingDateOnly, formatBookingTime } from '@/lib/booking-date-time'
 import { renderTrajectoryProgrammeHtml } from '@/lib/trajectory-email-content'
 import { extractCalBookingNote, renderBookingNoteEmailHtml } from '@/lib/booking-notes'
+import { GOOGLE_REVIEW_WRITE_URL, renderEmailReviewProof } from '@/lib/review-social-proof'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -12,7 +13,7 @@ const CHIVA_EMAIL = 'info@luxique.nl'
 const STUDIO_ADDRESS = 'De Overmaat 26, 6831 AH Arnhem'
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.luxique.nl').replace(/\/$/, '')
 const STUDIO_EXTERIOR_IMAGE_URL = `${SITE_URL}/images/luxique-studio-exterior.jpg`
-export const GOOGLE_REVIEW_URL = 'https://search.google.com/local/writereview?placeid=ChIJqwSMZ9Gnx0cR_1laVkvccp0'
+export const GOOGLE_REVIEW_URL = GOOGLE_REVIEW_WRITE_URL
 
 const studioExteriorPhotoNL = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0 0;"><tr><td align="center"><img src="${STUDIO_EXTERIOR_IMAGE_URL}" width="504" alt="Het pand van LUXIQUE aan De Overmaat 26 in Arnhem" style="display:block;width:100%;max-width:504px;height:auto;border:0;border-radius:10px;"></td></tr></table>`
 
@@ -730,6 +731,7 @@ export function renderReviewRequestHtml(firstName: string): string {
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Review</div>
         <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Hoe waren je nieuwe lashes? ✨</div>
+        ${renderEmailReviewProof()}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Hi ${firstName}, bedankt dat je bij LUXIQUE was! We hopen dat je helemaal blij bent met je set.</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Zou je 1 minuutje willen nemen om een review achter te laten op Google? Het helpt ons enorm — en een foto van je lashes erbij maakt het compleet.</div>
         <table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px auto 0 auto;">
