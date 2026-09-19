@@ -4,7 +4,7 @@ import { canonicalCustomerEmail } from '@/lib/customer-email'
 import { formatBookingDate, formatBookingDateOnly, formatBookingTime } from '@/lib/booking-date-time'
 import { renderTrajectoryProgrammeHtml } from '@/lib/trajectory-email-content'
 import { extractCalBookingNote, renderBookingNoteEmailHtml } from '@/lib/booking-notes'
-import { GOOGLE_REVIEW_WRITE_URL, renderEmailReviewProof } from '@/lib/review-social-proof'
+import { GOOGLE_REVIEW_WRITE_URL, renderEmailReviewHero } from '@/lib/review-social-proof'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -732,12 +732,7 @@ export function renderReviewRequestHtml(firstName: string): string {
       <tr><td style="padding:44px 48px 36px 48px;" align="center">
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#C4A265; padding-bottom:18px;">Review</div>
         <div style="font-family:'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-size:34px; line-height:42px; font-weight:500; color:#0C0A07; padding-bottom:20px;">Hoe waren je nieuwe lashes? ✨</div>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
-          <tr><td align="center">
-            <img src="${REVIEW_LASH_IMAGE_URL}" width="504" alt="Lashresultaat bij LUXIQUE" style="display:block; width:100%; max-width:504px; height:auto; border:0; border-radius:10px;">
-          </td></tr>
-        </table>
-        ${renderEmailReviewProof()}
+        ${renderEmailReviewHero(REVIEW_LASH_IMAGE_URL)}
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Heyy hey ${firstName},</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Wat leuk dat je bij LUXIQUE bent geweest. Ik hoop dat je nog steeds helemaal blij bent met je nieuwe lashes en met een fijn gevoel terugkijkt op je afspraak.</div>
         <div style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:26px; color:#4a463e; padding-bottom:22px; max-width:440px; margin:0 auto;">Zou je misschien één minuutje willen nemen om jouw ervaring op Google te delen? Jouw review helpt anderen om met vertrouwen voor LUXIQUE te kiezen en betekent ontzettend veel voor mij.</div>
