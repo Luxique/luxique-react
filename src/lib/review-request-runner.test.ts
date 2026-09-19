@@ -1,6 +1,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { runReviewRequestCandidates, type ReviewRequestCandidate } from './review-request-runner.ts'
+import {
+  dueReviewRequestCandidates,
+  runReviewRequestCandidates,
+  type ReviewRequestCandidate,
+} from './review-request-runner.ts'
 
 const candidate: ReviewRequestCandidate = {
   id: 'booking-1',
@@ -8,7 +12,22 @@ const candidate: ReviewRequestCandidate = {
   cal_booking_uid: 'cal-1',
   event_type: 'Nieuwe set',
   slot_start: '2026-09-16T12:00:00.000Z',
+  duration_minutes: 180,
 }
+
+test('selects an appointment as soon as its end time has passed', () => {
+  const justEnded = { ...candidate, slot_start: '2026-09-19T10:00:00.000Z', duration_minutes: 120 }
+  const due = dueReviewRequestCandidates([justEnded], new Date('2026-09-19T12:00:01.000Z'))
+
+  assert.deepEqual(due.map(({ id }) => id), ['booking-1'])
+})
+
+test('does not select an appointment whose end time is still in the future', () => {
+  const stillRunning = { ...candidate, slot_start: '2026-09-19T10:00:00.000Z', duration_minutes: 180 }
+  const due = dueReviewRequestCandidates([stillRunning], new Date('2026-09-19T12:59:59.000Z'))
+
+  assert.deepEqual(due, [])
+})
 
 test('claims and sends an eligible treatment exactly once', async () => {
   let claimed = false

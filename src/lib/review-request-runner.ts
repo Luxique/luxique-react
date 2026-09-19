@@ -4,9 +4,25 @@ export interface ReviewRequestCandidate {
   cal_booking_uid: string
   event_type: string
   slot_start: string
+  duration_minutes: number
   customer_name?: string | null
   customer_email?: string | null
   user_id?: string | null
+}
+
+export function reviewRequestEndTime(candidate: ReviewRequestCandidate): Date {
+  return new Date(new Date(candidate.slot_start).getTime() + candidate.duration_minutes * 60_000)
+}
+
+export function isReviewRequestDue(candidate: ReviewRequestCandidate, now: Date): boolean {
+  return reviewRequestEndTime(candidate).getTime() <= now.getTime()
+}
+
+export function dueReviewRequestCandidates(
+  candidates: ReviewRequestCandidate[],
+  now: Date,
+): ReviewRequestCandidate[] {
+  return candidates.filter((candidate) => isReviewRequestDue(candidate, now))
 }
 
 export interface ReviewRequestResult {
