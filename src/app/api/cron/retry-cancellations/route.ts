@@ -5,6 +5,7 @@ import { isWithin24Hours, MANUAL_TREATMENTS, restoreManualBookingPublicAvailabil
 import { sendManualBookingCancellation, sendManualBookingCancellationNotification } from '@/lib/manual-booking-email'
 import { isManualAvailabilityLedger } from '@/lib/manual-availability-ledger'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { isTerminalPastBookingCancellationError } from '@/lib/cancellation-retry'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -56,6 +57,16 @@ export async function GET(request: NextRequest) {
         results.push({ source: 'online', id: booking.id, status: 'cancelled_with_mail_warning', error: message })
         continue
       }
+      if (isTerminalPastBookingCancellationError(message)) {
+        const terminalMessage = `Cancellation retry stopped: appointment already ended. ${message}`
+        const { error: reconcileError } = await supabaseAdmin.from('pending_bookings').update({
+          status: 'paid',
+          cancellation_error: terminalMessage,
+        }).eq('id', booking.id).eq('status', 'cancellation_pending')
+        if (reconcileError) throw reconcileError
+        results.push({ source: 'online', id: booking.id, status: 'terminal_past', error: terminalMessage })
+        continue
+      }
       await supabaseAdmin.from('pending_bookings').update({ cancellation_error: message }).eq('id', booking.id)
       results.push({ source: 'online', id: booking.id, status: 'pending', error: message })
     }
@@ -92,6 +103,18 @@ export async function GET(request: NextRequest) {
       console.error('[retry-cancellations] manual failed:', { id: booking.id, uid: booking.cal_booking_uid, error: message })
       if (cancellationFinalized) {
         results.push({ source: 'manual', id: booking.id, status: 'cancelled_with_mail_warning', error: message })
+        continue
+      }
+      if (isTerminalPastBookingCancellationError(message)) {
+        const terminalMessage = `Cancellation retry stopped: appointment already ended. ${message}`
+        const { error: reconcileError } = await supabaseAdmin.from('manual_bookings').update({
+          status: 'confirmed',
+          sync_status: 'synced',
+          sync_error: terminalMessage,
+          updated_at: new Date().toISOString(),
+        }).eq('id', booking.id).eq('status', 'cancellation_pending')
+        if (reconcileError) throw reconcileError
+        results.push({ source: 'manual', id: booking.id, status: 'terminal_past', error: terminalMessage })
         continue
       }
       await supabaseAdmin.from('manual_bookings').update({ sync_status: 'cancellation_pending', sync_error: message, updated_at: new Date().toISOString() }).eq('id', booking.id)
