@@ -174,7 +174,7 @@
 .tt .subtitle { color: var(--gold-deep); font-style: italic; font-family: 'Cormorant Garamond',serif; font-size: 16px; margin-bottom: 12px; }
 .tt .subtitle p { margin: 0; }
 .tt .block-body { white-space: break-spaces; }
-.tt .block-body p { font-size: 16px; line-height: 1.75; color: #403c34; margin: 0 0 12px; }
+.tt .block-body p { font-size: 16px; line-height: 1.75; color: #403c34; margin: 0; }
 
 /* ── Photo ── */
 .photo {

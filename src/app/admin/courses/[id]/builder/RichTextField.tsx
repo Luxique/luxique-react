@@ -96,6 +96,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       />
       <style jsx global>{`
         .course-rich-text .ProseMirror { white-space: break-spaces; }
+        .course-rich-text .ProseMirror p { margin: 0; }
       `}</style>
       {/* Toolbar — onder het veld */}
       <div className="flex items-center gap-0.5 border-t border-[rgba(30,26,20,0.08)] pt-1.5 mt-1.5 flex-wrap">
