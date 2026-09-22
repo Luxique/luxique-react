@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
@@ -66,6 +67,7 @@ export default function LessonPage() {
   const [enrolled, setEnrolled] = useState(false)
   const [videoCompleted, setVideoCompleted] = useState(false)
   const [showConvertModal, setShowConvertModal] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; caption?: string } | null>(null)
   const convertDismissedRef = useRef(false) // one dismissal per session
   const hasMarkedRef = useRef(false)  // idempotency guard — markComplete fires once per lesson
 
@@ -150,6 +152,22 @@ export default function LessonPage() {
   }, [user, allLessons, lessonId])
 
   useEffect(() => { localStorage.setItem('lux-rail-open', railOpen ? 'open' : 'closed') }, [railOpen])
+
+  useEffect(() => {
+    if (!lightboxImage) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLightboxImage(null)
+    }
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [lightboxImage])
 
   /* ── Derived ──────────────────────────────────── */
   const hasAccess = enrolled || role === 'admin'
@@ -474,7 +492,21 @@ export default function LessonPage() {
                     {/* IMAGE */}
                     {block.type === 'image' && (
                       <>
-                        <div className="photo">{bc.imageUrl ? <img src={bc.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : '⛶'}</div>
+                        <div
+                          className={`photo ${bc.imageUrl ? 'is-zoomable' : ''}`}
+                          onClick={() => bc.imageUrl && setLightboxImage({ url: bc.imageUrl, caption: bc.caption })}
+                          role={bc.imageUrl ? 'button' : undefined}
+                          tabIndex={bc.imageUrl ? 0 : undefined}
+                          aria-label={bc.imageUrl ? 'Foto vergroten' : undefined}
+                          onKeyDown={event => {
+                            if (bc.imageUrl && (event.key === 'Enter' || event.key === ' ')) {
+                              event.preventDefault()
+                              setLightboxImage({ url: bc.imageUrl, caption: bc.caption })
+                            }
+                          }}
+                        >
+                          {bc.imageUrl ? <img src={bc.imageUrl} alt={bc.caption || ''} /> : '⛶'}
+                        </div>
                         {bc.caption && <div className="photo-cap">{bc.caption}</div>}
                       </>
                     )}
@@ -602,7 +634,7 @@ export default function LessonPage() {
                   onClick={() => canProceed ? (nextLessonNav ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : router.push(`/academy/${slug}`)) : null}
                   disabled={!canProceed}
                 >
-                  <span className="mn-label">Volgende</span>
+                  <span className="mn-label">{nextLessonNav?.title || 'Overzicht'}</span>
                   <span className="mn-arrow">→</span>
                 </button>
               </div>
@@ -610,6 +642,31 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+
+      {lightboxImage && typeof document !== 'undefined' && createPortal(
+        <div
+          className="photo-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vergrote foto"
+          onClick={() => setLightboxImage(null)}
+        >
+          <button
+            type="button"
+            className="photo-lightbox-close"
+            onClick={() => setLightboxImage(null)}
+            aria-label="Vergrote foto sluiten"
+            autoFocus
+          >
+            ✕
+          </button>
+          <figure className="photo-lightbox-figure" onClick={event => event.stopPropagation()}>
+            <img src={lightboxImage.url} alt={lightboxImage.caption || ''} />
+            {lightboxImage.caption && <figcaption>{lightboxImage.caption}</figcaption>}
+          </figure>
+        </div>,
+        document.body
+      )}
 
       {/* Conversion modal — after free lesson completion */}
       {showConvertModal && (
