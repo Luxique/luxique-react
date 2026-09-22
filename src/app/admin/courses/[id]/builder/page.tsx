@@ -2651,9 +2651,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   </button>
                   <button
                     onClick={() => currentLesson && addLesson('content', currentLesson.id)}
-                    disabled={!currentLesson || currentLesson.lesson_type !== 'content'}
+                    disabled={!currentLesson || currentLesson.lesson_type !== 'content' || !!currentLesson.parentId}
+                    data-testid="add-sublesson"
                     className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    title={!currentLesson ? 'Selecteer eerst een les' : 'Voegt een subles (1.1, 1.2 …) toe onder de geselecteerde les'}
+                    title={!currentLesson
+                      ? 'Selecteer eerst een les'
+                      : currentLesson.parentId
+                        ? 'Selecteer een hoofdles om daar een subles onder te plaatsen'
+                        : 'Voegt een subles (1.1, 1.2 …) toe onder de geselecteerde les'}
                   >
                     <span className="w-2 h-2 rounded-full bg-[rgba(196,162,101,0.6)]"></span>
                     Subles onder geselecteerde les

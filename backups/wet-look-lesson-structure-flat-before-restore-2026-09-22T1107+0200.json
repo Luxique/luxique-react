@@ -1,0 +1,44 @@
+{
+  "captured_at": "2026-09-22T11:07:00+02:00",
+  "course": {
+    "id": "02fc7233-5f4f-4b6d-aaad-15722f4ab827",
+    "title": "The Wet look ",
+    "slug": "the-wet-look",
+    "status": "draft",
+    "is_published": true
+  },
+  "lessons": [
+    {
+      "id": "249d9669-4015-49b4-a77f-54e2037f44f8",
+      "title": "The beginning",
+      "slug": "the-beginning",
+      "sort_order": 0,
+      "lesson_type": "content",
+      "parent_lesson_id": null
+    },
+    {
+      "id": "be5fd827-8cde-42de-8fe2-ff11dc02f0a4",
+      "title": "Lets begin! ",
+      "slug": "lets-begin",
+      "sort_order": 1,
+      "lesson_type": "content",
+      "parent_lesson_id": null
+    },
+    {
+      "id": "53cc6fa7-b2ea-4250-8c0b-3bc14984eb73",
+      "title": "Welke lashes gebruik je?",
+      "slug": "welke-lashes-gebruik-je",
+      "sort_order": 3,
+      "lesson_type": "content",
+      "parent_lesson_id": null
+    },
+    {
+      "id": "7350ad09-8c33-4d45-98d1-133fa192919d",
+      "title": "materialen",
+      "slug": "materialen",
+      "sort_order": 5,
+      "lesson_type": "content",
+      "parent_lesson_id": null
+    }
+  ]
+}

@@ -175,10 +175,10 @@
 .tt .subtitle p { margin: 0; }
 .course-rich-content { white-space: break-spaces; tab-size: 4; }
 .tt .block-body { font-size: 16px; line-height: 1.75; color: #403c34; }
-.tt .block-body p { font-size: inherit; line-height: inherit; color: inherit; margin: 0 0 12px; }
-.course-rich-content p { margin: 0 0 12px; }
+.tt .block-body p { font-size: inherit; line-height: inherit; color: inherit; margin: 0 0 .75em; }
+.course-rich-content p { margin: 0 0 .75em; }
 .course-rich-content p:last-child { margin-bottom: 0; }
-.course-rich-content p:empty { min-height: 1.75em; }
+.course-rich-content p:empty { min-height: 1.5em; }
 .course-rich-content ul { list-style: disc outside; margin: 12px 0; padding-left: 24px; }
 .course-rich-content ol { list-style: decimal outside; margin: 12px 0; padding-left: 24px; }
 .course-rich-content li { margin: 5px 0; }
