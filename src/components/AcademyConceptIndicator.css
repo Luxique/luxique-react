@@ -1,0 +1,27 @@
+.academy-concept-frame {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  border: 3px solid #E28735;
+  pointer-events: none;
+}
+
+.academy-concept-badge {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 9999;
+  transform: translateX(-50%);
+  padding: 7px 22px 8px;
+  border: 2px solid #E28735;
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background: #FFF5E8;
+  color: #9A4E10;
+  box-shadow: 0 6px 18px rgba(154,78,16,.18);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .22em;
+  line-height: 1;
+  pointer-events: none;
+}

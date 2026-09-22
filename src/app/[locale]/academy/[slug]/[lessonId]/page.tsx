@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
 import ExamPlayer from '@/components/ExamPlayer'
@@ -9,6 +9,8 @@ import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { checkEnrollmentCompletion } from '@/lib/academy-completion'
 import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize } from '@/lib/course-block-content'
+import { ACADEMY_PREVIEW_PARAM, ACADEMY_PREVIEW_VALUE, getAcademyPreviewSuffix, isAdminConceptPreview } from '@/lib/academy-preview'
+import AcademyConceptIndicator from '@/components/AcademyConceptIndicator'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -57,12 +59,14 @@ function extractBlockContent(block: Block) {
 
 /* ── Component ─────────────────────────────────── */
 export default function LessonPage() {
-  const params = useParams(); const router = useRouter()
+  const params = useParams(); const router = useRouter(); const searchParams = useSearchParams()
   const { user, role, loading: authLoading } = useAuth()
   const slug = params.slug as string; const lessonId = params.lessonId as string
+  const previewRequested = searchParams.get(ACADEMY_PREVIEW_PARAM) === ACADEMY_PREVIEW_VALUE
 
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [courseTitle, setCourseTitle] = useState('')
+  const [courseStatus, setCourseStatus] = useState<string | null>(null)
   const [allLessons, setAllLessons] = useState<Lesson[]>([])
   const [blocks, setBlocks] = useState<Block[]>([])
   const [progress, setProgress] = useState<Map<string, ProgressRec>>(new Map())
@@ -107,8 +111,8 @@ export default function LessonPage() {
         const { data: ld } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id').eq('id', lessonId).single()
         if (!ld) { setLoading(false); return }
         setLesson(ld)
-        const { data: cd } = await supabase.from('courses').select('title').eq('id', ld.course_id).single()
-        if (cd) setCourseTitle(cd.title)
+        const { data: cd } = await supabase.from('courses').select('title,status').eq('id', ld.course_id).single()
+        if (cd) { setCourseTitle(cd.title); setCourseStatus(cd.status) }
         const { data: als, error: alsErr } = await supabase.from('lessons').select('id,title,lesson_type,duration_seconds,is_free,course_id,parent_lesson_id').eq('course_id', ld.course_id).order('sort_order')
         let allRows = als
         if (alsErr && (alsErr.code === '42703' || (alsErr.message || '').includes('does not exist'))) {
@@ -167,6 +171,10 @@ export default function LessonPage() {
 
   /* ── Derived ──────────────────────────────────── */
   const hasAccess = enrolled || role === 'admin'
+  const isConceptPreview = isAdminConceptPreview({ requested: previewRequested, role, status: courseStatus })
+  const previewSuffix = getAcademyPreviewSuffix(isConceptPreview)
+  const lessonHref = (targetLessonId: string) => `/academy/${slug}/${targetLessonId}${previewSuffix}`
+  const courseHref = `/academy/${slug}${previewSuffix}`
   const isFreeLesson = lesson?.is_free
   const isLocked = !hasAccess && !isFreeLesson
   // Gate: if free lesson and user is not logged in, redirect to login
@@ -367,7 +375,7 @@ export default function LessonPage() {
 
     return (
       <a key={l.id} className={`ri ${isActive ? 'active' : ''} ${isClickLocked ? 'is-grey' : ''} ${isSubItem ? 'is-sub' : ''}`}
-        onClick={() => { if (!isClickLocked) router.push(`/academy/${slug}/${l.id}`); setRailMobileOpen(false) }}>
+        onClick={() => { if (!isClickLocked) router.push(lessonHref(l.id)); setRailMobileOpen(false) }}>
         <span className={`sq ${sqCls}`}>
           {status === 'done' ? <svg viewBox="0 0 100 100"><path d="M96.975 24.985 36.627 85.332c-.702.7-1.839.7-2.542 0L3.025 54.27c-.7-.703-.7-1.84 0-2.542l7.775-7.775c.703-.7 1.84-.7 2.542 0L35.358 65.97l51.3-51.3c.703-.7 1.84-.7 2.542 0l7.775 7.774c.7.703.7 1.84 0 2.542z"/></svg>
             : isLockedPay ? '🔒' : isQuizItem ? '✦' : (lessonDisplays.get(l.id)?.number || i + 1)}
@@ -383,6 +391,7 @@ export default function LessonPage() {
 
   return (
     <div className="lp-shell">
+      {isConceptPreview && <AcademyConceptIndicator />}
       {railMobileOpen && <div className="lp-rail-overlay" onClick={() => setRailMobileOpen(false)} />}
 
       <nav className={`lp-rail ${railOpen ? 'expanded' : ''} ${railMobileOpen ? 'mobile-open' : ''}`}>
@@ -411,11 +420,11 @@ export default function LessonPage() {
 
       <div className="lp-main">
         <div className="lp-topbar">
-          <a className="back" onClick={() => router.push(`/academy/${slug}`)}>← Terug naar overzicht</a>
+          <a className="back" onClick={() => router.push(courseHref)}>← Terug naar overzicht</a>
           <div className="nav-mini">
             <button className="rail-mobile-btn" onClick={() => setRailMobileOpen(true)}>☰ Lessen</button>
-            {prevLessonNav && <button onClick={() => router.push(`/academy/${slug}/${prevLessonNav.id}`)}>← Vorige</button>}
-            {nextLessonNav && <button onClick={() => canProceed ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : null} disabled={!canProceed} style={{ opacity: canProceed ? 1 : 0.4, cursor: canProceed ? 'pointer' : 'not-allowed' }}>Volgende →</button>}
+            {prevLessonNav && <button onClick={() => router.push(lessonHref(prevLessonNav.id))}>← Vorige</button>}
+            {nextLessonNav && <button onClick={() => canProceed ? router.push(lessonHref(nextLessonNav.id)) : null} disabled={!canProceed} style={{ opacity: canProceed ? 1 : 0.4, cursor: canProceed ? 'pointer' : 'not-allowed' }}>Volgende →</button>}
           </div>
         </div>
 
@@ -592,12 +601,12 @@ export default function LessonPage() {
               {/* Next/Prev navigation — desktop */}
               <div className="next-wrap next-wrap-desktop">
                 {prevLessonNav ? (
-                  <button className="next-prev" onClick={() => router.push(`/academy/${slug}/${prevLessonNav.id}`)}>← {prevLessonNav.title}</button>
+                  <button className="next-prev" onClick={() => router.push(lessonHref(prevLessonNav.id))}>← {prevLessonNav.title}</button>
                 ) : <div />}
                 <div>
                   <button
                     className={`next-btn ${canProceed ? 'ready' : ''}`}
-                    onClick={() => nextLessonNav ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : router.push(`/academy/${slug}`)}
+                    onClick={() => nextLessonNav ? router.push(lessonHref(nextLessonNav.id)) : router.push(courseHref)}
                     disabled={!canProceed}
                   >
                     {nextLessonNav ? `${nextLessonNav.title} →` : 'Terug naar overzicht →'}
@@ -611,7 +620,7 @@ export default function LessonPage() {
               <div className="mobile-nav-bar">
                 <button
                   className="mn-btn mn-prev"
-                  onClick={() => prevLessonNav ? router.push(`/academy/${slug}/${prevLessonNav.id}`) : null}
+                  onClick={() => prevLessonNav ? router.push(lessonHref(prevLessonNav.id)) : null}
                   disabled={!prevLessonNav}
                 >
                   <span className="mn-arrow">←</span>
@@ -626,7 +635,7 @@ export default function LessonPage() {
                 </button>
                 <button
                   className={`mn-btn mn-next ${canProceed ? 'ready' : ''}`}
-                  onClick={() => canProceed ? (nextLessonNav ? router.push(`/academy/${slug}/${nextLessonNav.id}`) : router.push(`/academy/${slug}`)) : null}
+                  onClick={() => canProceed ? (nextLessonNav ? router.push(lessonHref(nextLessonNav.id)) : router.push(courseHref)) : null}
                   disabled={!canProceed}
                 >
                   <span className="mn-label">Volgende</span>

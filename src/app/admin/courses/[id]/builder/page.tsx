@@ -131,6 +131,8 @@ interface Quiz {
 interface Course {
   id: string
   title: string
+  slug?: string
+  status?: 'draft' | 'published' | 'archived'
   description?: string
   longDescription?: string
   heroImageUrl?: string
@@ -674,6 +676,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
     console.log('[saveCourse] ✅ Save complete!')
     hasUnsavedChangesRef.current = false
+    setCourse(prev => prev ? { ...prev, slug: toSlug(prev.title || 'nieuwe-cursus'), status: 'draft' } : prev)
     
     // Update cache met opgeslagen blokken
     if (currentLesson?.id) {
@@ -894,6 +897,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       if (currentLesson?.id) {
         cacheLessonBlocks(currentLesson.id, blocks)
       }
+      setCourse(prev => prev ? { ...prev, slug: toSlug(prev.title || 'nieuwe-cursus'), status: 'published' } : prev)
       
       alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
     } catch (err) {
@@ -931,6 +935,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       setCourse({
         id: crypto.randomUUID(),
         title: 'Nieuwe Cursus',
+        status: 'draft',
         firstLessonFree: true,
         introVideo: true,
         finalQuizRequired: false,
@@ -972,6 +977,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       const parsedCourse: Course = {
         id: courseData.id,
         title: courseData.title,
+        slug: courseData.slug || toSlug(courseData.title || 'nieuwe-cursus'),
+        status: courseData.status || (courseData.is_published ? 'published' : 'draft'),
         description: courseData.description || undefined,
         longDescription: courseData.long_description || undefined,
         heroImageUrl: courseData.hero_image_url || undefined,
@@ -2707,7 +2714,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               {publishing ? 'Publiceren...' : 'Publiceren'}
             </button>
             <a
-              href={`/academy/${course?.title?.toLowerCase().replace(/\s+/g, '-') || ''}`}
+              href={`/academy/${course?.slug || toSlug(course?.title || 'nieuwe-cursus')}${course?.status === 'published' ? '' : '?preview=admin'}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-[rgba(196,162,101,0.3)] text-[#7A6340] text-[12px] font-medium hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer no-underline"
@@ -2715,7 +2722,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
               </svg>
-              Bekijk live cursus
+              {course?.status === 'published' ? 'Bekijk live cursus' : 'Bekijk conceptcursus'}
             </a>
           </div>
         </div>

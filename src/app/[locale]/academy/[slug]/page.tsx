@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
+import { ACADEMY_PREVIEW_PARAM, ACADEMY_PREVIEW_VALUE, getAcademyPreviewSuffix, isAdminConceptPreview } from '@/lib/academy-preview'
+import AcademyConceptIndicator from '@/components/AcademyConceptIndicator'
 import './course-interior.css'
 
 interface Lesson {
@@ -12,13 +14,14 @@ interface Lesson {
   lesson_type: 'content' | 'quiz' | 'exam'; duration_seconds?: number; is_free?: boolean
   parent_lesson_id?: string | null
 }
-interface Course { id: string; title: string; slug: string; lessons?: Lesson[] }
+interface Course { id: string; title: string; slug: string; status: string; lessons?: Lesson[] }
 interface ProgressRecord { lesson_id: string; completed: boolean; last_position_seconds?: number }
 type LessonStatus = 'done' | 'current' | 'todo'
 
 export default function CourseInteriorPage() {
-  const params = useParams(); const router = useRouter()
+  const params = useParams(); const router = useRouter(); const searchParams = useSearchParams()
   const slug = params.slug as string; const { user, role } = useAuth()
+  const previewRequested = searchParams.get(ACADEMY_PREVIEW_PARAM) === ACADEMY_PREVIEW_VALUE
 
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
@@ -32,7 +35,7 @@ export default function CourseInteriorPage() {
     if (!slug) return
     const fetchCourse = async () => {
       try {
-        const { data, error } = await supabase.from('courses').select('id, title, slug').eq('slug', slug).single()
+        const { data, error } = await supabase.from('courses').select('id, title, slug, status').eq('slug', slug).single()
         if (error || !data) { setLoading(false); return }
         const { data: lessons, error: lessonsErr } = await supabase.from('lessons')
           .select('id, title, slug, sort_order, lesson_type, duration_seconds, is_free, parent_lesson_id')
@@ -84,6 +87,9 @@ export default function CourseInteriorPage() {
   const isAdmin = role === 'admin'
   const hasAccess = enrolled || isAdmin
   const lessons = course?.lessons || []
+  const isConceptPreview = isAdminConceptPreview({ requested: previewRequested, role, status: course?.status })
+  const previewSuffix = getAcademyPreviewSuffix(isConceptPreview)
+  const lessonHref = (targetLessonId: string) => `/academy/${slug}/${targetLessonId}${previewSuffix}`
 
   const getLessonStatus = (lesson: Lesson): LessonStatus => {
     const rec = progress.get(lesson.id)
@@ -123,6 +129,7 @@ export default function CourseInteriorPage() {
 
   return (
     <div className="ci-wrap">
+      {isConceptPreview && <AcademyConceptIndicator />}
       {showEnrollSuccess && (
         <div className="ci-success-overlay" onClick={() => setShowEnrollSuccess(false)}>
           <div className="ci-success-box" onClick={e => e.stopPropagation()}>
@@ -131,7 +138,7 @@ export default function CourseInteriorPage() {
             <h2 className="ci-success-title">Bedankt voor je bestelling!</h2>
             <p className="ci-success-sub">Je hebt toegang tot {course.title}. Start meteen met je eerste les.</p>
             {nextLesson ? (
-              <button className="ci-success-btn" onClick={() => router.push(`/academy/${slug}/${nextLesson.id}`)}>Start met de eerste les →</button>
+              <button className="ci-success-btn" onClick={() => router.push(lessonHref(nextLesson.id))}>Start met de eerste les →</button>
             ) : (
               <button className="ci-success-btn" onClick={() => setShowEnrollSuccess(false)}>Veel plezier met de cursus</button>
             )}
@@ -161,7 +168,7 @@ export default function CourseInteriorPage() {
             <div className="meta">Video · {fmtDur(nextLesson.duration_seconds) || 'Binnenkort'}</div>
           </div>
           {hasAccess ? (
-            <button className="go" onClick={() => router.push(`/academy/${slug}/${nextLesson.id}`)}>Verder kijken →</button>
+            <button className="go" onClick={() => router.push(lessonHref(nextLesson.id))}>Verder kijken →</button>
           ) : (
             <a href={`/cursus/${slug}`} className="go">Inschrijven →</a>
           )}
@@ -181,7 +188,7 @@ export default function CourseInteriorPage() {
           return (
             <div key={lesson.id}
               className={`ci-lesson ${isCurrent ? 'is-current' : ''} ${locked ? 'is-locked' : ''} ${isExam ? 'exam-row' : ''} ${isSubLesson(lesson) ? 'is-sub' : ''}`}
-              onClick={() => { if (!locked) router.push(`/academy/${slug}/${lesson.id}`) }}
+              onClick={() => { if (!locked) router.push(lessonHref(lesson.id)) }}
               style={{ cursor: locked ? 'default' : 'pointer' }}
             >
               <span className={`status ${status === 'done' ? 'done' : isCurrent ? 'current' : 'todo'}`}>
