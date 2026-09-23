@@ -2112,8 +2112,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                     { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
                     { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
                     { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
-                    { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course },
-                    { label: 'Certificaat pas na handmatige beoordeling', field: 'certificateReviewRequired' as keyof Course }
+                    { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
                   ] as const
                 ).map((item) => (
                   <div key={item.field} className="flex items-center justify-between py-1">
@@ -2555,6 +2554,36 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                   <span className="text-[10px] text-[#7A7268] font-light">Algemene info</span>
                 </div>
               </button>
+
+              <div className="mx-1 my-2 rounded-lg border border-[rgba(196,162,101,0.24)] bg-[rgba(196,162,101,0.06)] p-2.5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#7A6340]">
+                    Cursusinstelling
+                  </span>
+                  <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-[#7A7268]">
+                    Hele cursus
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <label htmlFor="certificate-review-required" className="cursor-pointer text-[11px] font-medium leading-[1.35] text-[#1E1A14]">
+                    Certificaat pas na handmatige beoordeling
+                  </label>
+                  <label className="relative block h-5 w-8 flex-shrink-0 cursor-pointer">
+                    <input
+                      id="certificate-review-required"
+                      type="checkbox"
+                      checked={course?.certificateReviewRequired || false}
+                      onChange={(e) => updateCourseField('certificateReviewRequired', e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <span className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] transition-colors duration-200 peer-checked:bg-[#C4A265]"></span>
+                    <span className="absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white/40 transition-all duration-200 peer-checked:translate-x-[12px] peer-checked:bg-white"></span>
+                  </label>
+                </div>
+                <p className="mt-1.5 text-[9px] leading-[1.35] text-[#7A7268]">
+                  Geldt voor alle lessen en cursisten.
+                </p>
+              </div>
 
               {(() => {
                 // Boom-weergave: sublessen (parentId) direct onder hun bovenliggende les
