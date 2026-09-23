@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { syncKlasNaarCalCom, cancelKlasBlokkades } from '@/lib/klas-cal-sync'
+import { hasValidCronAuthorization } from '@/lib/cron-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,18 +21,13 @@ export const dynamic = 'force-dynamic'
  * Limit: 5 klassen per run (sync) + 3 (cancel).
  */
 export async function GET(request: NextRequest) {
-  const userAgent = request.headers.get('user-agent') || ''
-  const authHeader = request.headers.get('authorization')
-  const expectedSecret = process.env.CRON_SECRET
-  const isVercelCron = userAgent.includes('vercel-cron')
-
   const NO_STORE = {
     'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
     'Pragma': 'no-cache',
     'Expires': '0',
   }
 
-  if (!isVercelCron && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+  if (!hasValidCronAuthorization(request.headers)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: NO_STORE })
   }
 

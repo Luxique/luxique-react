@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { cancelCalBookingVerified } from '@/lib/cal-cancellation'
+import { hasValidCronAuthorization } from '@/lib/cron-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,13 +21,7 @@ export const dynamic = 'force-dynamic'
  */
 
 export async function GET(request: NextRequest) {
-  // Auth check — accept Vercel Cron (user-agent check) OR external CRON_SECRET bearer
-  const userAgent = request.headers.get('user-agent') || ''
-  const authHeader = request.headers.get('authorization')
-  const expectedSecret = process.env.CRON_SECRET
-  const isVercelCron = userAgent.includes('vercel-cron')
-  
-  if (!isVercelCron && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+  if (!hasValidCronAuthorization(request.headers)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

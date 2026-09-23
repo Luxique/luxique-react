@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { syncTrajectBlokNaarCalCom } from '@/lib/traject-cal-sync'
+import { hasValidCronAuthorization } from '@/lib/cron-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,13 +21,7 @@ export const dynamic = 'force-dynamic'
  * Dry-run: set CRON_DRY_RUN=true om te loggen zonder mutaties.
  */
 export async function GET(request: NextRequest) {
-  // Auth check — zelfde patroon als cleanup-bookings
-  const userAgent = request.headers.get('user-agent') || ''
-  const authHeader = request.headers.get('authorization')
-  const expectedSecret = process.env.CRON_SECRET
-  const isVercelCron = userAgent.includes('vercel-cron')
-
-  if (!isVercelCron && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+  if (!hasValidCronAuthorization(request.headers)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

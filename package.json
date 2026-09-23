@@ -10,6 +10,7 @@
     "test:review-requests": "node --experimental-strip-types --test src/lib/review-request-runner.test.ts",
     "test:manual-availability": "node --experimental-strip-types --test src/lib/manual-availability-ledger.test.ts",
     "test:review-social-proof": "node --experimental-strip-types --test src/lib/review-social-proof.test.ts",
+    "test:cron-auth": "node --experimental-strip-types --test src/lib/cron-auth.test.ts",
     "start": "next start",
     "lint": "next lint"
   },

@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatAmsterdamDateKey, getAmsterdamDateKeyAfterDays } from '@/lib/booking-date-time'
+import { hasValidCronAuthorization } from '@/lib/cron-auth'
 import { runTrajectoryReminderCandidates, type TrajectoryReminderCandidate } from '@/lib/trajectory-reminder-runner'
 
 export const dynamic = 'force-dynamic'
 const TRAJECT_REMINDER_DAYS_BEFORE = 2
 
 export async function GET(request: NextRequest) {
-  const userAgent = request.headers.get('user-agent') || ''
-  const authHeader = request.headers.get('authorization')
-  const expectedSecret = process.env.CRON_SECRET
-  if (!userAgent.includes('vercel-cron') && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+  if (!hasValidCronAuthorization(request.headers)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

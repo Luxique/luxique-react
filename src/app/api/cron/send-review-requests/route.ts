@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { MANUAL_TREATMENTS } from '@/lib/manual-bookings'
+import { hasValidCronAuthorization } from '@/lib/cron-auth'
 import {
   dueReviewRequestCandidates,
   runReviewRequestCandidates,
@@ -16,10 +17,7 @@ export const dynamic = 'force-dynamic'
  * deliberately excluded.
  */
 export async function GET(request: NextRequest) {
-  const userAgent = request.headers.get('user-agent') || ''
-  const authHeader = request.headers.get('authorization')
-  const expectedSecret = process.env.CRON_SECRET
-  if (!userAgent.includes('vercel-cron') && expectedSecret && authHeader !== `Bearer ${expectedSecret}`) {
+  if (!hasValidCronAuthorization(request.headers)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
