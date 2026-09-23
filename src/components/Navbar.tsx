@@ -89,11 +89,6 @@ export default function Navbar() {
         />
         
         <div className="flex items-center gap-2">
-          <div className="flex gap-1.5 mr-2">
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Bouwen"></div>
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Instellingen"></div>
-            <div className="w-2 h-2 rounded-full bg-[#E8E3DB] cursor-pointer" title="Publiceren"></div>
-          </div>
           <button 
             onClick={() => window.dispatchEvent(new CustomEvent('builder-save'))}
             className="text-[12px] font-medium px-4 py-1.5 rounded-full border border-[rgba(30,26,20,0.09)] text-[#7A7268] hover:text-[#1E1A14] hover:border-[rgba(30,26,20,0.22)] transition cursor-pointer"
