@@ -10,6 +10,7 @@ import { PreviewProvider } from '@/contexts/PreviewContext'
 import nlMessages from '../../../../../../messages/nl.json'
 import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
+import { flattenLessonHierarchy, moveLessonInHierarchy } from '@/lib/lesson-hierarchy'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
 import { extractStoredBlockContent, getBuilderVideoPlaybackConfig, type CourseImageSize } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
@@ -57,6 +58,27 @@ function SortableBlock({ block, children }: { block: { id: string }, children: R
   );
 }
 
+function SortableLesson({ lesson, children }: { lesson: { id: string }, children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lesson.id })
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.55 : 1 }}>
+      <div className="group/lesson-drag relative">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label="Versleep les"
+          title="Sleep verticaal om te herordenen; sleep zijwaarts om hoofdles/sub-les te wijzigen"
+          className="absolute left-0 top-1/2 z-10 flex h-7 w-5 -translate-y-1/2 touch-none cursor-grab items-center justify-center text-[#9A9185] opacity-55 hover:opacity-100 active:cursor-grabbing"
+        >
+          <span aria-hidden="true">⠿</span>
+        </button>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 /* ── Types ── */
 type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
 
@@ -95,6 +117,11 @@ interface BlockHistory {
   future: Block[][]
   lastMutationKey?: string
   lastMutationAt?: number
+}
+
+interface CourseHistory {
+  past: Course[]
+  future: Course[]
 }
 
 const MAX_BLOCK_HISTORY = 5
@@ -266,11 +293,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const blocksCacheRef = useRef<Record<string, Block[]>>({})
   const activeLessonIdRef = useRef<string | null>(null)
   const blockHistoryRef = useRef<Record<string, BlockHistory>>({})
+  const courseHistoryRef = useRef<CourseHistory>({ past: [], future: [] })
   const [historyRevision, setHistoryRevision] = useState(0)
   const [historyControlsSlot, setHistoryControlsSlot] = useState<HTMLElement | null>(null)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const hasUnsavedChangesRef = useRef(false)
   const [lessonNumber, setLessonNumber] = useState(2)
+  const [sidebarTab, setSidebarTab] = useState<'lessons' | 'settings'>('lessons')
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
   const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -442,6 +471,41 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     applyHistorySnapshot(lessonId, nextBlocks)
     setHistoryRevision(revision => revision + 1)
   }, [applyHistorySnapshot, blocks, currentLesson])
+
+  const recordCourseHistory = useCallback((previousCourse: Course) => {
+    const history = courseHistoryRef.current
+    courseHistoryRef.current = {
+      past: [...history.past, structuredClone(previousCourse)].slice(-MAX_BLOCK_HISTORY),
+      future: [],
+    }
+    setHistoryRevision(revision => revision + 1)
+  }, [])
+
+  const undoCourseChange = useCallback(() => {
+    if (!course || courseHistoryRef.current.past.length === 0) return
+    const history = courseHistoryRef.current
+    const previous = structuredClone(history.past[history.past.length - 1])
+    courseHistoryRef.current = {
+      past: history.past.slice(0, -1),
+      future: [structuredClone(course), ...history.future].slice(0, MAX_BLOCK_HISTORY),
+    }
+    setCourse(previous)
+    hasUnsavedChangesRef.current = true
+    setHistoryRevision(revision => revision + 1)
+  }, [course])
+
+  const redoCourseChange = useCallback(() => {
+    if (!course || courseHistoryRef.current.future.length === 0) return
+    const history = courseHistoryRef.current
+    const next = structuredClone(history.future[0])
+    courseHistoryRef.current = {
+      past: [...history.past, structuredClone(course)].slice(-MAX_BLOCK_HISTORY),
+      future: history.future.slice(1),
+    }
+    setCourse(next)
+    hasUnsavedChangesRef.current = true
+    setHistoryRevision(revision => revision + 1)
+  }, [course])
 
   const toSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -1273,6 +1337,42 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const reindexLessons = (lessons: Lesson[]): Lesson[] =>
     lessons.map((l, i) => ({ ...l, num: i + 1 }))
 
+  const handleLessonDragEnd = async (event: DragEndEvent) => {
+    if (!course || !event.over || event.active.id === event.over.id) return
+    const previousLessons = course.lessons || []
+    const nextLessons = reindexLessons(moveLessonInHierarchy(
+      previousLessons,
+      String(event.active.id),
+      String(event.over.id),
+      event.delta.x,
+    ))
+    if (nextLessons.every((lesson, index) => lesson.id === previousLessons[index]?.id && lesson.parentId === previousLessons[index]?.parentId)) return
+
+    recordCourseHistory(course)
+    setCourse({ ...course, lessons: nextLessons })
+    if (currentLesson) {
+      const updatedCurrentLesson = nextLessons.find(lesson => lesson.id === currentLesson.id)
+      if (updatedCurrentLesson) setCurrentLesson(updatedCurrentLesson)
+    }
+    hasUnsavedChangesRef.current = true
+
+    const results = await Promise.all(nextLessons.map((lesson, index) =>
+      supabase.from('lessons').update({
+        sort_order: index + 1,
+        parent_lesson_id: lesson.parentId || null,
+      }).eq('id', lesson.id)
+    ))
+    const error = results.find(result => result.error)?.error
+    if (error) {
+      setCourse({ ...course, lessons: previousLessons })
+      if (currentLesson) {
+        const previousCurrentLesson = previousLessons.find(lesson => lesson.id === currentLesson.id)
+        if (previousCurrentLesson) setCurrentLesson(previousCurrentLesson)
+      }
+      alert(`Lesvolgorde opslaan mislukt: ${error.message}`)
+    }
+  }
+
   const addLesson = (type: 'content' | 'quiz' | 'exam' = 'content', parentId?: string) => {
     if (!course) return
     const defaultBlocks: Block[] = type === 'content'
@@ -1359,6 +1459,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | Array<{question: string; answer: string}> | undefined) => {
     if (!course) return
+    recordCourseHistory(course)
     hasUnsavedChangesRef.current = true
     setCourse({ ...course, [field]: value })
   }
@@ -2100,38 +2201,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* SETTINGS Section Card */}
-          <div className="bg-[#FDFCFA] border border-[rgba(26,24,21,0.1)] rounded-lg overflow-hidden">
-            <div className="p-3 bg-[#F3EEE6] border-b border-[rgba(26,24,21,0.1)]">
-              <span className="text-[9px] font-bold tracking-[0.18em] uppercase text-[#7A6340]">SETTINGS</span>
-            </div>
-            <div className="p-3">
-              <div className="space-y-2">
-                {(
-                  [
-                    { label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course },
-                    { label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course },
-                    { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
-                    { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course }
-                  ] as const
-                ).map((item) => (
-                  <div key={item.field} className="flex items-center justify-between py-1">
-                    <span className="text-[12px] font-light text-[#1E1A14]">{item.label}</span>
-                    <label className="relative w-8 h-5 flex-shrink-0 block cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={(course?.[item.field] as boolean) || false}
-                        onChange={(e) => updateCourseField(item.field, e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] peer-checked:bg-[#C4A265] transition-colors duration-200"></div>
-                      <div className="absolute top-[3px] left-[3px] w-[14px] h-[14px] rounded-full bg-white/40 peer-checked:bg-white peer-checked:translate-x-[12px] transition-all duration-200"></div>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       )
     }
@@ -2156,42 +2225,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 />
               </div>
               )}
-              <div>
-                <label className="text-[10.5px] font-medium text-[#7A7268] block mb-1">Geschatte duur</label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="text-[9px] text-[#7A7268] block mb-1">uur</label>
-                    <input 
-                      type="number"
-                      min="0"
-                      max="23"
-                      value={Math.floor((currentLesson.duration || 0) / 60)}
-                      onChange={(e) => {
-                        const hours = parseInt(e.target.value) || 0
-                        const minutes = (currentLesson.duration || 0) % 60
-                        updateLessonField('duration', hours * 60 + minutes)
-                      }}
-                      className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-[9px] text-[#7A7268] block mb-1">min</label>
-                    <input 
-                      type="number"
-                      min="0"
-                      max="59"
-                      step="5"
-                      value={(currentLesson.duration || 0) % 60}
-                      onChange={(e) => {
-                        const minutes = parseInt(e.target.value) || 0
-                        const hours = Math.floor((currentLesson.duration || 0) / 60)
-                        updateLessonField('duration', hours * 60 + minutes)
-                      }}
-                      className="w-full bg-white border border-[rgba(30,26,20,0.09)] rounded-[7px] p-[7px_10px] text-[12.5px] outline-none focus:border-[rgba(196,162,101,0.45)]"
-                    />
-                  </div>
-                </div>
-              </div>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] font-light text-[#1E1A14]">Gratis preview les</span>
                 <label className="relative w-8 h-5 flex-shrink-0 block cursor-pointer">
@@ -2502,22 +2535,22 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   return (
     <div className="bg-[#F0EDE6] overflow-hidden fixed inset-0" style={{ fontFamily: "'Outfit', sans-serif" }}>
-      {historyControlsSlot && currentContext === 'lesson' && createPortal(
+      {historyControlsSlot && (currentContext === 'lesson' || currentContext === 'global') && createPortal(
         <div className="pointer-events-auto flex items-center justify-center gap-1.5 sm:gap-2" aria-label="Wijzigingsgeschiedenis">
           <button
             type="button"
-            onClick={undoBlockChange}
-            disabled={activeBlockHistory.past.length === 0}
-            title={`${activeBlockHistory.past.length} stap${activeBlockHistory.past.length === 1 ? '' : 'pen'} beschikbaar`}
+            onClick={currentContext === 'global' ? undoCourseChange : undoBlockChange}
+            disabled={(currentContext === 'global' ? courseHistoryRef.current.past : activeBlockHistory.past).length === 0}
+            title={`${(currentContext === 'global' ? courseHistoryRef.current.past : activeBlockHistory.past).length} stap(pen) beschikbaar`}
             className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
           >
             <span aria-hidden="true">↩</span><span className="hidden sm:inline">Ongedaan maken</span>
           </button>
           <button
             type="button"
-            onClick={redoBlockChange}
-            disabled={activeBlockHistory.future.length === 0}
-            title={`${activeBlockHistory.future.length} stap${activeBlockHistory.future.length === 1 ? '' : 'pen'} opnieuw beschikbaar`}
+            onClick={currentContext === 'global' ? redoCourseChange : redoBlockChange}
+            disabled={(currentContext === 'global' ? courseHistoryRef.current.future : activeBlockHistory.future).length === 0}
+            title={`${(currentContext === 'global' ? courseHistoryRef.current.future : activeBlockHistory.future).length} stap(pen) opnieuw beschikbaar`}
             className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full border border-[rgba(196,162,101,0.28)] bg-[rgba(250,248,244,0.94)] px-3 text-[11px] font-semibold text-[#7A6340] shadow-sm backdrop-blur-md transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35 sm:px-4"
           >
             <span aria-hidden="true">↪</span><span className="hidden sm:inline">Opnieuw</span>
@@ -2528,14 +2561,24 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       {/* Main App */}
       <div className="flex h-full pt-[50px]">
         {/* Sidebar */}
-        <div className="w-[260px] bg-[#FAF8F4] border-r border-[rgba(30,26,20,0.09)] overflow-y-auto flex flex-col">
-          <div className="p-2.5 border-b border-[rgba(30,26,20,0.09)]">
+        <div className="w-[260px] bg-[#FAF8F4] border-r border-[rgba(30,26,20,0.09)] overflow-hidden flex flex-col">
+          <div className="grid grid-cols-2 gap-1 border-b border-[rgba(30,26,20,0.09)] p-2.5" role="tablist" aria-label="Builder zijbalk">
+            <button type="button" role="tab" aria-selected={sidebarTab === 'lessons'} onClick={() => setSidebarTab('lessons')} className={`rounded-lg px-2 py-2 text-[11px] font-semibold transition ${sidebarTab === 'lessons' ? 'bg-[rgba(196,162,101,0.14)] text-[#7A6340]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.04)]'}`}>
+              Lessen
+            </button>
+            <button type="button" role="tab" aria-selected={sidebarTab === 'settings'} onClick={() => { setSidebarTab('settings'); void switchContext('global') }} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold transition ${sidebarTab === 'settings' ? 'bg-[rgba(196,162,101,0.14)] text-[#7A6340]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.04)]'}`}>
+              <span aria-hidden="true">⚙</span> Instellingen
+            </button>
+          </div>
+          {sidebarTab === 'lessons' ? <>
+          <div className="flex-1 min-h-[180px] overflow-y-auto p-2.5 border-b border-[rgba(30,26,20,0.09)]">
             <span className="text-[9px] font-bold tracking-[0.22em] uppercase text-[#7A7268] block mb-1 px-0.5">
               Bezig met
             </span>
             <div className="flex flex-col gap-0.5">
               <button
                 onClick={() => {
+                  setSidebarTab('lessons')
                   switchContext('global')
                   // Handle async without blocking
                 }}
@@ -2555,60 +2598,21 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 </div>
               </button>
 
-              <div className="mx-1 my-2 rounded-lg border border-[rgba(196,162,101,0.24)] bg-[rgba(196,162,101,0.06)] p-2.5">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#7A6340]">
-                    Cursusinstelling
-                  </span>
-                  <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-[#7A7268]">
-                    Hele cursus
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <label htmlFor="certificate-review-required" className="cursor-pointer text-[11px] font-medium leading-[1.35] text-[#1E1A14]">
-                    Certificaat pas na handmatige beoordeling
-                  </label>
-                  <label className="relative block h-5 w-8 flex-shrink-0 cursor-pointer">
-                    <input
-                      id="certificate-review-required"
-                      type="checkbox"
-                      checked={course?.certificateReviewRequired || false}
-                      onChange={(e) => updateCourseField('certificateReviewRequired', e.target.checked)}
-                      className="peer sr-only"
-                    />
-                    <span className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] transition-colors duration-200 peer-checked:bg-[#C4A265]"></span>
-                    <span className="absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white/40 transition-all duration-200 peer-checked:translate-x-[12px] peer-checked:bg-white"></span>
-                  </label>
-                </div>
-                <p className="mt-1.5 text-[9px] leading-[1.35] text-[#7A7268]">
-                  Geldt voor alle lessen en cursisten.
-                </p>
-              </div>
-
               {(() => {
-                // Boom-weergave: sublessen (parentId) direct onder hun bovenliggende les
                 const allLessons = course?.lessons || []
-                const ordered: Array<{ lesson: Lesson; isSub: boolean }> = []
-                for (const l of allLessons) {
-                  if (l.parentId) continue // subles komt onder de parent
-                  ordered.push({ lesson: l, isSub: false })
-                  for (const child of allLessons.filter(c => c.parentId === l.id)) {
-                    ordered.push({ lesson: child, isSub: true })
-                  }
-                }
-                // Wees-sublessen (parent verwijderd maar child bestaat nog) — als top-niveau tonen
-                for (const l of allLessons) {
-                  if (l.parentId && !allLessons.some(p => p.id === l.parentId)) {
-                    ordered.push({ lesson: l, isSub: false })
-                  }
-                }
-                return ordered.map(({ lesson, isSub }) => (
+                const ordered = flattenLessonHierarchy(allLessons)
+                return (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
+                <SortableContext items={ordered.map(lesson => lesson.id)} strategy={verticalListSortingStrategy}>
+                {ordered.map((lesson) => {
+                const isSub = Boolean(lesson.parentId)
+                return (
+                <SortableLesson key={lesson.id} lesson={lesson}>
                 <button
-                  key={lesson.id}
                   onClick={() => {
                     switchContext('lesson', lesson)
                   }}
-                  className={`group/les flex items-center gap-2 p-1.5 ${isSub ? 'pl-6 ml-3 border-l border-[rgba(196,162,101,0.25)]' : 'px-2'} rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)] border border-transparent'}`}
+                  className={`group/les flex items-center gap-2 p-1.5 ${isSub ? 'pl-8 ml-3 border-l border-[rgba(196,162,101,0.25)]' : 'pl-6 pr-2'} rounded-lg border-none bg-transparent cursor-pointer w-full text-left transition relative ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.09)] border border-[rgba(196,162,101,0.18)]' : 'hover:bg-[rgba(30,26,20,0.04)] border border-transparent'}`}
                 >
                   <div className={`w-6 h-6 rounded-lg bg-[rgba(30,26,20,0.05)] flex items-center justify-center text-[#7A7268] flex-shrink-0 text-[9px] font-semibold ${currentContext === 'lesson' && currentLesson?.id === lesson.id ? 'bg-[rgba(196,162,101,0.14)] text-[#C4A265]' : ''}`}>
                     {isSub ? '↳' : (
@@ -2639,7 +2643,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                     <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/></svg>
                   </span>
                 </button>
-                ))
+                </SortableLesson>
+                )})}
+                </SortableContext>
+                </DndContext>
+                )
               })()}
 
               {course?.quizzes?.map((quiz) => (
@@ -2713,9 +2721,52 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           </div>
 
           {/* Sidebar Form — only for lesson/quiz context */}
-          <div className="flex-1 p-2.5 overflow-y-auto">
+          <div className="max-h-[38%] shrink-0 p-2.5 overflow-y-auto">
             {currentContext !== 'global' && renderSidebarForm()}
           </div>
+          </> : (
+            <div className="flex-1 overflow-y-auto p-3" role="tabpanel" aria-label="Cursusinstellingen">
+              <p className="mb-4 text-[10px] leading-relaxed text-[#7A7268]">Deze instellingen gelden voor de hele cursus en alle cursisten.</p>
+              {([
+                { heading: 'Toegang', items: [{ label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course }] },
+                { heading: 'Content', items: [{ label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course }] },
+                { heading: 'Afronding', items: [
+                  { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
+                  { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course },
+                ] },
+              ]).map(group => (
+                <section key={group.heading} className="mb-4 overflow-hidden rounded-lg border border-[rgba(30,26,20,0.09)] bg-[#FDFCFA]">
+                  <h2 className="border-b border-[rgba(30,26,20,0.08)] bg-[#F3EEE6] px-3 py-2 text-[9px] font-bold uppercase tracking-[0.18em] text-[#7A6340]">{group.heading}</h2>
+                  <div className="space-y-1 p-3">
+                    {group.items.map(item => (
+                      <div key={item.field}>
+                        <div className="flex items-center justify-between gap-3 py-1.5">
+                          <label htmlFor={`course-setting-${item.field}`} className="text-[11px] font-medium leading-snug text-[#1E1A14]">{item.label}</label>
+                          <label className="relative block h-5 w-8 flex-shrink-0 cursor-pointer">
+                            <input id={`course-setting-${item.field}`} type="checkbox" checked={Boolean(course?.[item.field])} onChange={event => updateCourseField(item.field, event.target.checked)} className="peer sr-only" />
+                            <span className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] transition-colors peer-checked:bg-[#C4A265]"></span>
+                            <span className="absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white/50 transition-all peer-checked:translate-x-[12px] peer-checked:bg-white"></span>
+                          </label>
+                        </div>
+                        {item.field === 'certificate' && (
+                          <div className={`ml-2 mt-1 border-l pl-3 transition-colors ${course?.certificate ? 'border-[#C4A265] text-[#1E1A14]' : 'border-[rgba(30,26,20,0.12)] text-[#AAA39A]'}`}>
+                            <div className="flex items-center justify-between gap-3 py-2">
+                              <label htmlFor="course-setting-certificate-review" className={`text-[10.5px] leading-snug ${course?.certificate ? 'cursor-pointer' : 'cursor-not-allowed'}`}>Certificaat pas na handmatige beoordeling</label>
+                              <label className={`relative block h-5 w-8 flex-shrink-0 ${course?.certificate ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}`}>
+                                <input id="course-setting-certificate-review" type="checkbox" disabled={!course?.certificate} checked={Boolean(course?.certificate && course?.certificateReviewRequired)} onChange={event => updateCourseField('certificateReviewRequired', event.target.checked)} className="peer sr-only" />
+                                <span className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] transition-colors peer-checked:bg-[#C4A265]"></span>
+                                <span className="absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white/50 transition-all peer-checked:translate-x-[12px] peer-checked:bg-white"></span>
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
 
           {/* Action buttons */}
           <div className="p-2.5 border-t border-[rgba(30,26,20,0.09)] space-y-2">
@@ -2771,11 +2822,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               <div className="font-['Cormorant_Garamond'] text-[17px] font-medium text-[#1E1A14] tracking-[-0.01em]">
                 {currentContext === 'global' && 'Cursus overzicht'}
                 {currentContext === 'lesson' && currentLesson && (() => {
-                  const contentIndex = (course?.lessons || [])
-                    .filter(l => l.lesson_type === 'content' || l.lesson_type === undefined)
-                    .findIndex(l => l.id === currentLesson.id)
-                  const actualNum = contentIndex !== -1 ? contentIndex + 1 : currentLesson.num
-                  return currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${actualNum} — ${currentLesson.name}`
+                  const display = builderLessonDisplays.get(currentLesson.id)
+                  return currentLesson.lesson_type === 'quiz' || currentLesson.lesson_type === 'exam'
+                    ? display?.shortLabel || currentLesson.name
+                    : `${display?.shortLabel || 'Les'} — ${currentLesson.name}`
                 })()}
                 {currentContext === 'quiz' && currentQuiz && currentQuiz.name}
               </div>
@@ -3004,17 +3054,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                         <div className="mb-8">
                           <h1 className="text-3xl font-bold text-[#1E1A14] mb-2">
                             {(() => {
-                              const contentIndex = (course?.lessons || [])
-                                .filter(l => l.lesson_type === 'content' || l.lesson_type === undefined)
-                                .findIndex(l => l.id === currentLesson.id)
-                              const actualNum = contentIndex !== -1 ? contentIndex + 1 : currentLesson.num
-                              return currentLesson.lesson_type === 'quiz' ? 'Quiz' : currentLesson.lesson_type === 'exam' ? 'Eindtoets' : `Les ${actualNum}`
+                              return builderLessonDisplays.get(currentLesson.id)?.shortLabel || 'Les'
                             })()}: {currentLesson.name}
                           </h1>
                           <p className="text-[#7A7268]">
-                            {currentLesson.duration && (
-                              <>Duur: {Math.floor(currentLesson.duration / 60)}u {currentLesson.duration % 60}min</>
-                            )}
                             {currentLesson.free && (
                               <span className="ml-4 px-2 py-1 bg-[#C4A265] text-white text-xs rounded-full">Gratis</span>
                             )}
