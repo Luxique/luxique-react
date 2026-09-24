@@ -177,12 +177,6 @@ export default function LessonPage() {
   const courseHref = `/academy/${slug}${previewSuffix}`
   const isFreeLesson = lesson?.is_free
   const isLocked = !hasAccess && !isFreeLesson
-  // Gate: if free lesson and user is not logged in, redirect to login
-  useEffect(() => {
-    if (!authLoading && !user && isFreeLesson) {
-      router.replace(`/login?redirect=/academy/${slug}/${lessonId}`)
-    }
-  }, [authLoading, user, isFreeLesson, slug, lessonId, router])
   const currentIdx = allLessons.findIndex(l => l.id === lessonId)
   const prevLessonNav = currentIdx > 0 ? allLessons[currentIdx - 1] : null
   const nextLessonNav = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null
@@ -350,9 +344,8 @@ export default function LessonPage() {
   if (loading) return <div className="lp-loader"><div>Cursus wordt geladen...</div></div>
   if (!lesson) return <div className="lp-loader"><div>Les niet gevonden</div><a href={`/academy/${slug}`} className="lp-link">← Terug naar cursus</a></div>
 
-  // Auth gate for free lessons — show loader while checking
+  // Free previews are intentionally available to anonymous and non-enrolled visitors.
   if (isFreeLesson && authLoading) return <div className="lp-loader"><div>Controleren...</div></div>
-  if (isFreeLesson && !user) return <div className="lp-loader"><div>Doorverwijzen naar login...</div></div>
 
   const lessonDisplays = getLessonDisplays(allLessons.map(l => ({ id: l.id, title: l.title, lesson_type: l.lesson_type, parent_lesson_id: l.parent_lesson_id || null })))
 

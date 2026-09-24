@@ -188,13 +188,13 @@ export default function CourseLandingClient({
   }
 
   const handleLessonClick = (lesson: Lesson) => {
-    if (!user) {
-      setShowAuthModal(true)
+    // Free previews are available without login or enrollment.
+    if (lesson.is_free) {
+      router.push(`/academy/${course.slug}/${lesson.id}`)
       return
     }
-    // Free lesson: always allow
-    if (lesson.is_free) {
-      setOpenLessonIndex(prev => prev === sortedLessons.indexOf(lesson) ? -1 : sortedLessons.indexOf(lesson))
+    if (!user) {
+      setShowAuthModal(true)
       return
     }
     // Paid lesson: check enrollment

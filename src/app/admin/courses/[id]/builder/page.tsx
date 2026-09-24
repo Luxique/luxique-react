@@ -173,7 +173,6 @@ interface Course {
   level?: string
   galleryUrls?: string[]
   firstLessonFree?: boolean
-  introVideo?: boolean
   finalQuizRequired?: boolean
   certificate?: boolean
   certificateReviewRequired?: boolean
@@ -300,6 +299,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const hasUnsavedChangesRef = useRef(false)
   const [lessonNumber, setLessonNumber] = useState(2)
   const [sidebarTab, setSidebarTab] = useState<'lessons' | 'settings'>('lessons')
+  const [hierarchyNotice, setHierarchyNotice] = useState<string | null>(null)
   const [blockPickerPosition, setBlockPickerPosition] = useState({ top: 0, left: 0 })
   const [showLessonTypeMenu, setShowLessonTypeMenu] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -569,7 +569,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       level: courseToSave.level || 'beginner',
       gallery_urls: courseToSave.galleryUrls || [],
       is_first_lesson_free: courseToSave.firstLessonFree || false,
-      intro_video: courseToSave.introVideo || false,
       final_quiz_required: courseToSave.finalQuizRequired || false,
       certificate: courseToSave.certificate || false,
       certificate_review_required: courseToSave.certificateReviewRequired || false,
@@ -799,7 +798,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         level: courseToSave.level || 'beginner',
         gallery_urls: courseToSave.galleryUrls || [],
         is_first_lesson_free: courseToSave.firstLessonFree || false,
-        intro_video: courseToSave.introVideo || false,
         final_quiz_required: courseToSave.finalQuizRequired || false,
         certificate: courseToSave.certificate || false,
         certificate_review_required: courseToSave.certificateReviewRequired || false,
@@ -1001,7 +999,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         title: 'Nieuwe Cursus',
         status: 'draft',
         firstLessonFree: true,
-        introVideo: true,
         finalQuizRequired: false,
         certificate: true,
         certificateReviewRequired: false,
@@ -1055,8 +1052,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         stripePriceId: courseData.stripe_price_id || undefined,
         level: courseData.level || 'beginner',
         galleryUrls: courseData.gallery_urls || [],
-        firstLessonFree: courseData.first_lesson_free || false,
-        introVideo: courseData.intro_video || false,
+        firstLessonFree: courseData.is_first_lesson_free || false,
         finalQuizRequired: courseData.final_quiz_required || false,
         certificate: courseData.certificate || false,
         certificateReviewRequired: courseData.certificate_review_required || false,
@@ -1338,7 +1334,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     lessons.map((l, i) => ({ ...l, num: i + 1 }))
 
   const handleLessonDragEnd = async (event: DragEndEvent) => {
-    if (!course || !event.over || event.active.id === event.over.id) return
+    if (!course || !event.over) return
     const previousLessons = course.lessons || []
     const nextLessons = reindexLessons(moveLessonInHierarchy(
       previousLessons,
@@ -1347,6 +1343,18 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       event.delta.x,
     ))
     if (nextLessons.every((lesson, index) => lesson.id === previousLessons[index]?.id && lesson.parentId === previousLessons[index]?.parentId)) return
+
+    const activeBefore = previousLessons.find(lesson => lesson.id === String(event.active.id))
+    const activeAfter = nextLessons.find(lesson => lesson.id === String(event.active.id))
+    const parentBefore = activeBefore?.parentId
+    const parentAfter = activeAfter?.parentId
+    if (parentBefore !== parentAfter && activeAfter) {
+      const newParent = parentAfter ? nextLessons.find(lesson => lesson.id === parentAfter) : null
+      const prompt = newParent
+        ? `Maak "${activeAfter.name}" een subles onder "${newParent.name}"?`
+        : `Maak "${activeAfter.name}" een normale hoofdles?`
+      if (!window.confirm(prompt)) return
+    }
 
     recordCourseHistory(course)
     setCourse({ ...course, lessons: nextLessons })
@@ -1370,11 +1378,19 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         if (previousCurrentLesson) setCurrentLesson(previousCurrentLesson)
       }
       alert(`Lesvolgorde opslaan mislukt: ${error.message}`)
+    } else if (parentBefore !== parentAfter && activeAfter) {
+      const newParent = parentAfter ? nextLessons.find(lesson => lesson.id === parentAfter) : null
+      setHierarchyNotice(newParent
+        ? `“${activeAfter.name}” is nu een subles onder “${newParent.name}”.`
+        : `“${activeAfter.name}” is nu een normale hoofdles.`)
+      window.setTimeout(() => setHierarchyNotice(null), 3200)
     }
   }
 
   const addLesson = (type: 'content' | 'quiz' | 'exam' = 'content', parentId?: string) => {
     if (!course) return
+    const requestedParent = parentId ? (course.lessons || []).find(lesson => lesson.id === parentId) : undefined
+    const resolvedParentId = requestedParent?.parentId || requestedParent?.id
     const defaultBlocks: Block[] = type === 'content'
       ? [
           { id: uid(), type: 'text', title: '', subtitle: '', content: '' },
@@ -1383,7 +1399,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         ]
       : [] // quiz/exam get no default blocks — questions built in later step
     
-    const isSub = !!parentId
+    const isSub = !!resolvedParentId
     const prefix = isSub
       ? 'Subles'
       : type === 'quiz' ? 'Quiz' : type === 'exam' ? 'Eindtoets' : `Les ${lessonNumber}`
@@ -1393,7 +1409,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       name: prefix,
       free: false,
       lesson_type: type,
-      parentId,
+      parentId: resolvedParentId,
       reflectionQuestions: [],
       blocks: defaultBlocks
     }
@@ -1402,11 +1418,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     setCourse(prev => {
       if (!prev) return prev
       const lessons = [...(prev.lessons || [])]
-      if (isSub && parentId) {
+      if (isSub && resolvedParentId) {
         // Direct na de parent (en eventuele bestaende sublessen) invoegen
-        let insertAt = lessons.findIndex(l => l.id === parentId)
+        let insertAt = lessons.findIndex(l => l.id === resolvedParentId)
         if (insertAt === -1) insertAt = lessons.length - 1
-        while (insertAt + 1 < lessons.length && lessons[insertAt + 1].parentId === parentId) {
+        while (insertAt + 1 < lessons.length && lessons[insertAt + 1].parentId === resolvedParentId) {
           insertAt++
         }
         lessons.splice(insertAt + 1, 0, newLesson)
@@ -1462,6 +1478,18 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     recordCourseHistory(course)
     hasUnsavedChangesRef.current = true
     setCourse({ ...course, [field]: value })
+  }
+
+  const updateFirstLessonFree = (enabled: boolean) => {
+    if (!course) return
+    const firstContentLesson = flattenLessonHierarchy(course.lessons || []).find(lesson => (lesson.lesson_type || 'content') === 'content')
+    recordCourseHistory(course)
+    hasUnsavedChangesRef.current = true
+    const lessons = (course.lessons || []).map(lesson => lesson.id === firstContentLesson?.id ? { ...lesson, free: enabled } : lesson)
+    setCourse({ ...course, firstLessonFree: enabled, lessons })
+    if (currentLesson && firstContentLesson && currentLesson.id === firstContentLesson.id) {
+      setCurrentLesson({ ...currentLesson, free: enabled })
+    }
   }
 
   const updateLessonField = (field: keyof Lesson, value: string | number | boolean | string[] | undefined) => {
@@ -2558,6 +2586,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         </div>,
         historyControlsSlot,
       )}
+      {hierarchyNotice && (
+        <div role="status" className="fixed right-5 top-[66px] z-[100] max-w-sm rounded-xl border border-[rgba(196,162,101,0.45)] bg-[#1E1A14] px-4 py-3 text-[12px] font-medium text-white shadow-xl">
+          {hierarchyNotice}
+        </div>
+      )}
       {/* Main App */}
       <div className="flex h-full pt-[50px]">
         {/* Sidebar */}
@@ -2566,7 +2599,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             <button type="button" role="tab" aria-selected={sidebarTab === 'lessons'} onClick={() => setSidebarTab('lessons')} className={`rounded-lg px-2 py-2 text-[11px] font-semibold transition ${sidebarTab === 'lessons' ? 'bg-[rgba(196,162,101,0.14)] text-[#7A6340]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.04)]'}`}>
               Lessen
             </button>
-            <button type="button" role="tab" aria-selected={sidebarTab === 'settings'} onClick={() => { setSidebarTab('settings'); void switchContext('global') }} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold transition ${sidebarTab === 'settings' ? 'bg-[rgba(196,162,101,0.14)] text-[#7A6340]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.04)]'}`}>
+            <button type="button" role="tab" aria-selected={sidebarTab === 'settings'} onClick={() => setSidebarTab('settings')} className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold transition ${sidebarTab === 'settings' ? 'bg-[rgba(196,162,101,0.14)] text-[#7A6340]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.04)]'}`}>
               <span aria-hidden="true">⚙</span> Instellingen
             </button>
           </div>
@@ -2694,14 +2727,14 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                     Les
                   </button>
                   <button
-                    onClick={() => currentLesson && addLesson('content', currentLesson.id)}
-                    disabled={!currentLesson || currentLesson.lesson_type !== 'content' || !!currentLesson.parentId}
+                    onClick={() => currentLesson && addLesson('content', currentLesson.parentId || currentLesson.id)}
+                    disabled={!currentLesson || currentLesson.lesson_type !== 'content'}
                     data-testid="add-sublesson"
                     className="flex items-center gap-2 w-full px-3 py-2 text-[12px] text-[#1E1A14] hover:bg-[rgba(196,162,101,0.06)] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     title={!currentLesson
                       ? 'Selecteer eerst een les'
                       : currentLesson.parentId
-                        ? 'Selecteer een hoofdles om daar een subles onder te plaatsen'
+                        ? 'Voegt een volgende subles toe onder dezelfde hoofdles'
                         : 'Voegt een subles (1.1, 1.2 …) toe onder de geselecteerde les'}
                   >
                     <span className="w-2 h-2 rounded-full bg-[rgba(196,162,101,0.6)]"></span>
@@ -2729,7 +2762,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               <p className="mb-4 text-[10px] leading-relaxed text-[#7A7268]">Deze instellingen gelden voor de hele cursus en alle cursisten.</p>
               {([
                 { heading: 'Toegang', items: [{ label: 'Eerste les gratis preview', field: 'firstLessonFree' as keyof Course }] },
-                { heading: 'Content', items: [{ label: 'Intro video op cursuspagina', field: 'introVideo' as keyof Course }] },
                 { heading: 'Afronding', items: [
                   { label: 'Eindtoets verplicht', field: 'finalQuizRequired' as keyof Course },
                   { label: 'Certificaat bij afronding', field: 'certificate' as keyof Course },
@@ -2743,7 +2775,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                         <div className="flex items-center justify-between gap-3 py-1.5">
                           <label htmlFor={`course-setting-${item.field}`} className="text-[11px] font-medium leading-snug text-[#1E1A14]">{item.label}</label>
                           <label className="relative block h-5 w-8 flex-shrink-0 cursor-pointer">
-                            <input id={`course-setting-${item.field}`} type="checkbox" checked={Boolean(course?.[item.field])} onChange={event => updateCourseField(item.field, event.target.checked)} className="peer sr-only" />
+                            <input id={`course-setting-${item.field}`} type="checkbox" checked={Boolean(course?.[item.field])} onChange={event => item.field === 'firstLessonFree' ? updateFirstLessonFree(event.target.checked) : updateCourseField(item.field, event.target.checked)} className="peer sr-only" />
                             <span className="absolute inset-0 rounded-full bg-[rgba(26,24,21,0.12)] transition-colors peer-checked:bg-[#C4A265]"></span>
                             <span className="absolute left-[3px] top-[3px] h-[14px] w-[14px] rounded-full bg-white/50 transition-all peer-checked:translate-x-[12px] peer-checked:bg-white"></span>
                           </label>

@@ -30,7 +30,8 @@ export function moveLessonInHierarchy<T extends HierarchyLesson>(
   const flat = flattenLessonHierarchy(lessons)
   const active = flat.find(lesson => lesson.id === activeId)
   const overIndex = flat.findIndex(lesson => lesson.id === overId)
-  if (!active || overIndex < 0 || activeId === overId) return flat
+  if (!active || overIndex < 0) return flat
+  if (activeId === overId && Math.abs(horizontalDelta) < LESSON_NEST_THRESHOLD_PX) return flat
 
   const movingIds = new Set([activeId])
   if (!active.parentId) {
@@ -45,9 +46,12 @@ export function moveLessonInHierarchy<T extends HierarchyLesson>(
   if (horizontalDelta <= -LESSON_NEST_THRESHOLD_PX) {
     nextParentId = undefined
   } else if (horizontalDelta >= LESSON_NEST_THRESHOLD_PX) {
-    const candidate = over.parentId
-      ? remaining.find(lesson => lesson.id === over.parentId)
+    const sameRowCandidate = activeId === overId
+      ? remaining[Math.max(0, activeIndex - 1)]
       : over
+    const candidate = sameRowCandidate?.parentId
+      ? remaining.find(lesson => lesson.id === sameRowCandidate.parentId)
+      : sameRowCandidate
     if (candidate && candidate.id !== activeId) nextParentId = candidate.id
   }
 
@@ -55,8 +59,10 @@ export function moveLessonInHierarchy<T extends HierarchyLesson>(
     ...lesson,
     parentId: index === 0 ? nextParentId : nextParentId ? undefined : activeId,
   }))
-  const targetIndex = Math.max(0, remaining.findIndex(lesson => lesson.id === overId))
-  let insertionIndex = targetIndex + (activeIndex < overIndex ? 1 : 0)
+  const targetIndex = remaining.findIndex(lesson => lesson.id === overId)
+  let insertionIndex = targetIndex < 0
+    ? Math.min(activeIndex, remaining.length)
+    : targetIndex + (activeIndex < overIndex ? 1 : 0)
   if (nextParentId) {
     const parentIndex = remaining.findIndex(lesson => lesson.id === nextParentId)
     insertionIndex = parentIndex + 1
