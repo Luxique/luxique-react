@@ -12,6 +12,13 @@ import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { flattenLessonHierarchy, moveLessonInHierarchy } from '@/lib/lesson-hierarchy'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
+import { updateLessonById } from '@/lib/course-lesson-state'
+import {
+  MUX_ASSET_POLL_INTERVAL_MS,
+  MUX_ASSET_POLL_TIMEOUT_MS,
+  requireMuxAssetStatus,
+  requireMuxUpload,
+} from '@/lib/mux-upload-client'
 import { extractStoredBlockContent, getBuilderVideoPlaybackConfig, type CourseImageSize } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
@@ -311,6 +318,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const videoFileInputRef = useRef<HTMLInputElement>(null)
   const [videoUploading, setVideoUploading] = useState(false)
   const [videoUploadProgress, setVideoUploadProgress] = useState(0)
+  const [videoUploadError, setVideoUploadError] = useState<string | null>(null)
   
   // Preview state
   const [previewWidth, setPreviewWidth] = useState(420)
@@ -524,7 +532,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           // Check if this lesson has cached blocks
           const cachedBlocks = blocksCache[lesson.id]
           if (cachedBlocks) {
-            return { ...lesson, blocks: cachedBlocks }
+            return currentLesson?.id === lesson.id
+              ? { ...lesson, ...currentLesson, blocks: cachedBlocks }
+              : { ...lesson, blocks: cachedBlocks }
           }
           // If not cached and it's the active lesson, use current blocks + all fields
           if (currentLesson?.id === lesson.id) {
@@ -1496,6 +1506,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     if (!currentLesson) return
     hasUnsavedChangesRef.current = true
     setCurrentLesson({ ...currentLesson, [field]: value })
+    setCourse(prev => prev ? {
+      ...prev,
+      lessons: updateLessonById(prev.lessons, currentLesson.id, { [field]: value }),
+    } : prev)
   }
 
   const updateQuizField = (field: keyof Quiz, value: string | 'intermediate' | 'final' | number | boolean | undefined) => {
@@ -2359,11 +2373,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           if (!file) return
           setVideoUploading(true)
           setVideoUploadProgress(0)
+          setVideoUploadError(null)
           try {
             // 1. Get upload URL from backend — free lessons use public playback
             const lessonIsFree = currentLesson?.free ?? false
             const res = await fetch('/api/mux/upload-url', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_free: lessonIsFree }) })
-            const { upload_url, upload_id } = await res.json()
+            const uploadPayload = await res.json().catch(() => null)
+            const { uploadUrl, uploadId } = requireMuxUpload(res.ok, uploadPayload)
             
             // 2. Upload to Mux via XHR for progress tracking
             await new Promise<void>((resolve, reject) => {
@@ -2371,21 +2387,29 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               xhr.upload.onprogress = (ev) => {
                 if (ev.lengthComputable) setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 100))
               }
-              xhr.onload = () => resolve()
-              xhr.onerror = () => reject(new Error('Upload failed'))
-              xhr.open('PUT', upload_url)
+              xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) resolve()
+                else reject(new Error(`Mux-upload geweigerd (HTTP ${xhr.status}).`))
+              }
+              xhr.onerror = () => reject(new Error('De verbinding met Mux viel weg tijdens het uploaden.'))
+              xhr.open('PUT', uploadUrl)
               xhr.setRequestHeader('Content-Type', file.type)
               xhr.send(file)
             })
             
             // 3. Poll until asset is ready
-            let attempts = 0
-            while (attempts < 30) {
-              await new Promise(r => setTimeout(r, 2000))
+            const pollingStartedAt = Date.now()
+            let completed = false
+            while (Date.now() - pollingStartedAt < MUX_ASSET_POLL_TIMEOUT_MS) {
+              await new Promise(r => setTimeout(r, MUX_ASSET_POLL_INTERVAL_MS))
               const lessonIsFree = currentLesson?.free ?? false
-              const statusRes = await fetch(`/api/mux/asset-status?upload_id=${upload_id}&is_free=${lessonIsFree}`)
-              const { status, asset_id, playback_id, public_playback_id } = await statusRes.json()
-              if (status === 'ready' && playback_id) {
+              const statusRes = await fetch(`/api/mux/asset-status?upload_id=${uploadId}&is_free=${lessonIsFree}`)
+              const statusPayload = await statusRes.json().catch(() => null)
+              const { status, asset_id, playback_id, public_playback_id } = requireMuxAssetStatus(statusRes.ok, statusPayload)
+              if (status === 'errored') {
+                throw new Error('Mux kon deze video niet verwerken. Controleer het bestand en probeer opnieuw.')
+              }
+              if (status === 'ready' && typeof playback_id === 'string' && playback_id) {
                 // Update block content with Mux IDs — token is fetched on-demand by LuxiqueMuxPlayer
                 const updatedBlocks = blocks.map(b => {
                   const currentContent = typeof b.content === 'object' && b.content !== null ? b.content : {}
@@ -2394,23 +2418,29 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                         ...b, 
                         content: {
                           ...currentContent,
-                          mux_asset_id: asset_id,
+                          mux_asset_id: typeof asset_id === 'string' ? asset_id : undefined,
                           mux_playback_id: playback_id,
-                          mux_public_playback_id: public_playback_id,
+                          mux_public_playback_id: typeof public_playback_id === 'string' ? public_playback_id : undefined,
                         }
                       }
                     : b
                 })
                 setBlocksWithCache(updatedBlocks)
+                completed = true
                 break
               }
-              attempts++
+            }
+            if (!completed) {
+              throw new Error('Mux verwerkt de video na 30 minuten nog steeds. Controleer de Mux-status voordat je opnieuw uploadt.')
             }
           } catch (err) {
             console.error('Upload error:', err)
-            alert('Upload mislukt. Probeer opnieuw.')
+            const message = err instanceof Error ? err.message : 'Upload mislukt. Probeer opnieuw.'
+            setVideoUploadError(message)
+            alert(message)
           } finally {
             setVideoUploading(false)
+            e.target.value = ''
           }
         }
         
@@ -2457,6 +2487,11 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 <span className="text-[10.5px] text-[#7A7268] tracking-[0.1em] uppercase">Video uploaden via Mux</span>
                 <span className="text-[10.5px] text-[rgba(30,26,20,0.3)] font-light">MP4, MOV of MKV · klik om te kiezen</span>
               </div>
+            )}
+            {videoUploadError && (
+              <p role="alert" style={{ fontSize: 11, color: '#A2463B', marginTop: 8 }}>
+                {videoUploadError}
+              </p>
             )}
             
             <input 

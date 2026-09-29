@@ -33,6 +33,15 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Mux upload error:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    const providerMessage = error instanceof Error ? error.message : String(error)
+    const billingLocked = providerMessage.includes('payment_required') || providerMessage.includes('lack of payment')
+    return NextResponse.json(
+      {
+        error: billingLocked
+          ? 'Mux-account is geblokkeerd wegens een openstaande betaling.'
+          : 'Mux kon geen upload starten. Controleer de Mux-configuratie en probeer opnieuw.',
+      },
+      { status: 502 },
+    )
   }
 }
