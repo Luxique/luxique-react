@@ -298,6 +298,9 @@
   display: flex; align-items: center; justify-content: center;
   font-family: 'Cormorant Garamond',serif; font-style: italic; color: var(--gold-deep); font-size: 14px;
 }
+.quiz-opt-letter.checkbox { border-radius: 7px; font-family: 'Outfit',sans-serif; font-style: normal; }
+.quiz-submit-selection { display: block; margin: 18px auto 0; border: 0; border-radius: 10px; padding: 12px 24px; background: linear-gradient(180deg,var(--gold-bright),var(--gold)); color: var(--dark); font: 600 14px 'Outfit',sans-serif; cursor: pointer; }
+.quiz-submit-selection:disabled { opacity: .45; cursor: not-allowed; }
 .quiz-image-grid { display: grid; grid-template-columns: repeat(2,minmax(0,280px)); justify-content: center; gap: 18px; max-width: 590px; margin: 0 auto; }
 .quiz-image-option { position: relative; border-radius: 14px; overflow: hidden; background: var(--paper); transition: border-color .2s, transform .2s, box-shadow .2s; }
 .quiz-image-option:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(30,26,20,.10); }

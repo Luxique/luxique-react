@@ -12,6 +12,7 @@ import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize 
 import { ACADEMY_PREVIEW_PARAM, ACADEMY_PREVIEW_VALUE, getAcademyPreviewSuffix, isAdminConceptPreview } from '@/lib/academy-preview'
 import AcademyConceptIndicator from '@/components/AcademyConceptIndicator'
 import { getNextLessonButtonLabel } from '@/lib/lesson-navigation'
+import { isExactQuizSelectionCorrect, isMultiSelectQuestion, normalizeQuizSelection, toggleQuizSelection, type QuizSelection } from '@/lib/quiz-selection'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -31,7 +32,7 @@ interface Block {
   images?: Array<{ id: string; url: string; caption?: string }>
   imageSize?: CourseImageSize
 }
-interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }
+interface ProgressRec { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: QuizSelection; attempts: number; result: string }> }
 
 /* ── Helpers ───────────────────────────────────── */
 function extractBlockContent(block: Block) {
@@ -102,7 +103,7 @@ export default function LessonPage() {
 
   // Quiz: track attempts per question block
   const [quizAttempts, setQuizAttempts] = useState<Record<string, number>>({})      // blockId → attempt count
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})         // blockId → chosen optionId
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, QuizSelection>>({})
   const [quizResults, setQuizResults] = useState<Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>>({})
 
   /* ── Data fetching ────────────────────────────── */
@@ -144,16 +145,16 @@ export default function LessonPage() {
       .then(({ data }) => {
         if (data) {
           const m = new Map<string, ProgressRec>(); 
-          data.forEach((r: { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: string; attempts: number; result: string }> }) => {
+          data.forEach((r: { lesson_id: string; completed: boolean; last_position_seconds?: number; quiz_answers?: Record<string, { chosen: QuizSelection; attempts: number; result: string }> }) => {
             m.set(r.lesson_id, r)
             // Restore quiz state from DB for current lesson
             if (r.lesson_id === lessonId && r.quiz_answers && typeof r.quiz_answers === 'object') {
               const qa = r.quiz_answers
               const attempts: Record<string, number> = {}
-              const answers: Record<string, string> = {}
+              const answers: Record<string, QuizSelection> = {}
               const results: Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'> = {}
               Object.entries(qa).forEach(([blockId, val]) => {
-                const v = val as { chosen: string; attempts: number; result: string }
+                const v = val as { chosen: QuizSelection; attempts: number; result: string }
                 attempts[blockId] = v.attempts
                 answers[blockId] = v.chosen
                 results[blockId] = v.result as 'correct' | 'wrong' | 'tryAgain' | 'revealed'
@@ -299,6 +300,11 @@ export default function LessonPage() {
 
     const b = blocks.find(bl => bl.id === blockId)
     const opts = extractBlockContent(b!).options
+    const multiple = isMultiSelectQuestion(opts)
+    if (multiple) {
+      setQuizAnswers(previous => ({ ...previous, [blockId]: toggleQuizSelection(previous[blockId], optionId, true) }))
+      return
+    }
     const chosen = opts.find(o => o.id === optionId)
     if (!chosen) return
 
@@ -322,10 +328,28 @@ export default function LessonPage() {
     }
   }
 
+  const submitMultiQuizAnswer = (blockId: string) => {
+    const currentResult = quizResults[blockId]
+    if (currentResult === 'correct' || currentResult === 'revealed') return
+    const block = blocks.find(candidate => candidate.id === blockId)
+    if (!block) return
+    const options = extractBlockContent(block).options
+    const selection = quizAnswers[blockId]
+    if (normalizeQuizSelection(selection).length === 0) return
+    const attempts = (quizAttempts[blockId] || 0) + 1
+    const correct = isExactQuizSelectionCorrect(options, selection)
+    const result = correct ? 'correct' : attempts >= 2 ? 'revealed' : 'tryAgain'
+    const newAttempts = { ...quizAttempts, [blockId]: attempts }
+    const newResults = { ...quizResults, [blockId]: result } as Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>
+    setQuizAttempts(newAttempts)
+    setQuizResults(newResults)
+    persistQuizState(newAttempts, quizAnswers, newResults)
+  }
+
   // Save quiz state to DB
-  const persistQuizState = useCallback(async (newAttempts: Record<string, number>, newAnswers: Record<string, string>, newResults: Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>) => {
+  const persistQuizState = useCallback(async (newAttempts: Record<string, number>, newAnswers: Record<string, QuizSelection>, newResults: Record<string, 'correct' | 'wrong' | 'tryAgain' | 'revealed'>) => {
     if (!user || !lesson) return
-    const qa: Record<string, { chosen: string; attempts: number; result: string }> = {}
+    const qa: Record<string, { chosen: QuizSelection; attempts: number; result: string }> = {}
     Object.keys(newResults).forEach(blockId => {
       qa[blockId] = {
         chosen: newAnswers[blockId] || '',
@@ -524,8 +548,10 @@ export default function LessonPage() {
                     {/* QUIZ */}
                     {block.type === 'quiz' && (() => {
                       const result = quizResults[block.id]
-                      const chosenId = quizAnswers[block.id]
+                      const selection = quizAnswers[block.id]
+                      const selectedIds = normalizeQuizSelection(selection)
                       const correctOpt = bc.options.find(o => o.correct)
+                      const multiSelect = isMultiSelectQuestion(bc.options)
                       const isImage = bc.optionType === 'image'
 
                       return (
@@ -541,13 +567,13 @@ export default function LessonPage() {
                           {bc.media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={bc.media.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
                           <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{bc.question || 'Typ je vraag...'}</h3>
                           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 20 }}>
-                            {(bc.options.filter(o => o.correct).length || 0) > 1 ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}
+                            {multiSelect ? 'Selecteer alle goede antwoorden' : 'Selecteer het goede antwoord'}
                           </div>
 
                           {isImage ? (
                             <div className="quiz-image-grid">
                               {bc.options.map(opt => {
-                                const isChosen = chosenId === opt.id; const isCorrect = opt.correct
+                                const isChosen = selectedIds.includes(opt.id); const isCorrect = opt.correct
                                 let border = '1.5px solid var(--line)'
                                 if (result === 'correct' && isChosen) border = '2px solid var(--green)'
                                 if ((result === 'wrong' || result === 'tryAgain') && isChosen) border = '2px solid var(--red)'
@@ -571,7 +597,7 @@ export default function LessonPage() {
                           ) : (
                             <div className="quiz-options">
                               {bc.options.map((opt, oi) => {
-                                const isChosen = chosenId === opt.id; const isCorrect = opt.correct
+                                const isChosen = selectedIds.includes(opt.id); const isCorrect = opt.correct
                                 let bg: string = 'var(--paper)', border: string = '1.5px solid var(--line)'; const color = 'var(--ink)'
                                 if (result === 'correct' && isChosen) { bg = 'var(--green-soft)'; border = '1.5px solid var(--green)' }
                                 if ((result === 'wrong' || result === 'tryAgain') && isChosen) { bg = '#F5EAEA'; border = '1.5px solid var(--red)' }
@@ -579,7 +605,7 @@ export default function LessonPage() {
                                 if (result === 'revealed' && isChosen && !isCorrect) { bg = '#F5EAEA'; border = '1.5px solid var(--red)' }
                                 return (
                                   <div key={opt.id} onClick={() => handleQuizAnswer(block.id, opt.id)} className="quiz-opt" style={{ background: bg, border, color }}>
-                                    <span className="quiz-opt-letter">{String.fromCharCode(65 + oi)}</span>
+                                    <span className={`quiz-opt-letter ${multiSelect ? 'checkbox' : ''}`}>{isChosen && multiSelect ? '✓' : String.fromCharCode(65 + oi)}</span>
                                     <span style={{ flex: 1 }}>{opt.text || `Optie ${String.fromCharCode(65 + oi)}`}</span>
                                     {result === 'correct' && isChosen && <span style={{ color: 'var(--green)', fontWeight: 600, fontSize: 13 }}>✓ Goed!</span>}
                                     {(result === 'wrong' || result === 'tryAgain') && isChosen && <span style={{ color: 'var(--red)', fontWeight: 600, fontSize: 13 }}>✕ Fout</span>}
@@ -590,6 +616,13 @@ export default function LessonPage() {
                               })}
                             </div>
                           )}
+
+                          {multiSelect && result !== 'correct' && result !== 'revealed' && <button
+                            type="button"
+                            className="quiz-submit-selection"
+                            disabled={selectedIds.length === 0}
+                            onClick={() => submitMultiQuizAnswer(block.id)}
+                          >Controleer antwoorden</button>}
 
                           {/* Feedback */}
                           {result === 'correct' && <div className="quiz-feedback correct">✓ Goed gedaan!</div>}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import { checkEnrollmentCompletion } from '@/lib/academy-completion'
+import { isExactQuizSelectionCorrect, isMultiSelectQuestion, normalizeQuizSelection, toggleQuizSelection, type QuizSelection } from '@/lib/quiz-selection'
 
 /* ── Types ── */
 interface ExamProps {
@@ -53,7 +54,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const [blocks, setBlocks] = useState<ExamBlock[]>([])
   const [allBlocks, setAllBlocks] = useState<ExamBlock[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [answers, setAnswers] = useState<Record<string, QuizSelection>>({})
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [results, setResults] = useState<Record<string, boolean>>({})
   const [score, setScore] = useState(0)
@@ -121,7 +122,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         }
         // Compute score from saved answers
         if (data.quiz_answers && typeof data.quiz_answers === 'object') {
-          const prev = data.quiz_answers as Record<string, { chosen: string; correct: boolean }>
+          const prev = data.quiz_answers as Record<string, { chosen: QuizSelection; correct: boolean }>
           const correctCount = Object.values(prev).filter(v => v.correct).length
           const total = Object.keys(prev).length
           setScore(total > 0 ? Math.round((correctCount / total) * 100) : 100)
@@ -133,8 +134,8 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
       }
       
       if (data?.quiz_answers && typeof data.quiz_answers === 'object') {
-        const prev = data.quiz_answers as Record<string, { chosen: string; correct: boolean }>
-        const prevAnswers: Record<string, string> = {}
+        const prev = data.quiz_answers as Record<string, { chosen: QuizSelection; correct: boolean }>
+        const prevAnswers: Record<string, QuizSelection> = {}
         const prevResults: Record<string, boolean> = {}
         const wrong: string[] = []
         Object.entries(prev).forEach(([blockId, val]) => {
@@ -179,8 +180,8 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     setScreen('question')
   }
 
-  const handleSelectOption = (blockId: string, optionId: string) => {
-    setAnswers(prev => ({ ...prev, [blockId]: optionId }))
+  const handleSelectOption = (block: ExamBlock, optionId: string) => {
+    setAnswers(prev => ({ ...prev, [block.id]: toggleQuizSelection(prev[block.id], optionId, isMultiSelectQuestion(block.options)) }))
   }
 
   const handleSubmit = async () => {
@@ -191,9 +192,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     const wrongIds: string[] = []
 
     allBlocks.forEach(block => {
-      const chosenId = answers[block.id]
-      const correctOpt = block.options.find(o => o.correct)
-      const isCorrect = chosenId === correctOpt?.id
+      const isCorrect = isExactQuizSelectionCorrect(block.options, answers[block.id])
       newResults[block.id] = isCorrect
       if (isCorrect) correct++
       else wrongIds.push(block.id)
@@ -206,7 +205,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
 
     // Save exam answers to DB
     if (user) {
-      const examAnswers: Record<string, { chosen: string; correct: boolean }> = {}
+      const examAnswers: Record<string, { chosen: QuizSelection; correct: boolean }> = {}
       allBlocks.forEach(block => {
         examAnswers[block.id] = {
           chosen: answers[block.id] || '',
@@ -335,7 +334,10 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
 
   /* ── QUESTION Screen ── */
   if (screen === 'question' && currentBlock) {
-    const chosenId = answers[currentBlock.id]
+    const selection = answers[currentBlock.id]
+    const selectedIds = normalizeQuizSelection(selection)
+    const multiple = isMultiSelectQuestion(currentBlock.options)
+    const hasSelection = selectedIds.length > 0
     const isImage = currentBlock.optionType === 'image'
 
     return (
@@ -366,16 +368,19 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 24, textAlign: 'center', color: colors.white, margin: '0 0 24px', fontWeight: 500, lineHeight: 1.4 }}>
           {currentBlock.question}
         </h3>
+        <div style={{ textAlign: 'center', fontSize: 12, color: colors.muted, fontStyle: 'italic', margin: '-12px 0 20px', fontFamily: '"Jost", sans-serif' }}>
+          {multiple ? 'Selecteer alle goede antwoorden' : 'Selecteer het goede antwoord'}
+        </div>
 
         {/* Options */}
         {isImage ? (
           <div className="exam-image-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 300px))', justifyContent: 'center', gap: 18, marginBottom: 32 }}>
             {currentBlock.options.map(opt => {
-              const selected = chosenId === opt.id
+              const selected = selectedIds.includes(opt.id)
               return (
                 <div
                   key={opt.id}
-                  onClick={() => handleSelectOption(currentBlock.id, opt.id)}
+                  onClick={() => handleSelectOption(currentBlock, opt.id)}
                   style={{
                     border: selected ? `2px solid ${colors.gold}` : `1.5px solid ${colors.goldBorder}`,
                     borderRadius: 12,
@@ -411,11 +416,11 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
             {currentBlock.options.map((opt, oi) => {
-              const selected = chosenId === opt.id
+              const selected = selectedIds.includes(opt.id)
               return (
                 <div
                   key={opt.id}
-                  onClick={() => handleSelectOption(currentBlock.id, opt.id)}
+                  onClick={() => handleSelectOption(currentBlock, opt.id)}
                   style={{
                     background: selected ? colors.goldSoft : colors.bg2,
                     border: selected ? `1.5px solid ${colors.gold}` : `1.5px solid ${colors.goldBorder}`,
@@ -430,13 +435,13 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
                   }}
                 >
                   <span style={{
-                    width: 28, height: 28, borderRadius: 8,
+                    width: 28, height: 28, borderRadius: multiple ? 6 : 14,
                     background: selected ? colors.gold : colors.bg3,
                     color: selected ? colors.bg : colors.muted,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 13, fontWeight: 600, flexShrink: 0,
                   }}>
-                    {String.fromCharCode(65 + oi)}
+                    {multiple && selected ? '✓' : String.fromCharCode(65 + oi)}
                   </span>
                   <span style={{ color: colors.white, fontSize: 14, flex: 1 }}>{opt.text}</span>
                 </div>
@@ -469,14 +474,14 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
           {currentIndex < blocks.length - 1 ? (
             <button
               onClick={() => setCurrentIndex(currentIndex + 1)}
-              disabled={!chosenId}
+              disabled={!hasSelection}
               style={{
-                background: chosenId ? colors.gold : colors.bg3,
-                color: chosenId ? colors.bg : colors.muted,
+                background: hasSelection ? colors.gold : colors.bg3,
+                color: hasSelection ? colors.bg : colors.muted,
                 border: 'none',
                 borderRadius: 10,
                 padding: '10px 24px',
-                cursor: chosenId ? 'pointer' : 'default',
+                cursor: hasSelection ? 'pointer' : 'default',
                 fontFamily: '"Jost", sans-serif',
                 fontSize: 14,
                 fontWeight: 600,
@@ -487,14 +492,14 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={!chosenId || submitting}
+              disabled={!hasSelection || submitting}
               style={{
-                background: chosenId ? colors.gold : colors.bg3,
-                color: chosenId ? colors.bg : colors.muted,
+                background: hasSelection ? colors.gold : colors.bg3,
+                color: hasSelection ? colors.bg : colors.muted,
                 border: 'none',
                 borderRadius: 10,
                 padding: '10px 24px',
-                cursor: chosenId ? 'pointer' : 'default',
+                cursor: hasSelection ? 'pointer' : 'default',
                 fontFamily: '"Jost", sans-serif',
                 fontSize: 14,
                 fontWeight: 600,
