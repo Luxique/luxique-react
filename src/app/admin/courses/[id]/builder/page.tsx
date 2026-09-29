@@ -13,6 +13,7 @@ import { getLessonDisplays } from '@/lib/lesson-display'
 import { flattenLessonHierarchy, moveLessonInHierarchy } from '@/lib/lesson-hierarchy'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
 import { resetUnsavedStateAfterSuccessfulSave } from '@/lib/builder-unsaved-state'
+import { getBuilderSaveErrorMessage, retryBuilderSaveOperation } from '@/lib/builder-save-retry'
 import { updateLessonById } from '@/lib/course-lesson-state'
 import {
   hasMuxPlaybackIdentity,
@@ -573,7 +574,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     })
 
     // 1. Upsert course (including landing fields)
-    const { error: courseError } = await supabase.from('courses').upsert({
+    const { error: courseError } = await retryBuilderSaveOperation(() => supabase.from('courses').upsert({
       id: courseToSave.id,
       title: courseToSave.title,
       slug: toSlug(courseToSave.title || 'nieuwe-cursus'),
@@ -629,10 +630,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       comparison_footer_text: courseToSave.comparisonFooterText || null,
       faq_items: courseToSave.faqItems || null,
       landing_blocks: courseToSave.landingBlocks || []
-    })
+    }))
     if (courseError) {
       console.error('[saveCourse] Course upsert FAILED:', courseError)
-      alert(`Fout bij opslaan cursus: ${courseError.message}`)
+      alert(getBuilderSaveErrorMessage(courseError, 'opslaan'))
       return
     }
     console.log('[saveCourse] Course upsert OK')
@@ -641,19 +642,26 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     const keptLessonIds = new Set((courseToSave.lessons || []).map(l => l.id))
 
     // 2a. Verwijder lessen die in de DB staan maar niet meer in de builder
-    const { data: existingLessons } = await supabase
+    const { data: existingLessons, error: existingLessonsError } = await retryBuilderSaveOperation(() => supabase
       .from('lessons')
       .select('id')
-      .eq('course_id', courseToSave.id)
+      .eq('course_id', courseToSave.id))
+    if (existingLessonsError) {
+      console.error('[saveCourse] Existing lessons fetch FAILED:', existingLessonsError)
+      alert(getBuilderSaveErrorMessage(existingLessonsError, 'opslaan'))
+      return
+    }
     const staleLessonIds = (existingLessons || []).map(l => l.id).filter(id => !keptLessonIds.has(id))
     if (staleLessonIds.length > 0) {
       console.log(`[saveCourse] Deleting ${staleLessonIds.length} removed lessons`)
       // Voortgang van verwijderde lessen opruimen (best effort — RLS kan blokkeren)
       await supabase.from('lesson_progress').delete().in('lesson_id', staleLessonIds)
-      const { error: lessonDeleteError } = await supabase.from('lessons').delete().in('id', staleLessonIds)
+      const { error: lessonDeleteError } = await retryBuilderSaveOperation(() =>
+        supabase.from('lessons').delete().in('id', staleLessonIds),
+      )
       if (lessonDeleteError) {
         console.error('[saveCourse] Lesson delete FAILED:', lessonDeleteError)
-        alert(`Fout bij verwijderen lessen: ${lessonDeleteError.message}`)
+        alert(getBuilderSaveErrorMessage(lessonDeleteError, 'opslaan'))
         return
       }
     }
@@ -672,15 +680,17 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         duration_seconds: (lesson.duration || 0) * 60,
         lesson_type: lesson.lesson_type || 'content',
       }
-      const up1 = await supabase.from('lessons').upsert({ ...basePayload, parent_lesson_id: lesson.parentId || null })
+      const up1 = await retryBuilderSaveOperation(() =>
+        supabase.from('lessons').upsert({ ...basePayload, parent_lesson_id: lesson.parentId || null }),
+      )
       lessonError = up1.error
       if (up1.error && (up1.error.code === '42703' || (up1.error.message || '').includes('does not exist'))) {
-        const up2 = await supabase.from('lessons').upsert(basePayload)
+        const up2 = await retryBuilderSaveOperation(() => supabase.from('lessons').upsert(basePayload))
         lessonError = up2.error
       }
       if (lessonError) {
         console.error(`[saveCourse] Lesson "${lesson.name}" upsert FAILED:`, lessonError)
-        alert(`Fout bij opslaan les "${lesson.name}": ${lessonError.message}`)
+        alert(getBuilderSaveErrorMessage(lessonError, 'opslaan'))
         return
       }
       console.log(`[saveCourse] Lesson "${lesson.name}" upsert OK`)
@@ -694,13 +704,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       const lessonBlocks = lesson.blocks || []
       console.log(`[saveCourse] Syncing ${lessonBlocks.length} blocks for lesson "${lesson.name}"`)
 
-      const { data: existingBlocks, error: existingBlocksError } = await supabase
+      const { data: existingBlocks, error: existingBlocksError } = await retryBuilderSaveOperation(() => supabase
         .from('blocks')
         .select('id')
-        .eq('lesson_id', lesson.id)
+        .eq('lesson_id', lesson.id))
       if (existingBlocksError) {
         console.error('[saveCourse] Existing blocks fetch FAILED:', existingBlocksError)
-        alert(`Fout bij ophalen blokken: ${existingBlocksError.message}`)
+        alert(getBuilderSaveErrorMessage(existingBlocksError, 'opslaan'))
         return
       }
       const blocksToDelete = getBlockIdsToDelete(
@@ -708,10 +718,12 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         lessonBlocks.map(b => b.id),
       )
       if (blocksToDelete.length > 0) {
-        const { error: deleteError } = await supabase.from('blocks').delete().in('id', blocksToDelete)
+        const { error: deleteError } = await retryBuilderSaveOperation(() =>
+          supabase.from('blocks').delete().in('id', blocksToDelete),
+        )
         if (deleteError) {
           console.error('[saveCourse] Block delete FAILED:', deleteError)
-          alert(`Fout bij verwijderen oude blokken: ${deleteError.message}`)
+          alert(getBuilderSaveErrorMessage(deleteError, 'opslaan'))
           return
         }
       }
@@ -747,10 +759,10 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             mux_public_playback_id: (blockContent as Record<string,unknown>).mux_public_playback_id,
           }
         }
-        const { error: blockError } = await supabase.from('blocks').upsert(payload)
+        const { error: blockError } = await retryBuilderSaveOperation(() => supabase.from('blocks').upsert(payload))
         if (blockError) {
           console.error(`[saveCourse] Block ${i} (${block.type}) upsert FAILED:`, blockError)
-          alert(`Fout bij opslaan blok ${i+1}: ${blockError.message}`)
+          alert(getBuilderSaveErrorMessage(blockError, 'opslaan'))
           return
         }
       }
@@ -809,7 +821,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       }
 
       // Save lessons + blocks first (same as saveCourse)
-      const { error: courseError } = await supabase.from('courses').upsert({
+      const { error: courseError } = await retryBuilderSaveOperation(() => supabase.from('courses').upsert({
         id: courseToSave.id,
         title: courseToSave.title,
         slug: toSlug(courseToSave.title || 'nieuwe-cursus'),
@@ -866,18 +878,18 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         // PUBLISH in one shot — no intermediate draft state
         status: 'published',
         is_published: true,
-      })
+      }))
 
       if (courseError) {
         console.error('[publishCourse] Course upsert failed:', courseError)
-        alert('Fout bij opslaan: ' + courseError.message)
+        alert(getBuilderSaveErrorMessage(courseError, 'publiceren'))
         return
       }
 
       // Save lessons + blocks (same logic as saveCourse)
       if (courseToSave.lessons) {
         for (const lesson of courseToSave.lessons) {
-          const { error: lessonError } = await supabase.from('lessons').upsert({
+          const { error: lessonError } = await retryBuilderSaveOperation(() => supabase.from('lessons').upsert({
             id: lesson.id,
             title: lesson.name,
             slug: toSlug(lesson.name),
@@ -900,8 +912,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               })
             }
             return r
-          })
-          if (lessonError) console.error('Lesson upsert failed:', lessonError)
+          }))
+          if (lessonError) throw lessonError
 
           if (!shouldSyncLessonBlocks(dirtyLessonIdsAtSaveStart, lesson.id)) {
             console.log(`[publishCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
@@ -910,24 +922,26 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
           const lessonBlocks = lesson.blocks || []
 
-          const { data: existingBlocks, error: existingBlocksError } = await supabase
+          const { data: existingBlocks, error: existingBlocksError } = await retryBuilderSaveOperation(() => supabase
             .from('blocks')
             .select('id')
-            .eq('lesson_id', lesson.id)
+            .eq('lesson_id', lesson.id))
           if (existingBlocksError) throw existingBlocksError
           const blocksToDelete = getBlockIdsToDelete(
             existingBlocks?.map(b => b.id) || [],
             lessonBlocks.map(b => b.id),
           )
           if (blocksToDelete.length > 0) {
-            const { error: deleteError } = await supabase.from('blocks').delete().in('id', blocksToDelete)
+            const { error: deleteError } = await retryBuilderSaveOperation(() =>
+              supabase.from('blocks').delete().in('id', blocksToDelete),
+            )
             if (deleteError) throw deleteError
           }
           
           for (let i = 0; i < lessonBlocks.length; i++) {
             const block = lessonBlocks[i]
             const blockContent = typeof block.content === 'object' && block.content !== null ? block.content : {}
-            const { error: blockError } = await supabase.from('blocks').upsert({
+            const { error: blockError } = await retryBuilderSaveOperation(() => supabase.from('blocks').upsert({
               id: block.id,
               lesson_id: lesson.id,
               course_id: courseToSave.id,
@@ -953,7 +967,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 mux_playback_id: (blockContent as Record<string,unknown>).mux_playback_id,
                 mux_public_playback_id: (blockContent as Record<string,unknown>).mux_public_playback_id,
               }
-            })
+            }))
             if (blockError) throw blockError
           }
         }
@@ -997,7 +1011,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
     } catch (err) {
       console.error('[publishCourse] Error:', err)
-      alert('Onverwachte fout bij publiceren.')
+      alert(getBuilderSaveErrorMessage(err, 'publiceren'))
     } finally {
       setPublishing(false)
     }
