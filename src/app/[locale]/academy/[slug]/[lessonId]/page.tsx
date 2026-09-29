@@ -552,9 +552,18 @@ export default function LessonPage() {
                                 if (result === 'correct' && isChosen) border = '2px solid var(--green)'
                                 if ((result === 'wrong' || result === 'tryAgain') && isChosen) border = '2px solid var(--red)'
                                 if (result === 'revealed' && isCorrect) border = '2px solid var(--green)'
-                                return <div key={opt.id} onClick={() => handleQuizAnswer(block.id, opt.id)} style={{ border, borderRadius: 12, overflow: 'hidden', cursor: (result === 'correct' || result === 'revealed') ? 'default' : 'pointer' }}>
-                                  <div style={{ aspectRatio: '1', background: 'var(--cream-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                return <div key={opt.id} className="quiz-image-option" onClick={() => handleQuizAnswer(block.id, opt.id)} style={{ border, cursor: (result === 'correct' || result === 'revealed') ? 'default' : 'pointer' }}>
+                                  <div className="quiz-image-option-media">
                                     {opt.image_url ? <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28, color: 'var(--muted)' }}>⛶</span>}
+                                    {opt.image_url && <button
+                                      type="button"
+                                      className="quiz-image-zoom"
+                                      aria-label={opt.text ? `Vergroot foto: ${opt.text}` : 'Vergroot antwoordfoto'}
+                                      onClick={event => {
+                                        event.stopPropagation()
+                                        setLightboxImage({ url: opt.image_url!, alt: opt.text || '' })
+                                      }}
+                                    >⌕</button>}
                                   </div>
                                 </div>
                               })}

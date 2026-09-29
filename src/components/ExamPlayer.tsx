@@ -67,6 +67,16 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
   const [completedDate, setCompletedDate] = useState<string>('')
   const [reviewMode, setReviewMode] = useState(false)
   const [certificateStatus, setCertificateStatus] = useState<CertificateStatus | null>(null)
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; alt: string } | null>(null)
+
+  useEffect(() => {
+    if (!lightboxImage) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setLightboxImage(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [lightboxImage])
 
   // Fetch exam blocks
   useEffect(() => {
@@ -329,7 +339,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
     const isImage = currentBlock.optionType === 'image'
 
     return (
-      <div style={{ background: colors.bg, borderRadius: 20, padding: '40px 32px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ background: colors.bg, borderRadius: 20, padding: '40px 32px', maxWidth: 760, margin: '0 auto' }}>
         {/* Progress */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -359,7 +369,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
 
         {/* Options */}
         {isImage ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+          <div className="exam-image-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 300px))', justifyContent: 'center', gap: 18, marginBottom: 32 }}>
             {currentBlock.options.map(opt => {
               const selected = chosenId === opt.id
               return (
@@ -375,12 +385,21 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
                     background: selected ? colors.goldSoft : 'transparent',
                   }}
                 >
-                  <div style={{ aspectRatio: '1', background: colors.bg3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'relative', aspectRatio: '4 / 3', background: colors.bg3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {opt.image_url ? (
                       <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       <span style={{ fontSize: 28, color: colors.muted }}>⛶</span>
                     )}
+                    {opt.image_url && <button
+                      type="button"
+                      aria-label={opt.text ? `Vergroot foto: ${opt.text}` : 'Vergroot antwoordfoto'}
+                      onClick={event => {
+                        event.stopPropagation()
+                        setLightboxImage({ url: opt.image_url!, alt: opt.text || '' })
+                      }}
+                      style={{ position: 'absolute', top: 10, right: 10, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,.65)', background: 'rgba(12,10,7,.65)', color: '#fff', fontSize: 23, cursor: 'zoom-in', display: 'grid', placeItems: 'center' }}
+                    >⌕</button>}
                   </div>
                   {opt.text && (
                     <div style={{ padding: '8px 12px', fontSize: 12, color: colors.white, fontFamily: '"Jost", sans-serif' }}>{opt.text}</div>
@@ -485,6 +504,11 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
             </button>
           )}
         </div>
+        {lightboxImage && <div role="dialog" aria-modal="true" aria-label="Vergrote foto" onClick={() => setLightboxImage(null)} style={{ position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(0,0,0,.88)', cursor: 'zoom-out' }}>
+          <button type="button" onClick={() => setLightboxImage(null)} aria-label="Sluiten" style={{ position: 'fixed', top: 18, right: 22, width: 42, height: 42, border: '1px solid rgba(255,255,255,.35)', borderRadius: '50%', background: 'rgba(0,0,0,.35)', color: '#fff', fontSize: 18, cursor: 'pointer' }}>✕</button>
+          <img src={lightboxImage.url} alt={lightboxImage.alt} onClick={event => event.stopPropagation()} style={{ maxWidth: 'min(94vw, 1500px)', maxHeight: '90vh', objectFit: 'contain', borderRadius: 10, boxShadow: '0 20px 80px rgba(0,0,0,.45)' }} />
+        </div>}
+        <style jsx>{`@media (max-width: 680px) { .exam-image-options { grid-template-columns: minmax(0, 1fr) !important; } }`}</style>
       </div>
     )
   }
