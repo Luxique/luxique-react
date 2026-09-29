@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase-client'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { flattenLessonHierarchy, moveLessonInHierarchy } from '@/lib/lesson-hierarchy'
 import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-sync'
+import { resetUnsavedStateAfterSuccessfulSave } from '@/lib/builder-unsaved-state'
 import { updateLessonById } from '@/lib/course-lesson-state'
 import {
   MUX_ASSET_POLL_INTERVAL_MS,
@@ -304,6 +305,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const [historyControlsSlot, setHistoryControlsSlot] = useState<HTMLElement | null>(null)
   const dirtyBlockLessonIdsRef = useRef<Set<string>>(new Set())
   const hasUnsavedChangesRef = useRef(false)
+  const unsavedRevisionRef = useRef(0)
   const [lessonNumber, setLessonNumber] = useState(2)
   const [sidebarTab, setSidebarTab] = useState<'lessons' | 'settings'>('lessons')
   const [hierarchyNotice, setHierarchyNotice] = useState<string | null>(null)
@@ -357,10 +359,15 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  const markLessonBlocksDirty = useCallback((lessonId?: string) => {
-    if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
+  const markCourseDirty = useCallback(() => {
+    unsavedRevisionRef.current += 1
     hasUnsavedChangesRef.current = true
   }, [])
+
+  const markLessonBlocksDirty = useCallback((lessonId?: string) => {
+    if (lessonId) dirtyBlockLessonIdsRef.current.add(lessonId)
+    markCourseDirty()
+  }, [markCourseDirty])
 
   useEffect(() => {
     const warnBeforeLeave = (event: BeforeUnloadEvent) => {
@@ -498,9 +505,9 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       future: [structuredClone(course), ...history.future].slice(0, MAX_BLOCK_HISTORY),
     }
     setCourse(previous)
-    hasUnsavedChangesRef.current = true
+    markCourseDirty()
     setHistoryRevision(revision => revision + 1)
-  }, [course])
+  }, [course, markCourseDirty])
 
   const redoCourseChange = useCallback(() => {
     if (!course || courseHistoryRef.current.future.length === 0) return
@@ -511,15 +518,17 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       future: history.future.slice(1),
     }
     setCourse(next)
-    hasUnsavedChangesRef.current = true
+    markCourseDirty()
     setHistoryRevision(revision => revision + 1)
-  }, [course])
+  }, [course, markCourseDirty])
 
   const toSlug = (title: string) =>
     title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
   const saveCourse = useCallback(async () => {
     if (!course) return
+    const saveStartedAtRevision = unsavedRevisionRef.current
+    const dirtyLessonIdsAtSaveStart = new Set(dirtyBlockLessonIdsRef.current)
 
     // Sync current blocks to course state first
     let courseToSave = course
@@ -675,7 +684,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       }
       console.log(`[saveCourse] Lesson "${lesson.name}" upsert OK`)
 
-      if (!shouldSyncLessonBlocks(dirtyBlockLessonIdsRef.current, lesson.id)) {
+      if (!shouldSyncLessonBlocks(dirtyLessonIdsAtSaveStart, lesson.id)) {
         console.log(`[saveCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
         continue
       }
@@ -744,11 +753,16 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           return
         }
       }
-      dirtyBlockLessonIdsRef.current.delete(lesson.id)
     }
 
     console.log('[saveCourse] ✅ Save complete!')
-    hasUnsavedChangesRef.current = false
+    if (resetUnsavedStateAfterSuccessfulSave(
+      saveStartedAtRevision,
+      unsavedRevisionRef.current,
+      dirtyBlockLessonIdsRef.current,
+    )) {
+      hasUnsavedChangesRef.current = false
+    }
     setCourse(prev => prev ? { ...prev, slug: toSlug(prev.title || 'nieuwe-cursus'), status: 'draft' } : prev)
     
     // Update cache met opgeslagen blokken
@@ -764,6 +778,8 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const publishCourse = async () => {
     if (!course || publishing) return
+    const saveStartedAtRevision = unsavedRevisionRef.current
+    const dirtyLessonIdsAtSaveStart = new Set(dirtyBlockLessonIdsRef.current)
     setPublishing(true)
     try {
       // First, save course content (but override status to published in ONE update)
@@ -886,7 +902,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           })
           if (lessonError) console.error('Lesson upsert failed:', lessonError)
 
-          if (!shouldSyncLessonBlocks(dirtyBlockLessonIdsRef.current, lesson.id)) {
+          if (!shouldSyncLessonBlocks(dirtyLessonIdsAtSaveStart, lesson.id)) {
             console.log(`[publishCourse] Skipping blocks for clean/unloaded lesson "${lesson.name}"`)
             continue
           }
@@ -939,7 +955,6 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             })
             if (blockError) throw blockError
           }
-          dirtyBlockLessonIdsRef.current.delete(lesson.id)
         }
       }
 
@@ -970,6 +985,13 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
         cacheLessonBlocks(currentLesson.id, blocks)
       }
       setCourse(prev => prev ? { ...prev, slug: toSlug(prev.title || 'nieuwe-cursus'), status: 'published' } : prev)
+      if (resetUnsavedStateAfterSuccessfulSave(
+        saveStartedAtRevision,
+        unsavedRevisionRef.current,
+        dirtyBlockLessonIdsRef.current,
+      )) {
+        hasUnsavedChangesRef.current = false
+      }
       
       alert('✅ Gepubliceerd! De cursus is nu zichtbaar op de site.')
     } catch (err) {
@@ -1372,7 +1394,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       const updatedCurrentLesson = nextLessons.find(lesson => lesson.id === currentLesson.id)
       if (updatedCurrentLesson) setCurrentLesson(updatedCurrentLesson)
     }
-    hasUnsavedChangesRef.current = true
+    markCourseDirty()
 
     const results = await Promise.all(nextLessons.map((lesson, index) =>
       supabase.from('lessons').update({
@@ -1424,6 +1446,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
       blocks: defaultBlocks
     }
     dirtyBlockLessonIdsRef.current.add(newLesson.id)
+    markCourseDirty()
 
     setCourse(prev => {
       if (!prev) return prev
@@ -1486,7 +1509,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
   const updateCourseField = (field: keyof Course, value: string | boolean | number | string[] | Array<{icon: string; title: string; body: string}> | Array<{type: string; data: Record<string, unknown>; order: number}> | Lesson[] | Quiz[] | Array<{question: string; answer: string}> | undefined) => {
     if (!course) return
     recordCourseHistory(course)
-    hasUnsavedChangesRef.current = true
+    markCourseDirty()
     setCourse({ ...course, [field]: value })
   }
 
@@ -1494,7 +1517,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
     if (!course) return
     const firstContentLesson = flattenLessonHierarchy(course.lessons || []).find(lesson => (lesson.lesson_type || 'content') === 'content')
     recordCourseHistory(course)
-    hasUnsavedChangesRef.current = true
+    markCourseDirty()
     const lessons = (course.lessons || []).map(lesson => lesson.id === firstContentLesson?.id ? { ...lesson, free: enabled } : lesson)
     setCourse({ ...course, firstLessonFree: enabled, lessons })
     if (currentLesson && firstContentLesson && currentLesson.id === firstContentLesson.id) {
@@ -1504,7 +1527,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
 
   const updateLessonField = (field: keyof Lesson, value: string | number | boolean | string[] | undefined) => {
     if (!currentLesson) return
-    hasUnsavedChangesRef.current = true
+    markCourseDirty()
     setCurrentLesson({ ...currentLesson, [field]: value })
     setCourse(prev => prev ? {
       ...prev,

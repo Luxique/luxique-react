@@ -11,6 +11,7 @@ import { checkEnrollmentCompletion } from '@/lib/academy-completion'
 import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize } from '@/lib/course-block-content'
 import { ACADEMY_PREVIEW_PARAM, ACADEMY_PREVIEW_VALUE, getAcademyPreviewSuffix, isAdminConceptPreview } from '@/lib/academy-preview'
 import AcademyConceptIndicator from '@/components/AcademyConceptIndicator'
+import { getNextLessonButtonLabel } from '@/lib/lesson-navigation'
 import './lesson-page.css'
 
 /* ── Types ─────────────────────────────────────── */
@@ -180,6 +181,7 @@ export default function LessonPage() {
   const currentIdx = allLessons.findIndex(l => l.id === lessonId)
   const prevLessonNav = currentIdx > 0 ? allLessons[currentIdx - 1] : null
   const nextLessonNav = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null
+  const nextLessonButtonLabel = getNextLessonButtonLabel(nextLessonNav)
   // Exclude exam from progress calculation — exam is a separate milestone
   const contentLessons = allLessons.filter(l => l.lesson_type !== 'exam')
   const examLesson = allLessons.find(l => l.lesson_type === 'exam')
@@ -417,7 +419,7 @@ export default function LessonPage() {
           <div className="nav-mini">
             <button className="rail-mobile-btn" onClick={() => setRailMobileOpen(true)}>☰ Lessen</button>
             {prevLessonNav && <button onClick={() => router.push(lessonHref(prevLessonNav.id))}>← Vorige</button>}
-            {nextLessonNav && <button onClick={() => canProceed ? router.push(lessonHref(nextLessonNav.id)) : null} disabled={!canProceed} style={{ opacity: canProceed ? 1 : 0.4, cursor: canProceed ? 'pointer' : 'not-allowed' }}>Volgende →</button>}
+            {nextLessonNav && <button onClick={() => canProceed ? router.push(lessonHref(nextLessonNav.id)) : null} disabled={!canProceed} style={{ opacity: canProceed ? 1 : 0.4, cursor: canProceed ? 'pointer' : 'not-allowed' }}>{nextLessonButtonLabel} →</button>}
           </div>
         </div>
 
@@ -602,7 +604,7 @@ export default function LessonPage() {
                     onClick={() => nextLessonNav ? router.push(lessonHref(nextLessonNav.id)) : router.push(courseHref)}
                     disabled={!canProceed}
                   >
-                    {nextLessonNav ? `${nextLessonNav.title} →` : 'Terug naar overzicht →'}
+                    {nextLessonNav ? `${nextLessonButtonLabel} →` : 'Terug naar overzicht →'}
                   </button>
                   {!canProceed && hasPlayableVideo && <div className="next-hint">Kijk de video af om verder te gaan</div>}
                   {!canProceed && isQuizLesson && <div className="next-hint">Rond de quiz af om verder te gaan</div>}
@@ -631,7 +633,7 @@ export default function LessonPage() {
                   onClick={() => canProceed ? (nextLessonNav ? router.push(lessonHref(nextLessonNav.id)) : router.push(courseHref)) : null}
                   disabled={!canProceed}
                 >
-                  <span className="mn-label">Volgende</span>
+                  <span className="mn-label">{nextLessonNav ? nextLessonButtonLabel : 'Overzicht'}</span>
                   <span className="mn-arrow">→</span>
                 </button>
               </div>

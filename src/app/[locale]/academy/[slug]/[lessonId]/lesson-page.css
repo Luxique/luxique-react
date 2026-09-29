@@ -354,6 +354,10 @@
   .mn-arrow { font-size: 16px; line-height: 1; }
   .mn-icon { font-size: 16px; line-height: 1; }
   .mn-label { font-size: 10px; letter-spacing: .04em; }
+  .mn-next .mn-label {
+    display: -webkit-box; overflow: hidden; line-height: 1.15;
+    -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  }
   .mn-next.ready {
     background: linear-gradient(180deg,var(--gold-bright),var(--gold));
     color: var(--dark); border-color: transparent; font-weight: 600;
