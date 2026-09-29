@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import Mux from '@mux/mux-node';
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 interface AssetStatusResponse {
   status: string;
@@ -60,10 +62,14 @@ export async function GET(request: Request) {
         response.public_playback_id = publicPlaybackId;
       }
       
-      return NextResponse.json(response);
+      return NextResponse.json(response, {
+        headers: { 'Cache-Control': 'no-store, max-age=0' },
+      });
     }
     
-    return NextResponse.json({ status: 'uploading' });
+    return NextResponse.json({ status: 'uploading' }, {
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
+    });
   } catch (error) {
     console.error('Error checking Mux asset status:', error);
     return NextResponse.json({ 
