@@ -199,6 +199,13 @@ ImageBlock.displayName = 'ImageBlock'
 export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
   const optionType = block.option_type || 'text'
   const hasMedia = block.media?.type != null
+  const [pendingOptionCrop, setPendingOptionCrop] = useState<{ optionId: string; source: string } | null>(null)
+
+  useEffect(() => () => {
+    if (pendingOptionCrop?.source.startsWith('blob:')) {
+      URL.revokeObjectURL(pendingOptionCrop.source)
+    }
+  }, [pendingOptionCrop])
 
   const addOption = () => {
     const opts = [...(block.options || [])]
@@ -221,12 +228,33 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
     onUpdate(block.id, { options: opts })
   }
 
-  const handleImageUpload = async (idx: number, file: File) => {
-    const path = `quiz-options/${crypto.randomUUID()}-${file.name}`
-    const { error: uploadErr } = await supabase.storage.from('course-images').upload(path, file)
-    if (uploadErr) { console.error('Upload failed:', uploadErr); return }
-    const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(path)
-    updateOption(idx, { image_url: publicUrl })
+  const startOptionCrop = (index: number, source: string) => {
+    const optionId = block.options?.[index]?.id
+    if (!optionId) return
+    setPendingOptionCrop({ optionId, source })
+  }
+
+  const handleImageUpload = (idx: number, file: File) => {
+    startOptionCrop(idx, URL.createObjectURL(file))
+  }
+
+  const uploadCroppedOption = async (blob: Blob) => {
+    if (!pendingOptionCrop) return
+    const path = `quiz-options/${block.id}/${pendingOptionCrop.optionId}-${crypto.randomUUID()}.webp`
+    const { data, error } = await supabase.storage
+      .from('course-images')
+      .upload(path, blob, { contentType: 'image/webp' })
+    if (error) {
+      console.error('Quiz option image upload failed:', error)
+      throw new Error(`Foto opslaan mislukt: ${error.message}`)
+    }
+    const { data: { publicUrl } } = supabase.storage.from('course-images').getPublicUrl(data.path)
+    const currentIndex = (block.options || []).findIndex(option => option.id === pendingOptionCrop.optionId)
+    if (currentIndex < 0) {
+      throw new Error('Deze foto-optie bestaat niet meer.')
+    }
+    updateOption(currentIndex, { image_url: publicUrl })
+    setPendingOptionCrop(null)
   }
 
   const handleMediaHeaderUpload = async (file: File) => {
@@ -305,7 +333,19 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
                 <div key={opt.id || i} style={{ border: `1.5px solid ${opt.correct ? '#5E8463' : 'rgba(12,10,7,0.10)'}`, borderRadius: 14, overflow: 'hidden', background: '#fff', position: 'relative' }}>
                   <div style={{ aspectRatio: '1', background: opt.image_url ? 'transparent' : '#ede7db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb4a6', fontSize: 24 }}>
                     {opt.image_url ? (
-                      <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <>
+                        <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button
+                          type="button"
+                          title={`Foto ${String.fromCharCode(65 + i)} opnieuw croppen`}
+                          aria-label={`Foto ${String.fromCharCode(65 + i)} opnieuw croppen`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            startOptionCrop(i, opt.image_url!)
+                          }}
+                          style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(255,255,255,0.92)', border: 'none', borderRadius: '50%', width: 28, height: 28, fontSize: 13, color: '#7A6340', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.12)' }}
+                        >✎</button>
+                      </>
                     ) : (
                       <label style={{ cursor: 'pointer', padding: 16 }} onClick={(e) => e.stopPropagation()}>
                         ⛶ Upload
@@ -328,6 +368,14 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
               ))}
             </div>
             <button onClick={addOption} style={{ width: '100%', border: '1.5px dashed #C4A265', background: 'transparent', color: '#9E7E45', borderRadius: 12, padding: 13, fontFamily: 'Outfit', fontSize: 13, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer', marginTop: 12 }}>+ Foto-optie toevoegen</button>
+            {pendingOptionCrop && (
+              <ImageCropModal
+                key={`${pendingOptionCrop.optionId}:${pendingOptionCrop.source}`}
+                source={pendingOptionCrop.source}
+                onCancel={() => setPendingOptionCrop(null)}
+                onConfirm={uploadCroppedOption}
+              />
+            )}
           </>
         ) : (
           /* Text options — mockup b-opt */
