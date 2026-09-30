@@ -28,6 +28,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import LuxiqueMuxPlayer from '@/components/LuxiqueMuxPlayer'
+import QuizImageOptions from '@/components/QuizImageOptions'
 import { TextBlock, ImageBlock, QuizBlock, CalloutBlock, DownloadBlock } from './BlockComponents'
 
 /* ── SortableBlock (module-level, prevents re-mount) ── */
@@ -3234,13 +3235,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                                       <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#2C2A25', textAlign: 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
                                       <div style={{ textAlign: 'center', fontSize: 12, color: '#8C8579', fontStyle: 'italic', marginBottom: 30 }}>{multiAnswer ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}</div>
                                       {(block.option_type || 'text') === 'image' ? (
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 10 }}>
-                                          {(block.options || []).map((opt, oi) => (
-                                            <div key={oi} style={{ border: '2px solid rgba(228,201,138,0.12)', borderRadius: 16, overflow: 'hidden', cursor: 'default', position: 'relative' }}>
-                                              <div style={{ aspectRatio: '1', background: 'linear-gradient(135deg,#e8e2d6,#d8d2c6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a544a', fontSize: 32 }}>{opt.image_url ? <img src={opt.image_url} alt={opt.text || ''} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : '⛶'}</div>
-                                            </div>
-                                          ))}
-                                        </div>
+                                        <QuizImageOptions options={block.options || []} />
                                       ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
                                           {(block.options || []).map((opt, oi) => (

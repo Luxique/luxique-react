@@ -11,6 +11,7 @@ import { checkEnrollmentCompletion } from '@/lib/academy-completion'
 import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize } from '@/lib/course-block-content'
 import { ACADEMY_PREVIEW_PARAM, ACADEMY_PREVIEW_VALUE, getAcademyPreviewSuffix, isAdminConceptPreview } from '@/lib/academy-preview'
 import AcademyConceptIndicator from '@/components/AcademyConceptIndicator'
+import QuizImageOptions from '@/components/QuizImageOptions'
 import { getNextLessonButtonLabel } from '@/lib/lesson-navigation'
 import { isExactQuizSelectionCorrect, isMultiSelectQuestion, normalizeQuizSelection, toggleQuizSelection, type QuizSelection } from '@/lib/quiz-selection'
 import './lesson-page.css'
@@ -571,29 +572,19 @@ export default function LessonPage() {
                           </div>
 
                           {isImage ? (
-                            <div className="quiz-image-grid">
-                              {bc.options.map(opt => {
+                            <QuizImageOptions
+                              options={bc.options}
+                              disabled={result === 'correct' || result === 'revealed'}
+                              onSelect={opt => handleQuizAnswer(block.id, opt.id)}
+                              getBorder={opt => {
                                 const isChosen = selectedIds.includes(opt.id); const isCorrect = opt.correct
                                 let border = '1.5px solid var(--line)'
                                 if (result === 'correct' && isChosen) border = '2px solid var(--green)'
                                 if ((result === 'wrong' || result === 'tryAgain') && isChosen) border = '2px solid var(--red)'
                                 if (result === 'revealed' && isCorrect) border = '2px solid var(--green)'
-                                return <div key={opt.id} className="quiz-image-option" onClick={() => handleQuizAnswer(block.id, opt.id)} style={{ border, cursor: (result === 'correct' || result === 'revealed') ? 'default' : 'pointer' }}>
-                                  <div className="quiz-image-option-media">
-                                    {opt.image_url ? <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28, color: 'var(--muted)' }}>⛶</span>}
-                                    {opt.image_url && <button
-                                      type="button"
-                                      className="quiz-image-zoom"
-                                      aria-label={opt.text ? `Vergroot foto: ${opt.text}` : 'Vergroot antwoordfoto'}
-                                      onClick={event => {
-                                        event.stopPropagation()
-                                        setLightboxImage({ url: opt.image_url!, alt: opt.text || '' })
-                                      }}
-                                    >⌕</button>}
-                                  </div>
-                                </div>
-                              })}
-                            </div>
+                                return border
+                              }}
+                            />
                           ) : (
                             <div className="quiz-options">
                               {bc.options.map((opt, oi) => {
