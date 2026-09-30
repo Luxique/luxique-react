@@ -109,6 +109,7 @@ interface Block {
   images?: Array<{ id: string; url: string; caption?: string }>
   imageSize?: CourseImageSize
   question?: string
+  questionAlign?: 'left' | 'center' | 'right'
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
@@ -751,6 +752,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
             images: block.images,
             imageSize: block.imageSize,
             question: block.question,
+            questionAlign: block.questionAlign,
             option_type: block.option_type,
             options: block.options,
             fileName: block.fileName,
@@ -960,6 +962,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                 images: block.images,
                 imageSize: block.imageSize,
                 question: block.question,
+                questionAlign: block.questionAlign,
                 option_type: block.option_type,
                 options: block.options,
                 fileName: block.fileName,
@@ -1273,6 +1276,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
           images: stored.images,
           imageSize: stored.imageSize,
           question: stored.question,
+          questionAlign: stored.questionAlign as Block['questionAlign'],
           media: stored.media as Block['media'],
           option_type: stored.optionType as Block['option_type'],
           options: stored.options as Block['options'],
@@ -3246,7 +3250,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
                                       <div style={{ textAlign: 'center', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: '#C4A265', marginBottom: 14 }}>
                                         Vraag {blocks.filter(b => b.type === 'quiz').indexOf(block) + 1} van {blocks.filter(b => b.type === 'quiz').length}
                                       </div>
-                                      <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#2C2A25', textAlign: 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
+                                      <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 30, lineHeight: 1.2, color: '#2C2A25', textAlign: block.questionAlign || 'center', margin: '0 0 8px', fontWeight: 500 }}>{block.question || 'Typ je vraag...'}</h3>
                                       <div style={{ textAlign: 'center', fontSize: 12, color: '#8C8579', fontStyle: 'italic', marginBottom: 30 }}>{multiAnswer ? 'Meerdere antwoorden mogelijk' : 'Kies één antwoord'}</div>
                                       {(block.option_type || 'text') === 'image' ? (
                                         <QuizImageOptions options={block.options || []} />

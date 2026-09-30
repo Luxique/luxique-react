@@ -61,6 +61,17 @@ test('reads the photo size preset from current and legacy block shapes', () => {
   assert.equal(extractStoredBlockContent({ content: { image_size: 'large' } }).imageSize, 'large')
 })
 
+test('reads standalone question alignment while legacy blocks keep no override', () => {
+  assert.equal(extractStoredBlockContent({ questionAlign: 'right' }).questionAlign, 'right')
+  assert.equal(extractStoredBlockContent({ content: { question_align: 'center' } }).questionAlign, 'center')
+  assert.equal(extractStoredBlockContent({ question: 'Legacy vraag' }).questionAlign, undefined)
+})
+
+test('preserves TipTap text alignment styles in rich text HTML', () => {
+  const html = '<p style="text-align: center">Gecentreerde tekst</p>'
+  assert.equal(normalizeRichTextHtml(html), html)
+})
+
 test('decodes escaped legacy rich text tags instead of showing raw markup', () => {
   assert.equal(
     normalizeRichTextHtml('&lt;p&gt;&lt;strong&gt;The Wet look&lt;/strong&gt; volledig&lt;/p&gt;'),

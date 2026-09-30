@@ -6,6 +6,55 @@ import StarterKit from '@tiptap/starter-kit'
 import { FontSize, TextStyle } from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
+import { Extension } from '@tiptap/core'
+
+type TextAlignment = 'left' | 'center' | 'right'
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    courseTextAlign: {
+      setCourseTextAlign: (alignment: TextAlignment) => ReturnType
+    }
+  }
+}
+
+const CourseTextAlign = Extension.create({
+  name: 'courseTextAlign',
+  addGlobalAttributes() {
+    return [{
+      types: ['paragraph', 'heading'],
+      attributes: {
+        textAlign: {
+          default: null,
+          parseHTML: element => element.style.textAlign || null,
+          renderHTML: attributes => attributes.textAlign ? { style: `text-align: ${attributes.textAlign}` } : {},
+        },
+      },
+    }]
+  },
+  addCommands() {
+    return {
+      setCourseTextAlign: alignment => ({ commands }) => (
+        commands.updateAttributes('paragraph', { textAlign: alignment })
+        || commands.updateAttributes('heading', { textAlign: alignment })
+      ),
+    }
+  },
+})
+
+const ALIGNMENTS: Array<{ value: TextAlignment; label: string }> = [
+  { value: 'left', label: 'Links uitlijnen' },
+  { value: 'center', label: 'Centreren' },
+  { value: 'right', label: 'Rechts uitlijnen' },
+]
+
+const AlignIcon = ({ alignment }: { alignment: TextAlignment }) => (
+  <span className={`flex w-3 flex-col gap-[2px] ${alignment === 'center' ? 'items-center' : alignment === 'right' ? 'items-end' : 'items-start'}`} aria-hidden="true">
+    <span className="h-px w-3 bg-current" />
+    <span className="h-px w-2 bg-current" />
+    <span className="h-px w-3 bg-current" />
+  </span>
+)
 
 interface RichTextFieldProps {
   content: string
@@ -55,6 +104,7 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
       FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
+      CourseTextAlign,
     ],
     content,
     parseOptions: { preserveWhitespace: 'full' },
@@ -180,6 +230,21 @@ export default function RichTextField({ content, onChange, variant = 'block', pl
             >1. lijst</button>
           </>
         )}
+        <div className="w-px h-3 bg-[rgba(30,26,20,0.1)] mx-0.5" />
+        <div className="flex items-center" aria-label="Tekstuitlijning">
+          {ALIGNMENTS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              aria-label={label}
+              title={label}
+              onClick={() => editor.chain().focus().setCourseTextAlign(value).run()}
+              className={`flex h-6 w-6 items-center justify-center rounded text-[14px] leading-none ${editor.isActive({ textAlign: value }) || (value === 'left' && !editor.getAttributes('paragraph').textAlign) ? 'bg-[rgba(196,162,101,0.15)] text-[#C4A265]' : 'text-[#7A7268] hover:bg-[rgba(30,26,20,0.05)]'}`}
+            >
+              <AlignIcon alignment={value} />
+            </button>
+          ))}
+        </div>
         <div className="w-px h-3 bg-[rgba(30,26,20,0.1)] mx-0.5" />
         {/* Text color — full picker */}
         <div className="relative">

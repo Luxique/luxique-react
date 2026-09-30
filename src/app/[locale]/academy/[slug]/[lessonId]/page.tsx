@@ -26,6 +26,7 @@ interface Block {
   id: string; type: string; title?: string
   content?: string | { mux_playback_id?: string; [k: string]: unknown }
   question?: string; media?: { type: string; url: string; caption?: string } | null
+  questionAlign?: 'left' | 'center' | 'right'
   option_type?: 'text' | 'image'
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
@@ -47,6 +48,7 @@ function extractBlockContent(block: Block) {
     body: normalizeRichTextHtml(stored.body),
     muxPlaybackId: stored.muxPlaybackId,
     question: stored.question || block.question,
+    questionAlign: (stored.questionAlign || block.questionAlign) as 'left' | 'center' | 'right' | undefined,
     options: (stored.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
     optionType: stored.optionType || block.option_type || ((stored.options as Array<{ image_url?: string }> | undefined)?.some(o => o.image_url) ? 'image' : 'text'),
     media: (stored.media as { type: string; url: string; caption?: string } | null) || block.media,
@@ -566,7 +568,7 @@ export default function LessonPage() {
                           )}
                           <div className="quiz-counter">Vraag {quizBlocks.indexOf(block) + 1} van {quizBlocks.length}</div>
                           {bc.media?.url && <div style={{ textAlign: 'center', marginBottom: 16 }}><img src={bc.media.url} alt="" style={{ maxHeight: 180, borderRadius: 12, maxWidth: '100%' }} /></div>}
-                          <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{bc.question || 'Typ je vraag...'}</h3>
+                          <h3 style={{ fontFamily: '"Cormorant Garamond",serif', fontSize: 24, textAlign: bc.questionAlign || 'center', color: 'var(--ink)', margin: '0 0 8px', fontWeight: 500 }}>{bc.question || 'Typ je vraag...'}</h3>
                           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginBottom: 20 }}>
                             {multiSelect ? 'Selecteer alle goede antwoorden' : 'Selecteer het goede antwoord'}
                           </div>
