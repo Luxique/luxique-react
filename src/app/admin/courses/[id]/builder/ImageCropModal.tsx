@@ -2,16 +2,23 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Cropper, { type Area } from 'react-easy-crop'
+import type { CourseCropAspect } from '@/lib/course-block-content'
+
+export interface CropResultMetadata {
+  aspectOption: CourseCropAspect
+  aspectRatio: number
+  originalAspectRatio: number
+}
 
 type Props = {
   source: string
+  initialAspect?: CourseCropAspect
   onCancel: () => void
-  onConfirm: (blob: Blob) => Promise<void>
+  onConfirm: (blob: Blob, metadata: CropResultMetadata) => Promise<void>
+  onReset?: () => Promise<void> | void
 }
 
-type AspectOption = 'original' | '16:9' | '4:3' | '1:1' | '3:4'
-
-const ASPECTS: Record<Exclude<AspectOption, 'original'>, number> = {
+const ASPECTS: Record<Exclude<CourseCropAspect, 'original'>, number> = {
   '16:9': 16 / 9,
   '4:3': 4 / 3,
   '1:1': 1,
@@ -38,10 +45,10 @@ async function renderCrop(source: string, crop: Area, width: number, height: num
   })
 }
 
-export default function ImageCropModal({ source, onCancel, onConfirm }: Props) {
+export default function ImageCropModal({ source, initialAspect = 'original', onCancel, onConfirm, onReset }: Props) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
-  const [aspectOption, setAspectOption] = useState<AspectOption>('original')
+  const [aspectOption, setAspectOption] = useState<CourseCropAspect>(initialAspect)
   const [pixels, setPixels] = useState<Area | null>(null)
   const [busy, setBusy] = useState(false)
   const [imageReady, setImageReady] = useState(false)
@@ -81,7 +88,12 @@ export default function ImageCropModal({ source, onCancel, onConfirm }: Props) {
     try {
       const outputWidth = Math.max(1, Math.round(pixels.width))
       const outputHeight = Math.max(1, Math.round(pixels.height))
-      await onConfirm(await renderCrop(source, pixels, outputWidth, outputHeight))
+      const originalAspectRatio = naturalSize.width / naturalSize.height
+      await onConfirm(await renderCrop(source, pixels, outputWidth, outputHeight), {
+        aspectOption,
+        aspectRatio: aspect,
+        originalAspectRatio,
+      })
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Foto verwerken mislukt.')
     } finally {
@@ -89,8 +101,25 @@ export default function ImageCropModal({ source, onCancel, onConfirm }: Props) {
     }
   }
 
+  const resetToOriginal = async () => {
+    if (busy) return
+    setAspectOption('original')
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    if (!onReset) return
+    setBusy(true)
+    setError('')
+    try {
+      await onReset()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Originele foto herstellen mislukt.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Foto croppen">
-    <div className="w-full max-w-3xl rounded-2xl bg-[#FAF8F4] p-5 shadow-2xl">
+    <div className="w-full max-w-3xl rounded-2xl bg-[#FAF8F4] p-5 shadow-2xl" data-selected-aspect={aspectOption}>
       <div className="mb-4 flex items-center justify-between"><h2 className="font-['Cormorant_Garamond'] text-2xl text-[#1E1A14]">Foto croppen en schalen</h2><button onClick={onCancel}>✕</button></div>
       <div className="relative h-[420px] overflow-hidden rounded-xl bg-[#16130f]">
         {!imageReady && !error && <div className="absolute inset-0 flex items-center justify-center text-sm text-white/70">Foto laden…</div>}
@@ -98,10 +127,13 @@ export default function ImageCropModal({ source, onCancel, onConfirm }: Props) {
       </div>
       {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <label className="text-xs text-[#7A7268]">Uitsnede<select value={aspectOption} onChange={e => { setAspectOption(e.target.value as AspectOption); setCrop({ x: 0, y: 0 }); setZoom(1) }} className="mt-1 block w-full rounded-lg border p-2"><option value="original">Originele afmetingen</option><option value="16:9">Liggend 16:9</option><option value="4:3">Liggend 4:3</option><option value="1:1">Vierkant 1:1</option><option value="3:4">Staand 3:4</option></select></label>
+        <label className="text-xs text-[#7A7268]">Uitsnede<select aria-label="Uitsnede verhouding" value={aspectOption} onChange={e => { setAspectOption(e.target.value as CourseCropAspect); setCrop({ x: 0, y: 0 }); setZoom(1) }} className="mt-1 block w-full rounded-lg border p-2"><option value="original">Originele afmetingen</option><option value="16:9">Liggend 16:9</option><option value="4:3">Liggend 4:3</option><option value="1:1">Vierkant 1:1</option><option value="3:4">Staand 3:4</option></select></label>
         <label className="text-xs text-[#7A7268]">Zoom<input type="range" min={1} max={3} step={0.05} value={zoom} onChange={e => setZoom(Number(e.target.value))} className="mt-3 block w-full" /></label>
       </div>
-      <div className="mt-5 flex justify-end gap-2"><button disabled={busy} onClick={onCancel} className="rounded-full border px-5 py-2 text-sm disabled:opacity-50">Annuleren</button><button disabled={busy || !imageReady || !pixels} onClick={confirm} className="rounded-full bg-[#C4A265] px-5 py-2 text-sm text-white disabled:opacity-50">{busy ? 'Verwerken…' : 'Crop toepassen'}</button></div>
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
+        <button disabled={busy || !imageReady} onClick={resetToOriginal} className="rounded-full border border-[#C4A265] px-5 py-2 text-sm text-[#9E7E45] disabled:opacity-50">↺ Terug naar origineel</button>
+        <div className="flex gap-2"><button disabled={busy} onClick={onCancel} className="rounded-full border px-5 py-2 text-sm disabled:opacity-50">Annuleren</button><button disabled={busy || !imageReady || !pixels} onClick={confirm} className="rounded-full bg-[#C4A265] px-5 py-2 text-sm text-white disabled:opacity-50">{busy ? 'Verwerken…' : 'Crop toepassen'}</button></div>
+      </div>
     </div>
   </div>
 }

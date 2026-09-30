@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import {
   extractStoredBlockContent,
+  getQuizImageAspectRatio,
   getBuilderVideoPlaybackConfig,
   normalizeRichTextHtml,
 } from './course-block-content.ts'
@@ -59,6 +60,14 @@ test('preserves a multi-photo gallery with independent captions', () => {
 test('reads the photo size preset from current and legacy block shapes', () => {
   assert.equal(extractStoredBlockContent({ imageSize: 'small' }).imageSize, 'small')
   assert.equal(extractStoredBlockContent({ content: { image_size: 'large' } }).imageSize, 'large')
+})
+
+test('keeps independent quiz image aspect ratios and a stable legacy fallback', () => {
+  assert.equal(getQuizImageAspectRatio({ image_crop_aspect: '16:9' }), 16 / 9)
+  assert.equal(getQuizImageAspectRatio({ image_crop_aspect: '1:1' }), 1)
+  assert.equal(getQuizImageAspectRatio({ image_crop_aspect: '3:4' }), 3 / 4)
+  assert.equal(getQuizImageAspectRatio({}), 4 / 3)
+  assert.equal(getQuizImageAspectRatio({ image_crop_aspect: '1:1', image_aspect_ratio: 1.42 }), 1.42)
 })
 
 test('reads standalone question alignment while legacy blocks keep no override', () => {

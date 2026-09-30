@@ -8,7 +8,7 @@ import ExamPlayer from '@/components/ExamPlayer'
 import { useAuth } from '@/lib/auth-context'
 import { getLessonDisplays } from '@/lib/lesson-display'
 import { checkEnrollmentCompletion } from '@/lib/academy-completion'
-import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize } from '@/lib/course-block-content'
+import { extractStoredBlockContent, normalizeRichTextHtml, type CourseImageSize, type CourseQuizOption } from '@/lib/course-block-content'
 import { ACADEMY_PREVIEW_PARAM, ACADEMY_PREVIEW_VALUE, getAcademyPreviewSuffix, isAdminConceptPreview } from '@/lib/academy-preview'
 import AcademyConceptIndicator from '@/components/AcademyConceptIndicator'
 import QuizImageOptions from '@/components/QuizImageOptions'
@@ -28,7 +28,7 @@ interface Block {
   question?: string; media?: { type: string; url: string; caption?: string } | null
   questionAlign?: 'left' | 'center' | 'right'
   option_type?: 'text' | 'image'
-  options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
+  options?: CourseQuizOption[]
   file_name?: string; file_size?: number; file_url?: string; subtitle?: string
   showTitle?: boolean; showSubtitle?: boolean; showBody?: boolean
   images?: Array<{ id: string; url: string; caption?: string }>
@@ -49,7 +49,7 @@ function extractBlockContent(block: Block) {
     muxPlaybackId: stored.muxPlaybackId,
     question: stored.question || block.question,
     questionAlign: (stored.questionAlign || block.questionAlign) as 'left' | 'center' | 'right' | undefined,
-    options: (stored.options as Array<{ id: string; text: string; image_url?: string; correct: boolean }>) || block.options || [],
+    options: (stored.options as CourseQuizOption[]) || block.options || [],
     optionType: stored.optionType || block.option_type || ((stored.options as Array<{ image_url?: string }> | undefined)?.some(o => o.image_url) ? 'image' : 'text'),
     media: (stored.media as { type: string; url: string; caption?: string } | null) || block.media,
     imageUrl: stored.url || (stored.media?.url as string | undefined) || block.media?.url,

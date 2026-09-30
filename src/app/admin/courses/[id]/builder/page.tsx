@@ -22,7 +22,7 @@ import {
   requireMuxAssetStatus,
   requireMuxUpload,
 } from '@/lib/mux-upload-client'
-import { extractStoredBlockContent, getBuilderVideoPlaybackConfig, type CourseImageSize } from '@/lib/course-block-content'
+import { extractStoredBlockContent, getBuilderVideoPlaybackConfig, type CourseImageSize, type CourseQuizOption } from '@/lib/course-block-content'
 import CourseLandingClient from '@/app/cursus/[slug]/CourseLandingClient'
 import { REVIEWS } from '@/lib/reviews'
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -112,7 +112,7 @@ interface Block {
   questionAlign?: 'left' | 'center' | 'right'
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
-  options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
+  options?: CourseQuizOption[]
   points?: number
   quizType?: 'intermediate' | 'final'
   autoplay?: boolean

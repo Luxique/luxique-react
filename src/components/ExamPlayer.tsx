@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase-client'
 import { useAuth } from '@/lib/auth-context'
 import { checkEnrollmentCompletion } from '@/lib/academy-completion'
 import { isExactQuizSelectionCorrect, isMultiSelectQuestion, normalizeQuizSelection, toggleQuizSelection, type QuizSelection } from '@/lib/quiz-selection'
+import { getQuizImageAspectRatio, type CourseQuizOption } from '@/lib/course-block-content'
 
 /* ── Types ── */
 interface ExamProps {
@@ -19,7 +20,7 @@ interface ExamProps {
 interface ExamBlock {
   id: string
   question: string
-  options: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
+  options: CourseQuizOption[]
   optionType: 'text' | 'image'
   media?: { type: string; url: string } | null
 }
@@ -390,7 +391,7 @@ export default function ExamPlayer({ lessonId, courseId, courseTitle, passingSco
                     background: selected ? colors.goldSoft : 'transparent',
                   }}
                 >
-                  <div style={{ position: 'relative', aspectRatio: '4 / 3', background: colors.bg3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ position: 'relative', aspectRatio: getQuizImageAspectRatio(opt), background: colors.bg3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {opt.image_url ? (
                       <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
