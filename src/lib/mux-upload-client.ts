@@ -36,8 +36,8 @@ export function requireMuxAssetStatus(responseOk: boolean, payload: unknown): Js
   return payload as JsonRecord
 }
 
-export function hasMuxPlaybackIdentity(payload: JsonRecord): payload is JsonRecord & { playback_id: string } {
-  return payload.status !== 'errored'
+export function isMuxAssetReadyForPlayback(payload: JsonRecord): payload is JsonRecord & { playback_id: string } {
+  return payload.status === 'ready'
     && typeof payload.playback_id === 'string'
     && payload.playback_id.length > 0
 }

@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import {
   MUX_ASSET_POLL_TIMEOUT_MS,
-  hasMuxPlaybackIdentity,
+  isMuxAssetReadyForPlayback,
   requireMuxAssetStatus,
   requireMuxUpload,
 } from './mux-upload-client.ts'
@@ -25,9 +25,9 @@ test('allows thirty minutes for normal Mux processing', () => {
   assert.equal(MUX_ASSET_POLL_TIMEOUT_MS, 1_800_000)
 })
 
-test('finishes builder processing as soon as Mux supplies a playback identity', () => {
-  assert.equal(hasMuxPlaybackIdentity({ status: 'preparing', playback_id: 'playback-1' }), true)
-  assert.equal(hasMuxPlaybackIdentity({ status: 'ready', playback_id: 'playback-1' }), true)
-  assert.equal(hasMuxPlaybackIdentity({ status: 'preparing' }), false)
-  assert.equal(hasMuxPlaybackIdentity({ status: 'errored', playback_id: 'playback-1' }), false)
+test('only exposes playback after Mux marks the asset ready', () => {
+  assert.equal(isMuxAssetReadyForPlayback({ status: 'preparing', playback_id: 'playback-1' }), false)
+  assert.equal(isMuxAssetReadyForPlayback({ status: 'ready', playback_id: 'playback-1' }), true)
+  assert.equal(isMuxAssetReadyForPlayback({ status: 'ready' }), false)
+  assert.equal(isMuxAssetReadyForPlayback({ status: 'errored', playback_id: 'playback-1' }), false)
 })
