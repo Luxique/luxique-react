@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import RichTextField from './RichTextField'
-import ImageCropModal from './ImageCropModal'
-import type { CourseImageSize } from '@/lib/course-block-content'
+import ImageCropModal, { type CropResultMetadata } from './ImageCropModal'
+import { getQuizImageAspectRatio, type CourseCropAspect, type CourseImageSize, type CourseQuizOption } from '@/lib/course-block-content'
 import TextAlignmentControl, { type TextAlignment } from './TextAlignmentControl'
 
 /* ── Types ── */
@@ -27,7 +27,7 @@ export interface Block {
   questionAlign?: TextAlignment
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
-  options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
+  options?: CourseQuizOption[]
   points?: number
   quizType?: 'intermediate' | 'final'
   autoplay?: boolean
@@ -201,7 +201,13 @@ ImageBlock.displayName = 'ImageBlock'
 export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
   const optionType = block.option_type || 'text'
   const hasMedia = block.media?.type != null
-  const [pendingOptionCrop, setPendingOptionCrop] = useState<{ optionId: string; source: string } | null>(null)
+  const [pendingOptionCrop, setPendingOptionCrop] = useState<{
+    optionId: string
+    source: string
+    initialAspect: CourseCropAspect
+    originalUrl?: string
+    originalFile?: File
+  } | null>(null)
 
   useEffect(() => () => {
     if (pendingOptionCrop?.source.startsWith('blob:')) {
@@ -230,18 +236,37 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
     onUpdate(block.id, { options: opts })
   }
 
-  const startOptionCrop = (index: number, source: string) => {
-    const optionId = block.options?.[index]?.id
-    if (!optionId) return
-    setPendingOptionCrop({ optionId, source })
+  const startOptionCrop = (index: number, file?: File) => {
+    const option = block.options?.[index]
+    if (!option) return
+    setPendingOptionCrop({
+      optionId: option.id,
+      source: file ? URL.createObjectURL(file) : option.image_original_url || option.image_url || '',
+      initialAspect: file ? 'original' : option.image_crop_aspect || 'original',
+      originalUrl: option.image_original_url || option.image_url,
+      originalFile: file,
+    })
   }
 
   const handleImageUpload = (idx: number, file: File) => {
-    startOptionCrop(idx, URL.createObjectURL(file))
+    startOptionCrop(idx, file)
   }
 
-  const uploadCroppedOption = async (blob: Blob) => {
+  const uploadCroppedOption = async (blob: Blob, metadata: CropResultMetadata) => {
     if (!pendingOptionCrop) return
+    let originalUrl = pendingOptionCrop.originalUrl
+    if (pendingOptionCrop.originalFile) {
+      const originalExtension = pendingOptionCrop.originalFile.type.split('/')[1]?.replace(/[^a-z0-9.+-]/gi, '') || 'bin'
+      const originalPath = `quiz-options/${block.id}/${pendingOptionCrop.optionId}-original-${crypto.randomUUID()}.${originalExtension}`
+      const { data: originalData, error: originalError } = await supabase.storage
+        .from('course-images')
+        .upload(originalPath, pendingOptionCrop.originalFile, { contentType: pendingOptionCrop.originalFile.type || undefined })
+      if (originalError) {
+        console.error('Quiz option original upload failed:', originalError)
+        throw new Error(`Originele foto opslaan mislukt: ${originalError.message}`)
+      }
+      originalUrl = supabase.storage.from('course-images').getPublicUrl(originalData.path).data.publicUrl
+    }
     const path = `quiz-options/${block.id}/${pendingOptionCrop.optionId}-${crypto.randomUUID()}.webp`
     const { data, error } = await supabase.storage
       .from('course-images')
@@ -255,7 +280,29 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
     if (currentIndex < 0) {
       throw new Error('Deze foto-optie bestaat niet meer.')
     }
-    updateOption(currentIndex, { image_url: publicUrl })
+    updateOption(currentIndex, {
+      image_url: publicUrl,
+      image_original_url: originalUrl || publicUrl,
+      image_crop_aspect: metadata.aspectOption,
+      image_aspect_ratio: metadata.aspectRatio,
+      image_original_aspect_ratio: metadata.originalAspectRatio,
+    })
+    setPendingOptionCrop(null)
+  }
+
+  const resetCroppedOption = async () => {
+    if (!pendingOptionCrop) return
+    const currentIndex = (block.options || []).findIndex(option => option.id === pendingOptionCrop.optionId)
+    if (currentIndex < 0) throw new Error('Deze foto-optie bestaat niet meer.')
+    const option = block.options![currentIndex]
+    const originalUrl = option.image_original_url || pendingOptionCrop.originalUrl || option.image_url
+    if (!originalUrl) throw new Error('De originele foto is niet beschikbaar.')
+    updateOption(currentIndex, {
+      image_url: originalUrl,
+      image_original_url: originalUrl,
+      image_crop_aspect: 'original',
+      image_aspect_ratio: option.image_original_aspect_ratio || option.image_aspect_ratio || 4 / 3,
+    })
     setPendingOptionCrop(null)
   }
 
@@ -339,10 +386,10 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         {optionType === 'image' ? (
           /* Photo grid — mockup b-photo-grid */
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 260px))', justifyContent: 'center', alignItems: 'start', gap: 16 }}>
               {(block.options || []).map((opt, i) => (
-                <div key={opt.id || i} style={{ border: `1.5px solid ${opt.correct ? '#5E8463' : 'rgba(12,10,7,0.10)'}`, borderRadius: 14, overflow: 'hidden', background: '#fff', position: 'relative' }}>
-                  <div style={{ aspectRatio: '1', background: opt.image_url ? 'transparent' : '#ede7db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb4a6', fontSize: 24 }}>
+                <div key={opt.id || i} data-quiz-option-id={opt.id} data-crop-aspect={opt.image_crop_aspect || 'legacy'} style={{ border: `1.5px solid ${opt.correct ? '#5E8463' : 'rgba(12,10,7,0.10)'}`, borderRadius: 14, overflow: 'hidden', background: '#fff', position: 'relative' }}>
+                  <div data-quiz-option-frame style={{ position: 'relative', aspectRatio: getQuizImageAspectRatio(opt), background: opt.image_url ? 'transparent' : '#ede7db', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb4a6', fontSize: 24 }}>
                     {opt.image_url ? (
                       <>
                         <img src={opt.image_url} alt={opt.text} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -352,10 +399,11 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
                           aria-label={`Foto ${String.fromCharCode(65 + i)} opnieuw croppen`}
                           onClick={(event) => {
                             event.stopPropagation()
-                            startOptionCrop(i, opt.image_url!)
+                            startOptionCrop(i)
                           }}
                           style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(255,255,255,0.92)', border: 'none', borderRadius: '50%', width: 28, height: 28, fontSize: 13, color: '#7A6340', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.12)' }}
                         >✎</button>
+                        {opt.image_crop_aspect && <span style={{ position: 'absolute', bottom: 7, right: 7, borderRadius: 999, background: 'rgba(12,10,7,.66)', color: '#fff', padding: '3px 7px', fontSize: 9, letterSpacing: '.06em' }}>{opt.image_crop_aspect === 'original' ? 'ORIGINEEL' : opt.image_crop_aspect}</span>}
                       </>
                     ) : (
                       <label style={{ cursor: 'pointer', padding: 16 }} onClick={(e) => e.stopPropagation()}>
@@ -383,8 +431,10 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
               <ImageCropModal
                 key={`${pendingOptionCrop.optionId}:${pendingOptionCrop.source}`}
                 source={pendingOptionCrop.source}
+                initialAspect={pendingOptionCrop.initialAspect}
                 onCancel={() => setPendingOptionCrop(null)}
                 onConfirm={uploadCroppedOption}
+                onReset={pendingOptionCrop.originalFile ? undefined : resetCroppedOption}
               />
             )}
           </>

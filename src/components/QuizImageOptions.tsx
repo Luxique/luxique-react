@@ -1,13 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { getQuizImageAspectRatio, type CourseQuizOption } from '@/lib/course-block-content'
 
-export interface QuizImageOption {
-  id: string
-  text?: string
-  image_url?: string
-  correct?: boolean
-}
+export type QuizImageOption = CourseQuizOption
 
 interface QuizImageOptionsProps {
   options: QuizImageOption[]
@@ -35,13 +31,14 @@ export default function QuizImageOptions({ options, getBorder, onSelect, disable
           <div
             key={option.id}
             className="shared-quiz-image-option"
+            data-crop-aspect={option.image_crop_aspect || 'legacy'}
             onClick={() => !disabled && onSelect?.(option)}
             style={{
               border: getBorder?.(option) || '1.5px solid rgba(44,42,37,0.12)',
               cursor: disabled || !onSelect ? 'default' : 'pointer',
             }}
           >
-            <div className="shared-quiz-image-media">
+            <div className="shared-quiz-image-media" data-quiz-option-frame style={{ aspectRatio: getQuizImageAspectRatio(option) }}>
               {option.image_url ? (
                 <img src={option.image_url} alt={option.text || ''} />
               ) : (
@@ -73,10 +70,10 @@ export default function QuizImageOptions({ options, getBorder, onSelect, disable
       )}
 
       <style jsx>{`
-        .shared-quiz-image-grid { display: grid; grid-template-columns: repeat(2,minmax(0,280px)); justify-content: center; gap: 18px; max-width: 590px; margin: 0 auto; }
+        .shared-quiz-image-grid { display: grid; grid-template-columns: repeat(2,minmax(0,280px)); justify-content: center; align-items: start; gap: 18px; max-width: 590px; margin: 0 auto; }
         .shared-quiz-image-option { position: relative; border-radius: 14px; overflow: hidden; background: var(--paper, #fff); transition: border-color .2s, transform .2s, box-shadow .2s; }
         .shared-quiz-image-option:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(30,26,20,.10); }
-        .shared-quiz-image-media { position: relative; aspect-ratio: 4 / 3; background: var(--cream-2, #ebe6dd); display: flex; align-items: center; justify-content: center; }
+        .shared-quiz-image-media { position: relative; background: var(--cream-2, #ebe6dd); display: flex; align-items: center; justify-content: center; }
         .shared-quiz-image-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
         .shared-quiz-image-placeholder { font-size: 28px; color: var(--muted, #8c8579); }
         .shared-quiz-image-zoom { position: absolute; top: 10px; right: 10px; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.65); border-radius: 50%; background: rgba(12,10,7,.62); color: #fff; font-size: 23px; line-height: 1; cursor: zoom-in; box-shadow: 0 4px 16px rgba(0,0,0,.2); }

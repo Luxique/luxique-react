@@ -1,6 +1,35 @@
 type UnknownRecord = Record<string, unknown>
 
 export type CourseImageSize = 'small' | 'medium' | 'large' | 'full'
+export type CourseCropAspect = 'original' | '16:9' | '4:3' | '1:1' | '3:4'
+
+export interface CourseQuizOption {
+  id: string
+  text: string
+  image_url?: string
+  image_original_url?: string
+  image_crop_aspect?: CourseCropAspect
+  image_aspect_ratio?: number
+  image_original_aspect_ratio?: number
+  correct: boolean
+}
+
+const CROP_ASPECT_RATIOS: Record<Exclude<CourseCropAspect, 'original'>, number> = {
+  '16:9': 16 / 9,
+  '4:3': 4 / 3,
+  '1:1': 1,
+  '3:4': 3 / 4,
+}
+
+export function getQuizImageAspectRatio(option: Pick<CourseQuizOption, 'image_aspect_ratio' | 'image_crop_aspect'>): number {
+  if (typeof option.image_aspect_ratio === 'number' && Number.isFinite(option.image_aspect_ratio) && option.image_aspect_ratio > 0) {
+    return option.image_aspect_ratio
+  }
+  if (option.image_crop_aspect && option.image_crop_aspect !== 'original') {
+    return CROP_ASPECT_RATIOS[option.image_crop_aspect]
+  }
+  return 4 / 3
+}
 
 function asRecord(value: unknown): UnknownRecord | null {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
