@@ -15,7 +15,7 @@ import { getBlockIdsToDelete, shouldSyncLessonBlocks } from '@/lib/course-block-
 import { resetUnsavedStateAfterSuccessfulSave } from '@/lib/builder-unsaved-state'
 import { updateLessonById } from '@/lib/course-lesson-state'
 import {
-  hasMuxPlaybackIdentity,
+  isMuxAssetReadyForPlayback,
   MUX_ASSET_POLL_INTERVAL_MS,
   MUX_ASSET_POLL_TIMEOUT_MS,
   requireMuxAssetStatus,
@@ -2433,7 +2433,7 @@ function CourseBuilderPageInner({ params }: { params: { id: string } }) {
               if (status === 'errored') {
                 throw new Error('Mux kon deze video niet verwerken. Controleer het bestand en probeer opnieuw.')
               }
-              if (hasMuxPlaybackIdentity({ status, playback_id })) {
+              if (isMuxAssetReadyForPlayback({ status, playback_id })) {
                 const playbackId = playback_id as string
                 // Update block content with Mux IDs — token is fetched on-demand by LuxiqueMuxPlayer
                 const updatedBlocks = blocks.map(b => {
