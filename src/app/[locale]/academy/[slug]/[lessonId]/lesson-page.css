@@ -99,8 +99,13 @@
   transition: .2s;
 }
 .sq svg { width: 14px; height: 14px; }
-.sq svg path { fill: #fff; }
-.sq.done { background: var(--green); color: #fff; }
+.sq svg path { fill: currentColor; }
+.sq.done {
+  background: rgba(94,132,99,.14);
+  color: #426847;
+  border: 1px solid rgba(94,132,99,.42);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.45);
+}
 .sq.current { background: var(--gold); color: #fff; box-shadow: 0 0 0 3px rgba(196,162,101,.25); }
 .sq.available { background: var(--cream-2); color: var(--gold-deep); border: 1px solid rgba(196,162,101,.3); }
 .sq.locked-linear { background: #F0EEE9; color: #C9C3B6; }
