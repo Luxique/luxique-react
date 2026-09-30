@@ -96,7 +96,21 @@ export async function GET(request: NextRequest) {
       keySecret,
     });
 
-    return NextResponse.json({ token });
+    // Signed playback IDs require a separate thumbnail JWT (audience `t`).
+    // Mux requires image transformations for signed IDs to live in the token
+    // claims, so select a frame after typical black intro frames here.
+    const thumbnailToken = await mux.jwt.signPlaybackId(playbackId, {
+      type: 'thumbnail',
+      expiration: '2h',
+      keyId,
+      keySecret,
+      params: {
+        time: '3',
+        width: '1600',
+      },
+    });
+
+    return NextResponse.json({ token, thumbnailToken });
   } catch (err) {
     console.error('[playback-token] Token generation failed:', err);
     return NextResponse.json({ error: 'Token generation failed' }, { status: 500 });
