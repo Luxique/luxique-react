@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase-client'
 import RichTextField from './RichTextField'
 import ImageCropModal from './ImageCropModal'
 import type { CourseImageSize } from '@/lib/course-block-content'
+import TextAlignmentControl, { type TextAlignment } from './TextAlignmentControl'
 
 /* ── Types ── */
 export type BlockType = 'video' | 'text' | 'image' | 'quiz' | 'callout' | 'download' | 'divider'
@@ -23,6 +24,7 @@ export interface Block {
   images?: Array<{ id: string; url: string; caption?: string }>
   imageSize?: CourseImageSize
   question?: string
+  questionAlign?: TextAlignment
   media?: { type: 'image' | 'video' | null; url: string } | null
   option_type?: 'text' | 'image'
   options?: Array<{ id: string; text: string; image_url?: string; correct: boolean }>
@@ -314,14 +316,23 @@ export const QuizBlock = React.memo(({ block, onUpdate }: BlockProps) => {
         )}
 
         {/* Question input — Cormorant 22px, bottom border */}
-        <input
-          value={block.question || ''}
-          onChange={(e) => onUpdate(block.id, { question: e.target.value })}
-          placeholder="Typ je vraag..."
-          style={{ width: '100%', border: 'none', borderBottom: '2px solid rgba(12,10,7,0.10)', background: 'transparent', fontFamily: '"Cormorant Garamond", serif', fontSize: 22, color: '#2C2A25', padding: '6px 2px 12px', marginBottom: 8, outline: 'none', display: 'block' }}
-          onFocus={(e) => { e.currentTarget.style.borderBottomColor = '#C4A265' }}
-          onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'rgba(12,10,7,0.10)' }}
-        />
+        <div style={{ position: 'relative' }}>
+          <input
+            value={block.question || ''}
+            onChange={(e) => onUpdate(block.id, { question: e.target.value })}
+            placeholder="Typ je vraag..."
+            style={{ width: '100%', border: 'none', borderBottom: '2px solid rgba(12,10,7,0.10)', background: 'transparent', fontFamily: '"Cormorant Garamond", serif', fontSize: 22, color: '#2C2A25', padding: '6px 94px 12px 2px', marginBottom: 8, outline: 'none', display: 'block', textAlign: block.questionAlign || 'left' }}
+            onFocus={(e) => { e.currentTarget.style.borderBottomColor = '#C4A265' }}
+            onBlur={(e) => { e.currentTarget.style.borderBottomColor = 'rgba(12,10,7,0.10)' }}
+          />
+          <div style={{ position: 'absolute', right: 0, top: 2 }}>
+            <TextAlignmentControl
+              value={block.questionAlign}
+              onChange={questionAlign => onUpdate(block.id, { questionAlign })}
+              label="Vraagtekst uitlijnen"
+            />
+          </div>
+        </div>
         <p style={{ fontSize: 12, color: '#8C8579', margin: '4px 2px 20px', fontStyle: 'italic' }}>Vink de bolletjes aan bij de juiste antwoord(en). Meerdere mag.</p>
 
         {/* Options */}
