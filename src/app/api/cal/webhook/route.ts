@@ -27,7 +27,9 @@ function verifySignature(payload: string, signature: string | null): boolean {
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
-  const signature = request.headers.get('cal-signature') || request.headers.get('x-cal-signature')
+  const signature = request.headers.get('x-cal-signature-256')
+    || request.headers.get('cal-signature')
+    || request.headers.get('x-cal-signature')
   const headersObj = Object.fromEntries(request.headers.entries())
 
   const supabase = createClient(
