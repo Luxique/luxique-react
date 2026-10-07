@@ -2,6 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import { canonicalCustomerEmail } from '@/lib/customer-email'
+import { isManualAvailabilityLedger } from '@/lib/manual-availability-ledger'
+import { isWithin24Hours, MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
+import { sendManualBookingCancellation, sendManualBookingCancellationNotification } from '@/lib/manual-booking-email'
 
 export const dynamic = 'force-dynamic'
 
@@ -178,19 +182,125 @@ async function handleBookingCancelled(payload: any, supabase: any) {
   const booking = payload.payload || payload.data || payload.event || payload.booking || payload
   const calBookingUid = booking.uid || booking.id?.toString() || booking.bookingUid || payload.uid
 
+  if (!calBookingUid) {
+    console.error('Cancellation webhook missing booking UID')
+    return NextResponse.json({ error: 'Missing booking UID' }, { status: 400 })
+  }
+
+  // Manual appointments live in their own table. A customer can cancel from
+  // Cal.com's native confirmation link, so this webhook must reconcile those
+  // rows as well as online deposit bookings.
+  const { data: manualBooking, error: manualLookupError } = await supabase
+    .from('manual_bookings')
+    .select('*')
+    .eq('cal_booking_uid', calBookingUid)
+    .maybeSingle()
+  if (manualLookupError) {
+    console.error('Manual cancellation lookup failed:', manualLookupError)
+    return NextResponse.json({ error: 'Manual cancellation lookup failed' }, { status: 500 })
+  }
+
+  if (manualBooking) {
+    if (manualBooking.status === 'cancelled') {
+      return NextResponse.json({ received: true, duplicate: true, source: 'manual' })
+    }
+    const now = new Date().toISOString()
+    const within24h = isWithin24Hours(manualBooking.slot_start)
+    const hasLedger = isManualAvailabilityLedger(manualBooking.availability_restoration_ledger)
+    const { error: manualUpdateError } = await supabase.from('manual_bookings').update({
+      status: 'cancelled',
+      cancelled_at: now,
+      cancelled_within_24h: within24h,
+      cancellation_requested_at: manualBooking.cancellation_requested_at || now,
+      sync_status: hasLedger ? 'availability_restore_pending' : 'availability_review_required',
+      sync_error: hasLedger ? null : 'Cal.com-annulering ontvangen zonder betrouwbare beschikbaarheidsledger; handmatige controle vereist.',
+      updated_at: now,
+    }).eq('id', manualBooking.id).neq('status', 'cancelled')
+    if (manualUpdateError) {
+      console.error('Manual cancellation update failed:', manualUpdateError)
+      return NextResponse.json({ error: 'Manual cancellation update failed' }, { status: 500 })
+    }
+
+    const [{ data: profile }, { data: authUser }] = await Promise.all([
+      supabase.from('profiles').select('email, full_name').eq('id', manualBooking.user_id).maybeSingle(),
+      supabase.auth.admin.getUserById(manualBooking.user_id),
+    ])
+    const customerEmail = canonicalCustomerEmail({ profileEmail: profile?.email, authEmail: authUser?.user?.email })
+    if (customerEmail) {
+      const customerName = profile?.full_name || authUser?.user?.user_metadata?.full_name || customerEmail.split('@')[0]
+      const treatment = MANUAL_TREATMENTS[manualBooking.treatment_key as ManualTreatmentKey]
+      const mail = {
+        bookingId: manualBooking.id,
+        customerName,
+        customerEmail,
+        treatmentName: treatment?.name || 'Behandeling',
+        slotStart: manualBooking.slot_start,
+        salonDepositStatus: manualBooking.salon_deposit_status,
+        salonDepositCents: manualBooking.salon_deposit_cents,
+        within24h,
+      }
+      try {
+        await Promise.all([sendManualBookingCancellation(mail), sendManualBookingCancellationNotification(mail)])
+      } catch (mailError) {
+        console.error('Manual cancellation webhook mail failed:', mailError)
+      }
+    }
+    console.log(`Manual booking cancelled via Cal webhook: ${calBookingUid}`)
+    return NextResponse.json({ received: true, source: 'manual' })
+  }
+
+  const { data: onlineBooking, error: onlineLookupError } = await supabase
+    .from('pending_bookings')
+    .select('*')
+    .eq('cal_booking_uid', calBookingUid)
+    .maybeSingle()
+  if (onlineLookupError) {
+    console.error('Online cancellation lookup failed:', onlineLookupError)
+    return NextResponse.json({ error: 'Online cancellation lookup failed' }, { status: 500 })
+  }
+  if (!onlineBooking) {
+    console.warn(`Cancellation webhook booking not found: ${calBookingUid}`)
+    return NextResponse.json({ received: true, bookingFound: false })
+  }
+  if (onlineBooking.status === 'cancelled') {
+    return NextResponse.json({ received: true, duplicate: true, source: 'online' })
+  }
+
+  const now = new Date().toISOString()
+  const within24h = isWithin24Hours(onlineBooking.slot_start)
+  const refundEligible = onlineBooking.status === 'paid' && !within24h && Number(onlineBooking.amount_cents) > 0
+
   const { error } = await supabase
     .from('pending_bookings')
-    .update({ status: 'cancelled' })
+    .update({
+      status: 'cancelled',
+      cancelled_at: now,
+      cancelled_within_24h: within24h,
+      cancellation_requested_at: onlineBooking.cancellation_requested_at || now,
+      cancellation_refund_eligible: refundEligible,
+      cancellation_error: null,
+    })
     .eq('cal_booking_uid', calBookingUid)
-    .neq('status', 'paid')
+    .neq('status', 'cancelled')
 
   if (error) {
     console.error('Failed to cancel:', error)
-  } else {
-    console.log(`Booking cancelled: ${calBookingUid}`)
+    return NextResponse.json({ error: 'Cancellation update failed' }, { status: 500 })
   }
 
-  return NextResponse.json({ received: true })
+  try {
+    const { sendCancellationNotification, sendCustomerCancellationEmail } = await import('@/lib/email')
+    await Promise.all([
+      sendCustomerCancellationEmail({ ...onlineBooking, cancelled_within_24h: within24h, cancellation_refund_eligible: refundEligible }),
+      sendCancellationNotification({ ...onlineBooking, cancelled_within_24h: within24h, cancellation_refund_eligible: refundEligible }),
+    ])
+  } catch (mailError) {
+    console.error('Online cancellation webhook mail failed:', mailError)
+  }
+
+  console.log(`Booking cancelled via Cal webhook: ${calBookingUid}`)
+
+  return NextResponse.json({ received: true, source: 'online' })
 }
 
 /**

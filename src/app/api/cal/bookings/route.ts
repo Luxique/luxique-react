@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
-import { isCancelledCalStatus } from '@/lib/cal-cancellation'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
 import { reconcileManualBookingUids } from '@/lib/manual-booking-reconciliation'
 import { extractCalBookingNote } from '@/lib/booking-notes'
@@ -52,9 +51,7 @@ export async function GET(request: NextRequest) {
       Number(process.env.CAL_MANUAL_NEW_LASH_EVENT_TYPE_ID || 0),
       Number(process.env.CAL_MANUAL_FILL_LASH_EVENT_TYPE_ID || 0),
     ].filter(Boolean))
-    const calBookings = data.data.bookings.filter((b: Record<string, unknown>) =>
-      !isCancelledCalStatus(b.status)
-    ).map((b: Record<string, unknown>) => {
+    const calBookings = data.data.bookings.map((b: Record<string, unknown>) => {
       const eventType = b.eventType as Record<string, unknown> | undefined
       const responses = b.responses as Record<string, unknown> | undefined
       const metadata = b.metadata as Record<string, unknown> | undefined
@@ -134,7 +131,7 @@ export async function GET(request: NextRequest) {
     const { data: manualRows, error: manualError } = await supabaseAdmin
       .from('manual_bookings')
       .select('id, cal_booking_uid, event_type_id, treatment_key, slot_start, slot_end, status, user_id, note')
-      .in('status', ['confirmed', 'cancellation_pending'])
+      .in('status', ['confirmed', 'cancellation_pending', 'cancelled'])
       .order('slot_start', { ascending: false })
 
     if (manualError) {
@@ -186,34 +183,26 @@ export async function GET(request: NextRequest) {
 
     // The database is authoritative for manual bookings. UID-based replacement
     // prevents duplicates if Cal.com starts returning hidden event types later.
-    // A cancelled manual booking remains present in Cal's list for a short time in
-    // some cases. The local cancellation record is authoritative: use its Cal UID
-    // as a tombstone so the stale provider entry cannot reappear in the agenda.
-    const { data: cancelledManualBookings, error: cancelledManualError } = calBookingUids.length > 0
-      ? await supabaseAdmin
-          .from('manual_bookings')
-          .select('cal_booking_uid')
-          .eq('status', 'cancelled')
-          .in('cal_booking_uid', calBookingUids)
-      : { data: [], error: null }
-    if (cancelledManualError) {
-      console.error('[cal-bookings] cancelled manual booking tombstones query failed:', cancelledManualError)
-      return NextResponse.json({ error: 'Failed to reconcile cancelled manual bookings' }, { status: 500 })
-    }
+    // The database is authoritative for manual bookings, including cancellations.
+    // Replacing by UID keeps a cancelled appointment visible in the agenda rather
+    // than treating the local cancellation as a tombstone and deleting it.
     const bookingsByUid = reconcileManualBookingUids(
       sanitizedCalBookings,
       manualBookings,
-      (cancelledManualBookings || []).map(row => row.cal_booking_uid),
+      [],
     )
 
-    const { data: nonActiveOnlineBookings } = await supabaseAdmin
+    const { data: nonActiveOnlineBookings, error: nonActiveOnlineError } = await supabaseAdmin
       .from('pending_bookings')
       .select('cal_booking_uid, status')
       .in('status', ['cancelled', 'cancellation_pending'])
+    if (nonActiveOnlineError) {
+      console.error('[cal-bookings] online cancellation states query failed:', nonActiveOnlineError)
+      return NextResponse.json({ error: 'Failed to reconcile cancelled bookings' }, { status: 500 })
+    }
     for (const row of nonActiveOnlineBookings || []) {
       const existing = bookingsByUid.get(String(row.cal_booking_uid))
-      if (row.status === 'cancelled') bookingsByUid.delete(String(row.cal_booking_uid))
-      else if (existing) bookingsByUid.set(String(row.cal_booking_uid), { ...existing, status: 'cancellation_pending' })
+      if (existing) bookingsByUid.set(String(row.cal_booking_uid), { ...existing, status: row.status })
     }
     const bookings = Array.from(bookingsByUid.values())
 

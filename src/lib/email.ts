@@ -511,13 +511,11 @@ export async function sendCancellationNotification(booking: BookingData & { canc
     const deposit = (booking.amount_cents / 100).toFixed(0)
     const within24h = booking.cancelled_within_24h
     const refundEligible = booking.cancellation_refund_eligible ?? (booking.status === 'paid' && !within24h && booking.amount_cents > 0)
-    if (!within24h && !refundEligible) {
-      console.log(`Mail: no refund notification needed for unpaid booking ${booking.cal_booking_uid}`)
-      return
-    }
     const subject = within24h
       ? `CANCELLED • NO REFUND • ${customer.name} • ${date} • ${booking.event_type}`
-      : `REFUND ${customer.name} • ${date} • €${deposit} • GELDIGE ANNULERING`
+      : refundEligible
+        ? `REFUND ${customer.name} • ${date} • €${deposit} • GELDIGE ANNULERING`
+        : `AFSPRAAK GEANNULEERD • ${customer.name} • ${date} • ${booking.event_type}`
 
     const { error } = await resend.emails.send({
       from: FROM,
@@ -563,7 +561,7 @@ export async function sendCancellationNotification(booking: BookingData & { canc
           </td></tr>
         </table>
         <div style="background:${within24h ? 'rgba(197,60,60,0.08)' : 'rgba(91,140,102,0.08)'}; border:1px solid ${within24h ? 'rgba(197,60,60,0.25)' : 'rgba(91,140,102,0.25)'}; border-radius:10px; padding:14px 20px; max-width:440px; margin:0 auto;">
-          <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:.5px; color:${within24h ? '#c53c3c' : '#5b8c66'};">${within24h ? 'GEEN REFUND — BINNEN 24U (AV)' : `GELDIGE ANNULERING BUITEN 24U — betaal de aanbetaling van &euro;${deposit} handmatig terug in Stripe.`}</div>
+          <div style="font-family:Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:.5px; color:${within24h ? '#c53c3c' : '#5b8c66'};">${within24h ? 'GEEN REFUND — BINNEN 24U (AV)' : refundEligible ? `GELDIGE ANNULERING BUITEN 24U — betaal de aanbetaling van &euro;${deposit} handmatig terug in Stripe.` : 'AFSPRAAK GEANNULEERD — GEEN ONLINE AANBETALING GEREGISTREERD'}</div>
         </div>
       </td></tr>
       <tr><td style="padding:0 48px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="height:1px; line-height:1px; font-size:0; background-color:#e4ddd0;">&nbsp;</td></tr></table></td></tr>
