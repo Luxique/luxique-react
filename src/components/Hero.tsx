@@ -147,7 +147,7 @@ export default function Hero() {
       {/* ═══════════════════════════════════════════
           MOBILE HERO (<768px) — Original layout, pixel-identical
           ═══════════════════════════════════════════ */}
-      <div className="md:hidden w-full min-h-full pt-[30px] px-[10px] pb-[16px]">
+      <div className="md:hidden w-full min-h-full px-[10px] pb-0 pt-[30px]">
         <div className="w-full grid grid-cols-1 gap-[8px] grid-rows-[auto_auto]">
           {/* LEFT/TOP PANEL */}
           <div className="bg-[#FFFFFF] rounded-[22px] pt-[22px] px-[20px] pb-[28px] shrink-0 flex-none flex flex-col overflow-visible relative">

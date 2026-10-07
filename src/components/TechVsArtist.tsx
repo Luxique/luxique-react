@@ -125,6 +125,7 @@ export default function TechVsArtist() {
         .quote-role { font-family:var(--body); font-weight:400; font-size:.76rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); }
 
         @media (max-width:820px) {
+          .tva-section { padding-top:12px; }
           .curl { display:none; }
           .tva-cards { grid-template-columns:1fr; }
           .card--tech { margin-top:0; }
