@@ -197,7 +197,7 @@ export default function Hero() {
           </div>
 
           {/* RIGHT/BOTTOM PANEL — Slider */}
-          <div className="rounded-[22px] overflow-visible relative bg-[#161310] min-h-[280px]">
+          <div className="relative aspect-[35/48] min-h-0 overflow-visible rounded-[22px] bg-[#161310]">
             {SLIDES.map((slide, i) => (
               <div key={i} className="absolute inset-0 transition-opacity duration-[850ms] ease-in-out" style={{ opacity: current === i ? 1 : 0 }}>
                 <img src={slide.img || IMG_ORIG} alt={slide.title} className="w-full h-full object-cover rounded-[22px]" />
