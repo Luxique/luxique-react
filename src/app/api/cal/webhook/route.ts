@@ -21,7 +21,8 @@ function verifySignature(payload: string, signature: string | null): boolean {
     .update(payload)
     .digest('hex')
   const sig = signature.replace('v1=', '')
-  return sig === expected
+  if (sig.length !== expected.length) return false
+  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))
 }
 
 export async function POST(request: NextRequest) {
@@ -29,20 +30,10 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get('cal-signature') || request.headers.get('x-cal-signature')
   const headersObj = Object.fromEntries(request.headers.entries())
 
-  // === DIAGNOSTIC: Log env var status ===
-  console.log('🔧 WEBHOOK DIAGNOSTIC:')
-  console.log(`  - SUPABASE_SERVICE_ROLE_KEY length: ${process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0}`)
-  console.log(`  - SUPABASE_SERVICE_ROLE_KEY defined: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`)
-  console.log(`  - NEXT_PUBLIC_SUPABASE_URL: ${process.env.NEXT_PUBLIC_SUPABASE_URL}`)
-  console.log(`  - CAL_WEBHOOK_SECRET length: ${process.env.CAL_WEBHOOK_SECRET?.length || 0}`)
-  console.log(`  - CAL_WEBHOOK_SECRET defined: ${!!process.env.CAL_WEBHOOK_SECRET}`)
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-
-  console.log('🔧 Supabase client created')
 
   // === STEP 1: Write raw webhook to debug table BEFORE anything else ===
   let parsedForDebug: any = null
@@ -70,9 +61,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // === STEP 2: Signature check (log-only during setup) ===
-  if (process.env.CAL_WEBHOOK_SECRET && !verifySignature(body, signature)) {
-    console.warn('⚠️ Signature mismatch — accepting for setup phase')
+  // Reject unsigned or incorrectly signed events. The secret is configured in
+  // both Cal.com and Vercel; accepting mismatches would let arbitrary callers
+  // mutate booking state and trigger customer/admin emails.
+  if (!verifySignature(body, signature)) {
+    console.warn('Cal webhook signature rejected')
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
   // === STEP 3: Parse and handle ===
@@ -102,13 +96,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleBookingCreated(payload: any, supabase: any) {
-  // === DIAGNOSTIC: Log RAW payload for API version check ===
-  console.log('🔧 RAW PAYLOAD (handleBookingCreated):', JSON.stringify(payload, null, 2))
-  console.log('🔧 KEYS IN PAYBACK:', Object.keys(payload))
-  
   const booking = payload.payload || payload.data || payload.event || payload.booking || payload
-  console.log('🔧 BOOKING OBJECT:', JSON.stringify(booking, null, 2))
-  console.log('🔧 KEYS IN BOOKING:', Object.keys(booking))
   
   const eventTypeId = Number(booking.eventTypeId || booking.event_type_id || payload.eventTypeId)
 
