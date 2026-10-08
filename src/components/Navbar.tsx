@@ -8,6 +8,7 @@ import { usePreviewMode } from '@/contexts/PreviewContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import { routing } from '@/i18n/routing'
 import { isCustomerAcademyRoute } from '@/lib/chat-widget-route'
+import AdminRefundBadge from './AdminRefundBadge'
 
 export default function Navbar() {
   const { user, role, signOut } = useAuth()
@@ -160,10 +161,11 @@ export default function Navbar() {
         {user ? (
           <div className="relative" ref={dropdownRef}>
             <button onClick={() => setProfileOpen(!profileOpen)}
-              className="w-[52px] h-[52px] max-md:w-[48px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">
+              className="relative w-[52px] h-[52px] max-md:w-[48px] max-md:h-[48px] rounded-full bg-[rgba(250,248,244,0.72)] backdrop-blur-[26px] saturate-[115%] border border-[rgba(255,255,255,0.7)] flex items-center justify-center cursor-pointer shrink-0">
               <div className="w-[22px] h-[22px] rounded-full bg-[#C4A265] flex items-center justify-center text-white text-[10px] font-semibold">
                 {firstName ? firstName[0].toUpperCase() : 'U'}
               </div>
+              <AdminRefundBadge />
             </button>
             {profileOpen && (
               <div className="absolute right-0 top-[60px] w-[220px] bg-[rgba(250,248,244,0.95)] backdrop-blur-[26px] rounded-2xl border border-[rgba(255,255,255,0.7)] overflow-hidden py-1 z-50">

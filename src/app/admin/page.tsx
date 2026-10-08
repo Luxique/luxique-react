@@ -9,6 +9,7 @@ import KlassenAdmin from './klassen-admin'
 import AdminAgenda from './admin-agenda'
 import { AdminDashboardMobileNav, AdminDashboardSidebar, type AdminDashboardNavKey } from '@/components/AdminDashboardNav'
 import { canonicalCustomerEmail } from '@/lib/customer-email'
+import AdminRefundTracker from '@/components/AdminRefundTracker'
 
 /* ── types ── */
 type Profile = { id: string; email: string; full_name: string; role: string; created_at: string }
@@ -274,6 +275,7 @@ export default function AdminPage() {
           {/* ═══ OVERVIEW ═══ */}
           {tab === 'overview' && (
             <div className="space-y-5">
+              <AdminRefundTracker />
               {/* Stat cards */}
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
