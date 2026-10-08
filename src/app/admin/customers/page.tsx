@@ -6,6 +6,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { supabase } from '@/lib/supabase-client'
 import { AdminDashboardMobileNav, AdminDashboardSidebar } from '@/components/AdminDashboardNav'
 import { courseGrantErrorMessage, withCourseGrantTimeout } from '@/lib/course-grant'
+import { completedManualRefundLabel } from '@/lib/manual-refund-presentation'
 
 /* ── types ── */
 type Profile = {
@@ -32,7 +33,8 @@ type Lesson = { id: string; title: string; sort_order: number }
 
 type PendingBooking = {
   id: string; event_type: string; slot_start: string; status: string;
-  customer_name: string | null; customer_email: string | null; amount_cents: number | null
+  customer_name: string | null; customer_email: string | null; amount_cents: number | null;
+  source: 'online' | 'manual'; refunded_at: string | null
 }
 type CourseOption = { id: string; title: string; is_published: boolean; is_ghost: boolean }
 
@@ -496,22 +498,24 @@ export default function AdminCustomersPage() {
                   ) : bookings.length > 0 ? (
                     <div className="space-y-2">
                       {bookings.map(b => (
-                        <div key={b.id} className="flex items-center justify-between py-3 border-b border-[#f5f5f5] last:border-0">
+                        <div key={`${b.source}-${b.id}`} className={`flex items-center justify-between py-3 border-b border-[#f5f5f5] last:border-0 ${['cancelled', 'canceled'].includes(b.status) ? 'opacity-70' : ''}`}>
                           <div>
-                            <p className="text-[13px] font-medium">{b.event_type}</p>
+                            <p className={`text-[13px] font-medium ${['cancelled', 'canceled'].includes(b.status) ? 'line-through' : ''}`}>{b.event_type}</p>
                             <p className="text-[11px] text-[#aaa]">{fmt(b.slot_start)}</p>
+                            {b.refunded_at && <p className="mt-1 text-[10px] font-bold text-red-600">{completedManualRefundLabel(b.refunded_at)} · {new Intl.DateTimeFormat('nl-NL', { timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(b.refunded_at))}</p>}
                           </div>
                           <div className="flex items-center gap-2">
                             {b.amount_cents != null && b.amount_cents > 0 && (
                               <span className="text-[11px] text-[#666]">€{(b.amount_cents / 100).toFixed(2)} aanbetaald</span>
                             )}
                             <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${
+                              b.refunded_at ? 'bg-red-50 text-red-700' :
                               b.status === 'paid' ? 'bg-green-50 text-green-600' :
                               b.status === 'pending' ? 'bg-yellow-50 text-yellow-600' :
                               b.status === 'cancelled' ? 'bg-red-50 text-red-400' :
                               b.status === 'expired' ? 'bg-[#f5f5f5] text-[#aaa]' :
                               'bg-[#f5f5f5] text-[#888]'
-                            }`}>{b.status}</span>
+                            }`}>{b.refunded_at ? 'Terugbetaald' : b.status}</span>
                           </div>
                         </div>
                       ))}

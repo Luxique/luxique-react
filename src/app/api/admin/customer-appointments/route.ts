@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { MANUAL_TREATMENTS, type ManualTreatmentKey } from '@/lib/manual-bookings'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -13,6 +14,7 @@ const NO_STORE_HEADERS = {
 }
 
 const BOOKING_FIELDS = 'id, event_type, slot_start, status, customer_name, customer_email, amount_cents'
+const VISIBLE_STATUSES = ['paid', 'cancelled', 'cancellation_pending']
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request)
@@ -29,12 +31,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'userId ontbreekt.' }, { status: 400, headers: NO_STORE_HEADERS })
   }
 
-  const [linkedResult, legacyResult] = await Promise.all([
+  const [linkedResult, legacyResult, manualResult] = await Promise.all([
     supabaseAdmin
       .from('pending_bookings')
       .select(BOOKING_FIELDS)
       .eq('user_id', userId)
-      .eq('status', 'paid')
+      .in('status', VISIBLE_STATUSES)
       .order('slot_start', { ascending: false }),
     email
       ? supabaseAdmin
@@ -42,12 +44,18 @@ export async function GET(request: NextRequest) {
           .select(BOOKING_FIELDS)
           .is('user_id', null)
           .ilike('customer_email', email)
-          .eq('status', 'paid')
+          .in('status', VISIBLE_STATUSES)
           .order('slot_start', { ascending: false })
       : Promise.resolve({ data: [], error: null }),
+    supabaseAdmin
+      .from('manual_bookings')
+      .select('id,treatment_key,slot_start,status,salon_deposit_cents,refunded_at')
+      .eq('user_id', userId)
+      .in('status', ['confirmed', 'cancelled', 'cancellation_pending'])
+      .order('slot_start', { ascending: false }),
   ])
 
-  const error = linkedResult.error || legacyResult.error
+  const error = linkedResult.error || legacyResult.error || manualResult.error
   if (error) {
     console.error('[admin-customer-appointments] Afspraken ophalen mislukt:', error)
     return NextResponse.json(
@@ -56,9 +64,23 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const byId = new Map(
-    [...(linkedResult.data || []), ...(legacyResult.data || [])].map(booking => [booking.id, booking]),
-  )
+  const onlineBookings = [...(linkedResult.data || []), ...(legacyResult.data || [])].map(booking => ({
+    ...booking,
+    source: 'online',
+    refunded_at: null,
+  }))
+  const manualBookings = (manualResult.data || []).map(booking => ({
+    id: booking.id,
+    event_type: MANUAL_TREATMENTS[booking.treatment_key as ManualTreatmentKey]?.name || 'Behandeling',
+    slot_start: booking.slot_start,
+    status: booking.status,
+    customer_name: null,
+    customer_email: null,
+    amount_cents: booking.salon_deposit_cents,
+    source: 'manual',
+    refunded_at: booking.refunded_at,
+  }))
+  const byId = new Map([...onlineBookings, ...manualBookings].map(booking => [`${booking.source}-${booking.id}`, booking]))
   const bookings = Array.from(byId.values()).sort(
     (a, b) => new Date(b.slot_start).getTime() - new Date(a.slot_start).getTime(),
   )

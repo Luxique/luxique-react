@@ -6,6 +6,7 @@ import {
   isPastTimeslot,
   PAST_TIMESLOT_ERROR,
 } from '@/lib/cal-admin-availability'
+import { completedManualRefundLabel } from '@/lib/manual-refund-presentation'
 
 type ViewMode = 'month' | 'week'
 type TreatmentKey = 'new_lash_set' | 'fill_lash_set'
@@ -29,6 +30,7 @@ type CalendarItem = {
   source?: 'online' | 'manual'
   bookingUid?: string
   note?: string
+  refundedAt?: string | null
 }
 type CalBooking = {
   id: number | string
@@ -44,6 +46,7 @@ type CalBooking = {
   source?: 'online' | 'manual'
   paymentStatus?: string | null
   note?: unknown
+  refundedAt?: string | null
 }
 type CustomerResult = { id: string; email: unknown; full_name: unknown }
 type TrajectClass = {
@@ -101,6 +104,7 @@ function localTimeFromIso(value: string) {
 }
 function monthTitle(date: Date) { return new Intl.DateTimeFormat('nl-NL', { month: 'long', year: 'numeric' }).format(date) }
 function longDate(key: string) { return new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${key}T12:00:00`)) }
+function refundDate(value: string) { return new Intl.DateTimeFormat('nl-NL', { timeZone: 'Europe/Amsterdam', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value)) }
 function RefreshIcon() {
   return <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2m.5 5v-5h-5" /></svg>
 }
@@ -124,6 +128,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
   const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date()))
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [bookings, setBookings] = useState<CalBooking[]>([])
+  const [manualBookings, setManualBookings] = useState<CalBooking[]>([])
   const [availability, setAvailability] = useState<TreatmentAvailability[]>([])
   const [trajectClasses, setTrajectClasses] = useState<TrajectClass[]>([])
   const [loading, setLoading] = useState(true)
@@ -194,6 +199,12 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           ))
           return payload
         })
+      const manualBookingsRequest = loadJson(`/api/admin/agenda-manual-bookings?t=${cacheBust}`, 'Handmatige afspraken laden mislukt.', true)
+        .then(payload => {
+          if (!isLatestRequest()) return payload
+          setManualBookings(payload.bookings || [])
+          return payload
+        })
       const availabilityRequest = loadJson(
         `/api/admin/cal-availability?t=${cacheBust}&start=${rangeStart}&end=${rangeEnd}`,
         'Beschikbaarheid laden mislukt.',
@@ -210,13 +221,14 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           return payload
         })
 
-      const [bookingsResult, availabilityResult, trajectResult] = await Promise.allSettled([
+      const [bookingsResult, manualBookingsResult, availabilityResult, trajectResult] = await Promise.allSettled([
         bookingsRequest,
+        manualBookingsRequest,
         availabilityRequest,
         trajectRequest,
       ])
 
-      const failures = [bookingsResult, availabilityResult, trajectResult]
+      const failures = [bookingsResult, manualBookingsResult, availabilityResult, trajectResult]
         .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
         .map(result => result.reason instanceof Error ? result.reason.message : 'Agenda-data laden mislukt.')
       if (isLatestRequest() && failures.length > 0) setError(failures.join(' '))
@@ -271,8 +283,14 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
     return () => { window.clearTimeout(timer); controller.abort() }
   }, [manualCustomer, manualCustomerQuery, manualModalOpen, sessionToken])
 
-  const items = useMemo<CalendarItem[]>(() => [
-    ...bookings.map(booking => {
+  const items = useMemo<CalendarItem[]>(() => {
+    const bookingByUid = new Map<string, CalBooking>()
+    for (const booking of bookings) bookingByUid.set(String(booking.uid || booking.id), booking)
+    // The local database wins for manual bookings, including refund state. This
+    // remains available even when the independent Cal.com request fails.
+    for (const booking of manualBookings) bookingByUid.set(String(booking.uid || booking.id), booking)
+    return [
+    ...Array.from(bookingByUid.values()).map(booking => {
       const customerName = safeText(booking.customerName)
       const customerEmail = safeText(booking.customerEmail)
       const customerPhone = safeText(booking.customerPhone)
@@ -294,6 +312,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
         source: booking.source,
         bookingUid: booking.uid,
         note: safeText(booking.note),
+        refundedAt: booking.refundedAt || null,
       }
     }),
     ...availability.flatMap(treatment => treatment.slots.map(slot => ({
@@ -317,7 +336,8 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
       paidCount: traject.betaald_aantal,
       maxParticipants: traject.max_deelnemers,
     }))),
-  ], [availability, bookings, trajectClasses])
+  ]
+  }, [availability, bookings, manualBookings, trajectClasses])
 
   const visibleDays = useMemo(() => {
     const start = view === 'week' ? startOfWeek(cursor) : startOfMonthGrid(cursor)
@@ -577,7 +597,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
                   + Tijdslot
                 </button>
                 <div className="relative z-10 space-y-1 overflow-hidden p-1.5 pt-10 sm:p-2 sm:pt-10 pointer-events-none">
-                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => { const cancelled = item.kind === 'booking' && ['cancelled', 'canceled'].includes(safeText(item.status).toLowerCase()); return <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`relative rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.note ? 'pr-5' : ''} ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${cancelled ? 'border border-red-100 bg-red-50 text-red-500 line-through opacity-75' : item.kind === 'booking' && item.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span>{item.note && <span className="absolute right-1 top-1" title="Notitie aanwezig"><NoteIcon /></span>}</div> })}
+                  {dayItems.slice(0, view === 'week' ? 5 : 3).map(item => { const cancelled = item.kind === 'booking' && ['cancelled', 'canceled'].includes(safeText(item.status).toLowerCase()); return <div key={item.id} onClick={event => { if (item.kind !== 'override') { event.stopPropagation(); selectItem(item) } }} className={`relative rounded px-1.5 py-1 text-[8px] sm:text-[9px] leading-tight truncate ${item.note ? 'pr-5' : ''} ${item.kind !== 'override' ? 'pointer-events-auto cursor-pointer hover:brightness-95' : ''} ${cancelled ? 'border border-red-100 bg-red-50 text-red-500 line-through opacity-75' : item.kind === 'booking' && item.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' : item.kind === 'traject-day' ? 'bg-violet-50 text-violet-700 border border-violet-200' : 'bg-[#C4A265]/15 text-[#80642e] border border-[#C4A265]/20'}`}><b>{item.startTime}</b> <span className="hidden sm:inline">{item.title}{completedManualRefundLabel(item.refundedAt) ? ` · ${completedManualRefundLabel(item.refundedAt)}` : item.kind === 'traject-day' ? ` · ${item.paidCount}/${item.maxParticipants}` : ''}</span>{item.note && <span className="absolute right-1 top-1" title="Notitie aanwezig"><NoteIcon /></span>}</div> })}
                   {dayItems.length > (view === 'week' ? 5 : 3) && <div className="text-[8px] text-[#999] px-1">+{dayItems.length - (view === 'week' ? 5 : 3)} meer</div>}
                 </div>
               </div>
@@ -608,6 +628,7 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9a7838]">{selectedItem.kind === 'booking' ? 'Afspraakdetails' : 'Traject-details'}</p>
               <div className="mt-1 flex flex-wrap items-center gap-2"><h5 className="font-['Cormorant_Garamond'] text-[23px] leading-tight">{selectedItem.kind === 'booking' ? selectedItem.customer || 'Onbekende klant' : selectedItem.courseName || selectedItem.title}</h5>{selectedItem.source === 'manual' && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[9px] font-semibold text-blue-700">Handmatige boeking</span>}</div>
+              {selectedItem.refundedAt && <p className="mt-2 text-[11px] font-bold text-red-600">{completedManualRefundLabel(selectedItem.refundedAt)} · {refundDate(selectedItem.refundedAt)}</p>}
             </div>
             <button type="button" onClick={() => setSelectedItemId(null)} aria-label="Details sluiten" className="rounded-full border border-[#e5e2dc] bg-white px-2.5 py-1 text-[11px] text-[#777]">✕</button>
           </div>
@@ -624,8 +645,8 @@ export default function AdminAgenda({ sessionToken }: { sessionToken: string }) 
           <div className="divide-y divide-[#f3f3f3]">{selectedItems.map(item => (
             <div key={item.id} onClick={() => selectItem(item)} className={`px-5 py-4 flex items-center gap-4 ${item.kind !== 'override' ? 'cursor-pointer transition hover:bg-[#faf9f7]' : ''} ${selectedItemId === item.id ? 'bg-[#C4A265]/10' : ''} ${item.kind === 'booking' && ['cancelled', 'canceled'].includes(safeText(item.status).toLowerCase()) ? 'opacity-65 line-through' : ''}`}>
               <div className="w-[64px] shrink-0"><p className="text-[17px] font-semibold">{item.startTime}</p><p className="text-[10px] text-[#aaa]">tot {item.endTime}</p></div>
-              <div className="relative flex-1 min-w-0"><p className={`text-[13px] font-medium truncate ${item.note ? 'pr-6' : ''}`}>{item.title}</p>{item.note && <span className="absolute right-0 top-0 text-[#9a7838]" title="Notitie aanwezig"><NoteIcon /></span>}<p className="text-[10px] text-[#888] mt-0.5">{item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
-              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.kind === 'booking' && item.paymentStatus === 'paid' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.kind === 'booking' && item.paymentStatus === 'paid' ? 'Betaald' : item.source === 'manual' ? 'Handmatige boeking' : item.kind === 'booking' ? 'Niet betaald' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
+              <div className="relative flex-1 min-w-0"><p className={`text-[13px] font-medium truncate ${item.note ? 'pr-6' : ''}`}>{item.title}</p>{item.note && <span className="absolute right-0 top-0 text-[#9a7838]" title="Notitie aanwezig"><NoteIcon /></span>}<p className={`text-[10px] mt-0.5 ${item.refundedAt ? 'font-bold text-red-600' : 'text-[#888]'}`}>{item.refundedAt ? `${completedManualRefundLabel(item.refundedAt)} · ${refundDate(item.refundedAt)}` : item.kind === 'booking' ? `${item.customer || 'Klant'} · ${item.status || 'Geboekt'}` : item.kind === 'traject-day' ? `${item.paidCount}/${item.maxParticipants} deelnemers · ${item.status}` : 'Tijdslot via Cal.com'}</p></div>
+              <span className={`text-[9px] px-2.5 py-1 rounded-full border font-semibold ${item.refundedAt ? 'border-red-200 bg-red-50 text-red-700' : item.kind === 'booking' && item.paymentStatus === 'paid' ? 'border-green-200 bg-green-50 text-green-700' : item.kind === 'traject-day' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-[#C4A265]/30 bg-[#C4A265]/10 text-[#80642e]'}`}>{item.refundedAt ? 'Terugbetaald' : item.kind === 'booking' && item.paymentStatus === 'paid' ? 'Betaald' : item.source === 'manual' ? 'Handmatige boeking' : item.kind === 'booking' ? 'Niet betaald' : item.kind === 'traject-day' ? 'Traject-dag' : 'Tijdslot'}</span>
               {item.kind === 'override' && <button onClick={() => removeOverride(item)} disabled={deleting === item.id} className="text-[11px] text-[#aaa] hover:text-red-600 disabled:opacity-40" aria-label="Tijdslot verwijderen">{deleting === item.id ? '…' : '✕'}</button>}
             </div>
           ))}</div>
